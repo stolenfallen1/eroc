@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-navigation-drawer v-model="drawer" app>
+    <v-navigation-drawer width="220" v-model="drawer"  app>
       <div class="logo">MMIS</div>
       <v-list>
         <v-list-group

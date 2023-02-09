@@ -3,9 +3,7 @@
   <v-app>
     <!-- <v-navigation-drawer app>
     </v-navigation-drawer> -->
-    <side-bar :drawer="drawer" />
-
-    <app-bar :drawer="drawer" @toggle="toggleSide"/>
+    <side-bar :drawer="isdrawer" />
 
     <!-- Sizes your content based upon application components -->
     <v-main>
@@ -23,22 +21,20 @@
 </template>
 <script>
 import SideBar from "../components/layouts/SideBar.vue"
-import AppBar from "../components/layouts/AppBar.vue"
 export default {
   components:{
     SideBar,
-    AppBar
   },
   data(){
     return{
-      drawer:true
+      drawer:false,
+      isdrawer:true
     }
   },
   methods:{
-    toggleSide(val){
-      console.log(val)
-      this.drawer = val
-    }
+  },
+  watch:{
+
   }
   
 }

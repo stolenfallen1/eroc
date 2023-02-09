@@ -37,15 +37,10 @@ export default {
   },
   data() {
     return{
-      isclose:false
     }
   },
   watch:{
-    drawer:{
-      handler(val){
-        this.isclose = val
-      }
-    }
+    
   }
 
 };

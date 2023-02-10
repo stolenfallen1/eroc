@@ -25,15 +25,18 @@
         <span>{{ _dateFormat(item.updated_at) }}</span>
       </template>
     </custom-table>
+    <DataForm :show="showForm"/>
   </div>
 </template>
 <script>
 import DataFilter from "../filter_forms/PurchaseRequest.vue";
+import DataForm from "../forms/PurchaseRequest.vue";
 import CustomTable from "@global/components/CustomTable.vue";
 export default {
   components: {
     CustomTable,
     DataFilter,
+    DataForm,
   },
   data() {
     return {
@@ -67,6 +70,7 @@ export default {
         selected: [],
       },
       loading: false,
+      showForm: false,
     };
   },
   methods: {
@@ -95,7 +99,7 @@ export default {
       this.goTo("employee-edit", { id: payload.id });
     },
     addItem() {
-      this.goTo("employee-create");
+      this.showForm = true
     },
     remove(item) {
       axios.delete(`users/${item.id || item}`).then(({ data }) => {

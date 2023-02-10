@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Classifications extends Model
 {
     use HasFactory;
-    protected $table = 'Classifications';
+    protected $table = 'Itemsubcategoryclassification';
 }

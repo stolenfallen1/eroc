@@ -6,7 +6,8 @@ mix.webpackConfig({
     resolve: {
         extensions: [".js", ".vue"],
         alias: {
-            "@global": path.resolve(__dirname, "resources/js/global")
+            "@global": path.resolve(__dirname, "resources/js/global"),
+            "@mmis": path.resolve(__dirname, "resources/js/mmis")
         }
     },
     output: {

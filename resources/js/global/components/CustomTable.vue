@@ -46,6 +46,10 @@
         </v-text-field>
       </div>
       <slot class="mr-2 ml-2" name="generate_btn" />
+      <v-btn class="mr-2 ml-2" small color="primary" @click="$emit('add')">
+        <v-icon small class="mr-1">mdi-plus</v-icon>
+        Add record
+      </v-btn>
       <v-menu offset-y left nudge-bottom="5" :close-on-content-click="false">
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -80,8 +84,8 @@
       v-model="selected"
       :headers="tableData.headers"
       :items="tableData.items"
-      :single-select="false"
-      show-select
+      :single-select="single_select"
+      :show-select="show_select"
       :search="data.keyword"
       :server-items-length="tableData.total"
       :options.sync="tableData.options"
@@ -90,13 +94,13 @@
       :loading="data.loading"
       class="cursor-pointer table-fix-height"
       fixed-header
-      height="68.5vh"
+      height="66vh"
     >
       <template
         v-for="(head, index) of tableData.headers"
         v-slot:[`item.${head.value}`]="props"
       >
-        <td :props="props">
+        <td :props="props" :key="index">
           <slot :name="head.value" :item="props.item">
             {{ props.item[head.value] || "..." }}
           </slot>
@@ -157,6 +161,14 @@ export default {
     searchPlaceholder: {
       type: String,
       default: () => "name, age",
+    },
+    single_select:{
+      type:Boolean,
+      default:() => true
+    },
+    show_select:{
+      type:Boolean,
+      default:() => false
     },
   },
   methods: {

@@ -5534,7 +5534,7 @@ var mmis = {
   path: "/mmis",
   name: "mmis",
   beforeEnter: function beforeEnter(to, from, next) {
-    window.location.href = "mmis/test";
+    window.location.href = "mmis/procurements/purchase-request";
   } // component: () => import("../pages/sample/sample.vue")
 };
 var component = [mmis];

@@ -1,5 +1,24 @@
 const mix = require('laravel-mix');
 
+const path = require("path");
+
+mix.webpackConfig({
+    resolve: {
+        extensions: [".js", ".vue"],
+        alias: {
+            "@global": path.resolve(__dirname, "resources/js/global")
+        }
+    },
+    output: {
+        chunkFilename: "js/chunks/[name].js"
+    },
+    devServer: {
+        headers: {
+            "Access-Control-Allow-Origin": "*"
+        }
+    }
+})
+
 /*
  |--------------------------------------------------------------------------
  | Mix Asset Management

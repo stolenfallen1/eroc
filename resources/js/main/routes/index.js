@@ -2,7 +2,7 @@ const mmis = {
     path: `/mmis`,
     name: `mmis`,
     beforeEnter(to, from, next) {
-      window.location.href = "mmis/test";
+      window.location.href = "mmis/procurements/purchase-request";
     }
     // component: () => import("../pages/sample/sample.vue")
 };

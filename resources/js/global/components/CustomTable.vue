@@ -95,12 +95,13 @@
       class="cursor-pointer table-fix-height"
       fixed-header
       height="66vh"
+      dense
     >
       <template
         v-for="(head, index) of tableData.headers"
         v-slot:[`item.${head.value}`]="props"
       >
-        <td :props="props" :key="index">
+        <td class="test" :props="props" :key="index">
           <slot :name="head.value" :item="props.item">
             {{ props.item[head.value] || "..." }}
           </slot>
@@ -110,6 +111,7 @@
         <div>
           <slot name="custom-action" :item="item"> </slot>
           <v-icon
+            small
             v-if="!hide.includes('edit')"
             color="primary"
             class="mr-1"
@@ -118,6 +120,7 @@
             mdi-pencil-outline
           </v-icon>
           <v-icon
+            small
             v-if="!hide.includes('delete')"
             color="error"
             class="mr-1"
@@ -187,3 +190,8 @@ export default {
   },
 };
 </script>
+<style lang="scss" scoped>
+.test{
+  font-size: .7rem !important;
+}
+</style>

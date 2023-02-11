@@ -116,3 +116,11 @@ body {
 .active-route div {
   color: white;
 }
+
+.v-list {
+  padding-top: 0 !important;
+}
+
+tr.v-data-table__selected {
+  background: #6ebaf3 !important;
+}

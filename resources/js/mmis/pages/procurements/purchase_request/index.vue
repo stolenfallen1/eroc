@@ -4,6 +4,7 @@
       :data="setting"
       :tableData="tableData"
       :headers="headers"
+      @view="viewRecord"
       @search="search"
       @add="addItem"
       @edit="editItem"
@@ -11,7 +12,7 @@
       @fetchPage="initialize"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
-      :hide="['floater-btn']"
+      :hide="drawer ? ['add-btn', 'filter', 'floater-btn'] : ['floater-btn']"
     >
       <template v-slot:custom_filter>
         <DataFilter :filter="setting.filter" />
@@ -26,16 +27,25 @@
         <span>{{ _dateFormat(item.updated_at) }}</span>
       </template>
     </custom-table>
-    <right-side-bar />
+    <right-side-bar
+      :hide="['filter']"
+      @resetFilters="resetFilters"
+      @filterRecord="initialize"
+      @add="addItem"
+    >
+      <template v-slot:side_filter>
+        <DataFilter :filter="setting.filter" />
+      </template>
+    </right-side-bar>
     <DataForm :show="showForm" :payload="payload" @close="showForm = false" />
   </div>
 </template>
 <script>
 import DataFilter from "../filter_forms/PurchaseRequest.vue";
-import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import DataForm from "../forms/PurchaseRequest.vue";
+import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import CustomTable from "@global/components/CustomTable.vue";
-import { mapGetters } from "vuex"
+import { mapGetters } from "vuex";
 export default {
   components: {
     CustomTable,
@@ -106,11 +116,14 @@ export default {
         this.initialize();
       });
     },
+    viewRecord(item) {
+      console.log(item, "selected item");
+    },
   },
   computed: {
     ...mapGetters(["drawer"]),
     headers() {
-      let headerItems =[
+      let headerItems = [
         {
           text: "P.R No.",
           sortable: false,
@@ -124,10 +137,10 @@ export default {
         { text: "Date Approved", value: "updated_at" },
         { text: "Remarks", value: "prremarks" },
       ];
-      if(!this.drawer){
-        headerItems.push({ text: "Action", value: "action" })
+      if (!this.drawer) {
+        headerItems.push({ text: "Action", value: "action" });
       }
-      return headerItems
+      return headerItems;
     },
   },
 };

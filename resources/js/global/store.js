@@ -21,8 +21,8 @@ const module = {
     right_items: state => state.right_items,
   },
   mutations: {
-    setDrawer(state, value) {
-      state.drawer = value;
+    setDrawer(state) {
+      state.drawer = !state.drawer;
     },
     setActiveRoute(state, value) {
       state.active_route = value;

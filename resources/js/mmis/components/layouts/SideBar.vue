@@ -1,12 +1,12 @@
 <template>
   <div>
-    <v-navigation-drawer width="220" v-model="drawer" app>
+    <v-navigation-drawer width="220" v-model="isdrawer" app>
       <div class="logo">MMIS</div>
       <v-list nav>
         <v-list-group
           v-for="(menu, index) in menus"
           :key="index"
-          :value="true"
+          :value="index==0"
           dense
         >
           <v-icon class="list-icon" slot="prependIcon" small color="white">{{
@@ -32,7 +32,7 @@
         </v-list-group>
       </v-list>
     </v-navigation-drawer>
-    <app-bar :drawer="drawer" @toggle="toggleSide" />
+    <app-bar @toggle="toggleSide" />
   </div>
 </template>
 <script>
@@ -47,15 +47,14 @@ export default {
   data() {
     return {
       menus: MenuItems,
-      // drawer: true,
+      isdrawer: true,
     };
   },
   methods: {
     ...mapMutations(["setRightItems", "setDrawer"]),
-    toggleSide(val) {
-      this.setDrawer(val)
+    toggleSide() {
+      this.setDrawer()
       this.$emit("drawer");
-      // this.drawer = val;
     },
     selectedRoute(child, parent) {
       console.log(child, "child");
@@ -93,6 +92,12 @@ export default {
         console.log(items, "items")
       }
     },
+    drawer:{
+      handler(val){
+        this.isdrawer = val
+      }
+
+    }
   },
 };
 </script>

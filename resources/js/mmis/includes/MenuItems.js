@@ -1,65 +1,138 @@
 export default [
   {
-    name: "Procurement Transaction",
+    name: "Transaction",
     icon: "mdi-folder",
     children: [
       {
-        name: "Purchase request",
-        slugs: "purchase-request",
-        route: "purchase-request",
-        alias: 'purchase-request',
-        icon: "mdi-note-multiple"
-      },
-      {
-        name: "Request for quotation",
-        slugs: "request-quotation",
-        route: "request-quotation",
-        alias: 'request-quotation',
-        icon: "mdi-note-multiple"
-      },
-      {
-        name: "Canvas",
-        slugs: "canvas",
-        route: "canvas",
-        alias: 'canvas',
-        icon: "mdi-note-multiple"
-      },
-      {
-        name: "Purchase order",
-        slugs: "purchase-order",
-        route: "purchase-order",
-        alias: 'purchase-order',
-        icon: "mdi-note-multiple"
-      },
-    ]
-  },
-  {
-    name: "Audit Transactions",
-    icon: "mdi-note-multiple",
-    children: [
-      {
-        name: "Purchase request",
-        slugs: "purchase-request",
-        route: "purchase-request",
-        alias: 'purchase-request',
-        icon: "mdi-note-multiple"
-      },
-      {
-        name: "Purchase orders",
-        slugs: "purchase-orders",
-        route: "purchase-orders",
-        alias: 'purchase-orders',
-        icon: "mdi-note-multiple"
+        name: "Procurements",
+        slugs: "procurements",
+        route: "procurements",
+        alias: 'procurements',
+        icon: "mdi-folder",
+        sub_childrens:[
+          {
+            name: "Purchase request",
+            slugs: "purchase-request",
+            route: "purchase-request",
+            alias: 'purchase-request',
+            icon: "mdi-note-multiple"
+          },
+          {
+            name: "Request for quotation",
+            slugs: "request-quotation",
+            route: "request-quotation",
+            alias: 'request-quotation',
+            icon: "mdi-note-multiple"
+          },
+          {
+            name: "Canvas",
+            slugs: "canvas",
+            route: "canvas",
+            alias: 'canvas',
+            icon: "mdi-note-multiple"
+          },
+          {
+            name: "Purchase order",
+            slugs: "purchase-order",
+            route: "purchase-order",
+            alias: 'purchase-order',
+            icon: "mdi-note-multiple"
+          },
+        ]
       },
       {
         name: "Audit",
         slugs: "audit",
         route: "audit",
         alias: 'audit',
-        icon: "mdi-note-multiple"
+        icon: "mdi-note-multiple",
+        sub_childrens:[
+          {
+            name: "Purchase request",
+            slugs: "purchase-request",
+            route: "purchase-request",
+            alias: 'purchase-request',
+            icon: "mdi-note-multiple"
+          },
+          {
+            name: "Purchase orders",
+            slugs: "purchase-orders",
+            route: "purchase-orders",
+            alias: 'purchase-orders',
+            icon: "mdi-note-multiple"
+          },
+          {
+            name: "Audit",
+            slugs: "audit-page",
+            route: "audit-page",
+            alias: 'audit-page',
+            icon: "mdi-note-multiple"
+          },
+        ]
       },
     ]
   },
+  // {
+  //   name: "Procurement Transaction",
+  //   icon: "mdi-folder",
+  //   children: [
+  //     {
+  //       name: "Purchase request",
+  //       slugs: "purchase-request",
+  //       route: "purchase-request",
+  //       alias: 'purchase-request',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //     {
+  //       name: "Request for quotation",
+  //       slugs: "request-quotation",
+  //       route: "request-quotation",
+  //       alias: 'request-quotation',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //     {
+  //       name: "Canvas",
+  //       slugs: "canvas",
+  //       route: "canvas",
+  //       alias: 'canvas',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //     {
+  //       name: "Purchase order",
+  //       slugs: "purchase-order",
+  //       route: "purchase-order",
+  //       alias: 'purchase-order',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //   ]
+  // },
+  // {
+  //   name: "Audit Transactions",
+  //   icon: "mdi-note-multiple",
+  //   children: [
+  //     {
+  //       name: "Purchase request",
+  //       slugs: "purchase-request",
+  //       route: "purchase-request",
+  //       alias: 'purchase-request',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //     {
+  //       name: "Purchase orders",
+  //       slugs: "purchase-orders",
+  //       route: "purchase-orders",
+  //       alias: 'purchase-orders',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //     {
+  //       name: "Audit",
+  //       slugs: "audit",
+  //       route: "audit",
+  //       alias: 'audit',
+  //       icon: "mdi-note-multiple"
+  //     },
+  //   ]
+  // },
   {
     name: "Item Management",
     icon: "mdi-cube",

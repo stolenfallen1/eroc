@@ -191,6 +191,9 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+table .v-data-table-header tr th{
+    font-size: 1.7rem !important;
+}
 .test{
   font-size: .7rem !important;
 }

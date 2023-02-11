@@ -1,4 +1,4 @@
-js/*
-js/chunks/*
+js/*.js
+js/chunks/*.js
 css/*.css
 ./mix-manifest.json

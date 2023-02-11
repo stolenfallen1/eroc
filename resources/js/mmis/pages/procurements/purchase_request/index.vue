@@ -25,7 +25,7 @@
         <span>{{ _dateFormat(item.updated_at) }}</span>
       </template>
     </custom-table>
-    <DataForm :show="showForm"/>
+    <DataForm :show="showForm" :payload="payload" @close="showForm = false"/>
   </div>
 </template>
 <script>
@@ -71,6 +71,15 @@ export default {
       },
       loading: false,
       showForm: false,
+      payload: {
+        requested_date: new Date,
+        items:[
+          {
+            code:'dtte222',
+            name:'test',
+          }
+        ]
+      },
     };
   },
   methods: {

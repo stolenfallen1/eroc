@@ -46,19 +46,18 @@
         </v-text-field>
       </div>
       <slot class="mr-2 ml-2" name="generate_btn" />
-      <v-btn class="mr-2 ml-2" small color="primary" @click="$emit('add')">
+      <v-btn v-if="!hide.includes('add-btn')" class="mr-2 ml-2" small color="primary" @click="$emit('add')">
         <v-icon small class="mr-1">mdi-plus</v-icon>
         Add record
       </v-btn>
-      <v-menu offset-y left nudge-bottom="5" :close-on-content-click="false">
+      <v-menu v-if="!hide.includes('filter')" offset-y left nudge-bottom="5" :close-on-content-click="false">
         <template v-slot:activator="{ on, attrs }">
           <v-btn
+            class="mr-2"
             small
             color="success"
             v-bind="attrs"
             v-on="on"
-            @click.stop="drawer = true"
-            v-if="!hide.includes('filter')"
           >
             <v-icon small class="mr-2">mdi-filter-plus-outline</v-icon>
             filter
@@ -82,7 +81,7 @@
     </v-toolbar>
     <v-data-table
       v-model="selected"
-      :headers="tableData.headers"
+      :headers="headers"
       :items="tableData.items"
       :single-select="single_select"
       :show-select="show_select"
@@ -91,6 +90,7 @@
       :options.sync="tableData.options"
       :items-per-page="tableData.options.itemsPerPage"
       @update:options="$emit('fetchPage')"
+      @click:row="selectRow"
       :loading="data.loading"
       class="cursor-pointer table-fix-height"
       fixed-header
@@ -98,7 +98,7 @@
       dense
     >
       <template
-        v-for="(head, index) of tableData.headers"
+        v-for="(head, index) of headers"
         v-slot:[`item.${head.value}`]="props"
       >
         <td class="test" :props="props" :key="index">
@@ -107,7 +107,7 @@
           </slot>
         </td>
       </template>
-      <template v-slot:item.action="{ item }">
+      <template v-if="!hide.includes('actions')" v-slot:item.action="{ item }">
         <div>
           <slot name="custom-action" :item="item"> </slot>
           <v-icon
@@ -115,7 +115,7 @@
             v-if="!hide.includes('edit')"
             color="primary"
             class="mr-1"
-            @click.stop="$emit('edit', item)"
+            @click="$emit('edit', item)"
           >
             mdi-pencil-outline
           </v-icon>
@@ -124,7 +124,7 @@
             v-if="!hide.includes('delete')"
             color="error"
             class="mr-1"
-            @click.stop="remove(item)"
+            @click="remove(item)"
           >
             mdi-delete-outline
           </v-icon>
@@ -134,6 +134,7 @@
   </div>
 </template>
 <script>
+import { mapGetters } from "vuex"
 export default {
   data() {
     return {
@@ -161,6 +162,12 @@ export default {
         return {};
       },
     },
+    headers: {
+      type: Array,
+      default: () => {
+        return [];
+      },
+    },
     searchPlaceholder: {
       type: String,
       default: () => "name, age",
@@ -175,6 +182,10 @@ export default {
     },
   },
   methods: {
+    selectRow(item, row){
+      row.select(true);
+      this.$emit('view', item)
+    },
     edit(item) {
       this.$emit("edit", item);
     },
@@ -188,6 +199,9 @@ export default {
       this.remove(ids);
     },
   },
+  computed:{
+    ...mapGetters(["drawer"])
+  }
 };
 </script>
 <style lang="scss" scoped>

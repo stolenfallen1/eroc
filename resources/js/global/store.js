@@ -7,18 +7,23 @@ Vue.use(Vuex);
 
 const module = {
   state: {
+    drawer:true,
     user:{},
     active_route: null,
     main_active_route: null,
     right_items:[]
   },
   getters: {
+    drawer: state => state.drawer,
     active_route: state => state.active_route,
     main_active_route: state => state.main_active_route,
     user: state => state.user,
     right_items: state => state.right_items,
   },
   mutations: {
+    setDrawer(state) {
+      state.drawer = !state.drawer;
+    },
     setActiveRoute(state, value) {
       state.active_route = value;
     },

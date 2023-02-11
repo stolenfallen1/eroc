@@ -1,6 +1,6 @@
 <template>
   <v-app-bar app>
-    <v-app-bar-nav-icon @click="$emit('toggle', !drawer)"></v-app-bar-nav-icon>
+    <v-app-bar-nav-icon @click="$emit('toggle')"></v-app-bar-nav-icon>
     <!-- <v-toolbar-title>Collapsing Bar</v-toolbar-title> -->
     <v-spacer></v-spacer>
     <div class="text-center">
@@ -28,12 +28,6 @@
 <script>
 export default {
   props:{
-    drawer:{
-      type:Boolean,
-      default(){
-        return true
-      }
-    }
   },
   data() {
     return{

@@ -82,7 +82,7 @@
     </v-toolbar>
     <v-data-table
       v-model="selected"
-      :headers="tableData.headers"
+      :headers="headers"
       :items="tableData.items"
       :single-select="single_select"
       :show-select="show_select"
@@ -98,7 +98,7 @@
       dense
     >
       <template
-        v-for="(head, index) of tableData.headers"
+        v-for="(head, index) of headers"
         v-slot:[`item.${head.value}`]="props"
       >
         <td class="test" :props="props" :key="index">
@@ -107,7 +107,7 @@
           </slot>
         </td>
       </template>
-      <template v-slot:item.action="{ item }">
+      <template v-if="!hide.includes('actions')" v-slot:item.action="{ item }">
         <div>
           <slot name="custom-action" :item="item"> </slot>
           <v-icon
@@ -159,6 +159,12 @@ export default {
       type: Object,
       default: () => {
         return {};
+      },
+    },
+    headers: {
+      type: Array,
+      default: () => {
+        return [];
       },
     },
     searchPlaceholder: {

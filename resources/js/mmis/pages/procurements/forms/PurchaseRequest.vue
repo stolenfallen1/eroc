@@ -175,7 +175,6 @@ export default {
     show: {
       handler(val) {
         if (!val) {
-          console.log("close");
         }
       },
     },

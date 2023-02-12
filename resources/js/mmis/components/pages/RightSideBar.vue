@@ -24,7 +24,7 @@
             </v-list-item>
           </v-list>
         </v-list-group>
-        <v-list-group :value="false">
+        <v-list-group v-if="!hide.includes('actions')" :value="false">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-cursor-default-outline</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Actions</v-list-item-title>
@@ -47,7 +47,12 @@ export default {
   components:{
     SideActions
   },
-  props: {},
+  props: {
+    hide:{
+      type: Array,
+      default:()=>[]
+    }
+  },
   data() {
     return {
       isdrawer: true,
@@ -55,8 +60,6 @@ export default {
   },
   methods: {
     selectedRoute(child, parent) {
-      console.log(child, "child");
-      console.log(this.$route.name, "this.$route.name");
       if (this.$route.name != child.route) this._push(child);
     },
   },

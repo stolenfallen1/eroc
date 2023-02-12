@@ -57,7 +57,6 @@ export default {
       this.$emit("drawer");
     },
     selectedRoute(child, parent) {
-      console.log(child, "child");
       this.active_route = child.route;
       if (child.sub_childrens && child.sub_childrens.length > 0)
         this.setRightItems(child.sub_childrens);
@@ -74,22 +73,16 @@ export default {
   watch: {
     $route(to, from) {
       let path = to.path.split("/");
-      console.log(from, "from watch");
       if (from.path == "/") {
-        let items = this.menus.map((menu) => {
+        this.menus.map((menu) => {
           if (menu.children) {
             return menu.children.map((child) => {
               if (path[2] == child.route) {
-                console.log(child.sub_childrens, "child.sub_childrens");
                 this.$store.commit("setRightItems", child.sub_childrens);
               }
             });
           }
-        })
-        items.filter(function (el) {
-          return el != null;
         });
-        console.log(items, "items")
       }
     },
     drawer:{

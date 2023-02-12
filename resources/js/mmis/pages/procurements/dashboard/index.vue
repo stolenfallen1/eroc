@@ -1,7 +1,7 @@
 <template>
   <div>
     procurement dashboard
-    <right-side-bar/>
+    <right-side-bar :hide="['actions']"/>
   </div>
 </template>
 <script>

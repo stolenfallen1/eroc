@@ -17,9 +17,7 @@ const router = new VueRouter({
 
 router.beforeEach((to, from, next) => {
   let path = to.path.split("/")
-  console.log(path, "to")
   if (path.length == 4) {
-    console.log(to.name, "to name")
     store.commit("setActiveRoute", to.name);
   } else {
     store.commit("setActiveRoute", null);

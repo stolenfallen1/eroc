@@ -4,7 +4,7 @@ import axios from "../global/axios";
 import vuetify from "../global/vuetify";
 import router from "./plugins/router";
 import '@global/mixin';
-import {store} from '@global/store';
+import { store } from '@global/store';
 
 import App from "./layouts/main.vue";
 

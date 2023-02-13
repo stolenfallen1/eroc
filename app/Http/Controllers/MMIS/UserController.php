@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\MMIS\PurchaseRequest;
-
 class UserController extends Controller
 {
     public function index(){
@@ -21,4 +20,10 @@ class UserController extends Controller
             'password' => bcrypt($request->password),
         ]);
     }
+
+
+
+
+    
+
 }

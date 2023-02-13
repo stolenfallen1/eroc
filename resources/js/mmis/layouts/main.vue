@@ -20,22 +20,18 @@
   </v-app>
 </template>
 <script>
-import SideBar from "../components/layouts/SideBar.vue"
+import SideBar from "../components/layouts/SideBar.vue";
 export default {
-  components:{
+  components: {
     SideBar,
   },
-  data(){
-    return{
-      drawer:false,
-      isdrawer:true
-    }
+  data() {
+    return {
+      drawer: false,
+      isdrawer: true,
+    };
   },
-  methods:{
-  },
-  watch:{
-
-  }
-  
-}
+  methods: {},
+  watch: {},
+};
 </script>

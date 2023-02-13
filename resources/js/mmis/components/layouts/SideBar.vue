@@ -22,7 +22,7 @@
             class="pl-7"
             dense
             link
-            :class="{'active-route': activeRoute == child.route,}"
+            :class="{ 'active-route': activeRoute == child.route }"
           >
             <v-list-item-icon>
               <v-icon v-text="child.icon" color="primary" small></v-icon>
@@ -59,11 +59,11 @@ export default {
       if (this.$route.name != child) this._push(child);
     },
   },
-  computed:{
+  computed: {
     activeRoute() {
       return this._getters("active_route");
     },
-  }
+  },
 };
 </script>
 <style lang="scss" scoped>

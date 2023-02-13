@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 require_once __DIR__ . '/mmis/api.php';
+require_once __DIR__ . '/buildfile/api.php';
 Route::post('test', [UserController::class, 'store']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

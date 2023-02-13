@@ -39,5 +39,9 @@ export default {
   },
   computed: {
   },
+  created(){
+    this.$store.dispatch("fetchCategories")
+    this.$store.dispatch("fetchUserDetails")
+  }
 };
 </script>

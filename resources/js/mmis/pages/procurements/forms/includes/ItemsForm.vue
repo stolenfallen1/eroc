@@ -2,7 +2,7 @@
   <v-dialog
     v-model="show"
     hide-overlay
-    width="500"
+    width="700"
     transition="dialog-top-transition"
     scrollable
     persistent

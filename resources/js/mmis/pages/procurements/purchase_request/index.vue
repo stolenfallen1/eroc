@@ -109,6 +109,7 @@ export default {
       this.goTo("employee-edit", { id: payload.id });
     },
     addItem() {
+      // this.payload.
       this.showForm = true;
     },
     remove(item) {

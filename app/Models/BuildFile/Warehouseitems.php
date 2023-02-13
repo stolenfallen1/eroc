@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Warehouseitems extends Model
 {
     use HasFactory;
+
+    protected $table = "warehouseitems";
+
+    public function itemMaster()
+    {
+        return $this->belongsTo(Itemmasters::class, 'item_Id', 'id');
+    }
 }

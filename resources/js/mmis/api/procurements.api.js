@@ -1,5 +1,5 @@
 import Axios from "@global/axios";
-const purchase = "/purchase-request";
+const purchase = "api/purchase-request";
 
 export const apiGetAllPurchaseRequest = (query)  => Axios.get(`${resource}?`+query);
 // export const apiGetUser = (id)  => Axios.get(`${resource}/`+id);

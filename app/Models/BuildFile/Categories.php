@@ -10,7 +10,7 @@ class Categories extends Model
 {
     use HasFactory;
 
-    protected $table = "categories";
+    protected $table = "Itemcategories";
 
     public function purchase_request(){
         return $this->hasMany(PurchaseRequest::class,'categoryid', 'id');

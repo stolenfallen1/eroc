@@ -43,6 +43,8 @@
       redirect(){
         window.location.href = 'mmis';
       }
+    },
+    created(){
     }
   }
 </script>

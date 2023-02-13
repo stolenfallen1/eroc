@@ -12,6 +12,7 @@
       @fetchPage="initialize"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
+      @refresh="initialize"
       :hide="drawer ? ['add-btn', 'filter', 'floater-btn'] : ['floater-btn']"
     >
       <template v-slot:custom_filter>

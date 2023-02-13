@@ -29,6 +29,11 @@
 
     <v-toolbar dense flat class="mb-5 py-3" v-if="!hide.includes('headers')">
       <v-toolbar-title>{{ data.title }}</v-toolbar-title>
+      <v-divider class="mx-4" inset vertical></v-divider>
+      <v-icon @click.stop="$emit('refresh')" v-if="!hide.includes('refresh')">
+        mdi-autorenew
+        {{ data.loading ? "mdi-spin" : "" }}
+      </v-icon>
       <v-spacer></v-spacer>
       <div class="mr-2">
         <v-text-field
@@ -46,19 +51,25 @@
         </v-text-field>
       </div>
       <slot class="mr-2 ml-2" name="generate_btn" />
-      <v-btn v-if="!hide.includes('add-btn')" class="mr-2 ml-2" small color="primary" @click="$emit('add')">
+      <v-btn
+        v-if="!hide.includes('add-btn')"
+        class="mr-2 ml-2"
+        small
+        color="primary"
+        @click="$emit('add')"
+      >
         <v-icon small class="mr-1">mdi-plus</v-icon>
         Add record
       </v-btn>
-      <v-menu v-if="!hide.includes('filter')" offset-y left nudge-bottom="5" :close-on-content-click="false">
+      <v-menu
+        v-if="!hide.includes('filter')"
+        offset-y
+        left
+        nudge-bottom="5"
+        :close-on-content-click="false"
+      >
         <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            class="mr-2"
-            small
-            color="success"
-            v-bind="attrs"
-            v-on="on"
-          >
+          <v-btn class="mr-2" small color="success" v-bind="attrs" v-on="on">
             <v-icon small class="mr-2">mdi-filter-plus-outline</v-icon>
             filter
           </v-btn>
@@ -134,7 +145,7 @@
   </div>
 </template>
 <script>
-import { mapGetters } from "vuex"
+import { mapGetters } from "vuex";
 export default {
   data() {
     return {
@@ -172,23 +183,23 @@ export default {
       type: String,
       default: () => "name, age",
     },
-    single_select:{
-      type:Boolean,
-      default:() => true
+    single_select: {
+      type: Boolean,
+      default: () => true,
     },
-    show_select:{
-      type:Boolean,
-      default:() => false
+    show_select: {
+      type: Boolean,
+      default: () => false,
     },
-    height:{
-      type:String,
-      default: () => "66vh"
-    }
+    height: {
+      type: String,
+      default: () => "66vh",
+    },
   },
   methods: {
-    selectRow(item, row){
+    selectRow(item, row) {
       row.select(true);
-      this.$emit('view', item)
+      this.$emit("view", item);
     },
     edit(item) {
       this.$emit("edit", item);
@@ -203,16 +214,16 @@ export default {
       this.remove(ids);
     },
   },
-  computed:{
-    ...mapGetters(["drawer"])
-  }
+  computed: {
+    ...mapGetters(["drawer"]),
+  },
 };
 </script>
 <style lang="scss" scoped>
-table .v-data-table-header tr th{
-    font-size: 1.7rem !important;
+table .v-data-table-header tr th {
+  font-size: 1.7rem !important;
 }
-.test{
-  font-size: .7rem !important;
+.test {
+  font-size: 0.7rem !important;
 }
 </style>

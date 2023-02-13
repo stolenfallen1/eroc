@@ -124,3 +124,18 @@ body {
 tr.v-data-table__selected {
   background: #6ebaf3 !important;
 }
+
+/**
+ * Pages imports
+ */
+/**
+ * procurement imports
+ */
+.pr-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pr-form-if-bg-white {
+  background-color: white;
+}

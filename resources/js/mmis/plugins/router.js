@@ -2,7 +2,6 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 import procurement from '../routes/procurements'
 import { store } from "@global/store";
-import menus from "../includes/MenuItems"
 
 Vue.use(VueRouter);
 

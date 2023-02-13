@@ -12,5 +12,11 @@ const purchase = {
   component: () => import("../pages/procurements/purchase_request/index.vue")
 };
 
-const component = [purchase, procurement];
+const quotation = {
+  path: `/mmis/procurements/request-quotation`,
+  name: `request-quotation`,
+  component: () => import("../pages/procurements/quotation_request/index.vue")
+};
+
+const component = [purchase, procurement, quotation];
 export default component;

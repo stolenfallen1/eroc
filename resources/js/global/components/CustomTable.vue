@@ -80,7 +80,7 @@
       </v-menu>
     </v-toolbar>
     <v-data-table
-      v-model="selected"
+      v-model="tableData.selected"
       :headers="headers"
       :items="tableData.items"
       :single-select="single_select"
@@ -94,7 +94,7 @@
       :loading="data.loading"
       class="cursor-pointer table-fix-height"
       fixed-header
-      height="66vh"
+      :height="height"
       dense
     >
       <template
@@ -180,6 +180,10 @@ export default {
       type:Boolean,
       default:() => false
     },
+    height:{
+      type:String,
+      default: () => "66vh"
+    }
   },
   methods: {
     selectRow(item, row){

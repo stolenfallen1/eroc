@@ -1,0 +1,84 @@
+<template>
+  <div>
+    <v-list nav>
+      <v-list-item dense>
+        <v-list-item-title>
+          <v-menu
+             v-if="!hide.includes('filter')"
+            offset-y
+            left
+            nudge-left="190"
+            nudge-top="50"
+            :close-on-content-click="false"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                width="100%"
+                small
+                color="success"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon small class="mr-2">mdi-filter-plus-outline</v-icon>
+                filter
+              </v-btn>
+            </template>
+            <v-card min-width="300">
+              <v-card-text>
+                <slot name="side_filter" />
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="error" text @click="$emit('resetFilters')">
+                  {{ "reset" }}
+                </v-btn>
+                <v-btn color="primary" depressed @click="$emit('filterRecord')">
+                  {{ "filter" }}
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-menu>
+        </v-list-item-title>
+      </v-list-item>
+      <v-list-item dense>
+        <v-list-item-title>
+          <v-btn @click="$emit('add')" class="mt-2" width="100%" small color="primary">
+            <v-icon class="mr-2" small>mdi-plus</v-icon>
+            Add Record
+          </v-btn>
+        </v-list-item-title>
+      </v-list-item>
+      <v-list-item class="mt-2" dense>
+        <v-list-item-title>
+          <v-btn width="100%" small color="warning">
+            <v-icon class="mr-2" small>mdi-pencil</v-icon>
+            Edit Record
+          </v-btn>
+        </v-list-item-title>
+      </v-list-item>
+      <v-list-item class="mt-2" dense>
+        <v-list-item-title>
+          <v-btn width="100%" small color="error">
+            <v-icon class="mr-2" small>mdi-delete</v-icon>
+            Add Record
+          </v-btn>
+        </v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </div>
+</template>
+<script>
+export default {
+  props:{
+    hide: {
+      type: Array,
+      default: () => {
+        return [];
+      },
+    },
+  },
+  data() {
+    return {};
+  },
+};
+</script>

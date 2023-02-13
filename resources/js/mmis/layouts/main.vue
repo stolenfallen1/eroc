@@ -3,14 +3,16 @@
   <v-app>
     <!-- <v-navigation-drawer app>
     </v-navigation-drawer> -->
-    <side-bar :drawer="isdrawer" />
+    <side-bar @drawer="isdrawer = !isdrawer" />
 
     <!-- Sizes your content based upon application components -->
     <v-main>
       <!-- Provides the application the proper gutter -->
       <v-container fluid>
         <!-- If using vue-router -->
-        <router-view></router-view>
+        <router-view
+          :class="isdrawer ? 'router-main-container' : ''"
+        ></router-view>
       </v-container>
     </v-main>
 
@@ -20,22 +22,22 @@
   </v-app>
 </template>
 <script>
-import SideBar from "../components/layouts/SideBar.vue"
+import SideBar from "../components/layouts/SideBar.vue";
 export default {
-  components:{
+  components: {
     SideBar,
   },
-  data(){
-    return{
-      drawer:false,
-      isdrawer:true
-    }
+  data() {
+    return {
+      isdrawer: true,
+    };
   },
-  methods:{
+  methods: {
+    toggleSide(val) {
+      this.isdrawer = val;
+    },
   },
-  watch:{
-
-  }
-  
-}
+  computed: {
+  },
+};
 </script>

@@ -3,73 +3,66 @@
     <custom-table
       :data="setting"
       :tableData="tableData"
+      :headers="headers"
+      @view="viewRecord"
       @search="search"
       @add="addItem"
       @edit="editItem"
       @remove="remove"
       @fetchPage="initialize"
-      :hide="['filter']"
+      @resetFilters="resetFilters"
+      @filterRecord="initialize"
+      @refresh="initialize"
+      :hide="drawer ? ['add-btn', 'filter', 'floater-btn'] : ['floater-btn']"
     >
-      <template v-slot:status="{ item }">
-        <v-switch
-          @click.stop="changeStatus(item)"
-          class="mt-0"
-          v-model="item.status"
-          inset
-          dense
-          hide-details
-        ></v-switch>
+      <template v-slot:custom_filter>
+        <DataFilter :filter="setting.filter" />
+      </template>
+      <template v-slot:daterequested="{ item }">
+        {{ _dateFormat(item.daterequested) }}
+      </template>
+      <template v-slot:category="{ item }">
+        {{ item.category.categoryname }}
       </template>
       <template v-slot:updated_at="{ item }">
-        <span>{{ defaultDate(item.updated_at) }}</span>
-      </template>
-      <template v-slot:custom-action="{ item }">
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon
-              color="success"
-              v-bind="attrs"
-              v-on="on"
-              class="mr-2"
-              @click="makeAdmin(item)"
-              >mdi-account-multiple
-            </v-icon>
-          </template>
-          <span>Set as Admin</span>
-        </v-tooltip>
+        <span>{{ _dateFormat(item.updated_at) }}</span>
       </template>
     </custom-table>
+    <right-side-bar
+      :hide="['filter']"
+      @resetFilters="resetFilters"
+      @filterRecord="initialize"
+      @add="addItem"
+    >
+      <template v-slot:side_filter>
+        <DataFilter :filter="setting.filter" />
+      </template>
+    </right-side-bar>
+    <DataForm :show="showForm" :payload="payload" @close="showForm = false" />
   </div>
 </template>
 <script>
-import CustomTable from '@global/components/CustomTable.vue'
+import DataFilter from "../filter_forms/PurchaseRequest.vue";
+import DataForm from "../forms/PurchaseRequest.vue";
+import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
+import CustomTable from "@global/components/CustomTable.vue";
+import { mapGetters } from "vuex";
 export default {
-  components:{
-    CustomTable
+  components: {
+    CustomTable,
+    DataFilter,
+    DataForm,
+    RightSideBar,
   },
   data() {
     return {
       setting: {
-        title: "Samples",
+        title: "Purchase request",
         keyword: "",
         loading: false,
         filter: {},
       },
       tableData: {
-        headers: [
-          {
-            text: "First Name",
-            align: "start",
-            sortable: false,
-            value: "first_name",
-          },
-          { text: "Last Name", value: "last_name" },
-          { text: "Email", value: "email" },
-          { text: "Address", value: "address_1" },
-          { text: "Status", value: "status" },
-          { text: "Last Updated", value: "updated_at" },
-          { text: "Action", value: "action" },
-        ],
         items: [],
         options: {
           itemsPerPage: 15,
@@ -78,7 +71,78 @@ export default {
         selected: [],
       },
       loading: false,
+      showForm: false,
+      payload: {
+        requested_date: new Date(),
+        items: [
+          {
+            code: "dtte222",
+            name: "test",
+          },
+        ],
+      },
     };
+  },
+  methods: {
+    initialize() {
+      this.setting.loading = true;
+      let params = this._createParams(this.tableData.options);
+      params = params + this._createFilterParams(this.setting.filter);
+      if (this.setting.keyword)
+        params = params + "&keyword=" + this.setting.keyword;
+      params = params + "&withoutadmin=true";
+      axios.get(`purchase-request?${params}`).then(({ data }) => {
+        this.tableData.items = data.data;
+        this.tableData.total = data.total;
+        this.setting.loading = false;
+      });
+    },
+    search() {
+      this.tableData.options.page = 1;
+      this.initialize();
+    },
+    resetFilters() {
+      this.setting.filter = {};
+      this.initialize();
+    },
+    editItem(payload) {
+      this.goTo("employee-edit", { id: payload.id });
+    },
+    addItem() {
+      this.showForm = true;
+    },
+    remove(item) {
+      axios.delete(`users/${item.id || item}`).then(({ data }) => {
+        this.successNotification(`Employee Deleted`);
+        this.initialize();
+      });
+    },
+    viewRecord(item) {
+      console.log(item, "selected item");
+    },
+  },
+  computed: {
+    ...mapGetters(["drawer"]),
+    headers() {
+      let headerItems = [
+        {
+          text: "P.R No.",
+          sortable: false,
+          value: "prnumber",
+        },
+        { text: "Date Request", value: "daterequested" },
+        { text: "Requesting Dept.", value: "departmentid" },
+        { text: "Item group", value: "itemgroupid" },
+        { text: "Category", value: "category" },
+        { text: "Pr. Status", value: "prstatus" },
+        { text: "Date Approved", value: "updated_at" },
+        { text: "Remarks", value: "prremarks" },
+      ];
+      if (!this.drawer) {
+        headerItems.push({ text: "Action", value: "action" });
+      }
+      return headerItems;
+    },
   },
 };
 </script>

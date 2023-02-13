@@ -1,0 +1,7 @@
+@charset "UTF-8";
+
+/**
+ * procurement imports
+ */
+@import './procurements/purchase_request/index',
+'./procurements/purchase_request/form';

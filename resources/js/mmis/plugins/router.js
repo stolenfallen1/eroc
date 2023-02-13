@@ -6,17 +6,23 @@ import { store } from "@global/store";
 Vue.use(VueRouter);
 
 const routes = [
-    ...procurement
+  ...procurement
 ];
 
 const router = new VueRouter({
-    mode: "history",
-    routes
+  mode: "history",
+  routes
 })
 
 router.beforeEach((to, from, next) => {
+  let path = to.path.split("/")
+  if (path.length == 4) {
     store.commit("setActiveRoute", to.name);
-    next();
+  } else {
+    store.commit("setActiveRoute", null);
+  }
+  store.commit("setMainActiveRoute", path[2]);
+  next();
 })
 
 export default router;

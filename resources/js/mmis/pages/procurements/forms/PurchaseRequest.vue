@@ -11,145 +11,34 @@
       <v-toolbar flat dark color="primary">
         <v-toolbar-title>Purchase request</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn icon dark @click="close()">
+        <v-btn :disabled="show_item_form" icon dark @click="close()">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-toolbar>
       <v-card-text>
         <v-container fluid>
-          <v-row>
-            <v-col cols="12" xs="12" md="6" xl="4">
-              <v-autocomplete
-                label="Inv. Group"
-                v-model="payload.item_group"
-                filled
-                dense
-              ></v-autocomplete>
-              <v-autocomplete
-                label="Category"
-                v-model="payload.category"
-                filled
-                dense
-              ></v-autocomplete>
-              <v-textarea
-                v-model="payload.remarks"
-                label="Remarks"
-                rows="4"
-                dense
-                filled
-              ></v-textarea>
-              <v-file-input
-                show-size
-                counter
-                filled
-                multiple
-                label="File input"
-              ></v-file-input>
-            </v-col>
-
-            <v-col cols="12" xs="12" md="6" xl="4">
-              <v-text-field
-                v-model="payload.requested_by"
-                label="Requested By"
-                readonly
-                filled
-                dense
-              ></v-text-field>
-              <v-text-field
-                v-model="payload.department"
-                label="Department"
-                readonly
-                filled
-                dense
-              ></v-text-field>
-              <v-text-field
-                :value="_dateFormat(payload.requested_date)"
-                clearable
-                label="Date requested"
-                readonly
-                filled
-                dense
-              ></v-text-field>
-              <v-menu
-                v-model="required_date"
-                :close-on-content-click="false"
-                max-width="290"
-              >
-                <template v-slot:activator="{ on, attrs }">
-                  <v-text-field
-                    v-model="payload.required_date"
-                    clearable
-                    label="Date Required"
-                    readonly
-                    v-bind="attrs"
-                    v-on="on"
-                    @click:clear="payload.required_date = null"
-                    filled
-                    dense
-                  ></v-text-field>
-                </template>
-                <v-date-picker
-                  v-model="payload.required_date"
-                  @change="required_date = false"
-                ></v-date-picker>
-              </v-menu>
-              <v-btn
-                :disabled="!payload.item_group || !payload.category"
-                class="mt-4"
-                large
-                color="primary"
-                >Select item</v-btn
-              >
-            </v-col>
-          </v-row>
-          <v-simple-table fixed-header dense height="300px">
-            <template v-slot:default>
-              <thead>
-                <tr>
-                  <th class="text-left">Item Code</th>
-                  <th class="text-left">Item Name / Description</th>
-                  <th class="text-left">Attachment</th>
-                  <th class="text-left">Qty</th>
-                  <th class="text-left">UOM</th>
-                  <th class="text-left">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in payload.items" :key="item.name">
-                  <td>{{ item.code }}</td>
-                  <td>{{ item.name }}</td>
-                  <td style="width: 90px !important">
-                    <input
-                      type="file"
-                      class="fields fields12163"
-                      style="width: 94px !important"
-                      accept="image/png"
-                      name="attachment[]"
-                    />
-                  </td>
-                  <td>
-                    <v-text-field solo dense hide-details="auto" type="number"></v-text-field>
-                  </td>
-                  <td>
-                    <v-autocomplete solo dense hide-details="auto">
-                    </v-autocomplete>
-                  </td>
-                  <td>
-                    <v-btn small color="primary">
-                      <v-icon> mdi-close </v-icon>
-                    </v-btn>
-                  </td>
-                </tr>
-              </tbody>
-            </template>
-          </v-simple-table>
+          <fields :payload="payload" @select="show_item_form = true"/>
+          <item-table :items="payload.items"/>
+          <div class="pr-form-actions">
+            <v-btn class="mr-2" color="error" @click="close()">Cancel</v-btn>
+            <v-btn color="primary">Submit</v-btn>
+          </div>
         </v-container>
       </v-card-text>
     </v-card>
+    <items-form :show="show_item_form" @cancel="show_item_form = false" @selected="setPayloadItems" />
   </v-dialog>
 </template>
 <script>
+import Fields from "./includes/fields.vue";
+import ItemTable from "./includes/ItemTable.vue"
+import ItemsForm from "./includes/ItemsForm.vue"
 export default {
+  components:{
+    ItemTable,
+    ItemsForm,
+    Fields
+  },
   props: {
     show: {
       type: Boolean,
@@ -162,14 +51,17 @@ export default {
   },
   data() {
     return {
-      requested_date: false,
-      required_date: false,
+      show_item_form: false,
     };
   },
   methods: {
     close() {
       this.$emit("close");
     },
+    setPayloadItems(val){
+      this.payload.items = val
+      this.show_item_form = false
+    }
   },
   watch: {
     show: {

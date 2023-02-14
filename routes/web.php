@@ -15,16 +15,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthController@login',     'as' => 'login']);
 
-
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 });
+
 require_once __DIR__ . './mmis/mmismainroute.php';
+
 Route::group(['middleware' => 'admin.user'], function () {
-
-
     Route::get('/{any}', function () {
         return view('layouts.main');
     })->where('any', '.*');
-
 });

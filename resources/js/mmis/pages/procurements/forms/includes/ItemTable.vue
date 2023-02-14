@@ -13,8 +13,8 @@
       </thead>
       <tbody>
         <tr v-for="(item, index) in items" :key="index">
-          <td>{{ item.code }}</td>
-          <td>{{ item.name }}</td>
+          <td>{{ item.id }}</td>
+          <td>{{ item.item_Name }}</td>
           <td>
             <input
               type="file"
@@ -38,6 +38,9 @@
             <v-autocomplete
               v-model="item.unit"
               solo
+              :items="units"
+              item-text="name"
+              item-value="id"
               dense
               hide-details="auto"
               attach
@@ -55,6 +58,7 @@
   </v-simple-table>
 </template>
 <script>
+import { mapGetters } from "vuex";
 export default {
   props: {
     items: {
@@ -69,6 +73,9 @@ export default {
     removeItem(index){
       this.items.splice(index, 1)
     }
+  },
+  computed:{
+    ...mapGetters(["units"])
   }
 };
 </script>

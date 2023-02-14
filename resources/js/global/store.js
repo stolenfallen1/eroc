@@ -1,7 +1,7 @@
-import { method } from "lodash";
 import Vue from "vue";
 import Vuex from "vuex";
 import axios from "./axios";
+import { apiGetAllUnits } from "./api/units"
 // import router from "@/router/router";
 
 Vue.use(Vuex);
@@ -13,7 +13,8 @@ const module = {
     active_route: null,
     main_active_route: null,
     right_items:[],
-    categories:[]
+    categories:[],
+    units:[]
   },
   getters: {
     drawer: state => state.drawer,
@@ -22,6 +23,7 @@ const module = {
     user: state => state.user,
     right_items: state => state.right_items,
     categories: state => state.categories,
+    units: state => state.units,
   },
   mutations: {
     setDrawer(state) {
@@ -42,11 +44,18 @@ const module = {
     setCategories(state, value) {
       state.categories = value;
     },
+    setUnits(state, value) {
+      state.units = value;
+    },
   },
   actions: {
+    async fetchUnits({commit, dispatch}){
+      let res = await apiGetAllUnits()
+      commit("setUnits", res.data.units)
+    },
+
     fetchCategories({commit, dispatch}){
       axios.get('api/categories').then(({data})=>{
-        console.log(data)
         commit("setCategories", data.categories)
       })
     },

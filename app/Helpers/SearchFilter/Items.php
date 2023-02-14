@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Helpers\SearchFilterHelpers;
+namespace App\Helpers\SearchFilter;
 
 use App\Models\BuildFile\Itemmasters;
 
@@ -41,7 +41,7 @@ class Items
   private function bySubCategory(){
     $subcategory_id = Request()->subcategory_id;
     if($subcategory_id){
-      $this->model->where('item_Category_Id', $subcategory_id);
+      $this->model->where('item_SubCategory_Id', $subcategory_id);
     }
   }
 

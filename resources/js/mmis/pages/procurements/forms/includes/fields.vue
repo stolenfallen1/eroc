@@ -48,8 +48,6 @@
     </v-col>
 
     <v-col cols="12" xs="12" md="6" xl="4">
-      <p class="pa-0 ma-0">Attachment</p>
-      <v-file-input show-size counter solo dense multiple hide-details="auto"></v-file-input>
       <p class="pa-0 ma-0">Requested By</p>
       <v-text-field
         v-model="payload.requested_by"
@@ -104,15 +102,35 @@
           @change="required_date = false"
         ></v-date-picker>
       </v-menu>
-      <!-- :disabled="!payload.item_group || !payload.category" -->
-      <v-btn class="mt-2" color="primary" @click="$emit('select')"
-        >Select item</v-btn
-      >
+      <p class="pa-0 ma-0">Attachment</p>
+      <v-file-input
+        v-model="attachments"
+        show-size
+        counter
+        solo
+        dense
+        multiple
+        @change="convertAttachment"
+        hide-details="auto"
+      ></v-file-input>
+      <!--  -->
+      <div class="d-flex flex-row-reverse">
+        <v-btn
+          :disabled="!payload.sub_category || !payload.category || !payload.department"
+          class="mt-2"
+          color="primary"
+          @click="$emit('select')"
+          >Select item</v-btn
+        >
+      </div>
     </v-col>
   </v-row>
 </template>
 <script>
-import {apiGetAllSubCategories, apiGetAllClassifications} from "@global/api/categories"
+import {
+  apiGetAllSubCategories,
+  apiGetAllClassifications,
+} from "@global/api/categories";
 import { mapGetters } from "vuex";
 export default {
   props: {
@@ -126,22 +144,28 @@ export default {
       required_date: false,
       sub_categories: [],
       classifications: [],
+      attachments:[]
     };
   },
-  methods:{
-    async fetchSubcategory(val){
-      let params = `category_id=${val}`
-      let res = await apiGetAllSubCategories(params)
-      this.sub_categories = res.data.subcategories
+  methods: {
+    async fetchSubcategory(val) {
+      let params = `category_id=${val}`;
+      let res = await apiGetAllSubCategories(params);
+      this.sub_categories = res.data.subcategories;
     },
-    async fetchClassifications(val){
-      let params = `sub_category_id=${val}`
-      let res = await apiGetAllClassifications(params)
-      this.classifications = res.data.classifications
+    async fetchClassifications(val) {
+      let params = `sub_category_id=${val}`;
+      let res = await apiGetAllClassifications(params);
+      this.classifications = res.data.classifications;
+    },
+    async convertAttachment(){
+      console.log(this.attachments)
     }
   },
   computed: {
     ...mapGetters(["categories"]),
   },
+  mounted(){
+  }
 };
 </script>

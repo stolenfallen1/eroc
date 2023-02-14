@@ -122,8 +122,12 @@ export default {
       console.log(item, "selected item");
     },
   },
+  mounted(){
+    this.payload.requested_by = this.user.name
+    this.payload.department = this.user.warehouse.warehouse_Description
+  },
   computed: {
-    ...mapGetters(["drawer"]),
+    ...mapGetters(["drawer", "user"]),
     headers() {
       let headerItems = [
         {

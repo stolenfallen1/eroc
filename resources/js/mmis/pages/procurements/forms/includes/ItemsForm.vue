@@ -35,8 +35,12 @@
           </template>
         </custom-table>
         <div class="pr-form-actions">
-          <v-btn class="mr-2" color="error" @click="$emit('cancel')">Cancel</v-btn>
-          <v-btn color="primary" @click="$emit('selected', tableData.selected)">Select</v-btn>
+          <v-btn class="mr-2" color="error" @click="$emit('cancel')"
+            >Cancel</v-btn
+          >
+          <v-btn color="primary" @click="$emit('selected', tableData.selected)"
+            >Select</v-btn
+          >
         </div>
       </v-card-text>
     </v-card>
@@ -44,11 +48,16 @@
 </template>
 <script>
 import CustomTable from "@global/components/CustomTable.vue";
+import { apiGetAllBuildItems } from "@global/api/items";
 export default {
   components: {
     CustomTable,
   },
   props: {
+    payload: {
+      type: Object,
+      default: () => {},
+    },
     show: {
       type: Boolean,
       default: () => false,
@@ -67,17 +76,17 @@ export default {
           {
             text: "Code",
             sortable: true,
-            value: "code",
+            value: "id",
           },
           {
             text: "Item name",
             sortable: true,
-            value: "item_name",
+            value: "item_Name",
           },
           {
             text: "Current stocks",
             sortable: true,
-            value: "stocks",
+            value: "item_OnHand",
           },
         ],
         items: [],
@@ -92,6 +101,22 @@ export default {
   methods: {
     initialize() {},
     search() {},
+    async fetchBuildItems() {
+      let params = `warehouse_id=${this.$store.getters.user.warehouse.id}&category_id=${this.payload.category}&subcategory_id=${this.payload.sub_category}`;
+      let res = await apiGetAllBuildItems(params);
+      this.tableData.items = res.data.data;
+      this.tableData.total = res.data.total;
+      console.log(this.tableData.items, "items");
+    },
+  },
+  watch: {
+    show: {
+      handler(val) {
+        if (val) {
+          this.fetchBuildItems();
+        }
+      },
+    },
   },
 };
 </script>

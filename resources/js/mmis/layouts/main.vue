@@ -41,6 +41,7 @@ export default {
   },
   created(){
     this.$store.dispatch("fetchCategories")
+    this.$store.dispatch("fetchUnits")
     this.$store.dispatch("fetchUserDetails")
   }
 };

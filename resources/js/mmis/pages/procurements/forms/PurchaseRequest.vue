@@ -26,7 +26,7 @@
         </v-container>
       </v-card-text>
     </v-card>
-    <items-form :show="show_item_form" @cancel="show_item_form = false" @selected="setPayloadItems" />
+    <items-form :payload="payload" :show="show_item_form" @cancel="show_item_form = false" @selected="setPayloadItems" />
   </v-dialog>
 </template>
 <script>
@@ -52,7 +52,7 @@ export default {
   data() {
     return {
       show_item_form: false,
-    };
+    };       
   },
   methods: {
     close() {
@@ -60,6 +60,7 @@ export default {
     },
     setPayloadItems(val){
       this.payload.items = val
+      console.log(this.payload.items,"sjhdsjdh")
       this.show_item_form = false
     }
   },

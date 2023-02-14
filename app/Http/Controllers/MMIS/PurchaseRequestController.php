@@ -4,11 +4,10 @@ namespace App\Http\Controllers\MMIS;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-
+use DB;
 class PurchaseRequestController extends Controller
 {
     public function index(){
-        
     }
 
     public function store(Request $request){

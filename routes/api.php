@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\MMIS\UserController;
+use App\Http\Controllers\MMIS\PurchaseRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 require_once __DIR__ . '/mmis/api.php';
-Route::post('test', [UserController::class, 'store']);
+Route::get('test', [PurchaseRequestController::class, 'index']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

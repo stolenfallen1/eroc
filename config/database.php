@@ -91,6 +91,18 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_mmis' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MMIS', 'localhost'),
+            'port' => env('DB_PORT_MMIS', '1433'),
+            'database' => env('DB_DATABASE_MMIS', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
     ],
 
     /*

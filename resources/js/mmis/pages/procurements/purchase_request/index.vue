@@ -38,7 +38,7 @@
         <DataFilter :filter="setting.filter" />
       </template>
     </right-side-bar>
-    <DataForm :show="showForm" :payload="payload" @close="showForm = false" />
+    <DataForm :show="showForm" :payload="payload" @submit="submit" @close="showForm = false" />
   </div>
 </template>
 <script>
@@ -74,16 +74,14 @@ export default {
       showForm: false,
       payload: {
         requested_date: new Date(),
-        items: [
-          {
-            code: "dtte222",
-            name: "test",
-          },
-        ],
+        items: [],
       },
     };
   },
   methods: {
+    submit(){
+      console.log(this.payload, "payload")
+    },
     initialize() {
       this.setting.loading = true;
       let params = this._createParams(this.tableData.options);
@@ -123,8 +121,10 @@ export default {
     },
   },
   mounted(){
-    this.payload.requested_by = this.user.name
-    this.payload.department = this.user.warehouse.warehouse_Description
+    if(this.user){
+      this.payload.requested_by = this.user.name
+      this.payload.department = this.user.warehouse.warehouse_Description
+    }
   },
   computed: {
     ...mapGetters(["drawer", "user"]),

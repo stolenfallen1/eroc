@@ -21,17 +21,8 @@
           :height="'59vh'"
           :hide="['add-btn', 'filter', 'floater-btn']"
         >
-          <template v-slot:custom_filter>
-            <DataFilter :filter="setting.filter" />
-          </template>
-          <template v-slot:daterequested="{ item }">
-            {{ _dateFormat(item.daterequested) }}
-          </template>
-          <template v-slot:category="{ item }">
-            {{ item.category.categoryname }}
-          </template>
-          <template v-slot:updated_at="{ item }">
-            <span>{{ _dateFormat(item.updated_at) }}</span>
+          <template v-slot:item_OnHand="{ item }">
+            {{item.ware_house_item.item_OnHand}}
           </template>
         </custom-table>
         <div class="pr-form-actions">

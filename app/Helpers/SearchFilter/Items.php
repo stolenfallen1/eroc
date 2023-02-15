@@ -27,7 +27,7 @@ class Items
       $this->model->whereHas('wareHouseItems', function($q) use($warehouse){
         $q->where('warehouse_Id', $warehouse);
       });
-      $this->model->with('wareHouseItems');
+      $this->model->with('wareHouseItem');
     }
   }
 

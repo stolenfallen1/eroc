@@ -5469,7 +5469,7 @@ vue__WEBPACK_IMPORTED_MODULE_2__["default"].use(vuex__WEBPACK_IMPORTED_MODULE_3_
 var module = {
   state: {
     drawer: true,
-    user: {},
+    user: null,
     active_route: null,
     main_active_route: null,
     right_items: [],

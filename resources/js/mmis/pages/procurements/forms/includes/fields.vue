@@ -104,15 +104,15 @@
       </v-menu>
       <p class="pa-0 ma-0">Attachment</p>
       <v-file-input
-        v-model="attachments"
+        v-model="payload.attachments"
         show-size
         counter
         solo
         dense
         multiple
-        @change="convertAttachment"
         hide-details="auto"
       ></v-file-input>
+        <!-- @change="convertAttachment" -->
       <!--  -->
       <div class="d-flex flex-row-reverse">
         <v-btn

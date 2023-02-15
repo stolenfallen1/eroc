@@ -21,7 +21,7 @@
           <item-table :items="payload.items"/>
           <div class="pr-form-actions">
             <v-btn class="mr-2" color="error" @click="close()">Cancel</v-btn>
-            <v-btn color="primary">Submit</v-btn>
+            <v-btn @click="$emit('submit')" color="primary">Submit</v-btn>
           </div>
         </v-container>
       </v-card-text>

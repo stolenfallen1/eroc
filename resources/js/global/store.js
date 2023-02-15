@@ -9,7 +9,7 @@ Vue.use(Vuex);
 const module = {
   state: {
     drawer:true,
-    user:{},
+    user:null,
     active_route: null,
     main_active_route: null,
     right_items:[],

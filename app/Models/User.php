@@ -48,6 +48,6 @@ class User extends \TCG\Voyager\Models\User
 
     public function warehouse()
     {
-        return $this->belongsTo(Warehouses::class, 'warehouse_id');
+        return $this->belongsTo(Warehouses::class, 'warehouse_id', 'id');
     }
 }

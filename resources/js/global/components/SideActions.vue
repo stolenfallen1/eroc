@@ -42,7 +42,7 @@
       </v-list-item>
       <v-list-item dense>
         <v-list-item-title>
-          <v-btn @click="$emit('add')" class="mt-2" width="100%" small color="primary">
+          <v-btn :disabled="!user.warehouse" @click="$emit('add')" class="mt-2" width="100%" small color="primary">
             <v-icon class="mr-2" small>mdi-plus</v-icon>
             Add Record
           </v-btn>
@@ -68,6 +68,7 @@
   </div>
 </template>
 <script>
+import { mapGetters } from "vuex"
 export default {
   props:{
     hide: {
@@ -80,5 +81,8 @@ export default {
   data() {
     return {};
   },
+  computed:{
+    ...mapGetters(["user"])
+  }
 };
 </script>

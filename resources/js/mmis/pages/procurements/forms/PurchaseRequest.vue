@@ -21,12 +21,12 @@
           <item-table :items="payload.items"/>
           <div class="pr-form-actions">
             <v-btn class="mr-2" color="error" @click="close()">Cancel</v-btn>
-            <v-btn color="primary">Submit</v-btn>
+            <v-btn @click="$emit('submit')" color="primary">Submit</v-btn>
           </div>
         </v-container>
       </v-card-text>
     </v-card>
-    <items-form :show="show_item_form" @cancel="show_item_form = false" @selected="setPayloadItems" />
+    <items-form :payload="payload" :show="show_item_form" @cancel="show_item_form = false" @selected="setPayloadItems" />
   </v-dialog>
 </template>
 <script>
@@ -52,7 +52,7 @@ export default {
   data() {
     return {
       show_item_form: false,
-    };
+    };       
   },
   methods: {
     close() {
@@ -60,6 +60,7 @@ export default {
     },
     setPayloadItems(val){
       this.payload.items = val
+      console.log(this.payload.items,"sjhdsjdh")
       this.show_item_form = false
     }
   },

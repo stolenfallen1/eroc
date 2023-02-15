@@ -13,16 +13,17 @@
       </thead>
       <tbody>
         <tr v-for="(item, index) in items" :key="index">
-          <td>{{ item.code }}</td>
-          <td>{{ item.name }}</td>
+          <td>{{ item.id }}</td>
+          <td>{{ item.item_Name }}</td>
           <td>
-            <input
-              type="file"
-              class="fields fields12163"
-              style="width: 94px !important"
-              accept="image/png"
-              name="attachment[]"
-            />
+            <v-file-input
+              v-model="item.attachment"
+              style="min-width: 200px"
+              solo
+              dense
+              prepend-icon=""
+              hide-details="auto"
+            ></v-file-input>
           </td>
           <td>
             <v-text-field
@@ -38,6 +39,9 @@
             <v-autocomplete
               v-model="item.unit"
               solo
+              :items="units"
+              item-text="name"
+              item-value="id"
               dense
               hide-details="auto"
               attach
@@ -55,20 +59,24 @@
   </v-simple-table>
 </template>
 <script>
+import { mapGetters } from "vuex";
 export default {
   props: {
     items: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
   },
   data() {
     return {};
   },
-  methods:{
-    removeItem(index){
-      this.items.splice(index, 1)
-    }
-  }
+  methods: {
+    removeItem(index) {
+      this.items.splice(index, 1);
+    },
+  },
+  computed: {
+    ...mapGetters(["units"]),
+  },
 };
 </script>

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Helpers\SearchFilterHelpers;
+namespace App\Helpers\SearchFilter;
 
 use App\Models\User;
 use Carbon\Carbon;
 
-class Users
+class PurchaseRequests
 {
     protected $model=null;
     public function __construct()

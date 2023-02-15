@@ -6,7 +6,7 @@
     <side-bar @drawer="isdrawer = !isdrawer" />
 
     <!-- Sizes your content based upon application components -->
-    <v-main>
+    <v-main v-if="user">
       <!-- Provides the application the proper gutter -->
       <v-container fluid>
         <!-- If using vue-router -->
@@ -23,6 +23,7 @@
 </template>
 <script>
 import SideBar from "../components/layouts/SideBar.vue";
+import { mapGetters } from "vuex"
 export default {
   components: {
     SideBar,
@@ -38,6 +39,12 @@ export default {
     },
   },
   computed: {
+    ...mapGetters(["user"])
   },
+  created(){
+    this.$store.dispatch("fetchUserDetails")
+    this.$store.dispatch("fetchCategories")
+    this.$store.dispatch("fetchUnits")
+  }
 };
 </script>

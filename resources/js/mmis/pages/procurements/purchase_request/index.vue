@@ -38,7 +38,7 @@
         <DataFilter :filter="setting.filter" />
       </template>
     </right-side-bar>
-    <DataForm :show="showForm" :payload="payload" @close="showForm = false" />
+    <DataForm :show="showForm" :payload="payload" @submit="submit" @close="showForm = false" />
   </div>
 </template>
 <script>
@@ -47,6 +47,7 @@ import DataForm from "../forms/PurchaseRequest.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import CustomTable from "@global/components/CustomTable.vue";
 import { mapGetters } from "vuex";
+import { apiCreatePurchaseRequest } from "@mmis/api/procurements.api"
 export default {
   components: {
     CustomTable,
@@ -74,16 +75,29 @@ export default {
       showForm: false,
       payload: {
         requested_date: new Date(),
-        items: [
-          {
-            code: "dtte222",
-            name: "test",
-          },
-        ],
+        items: [],
       },
     };
   },
   methods: {
+    async submit(){
+      let fd = new FormData();
+      console.log(this.payload, "payload   sssdsdsd start")
+      this.payload.attachments.forEach(attachment => {
+        fd.append("attachments[]", attachment);
+      });
+      this.payload.items.forEach((item, index) => {
+        fd.append(`items[${index}]['attachment']`, item.attachment);
+        fd.append(`items[${index}]['item_Id']`, item.id);
+        fd.append(`items[${index}]['item_Request_Qty']`, item.quantity);
+        fd.append(`items[${index}]['item_Request_UnitofMeasurement_Id']`, item.unit);
+      });
+      fd.append("justication", this.payload.justication)
+      fd.append("required_date", this.payload.required_date)
+      console.log(this.payload.attachments, "payload   sssdsdsd end")
+      console.log(...fd, "payload")
+      let res = await apiCreatePurchaseRequest(fd)
+    },
     initialize() {
       this.setting.loading = true;
       let params = this._createParams(this.tableData.options);
@@ -109,6 +123,7 @@ export default {
       this.goTo("employee-edit", { id: payload.id });
     },
     addItem() {
+      // this.payload.
       this.showForm = true;
     },
     remove(item) {
@@ -121,8 +136,14 @@ export default {
       console.log(item, "selected item");
     },
   },
+  mounted(){
+    if(this.user){
+      this.payload.requested_by = this.user.name
+      this.payload.department = this.user.warehouse.warehouse_Description
+    }
+  },
   computed: {
-    ...mapGetters(["drawer"]),
+    ...mapGetters(["drawer", "user"]),
     headers() {
       let headerItems = [
         {

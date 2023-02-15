@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -18,10 +19,9 @@ Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthCont
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 });
-
-require_once __DIR__ . './mmis/mmismainroute.php';
-
 Route::group(['middleware' => 'admin.user'], function () {
+    require_once __DIR__ . './mmis/mmismainroute.php';
+    Route::get('user-details', [AuthController::class, 'userDetails']);
     Route::get('/{any}', function () {
         return view('layouts.main');
     })->where('any', '.*');

@@ -1,4 +1,4 @@
 import axios from "axios";
 
-axios.defaults.baseURL = '/api/';
+axios.defaults.baseURL = '/';
 export default axios;

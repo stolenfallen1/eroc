@@ -12,6 +12,7 @@
         dense
         hide-details="auto"
         class="mb-2"
+        attach
       ></v-autocomplete>
       <p class="pa-0 ma-0">Category</p>
       <v-autocomplete
@@ -24,6 +25,7 @@
         dense
         hide-details="auto"
         class="mb-2"
+        attach
       ></v-autocomplete>
       <p class="pa-0 ma-0">Classification</p>
       <v-autocomplete
@@ -35,16 +37,30 @@
         dense
         hide-details="auto"
         class="mb-2"
+        attach
       ></v-autocomplete>
-      <p class="pa-0 ma-0">Remarks</p>
+      <p class="pa-0 ma-0">Justication</p>
       <v-textarea
-        v-model="payload.remarks"
+        v-model="payload.justication"
         rows="4"
         dense
         solo
         hide-details="auto"
         class="mb-2"
       ></v-textarea>
+
+      <p class="pa-0 ma-0">Priority</p>
+      <v-autocomplete
+        v-model="payload.priority"
+        :items="priorities"
+        item-text="name"
+        item-value="id"
+        dense
+        solo
+        hide-details="auto"
+        class="mb-2"
+        attach
+      ></v-autocomplete>
     </v-col>
 
     <v-col cols="12" xs="12" md="6" xl="4">
@@ -144,7 +160,8 @@ export default {
       required_date: false,
       sub_categories: [],
       classifications: [],
-      attachments:[]
+      attachments:[],
+      priorities:[]
     };
   },
   methods: {

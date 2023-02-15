@@ -18,9 +18,10 @@
           <td>
             <v-file-input
               v-model="item.attachment"
-              style="max-width: 100px"
+              style="min-width: 200px"
               solo
               dense
+              prepend-icon=""
               hide-details="auto"
             ></v-file-input>
           </td>

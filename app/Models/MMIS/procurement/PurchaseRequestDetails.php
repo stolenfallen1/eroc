@@ -10,6 +10,7 @@ class PurchaseRequestDetails extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseRequestDetail';
+    protected $guarded = [];
 
     public function purchaseRequest(){
         return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');

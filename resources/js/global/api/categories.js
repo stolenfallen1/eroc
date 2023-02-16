@@ -1,8 +1,9 @@
-import Axios from "@global/axios";
-const categories = "api/categories";
-const subCategories = "api/sub-categories";
-const classifications = "api/classifications";
-
-export const apiGetAllCategories = (query)  => Axios.get(`${categories}?`+query);
-export const apiGetAllSubCategories = (query)  => Axios.get(`${subCategories}?`+query);
-export const apiGetAllClassifications = (query)  => Axios.get(`${classifications}?`+query);
+import {httpApiClient} from "@global/axios";
+import { store } from "../store"
+const categories = "categories";
+const subCategories = "sub-categories";
+const classifications = "classifications";
+httpApiClient.defaults.headers.common['Authorization'] = 'Bearer ' + store.getters.user.api_token
+export const apiGetAllCategories = (query)  => httpApiClient.get(`${categories}?`+query);
+export const apiGetAllSubCategories = (query)  => httpApiClient.get(`${subCategories}?`+query);
+export const apiGetAllClassifications = (query)  => httpApiClient.get(`${classifications}?`+query);

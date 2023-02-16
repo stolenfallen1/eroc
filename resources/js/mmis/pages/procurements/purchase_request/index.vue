@@ -86,12 +86,17 @@ export default {
       this.payload.attachments.forEach(attachment => {
         fd.append("attachments[]", attachment);
       });
+
+      let test = []
       this.payload.items.forEach((item, index) => {
-        fd.append(`items[${index}]['attachment']`, item.attachment);
-        fd.append(`items[${index}]['item_Id']`, item.id);
-        fd.append(`items[${index}]['item_Request_Qty']`, item.quantity);
-        fd.append(`items[${index}]['item_Request_UnitofMeasurement_Id']`, item.unit);
+        // fd.append(`items[]`, JSON.stringify(item));
+        // fd.append(`attachment[]`, item.attachment);
+        // fd.append(`items[${index}]['attachment']`, item.attachment);
+        // fd.append(`items[${index}]['item_Id']`, item.id);
+        // fd.append(`items[${index}]['item_Request_Qty']`, item.quantity);
+        // fd.append(`items[${index}]['item_Request_UnitofMeasurement_Id']`, item.unit);
       });
+      // fd.append("items", JSON.stringify(test))
       fd.append("justication", this.payload.justication)
       fd.append("required_date", this.payload.required_date)
       console.log(this.payload.attachments, "payload   sssdsdsd end")

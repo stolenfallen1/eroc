@@ -15,6 +15,7 @@ const router = new VueRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  store.dispatch("fetchUserDetails")
   let path = to.path.split("/")
   if (path.length == 4) {
     store.commit("setActiveRoute", to.name);

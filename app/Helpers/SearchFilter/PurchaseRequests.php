@@ -15,7 +15,6 @@ class PurchaseRequests
 
     public function searchable()
     {
-        $this->model->with('activeSubscription.plan');
         $this->noSubs();
         $this->searchColumns();
         $this->byCreatedAt();

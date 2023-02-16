@@ -10,4 +10,11 @@ class AuthController extends Controller
     public function userDetails(){
         return Auth::user();
     }
+
+    public function verifyPasscode(Request $request){
+        if(Auth::user()->passcode === $request->code){
+            return response()->json(["message" => 'success'], 200);
+        }
+        return response()->json(["message" => 'Incorrect passcode'], 403);
+    }
 }

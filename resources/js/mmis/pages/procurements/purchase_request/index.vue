@@ -21,11 +21,11 @@
       <template v-slot:daterequested="{ item }">
         {{ _dateFormat(item.daterequested) }}
       </template>
-      <template v-slot:category="{ item }">
-        {{ item.category.categoryname }}
+      <template v-slot:status="{ item }">
+        {{ item.status.Status_description }}
       </template>
-      <template v-slot:updated_at="{ item }">
-        <span>{{ _dateFormat(item.updated_at) }}</span>
+      <template v-slot:warehouse="{ item }">
+        {{ item.warehouse.warehouse_Description }}
       </template>
     </custom-table>
     <right-side-bar
@@ -38,22 +38,41 @@
         <DataFilter :filter="setting.filter" />
       </template>
     </right-side-bar>
-    <DataForm :show="showForm" :payload="payload" @submit="submit" @close="showForm = false" />
+    <DataForm
+      :show="showForm"
+      :payload="payload"
+      @submit="forConfirmation"
+      @close="showForm = false"
+    />
+    <Confirmation
+      @cancel="isconfirmation = false"
+      @confirm="submit"
+      :show="isconfirmation"
+    />
+    <SnackBar
+      @close="isnotification = false"
+      :data="notification"
+      :show="isnotification"
+    />
   </div>
 </template>
 <script>
+import Confirmation from "@global/components/Confirmation.vue";
+import SnackBar from "@global/components/SnackBar.vue";
 import DataFilter from "../filter_forms/PurchaseRequest.vue";
 import DataForm from "../forms/PurchaseRequest.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import CustomTable from "@global/components/CustomTable.vue";
 import { mapGetters } from "vuex";
-import { apiCreatePurchaseRequest } from "@mmis/api/procurements.api"
+import { apiCreatePurchaseRequest, apiGetAllPurchaseRequest } from "@mmis/api/procurements.api";
 export default {
   components: {
     CustomTable,
     DataFilter,
     DataForm,
     RightSideBar,
+    Confirmation,
+    SnackBar,
   },
   data() {
     return {
@@ -77,44 +96,68 @@ export default {
         requested_date: new Date(),
         items: [],
       },
+      isconfirmation: false,
+      isnotification: false,
+      notification: {},
     };
   },
   methods: {
-    async submit(){
+    forConfirmation() {
+      this.isconfirmation = true;
+    },
+    async submit(code) {
+      console.log(code)
+      if (this.user.passcode != code || code == null) {
+        this.notification.message = "Incorrect passcode";
+        this.notification.color = "error";
+        this.isnotification = true;
+        return;
+      }
       let fd = new FormData();
-      console.log(this.payload, "payload   sssdsdsd start")
-      this.payload.attachments.forEach(attachment => {
+      this.payload.attachments.forEach((attachment) => {
         fd.append("attachments[]", attachment);
       });
 
-      let test = []
       this.payload.items.forEach((item, index) => {
-        // fd.append(`items[]`, JSON.stringify(item));
-        // fd.append(`attachment[]`, item.attachment);
-        // fd.append(`items[${index}]['attachment']`, item.attachment);
-        // fd.append(`items[${index}]['item_Id']`, item.id);
-        // fd.append(`items[${index}]['item_Request_Qty']`, item.quantity);
-        // fd.append(`items[${index}]['item_Request_UnitofMeasurement_Id']`, item.unit);
+        if (item.attachment) {
+          fd.append(`items[${index}][attachment]`, item.attachment);
+        }
+        fd.append(`items[${index}][item_Id]`, item.id);
+        fd.append(`items[${index}][item_Request_Qty]`, item.quantity);
+        fd.append(
+          `items[${index}][item_Request_UnitofMeasurement_Id]`,
+          item.unit
+        );
       });
-      // fd.append("items", JSON.stringify(test))
-      fd.append("justication", this.payload.justication)
-      fd.append("required_date", this.payload.required_date)
-      console.log(this.payload.attachments, "payload   sssdsdsd end")
-      console.log(...fd, "payload")
-      let res = await apiCreatePurchaseRequest(fd)
+
+      fd.append("justication", this.payload.justication);
+      fd.append("required_date", this.payload.required_date);
+      fd.append("pr_Priority_Id", this.payload.priority);
+
+      let res = await apiCreatePurchaseRequest(fd);
+      console.log(res)
+      if (res.data.message == "success") {
+        this.notification.message = "Record successfully saved";
+        this.notification.color = "success";
+        this.isnotification = true;
+        this.isconfirmation = false;
+        this.showForm = false;
+      }
     },
-    initialize() {
+    async initialize() {
       this.setting.loading = true;
       let params = this._createParams(this.tableData.options);
       params = params + this._createFilterParams(this.setting.filter);
       if (this.setting.keyword)
         params = params + "&keyword=" + this.setting.keyword;
       params = params + "&withoutadmin=true";
-      axios.get(`purchase-request?${params}`).then(({ data }) => {
-        this.tableData.items = data.data;
-        this.tableData.total = data.total;
+      let res = await apiGetAllPurchaseRequest(params)
+      console.log(res, "purchase")
+      if(res.status == 200){
+        this.tableData.items = res.data.data;
+        this.tableData.total = res.data.total;
         this.setting.loading = false;
-      });
+      }
     },
     search() {
       this.tableData.options.page = 1;
@@ -141,10 +184,10 @@ export default {
       console.log(item, "selected item");
     },
   },
-  mounted(){
-    if(this.user){
-      this.payload.requested_by = this.user.name
-      this.payload.department = this.user.warehouse.warehouse_Description
+  mounted() {
+    if (this.user) {
+      this.payload.requested_by = this.user.name;
+      this.payload.department = this.user.warehouse.warehouse_Description;
     }
   },
   computed: {
@@ -157,12 +200,12 @@ export default {
           value: "prnumber",
         },
         { text: "Date Request", value: "daterequested" },
-        { text: "Requesting Dept.", value: "departmentid" },
+        { text: "Requesting Dept.", value: "warehouse" },
         { text: "Item group", value: "itemgroupid" },
         { text: "Category", value: "category" },
-        { text: "Pr. Status", value: "prstatus" },
+        { text: "Pr. Status", value: "status" },
         { text: "Date Approved", value: "updated_at" },
-        { text: "Remarks", value: "prremarks" },
+        { text: "Remarks", value: "pr_Justication" },
       ];
       if (!this.drawer) {
         headerItems.push({ text: "Action", value: "action" });

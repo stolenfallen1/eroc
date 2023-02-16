@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\MMIS;
 
+use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
 use DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Approver\invStatus;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class PurchaseRequestController extends Controller
 {
     public function index(){
-       echo Auth::User();
+       return (new PurchaseRequests)->searchable();
     }
 
     public function store(Request $request){
@@ -28,7 +30,8 @@ class PurchaseRequestController extends Controller
             'pr_Transaction_Date' => Carbon::now(),
             'pr_Transaction_Date_Required' => Carbon::parse($request->required_date),
             'pr_RequestedBy' => Auth::user()->id,
-            'pr_Priority_Id' => 1,
+            'pr_Priority_Id' => $request->pr_Priority_Id,
+            'pr_Status_Id' => invStatus::where('Status_description', 'like', '%pending%')->select('id')->first(),
         ]);
 
         foreach($request->attachments as $key => $attachment){
@@ -41,8 +44,10 @@ class PurchaseRequestController extends Controller
         // return $request->items;
 
         foreach($request->items as $item){
-            $test = json_decode($item);
-            return $filepath = storeDocument($test->attachment, "procurements/items");
+            $filepath = null;
+            if(isset($item['attachment']) || $item['attachment'] !=null ){
+                $filepath = storeDocument($item['attachment'], "procurements/items")[0];
+            }
             $pr->purchaseRequestDetails()->create([
                 'filepath' => $filepath,
                 'item_Id' => $item['item_Id'],

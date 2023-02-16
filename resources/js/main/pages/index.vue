@@ -41,7 +41,7 @@
     },
     methods:{
       redirect(){
-        window.location.href = 'mmis';
+        window.location.href = 'mmis/procurements';
       }
     },
     created(){

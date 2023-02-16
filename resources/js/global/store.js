@@ -13,7 +13,9 @@ const module = {
     main_active_route: null,
     right_items:[],
     categories:[],
-    units:[]
+    units:[],
+    status:[],
+    priorities:[]
   },
   getters: {
     drawer: state => state.drawer,
@@ -23,6 +25,8 @@ const module = {
     right_items: state => state.right_items,
     categories: state => state.categories,
     units: state => state.units,
+    status: state => state.status,
+    priorities: state => state.priorities,
   },
   mutations: {
     setDrawer(state) {
@@ -46,8 +50,26 @@ const module = {
     setUnits(state, value) {
       state.units = value;
     },
+    setStatus(state, value) {
+      state.status = value;
+    },
+    setPriorities(state, value) {
+      state.priorities = value;
+    },
   },
   actions: {
+    async fetchPriorities({commit, state}){
+      httpApiClient.get('priorities',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setPriorities", data.priorities)
+      })
+    },
+
+    async fetchStatus({commit, state}){
+      httpApiClient.get('status',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setStatus", data.status)
+      })
+    },
+
     async fetchUnits({commit, state}){
       httpApiClient.get('units',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setUnits", data.units)
@@ -68,6 +90,8 @@ const module = {
         commit("setUser", data)
         dispatch("fetchCategories")
         dispatch("fetchUnits")
+        dispatch("fetchStatus")
+        dispatch("fetchPriorities")
       })
     },
 

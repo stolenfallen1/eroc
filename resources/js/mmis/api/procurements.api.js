@@ -1,8 +1,10 @@
-import Axios from "@global/axios";
-const purchase = "api/purchase-request";
+import { httpApiClient } from "@global/axios";
+import { store } from "@global/store"
+const purchase = "purchase-request";
+httpApiClient.defaults.headers.common['Authorization'] = 'Bearer ' + store.getters.user.api_token
 
-export const apiGetAllPurchaseRequest = (query)  => Axios.get(`${purchase}?`+query);
-export const apiCreatePurchaseRequest = (payload)  => Axios.post(`${purchase}`, payload, { headers: {
+export const apiGetAllPurchaseRequest = (query)  => httpApiClient.get(`${purchase}?`+query);
+export const apiCreatePurchaseRequest = (payload)  => httpApiClient.post(`${purchase}`, payload, { headers: {
   "Content-Type": "multipart/form-data",
 },});
 // export const apiGetUser = (id)  => Axios.get(`${resource}/`+id);

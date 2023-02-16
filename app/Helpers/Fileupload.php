@@ -20,13 +20,13 @@
 
     }
 
-    function storeDocument($file, $path){
+    function storeDocument($file, $path, $index=0){
         if (empty($file)) return '';
         if (!file_exists(public_path($path))){
             mkdir(public_path($path), 0777, true);
         }
 
-        $name = time().'_'.$file->getClientOriginalName();
+        $name = $index.time().'_'.$file->getClientOriginalName();
         $ext = $file->getClientOriginalExtension();
         // $name = $name.'.'.$ext;
         // $image_path = 'public/'.$path.'/'.$name;
@@ -34,7 +34,7 @@
         // file_put_contents(public_path() . '/' . $path . '/' . $name, $file);
         $file->move(public_path($path), $name);
         // $status =Storage::put($image_path, $file);
-
+        
         return ['/'. $path .'/' . $name, $ext, $file->getClientOriginalName()] ;
     }
 

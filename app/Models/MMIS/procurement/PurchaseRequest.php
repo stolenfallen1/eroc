@@ -11,6 +11,11 @@ class PurchaseRequest extends Model
     protected $connection = "sqlsrv_mmis";
     protected $table = 'purchaseRequestMaster';
 
+    protected $guarded = [];
+    // protected $fillable = [
+
+    // ];
+
     public function purchaseRequestAttachments(){
         return $this->hasMany(PurchaseRequestAttachment::class, 'pr_request_id', 'id');
     }

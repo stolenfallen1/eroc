@@ -7,6 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseOrders extends Model
 {
-    use HasFactory;
+    protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseOrderMaster';
 }

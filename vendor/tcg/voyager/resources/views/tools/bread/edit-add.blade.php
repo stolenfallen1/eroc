@@ -70,7 +70,6 @@
                     {{ csrf_field() }}
 
                     <div class="panel panel-primary panel-bordered">
-
                         <div class="panel-heading">
                             <h3 class="panel-title panel-icon"><i class="voyager-bread"></i> {{ ucfirst($table) }} {{ __('voyager::bread.bread_info') }}</h3>
                             <div class="panel-actions">
@@ -79,6 +78,7 @@
                         </div>
 
                         <div class="panel-body">
+                            
                             <div class="row clearfix">
                                 <div class="col-md-6 form-group">
                                     <label for="name">{{ __('voyager::database.table_name') }}</label>
@@ -142,7 +142,7 @@
                                         data-placement="right"
                                         title="{{ __('voyager::bread.model_name_ph') }}"></span>
                                     <input type="text" class="form-control" name="model_name" placeholder="{{ __('voyager::bread.model_class') }}"
-                                           value="{{ $dataType->model_name ?? $model_name }}">
+                                           value="{{ $dataType->model_name ?? 'App\\Models\\' }}">
                                 </div>
                                 <div class="col-md-6 form-group">
                                     <label for="controller">{{ __('voyager::bread.controller_name') }}</label>

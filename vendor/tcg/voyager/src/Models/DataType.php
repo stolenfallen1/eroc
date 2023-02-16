@@ -82,11 +82,10 @@ class DataType extends Model
         $this->attributes['server_side'] = $value ? 1 : 0;
     }
 
-    public function updateDataType($requestData, $throw = false)
+    public function updateDataType($requestData, $throw = false, $connection = null)
     {
         try {
-            DB::beginTransaction();
-
+            DB::connection($connection)->beginTransaction();
             // Prepare data
             foreach (['generate_permissions', 'server_side'] as $field) {
                 if (!isset($requestData[$field])) {
@@ -139,12 +138,14 @@ class DataType extends Model
                     Voyager::model('Permission')->generateFor($this->name);
                 }
 
-                DB::commit();
+                DB::connection($connection)->commit();
 
                 return true;
             }
+
+            
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection($connection)->rollBack();
 
             if ($throw) {
                 throw $e;

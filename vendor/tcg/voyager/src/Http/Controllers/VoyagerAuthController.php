@@ -6,7 +6,7 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use TCG\Voyager\Facades\Voyager;
-
+use App\Models\User;
 class VoyagerAuthController extends Controller
 {
     use AuthenticatesUsers;
@@ -36,6 +36,8 @@ class VoyagerAuthController extends Controller
         $credentials = $this->credentials($request);
 
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
+            $user = Auth::user();
+            $token = $user->createToken();
             return $this->sendLoginResponse($request);
         }
 

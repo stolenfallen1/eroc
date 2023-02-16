@@ -19,6 +19,7 @@ use TCG\Voyager\Events\TableAdded;
 use TCG\Voyager\Events\TableDeleted;
 use TCG\Voyager\Events\TableUpdated;
 use TCG\Voyager\Facades\Voyager;
+use App\Models\Database\Database;
 
 class VoyagerDatabaseController extends Controller
 {
@@ -28,20 +29,45 @@ class VoyagerDatabaseController extends Controller
 
         $dataTypes = Voyager::model('DataType')->select('id', 'name', 'slug')->get()->keyBy('name')->toArray();
 
-        $tables = array_map(function ($table) use ($dataTypes) {
-            $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
+        // retrive all database connection in table
+        $databaseconnection = Database::all();
+        $list = [];
+        $count =0;
+        foreach ($databaseconnection as $row) {
+            $count++;
+            $tables = array_map(
+                function ($table) use ($dataTypes,$row) {
+                    $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
+                    $table = [
+                        'prefix'     => DB::getTablePrefix(),
+                        'name'       => $table,
+                        'slug'       => $dataTypes[$table]['slug'] ?? null,
+                        'dataTypeId' => $dataTypes[$table]['id'] ?? null,
+                        'driver' => $row->driver
+                    ];
+                    return $table;
+                },
+                SchemaManager::manager($row->driver)->listTableNames()
+            );
+            $list[] = $tables;
+        }
+        // merge all database connection 
+        $array  = [];
+        for ($i=0; $i < $count; $i++) {
+            foreach ($list[$i] as $row) {
+                $array[] = array(
+                            'prefix'     =>$row['prefix'],
+                            'name'       => $row['name'],
+                            'slug'       => $row['slug'] ?? null,
+                            'dataTypeId' => $row['dataTypeId'] ?? null,
+                            'driver' => $row['driver'] ?? null,
 
-            $table = [
-                'prefix'     => DB::getTablePrefix(),
-                'name'       => $table,
-                'slug'       => $dataTypes[$table]['slug'] ?? null,
-                'dataTypeId' => $dataTypes[$table]['id'] ?? null,
-            ];
+                   );
+            }
+        }
 
-            return (object) $table;
-        }, SchemaManager::listTableNames());
-
-        return Voyager::view('voyager::tools.database.index')->with(compact('dataTypes', 'tables'));
+       
+        return Voyager::view('voyager::tools.database.index')->with(compact('dataTypes', 'array'));
     }
 
     /**
@@ -66,10 +92,11 @@ class VoyagerDatabaseController extends Controller
      * @return \Illuminate\Http\RedirectResponse
      */
 
-     
+
     public function store(Request $request)
     {
         $this->authorize('browse_database');
+
         $databaseconnection = $request->databasename ?? '';
         $foldername = $request->foldername ?? '';
         try {
@@ -84,13 +111,17 @@ class VoyagerDatabaseController extends Controller
 
             $table = Table::make($table);
             // Use the schema builder to create a new table in the database
-             SchemaManager::manager($databaseconnection)->createTable($table);
-             SchemaManager::manager('sqlsrv')->createTable($table);
+            if(Request()->databasename =='core'){
+                SchemaManager::manager()->createTable($table);
+            }else{ 
+
+                SchemaManager::manager($databaseconnection)->createTable($table);
+            }
 
             if (isset($request->create_model) && $request->create_model == 'on') {
-                $modelNamespace = config('voyager.models.namespace', app()->getNamespace());
+                $modelNamespace = config('voyager.models.namespace', app()->getNamespace().'Models\\');
                 $params = [
-                    'name' => $modelNamespace.Str::studly(Str::singular($table->name)),
+                    'name' => $modelNamespace.Str::studly(Str::singular($foldername.'\\'.ucfirst($table->name))),
                 ];
 
                 // if (in_array('deleted_at', $request->input('field.*'))) {
@@ -100,7 +131,9 @@ class VoyagerDatabaseController extends Controller
                 if (isset($request->create_migration) && $request->create_migration == 'on') {
                     $params['--migration'] = true;
                 }
-                Artisan::call('voyager:make:model',  $foldername.'/'.$params);
+                Artisan::call('voyager:make:model', $params);
+
+              
             } elseif (isset($request->create_migration) && $request->create_migration == 'on') {
                 Artisan::call('make:migration', [
                     'name'    => 'create_'.$table->name.'_table',
@@ -276,6 +309,10 @@ class VoyagerDatabaseController extends Controller
 
         try {
             SchemaManager::dropTable($table);
+
+            if (Request()->databasename !='core') {
+                SchemaManager::manager(Request()->databasename)->dropTable($table);
+            }
             event(new TableDeleted($table));
 
             return redirect()

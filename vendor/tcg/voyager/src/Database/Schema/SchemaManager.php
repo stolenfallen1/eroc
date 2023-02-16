@@ -13,7 +13,7 @@ abstract class SchemaManager
 
     public static function __callStatic($method, $args)
     {
-        return static::manager()->$method(...$args);
+        return static::manager($table = null)->$method(...$args);
     }
 
     public static function manager($table = null)
@@ -23,7 +23,6 @@ abstract class SchemaManager
 
     public static function getDatabaseConnection($table = null)
     {
-        
         return DB::connection($table)->getDoctrineConnection();
     }
 
@@ -52,16 +51,16 @@ abstract class SchemaManager
      *
      * @return \TCG\Voyager\Database\Schema\Table
      */
-    public static function listTableDetails($tableName)
+    public static function listTableDetails($tableName,$dbconnect = null)
     {
-        $columns = static::manager()->listTableColumns($tableName);
+        $columns = static::manager($dbconnect)->listTableColumns($tableName);
 
         $foreignKeys = [];
-        if (static::manager()->getDatabasePlatform()->supportsForeignKeyConstraints()) {
+        if (static::manager($dbconnect)->getDatabasePlatform()->supportsForeignKeyConstraints()) {
             $foreignKeys = static::manager()->listTableForeignKeys($tableName);
         }
 
-        $indexes = static::manager()->listTableIndexes($tableName);
+        $indexes = static::manager($dbconnect)->listTableIndexes($tableName);
 
         return new Table($tableName, $columns, $indexes, $foreignKeys, false, []);
     }
@@ -73,11 +72,11 @@ abstract class SchemaManager
      *
      * @return \Illuminate\Support\Collection
      */
-    public static function describeTable($tableName)
+    public static function describeTable($tableName, $dbconnect=null)
     {
         Type::registerCustomPlatformTypes();
 
-        $table = static::listTableDetails($tableName);
+        $table =static::listTableDetails($tableName,$dbconnect);
 
         return collect($table->columns)->map(function ($column) use ($table) {
             $columnArr = Column::toArray($column);

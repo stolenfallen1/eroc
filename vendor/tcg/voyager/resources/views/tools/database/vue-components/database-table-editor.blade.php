@@ -1,32 +1,43 @@
 @section('database-table-editor-template')
-
-<div class="panel panel-bordered">
-    <div class="panel-body">
-        <div class="row">
-        @if($db->action == 'update')
-            <div class="col-md-12">
-        @else
-            <div class="col-md-6">
-        @endif
-            <label for="name">Database</label><br>
-            <select name="databasename" class="form-control" required>
-                <option value="">Select Database</option>
-                <option value="sqlsrv">CORE</option>
-                <option value="sqlsrv_mmis">CDG MMIS</option>
-            </select><br>
-            <input  type="text" name="foldername"  class="form-control" placeholder="FolderName"  pattern="{{ $db->identifierRegex }}">
-            <br>
-            <label for="name">{{ __('voyager::database.table_name') }}</label><br>
-            <input v-model.trim="table.name" type="text" class="form-control" placeholder="{{ __('voyager::database.table_name') }}" required pattern="{{ $db->identifierRegex }}">
+    <div class="panel panel-bordered">
+        <div class="panel-body">
+            <div class="row">
+                @if ($db->action == 'update')
+                    <div class="col-md-12">
+                    @else
+                        <div class="col-md-6">
+                @endif
+                <label for="name">Database</label><br>
+                <select name="databasename" class="form-control" required>
+                    <option value="">Select Database</option>
+                    @php
+                        $databasename = DB::table('databases')->get();
+                    @endphp
+                    @foreach ($databasename as $row)
+                        @if ($row->name == 'CORE')
+                            <option value="core">{{ $row->name }}</option>
+                        @else
+                            <option value="{{ $row->driver }}">{{ $row->name }}</option>
+                        @endif
+                    @endforeach
+                </select>
+                @if ($db->action == 'create')
+                    <br>
+                    <input type="text" name="foldername" class="form-control" placeholder="FolderName">
+                @endif
+                <br>
+                <label for="name">{{ __('voyager::database.table_name') }}</label><br>
+                <input v-model.trim="table.name" type="text" class="form-control"
+                    placeholder="{{ __('voyager::database.table_name') }}" required pattern="{{ $db->identifierRegex }}">
             </div>
 
-        @if($db->action == 'create')
-            <div class="col-md-3 col-sm-4 col-xs-6">
-                <label for="create_model">{{ __('voyager::database.create_model_table') }}</label><br>
-                <input type="checkbox" name="create_model" checked data-toggle="toggle"
-                       data-on="{{ __('voyager::generic.yes_please') }}" data-off="{{ __('voyager::generic.no_thanks') }}">
-            </div>
-            {{--
+            @if ($db->action == 'create')
+                <div class="col-md-3 col-sm-4 col-xs-6">
+                    <label for="create_model">{{ __('voyager::database.create_model_table') }}</label><br>
+                    <input type="checkbox" name="create_model" checked data-toggle="toggle"
+                        data-on="{{ __('voyager::generic.yes_please') }}" data-off="{{ __('voyager::generic.no_thanks') }}">
+                </div>
+                {{--
                 Hide migration button until feature is available.
                  <div class="col-md-3 col-sm-4 col-xs-6">
                     <label for="create_migration">{{ __('voyager::database.create_migration') }}</label><br>
@@ -34,7 +45,7 @@
                            data-on="{{ __('voyager::generic.yes_please') }}" data-off="{{ __('voyager::generic.no_thanks') }}">
                 </div>
             --}}
-        @endif
+            @endif
         </div><!-- .panel-body .row -->
 
         <div v-if="compositeIndexes.length" v-once class="alert alert-danger">
@@ -42,60 +53,48 @@
         </div>
 
         <div id="alertsContainer"></div>
-        
+
         <template v-if="tableHasColumns">
             <p>{{ __('voyager::database.table_columns') }}</p>
 
             <table class="table table-bordered" style="width:100%;">
                 <thead>
-                <tr>
-                    <th>{{ __('voyager::generic.name') }}</th>
-                    <th>{{ __('voyager::generic.type') }}</th>
-                    <th>{{ __('voyager::generic.length') }}</th>
-                    <th>{{ __('voyager::generic.not_null') }}</th>
-                    <th>{{ __('voyager::generic.unsigned') }}</th>
-                    <th>{{ __('voyager::generic.auto_increment') }}</th>
-                    <th>{{ __('voyager::generic.index') }}</th>
-                    <th>{{ __('voyager::generic.default') }}</th>
-                    <th></th>
-                </tr>
+                    <tr>
+                        <th>{{ __('voyager::generic.name') }}</th>
+                        <th>{{ __('voyager::generic.type') }}</th>
+                        <th>{{ __('voyager::generic.length') }}</th>
+                        <th>{{ __('voyager::generic.not_null') }}</th>
+                        <th>{{ __('voyager::generic.unsigned') }}</th>
+                        <th>{{ __('voyager::generic.auto_increment') }}</th>
+                        <th>{{ __('voyager::generic.index') }}</th>
+                        <th>{{ __('voyager::generic.default') }}</th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
-                    <database-column
-                        v-for="(column, index) in table.columns"
-                        :column="column"
-                        :index="getColumnsIndex(column.name)"
-                        :key="index"
-                        @columnNameUpdated="renameColumn"
-                        @columnDeleted="deleteColumn"
-                        @indexAdded="addIndex"
-                        @indexDeleted="deleteIndex"
-                        @indexUpdated="updateIndex"
-                        @indexChanged="onIndexChange"
-                    ></database-column>
+                    <database-column v-for="(column, index) in table.columns" :column="column"
+                        :index="getColumnsIndex(column.name)" :key="index" @columnNameUpdated="renameColumn"
+                        @columnDeleted="deleteColumn" @indexAdded="addIndex" @indexDeleted="deleteIndex"
+                        @indexUpdated="updateIndex" @indexChanged="onIndexChange"></database-column>
                 </tbody>
             </table>
         </template>
         <div v-else>
-          <p>{{ __('voyager::database.table_no_columns') }}</p>
+            <p>{{ __('voyager::database.table_no_columns') }}</p>
         </div>
 
         <div style="text-align:center">
-            <database-table-helper-buttons
-                @columnAdded="addColumn"
-            ></database-table-helper-buttons>
+            <database-table-helper-buttons @columnAdded="addColumn"></database-table-helper-buttons>
         </div>
     </div><!-- .panel-body -->
 
     <div class="panel-footer">
         <input type="submit" class="btn btn-primary pull-right"
-               value="@if($db->action == 'update'){{ __('voyager::database.update_table') }}@else{{ __('voyager::database.create_new_table') }}@endif"
-               :disabled="!tableHasColumns">
+            value="@if ($db->action == 'update') {{ __('voyager::database.update_table') }}@else{{ __('voyager::database.create_new_table') }} @endif"
+            :disabled="!tableHasColumns">
         <div style="clear:both"></div>
     </div>
-</div><!-- .panel -->
-
-
+    </div><!-- .panel -->
 @endsection
 
 @include('voyager::tools.database.vue-components.database-column')
@@ -129,8 +128,10 @@
             }
 
             // Display errors
-            @if(Session::has('alerts'))
-                helpers.displayAlerts(alerts, helpers.bootstrapAlerter({dismissible: true}), 'error');
+            @if (Session::has('alerts'))
+                helpers.displayAlerts(alerts, helpers.bootstrapAlerter({
+                    dismissible: true
+                }), 'error');
             @endif
         },
         computed: {
@@ -143,7 +144,8 @@
                 column.name = column.name.trim();
 
                 if (column.name && this.hasColumn(column.name)) {
-                    return toastr.error("{{ __('voyager::database.column') }} " + column.name + " {{ __('voyager::database.already_exists') }}");
+                    return toastr.error("{{ __('voyager::database.column') }} " + column.name +
+                        " {{ __('voyager::database.already_exists') }}");
                 }
 
                 this.table.columns.push(
@@ -153,7 +155,7 @@
             getColumn(name) {
                 name = name.toLowerCase().trim();
 
-                return this.table.columns.find(function (column) {
+                return this.table.columns.find(function(column) {
                     return name == column.name.toLowerCase();
                 });
             },
@@ -166,7 +168,8 @@
 
                 let existingColumn;
                 if ((existingColumn = this.getColumn(newName)) && (existingColumn !== column)) {
-                    return toastr.error("{{ __('voyager::database.column') }} " + newName + " {{ __('voyager::database.already_exists') }}");
+                    return toastr.error("{{ __('voyager::database.column') }} " + newName +
+                        " {{ __('voyager::database.already_exists') }}");
                 }
 
                 let index = this.getColumnsIndex(column.name);

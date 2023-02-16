@@ -84,6 +84,9 @@ class DatabaseUpdater
         // Update the table
         if ($tableDiff) {
             SchemaManager::alterTable($tableDiff);
+            if(Request()->databasename !='core'){
+                SchemaManager::manager(Request()->databasename)->alterTable($tableDiff);
+            }
         }
     }
 

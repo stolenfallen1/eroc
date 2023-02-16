@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseRequest extends Model
 {
     use HasFactory;
+    protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseRequestMaster';
 }

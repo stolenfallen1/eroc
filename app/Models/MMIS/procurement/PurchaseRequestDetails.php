@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseRequestDetails extends Model
 {
     use HasFactory;
-    protected $connection = "sqlsrv_mmis";
+    protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseRequestDetail';
 
     public function purchaseRequest(){

@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\MMIS;
 
+use DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Carbon\Carbon;
-use DB;
 use Illuminate\Support\Facades\Auth;
 
 class PurchaseRequestController extends Controller
 {
     public function index(){
+       echo Auth::User();
     }
 
     public function store(Request $request){

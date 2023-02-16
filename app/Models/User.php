@@ -12,7 +12,9 @@ use PDO;
 
 class User extends \TCG\Voyager\Models\User
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -49,5 +51,12 @@ class User extends \TCG\Voyager\Models\User
     public function warehouse()
     {
         return $this->belongsTo(Warehouses::class, 'warehouse_id', 'id');
+    }
+    public function createToken()
+    {
+        $token = sha1(time());
+        $this->api_token = $token;
+        $this->save();
+        return $token;
     }
 }

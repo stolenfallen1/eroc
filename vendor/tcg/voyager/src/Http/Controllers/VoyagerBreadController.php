@@ -2,17 +2,18 @@
 
 namespace TCG\Voyager\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use ReflectionClass;
-use TCG\Voyager\Database\Schema\SchemaManager;
-use TCG\Voyager\Database\Schema\Table;
-use TCG\Voyager\Database\Types\Type;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use TCG\Voyager\Facades\Voyager;
+use App\Models\Database\Database;
+use Illuminate\Support\Facades\DB;
 use TCG\Voyager\Events\BreadAdded;
+use TCG\Voyager\Database\Types\Type;
 use TCG\Voyager\Events\BreadDeleted;
 use TCG\Voyager\Events\BreadUpdated;
-use TCG\Voyager\Facades\Voyager;
+use TCG\Voyager\Database\Schema\Table;
+use TCG\Voyager\Database\Schema\SchemaManager;
 
 class VoyagerBreadController extends Controller
 {
@@ -53,11 +54,14 @@ class VoyagerBreadController extends Controller
         $dataType = Voyager::model('DataType')->whereName($table)->first();
 
         $data = $this->prepopulateBreadInfo($table);
+
         $data['fieldOptions'] = SchemaManager::describeTable(
             (isset($dataType) && strlen($dataType->model_name) != 0)
             ? DB::getTablePrefix().app($dataType->model_name)->getTable()
             : DB::getTablePrefix().$table
         );
+
+
 
         return Voyager::view('voyager::tools.bread.edit-add', $data);
     }
@@ -95,7 +99,7 @@ class VoyagerBreadController extends Controller
 
         try {
             $dataType = Voyager::model('DataType');
-            $res = $dataType->updateDataType($request->all(), true);
+            $res = $dataType->updateDataType($request->all(), true, $request->databasename);
             $data = $res
                 ? $this->alertSuccess(__('voyager::bread.success_created_bread'))
                 : $this->alertError(__('voyager::bread.error_creating_bread'));
@@ -121,12 +125,20 @@ class VoyagerBreadController extends Controller
         $this->authorize('browse_bread');
 
         $dataType = Voyager::model('DataType')->whereName($table)->first();
-
+        
         $fieldOptions = SchemaManager::describeTable(
-            (strlen($dataType->model_name) != 0)
+            ((strlen($dataType->model_name) != 0)
             ? DB::getTablePrefix().app($dataType->model_name)->getTable()
-            : DB::getTablePrefix().$dataType->name
+            : DB::getTablePrefix().$dataType->name),$dataType->driver
         );
+
+        $isModelTranslatable = is_bread_translatable($dataType);
+        $tables = SchemaManager::listTableNames();
+        $dataTypeRelationships = Voyager::model('DataRow')->where('data_type_id', '=', $dataType->id)->where('type', '=', 'relationship')->get();
+        $scopes = [];
+        if ($dataType->model_name != '') {
+            $scopes = $this->getModelScopes($dataType->model_name);
+        }
 
         $isModelTranslatable = is_bread_translatable($dataType);
         $tables = SchemaManager::listTableNames();

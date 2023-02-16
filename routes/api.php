@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\MMIS\PurchaseRequestController;
+use App\Http\Controllers\Api\ApiAuthController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,7 +16,9 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::middleware('api')->group( function () {
+
+
+Route::group(['middleware' => 'auth:api'], function ()  {
     require_once __DIR__ . '/buildfile/api.php';
     require_once __DIR__ . '/mmis/api.php';
     Route::post('test', [UserController::class, 'store']);

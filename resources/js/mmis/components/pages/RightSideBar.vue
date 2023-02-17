@@ -29,7 +29,7 @@
           <template v-slot:activator>
             <v-list-item-title>Actions</v-list-item-title>
           </template>
-          <side-actions @add="$emit('add')">
+          <side-actions :disabled="disabled" @add="$emit('add')" @edit="$emit('edit')">
             <template v-slot:side_filter>
               <slot name="side_filter" />
             </template>
@@ -51,7 +51,11 @@ export default {
     hide:{
       type: Array,
       default:()=>[]
-    }
+    },
+    disabled:{
+      type: Array,
+      default:()=>[]
+    },
   },
   data() {
     return {

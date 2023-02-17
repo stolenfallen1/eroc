@@ -3,6 +3,8 @@
 namespace App\Models\MMIS\procurement;
 
 use App\Models\Approver\invStatus;
+use App\Models\BuildFile\Itemcategories;
+use App\Models\BuildFile\Itemsubcategories;
 use App\Models\BuildFile\Priority;
 use App\Models\BuildFile\Warehouses;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,5 +39,13 @@ class PurchaseRequest extends Model
 
     public  function warehouse(){
         return $this->belongsTo(Warehouses::class, 'warehouse_Id');
+    }
+
+    public  function category(){
+        return $this->belongsTo(Itemcategories::class, 'item_Category_Id');
+    }
+
+    public  function subcategory(){
+        return $this->belongsTo(Itemsubcategories::class, 'item_SubCategory_Id');
     }
 }

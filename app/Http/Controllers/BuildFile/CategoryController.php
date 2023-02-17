@@ -12,7 +12,8 @@ class CategoryController extends Controller
 {
     public function getAllCategory()
     {
-        return response()->json(['categories' => Itemcategories::get()], 200);
+        $categories = Itemcategories::where(['invgroup_id' => Request()->invgroup_id, 'isactive' => 1])->get();
+        return response()->json(['categories' => $categories], 200);
     }
 
     public function getAllSubCategories()

@@ -18,8 +18,23 @@
       <template v-slot:custom_filter>
         <DataFilter :filter="setting.filter" />
       </template>
+      <template v-slot:prnumber="{ item }">
+        {{
+          item.pr_Document_Prefix +
+          "-" +
+          item.pr_Document_Number +
+          "-" +
+          item.pr_Document_Suffix
+        }}
+      </template>
       <template v-slot:daterequested="{ item }">
         {{ _dateFormat(item.daterequested) }}
+      </template>
+      <template v-slot:item_Category_Id="{ item }">
+        {{ item.category ? item.category.name : '...' }}
+      </template>
+      <template v-slot:item_SubCategory_Id="{ item }">
+        {{ item.subcategory ? item.subcategory.name : '...' }}
       </template>
       <template v-slot:status="{ item }">
         {{ item.status.Status_description }}
@@ -30,9 +45,11 @@
     </custom-table>
     <right-side-bar
       :hide="['filter']"
+      :disabled="isedit?[]:['edit']"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
       @add="addItem"
+      @edit="editItem"
     >
       <template v-slot:side_filter>
         <DataFilter :filter="setting.filter" />
@@ -40,9 +57,10 @@
     </right-side-bar>
     <DataForm
       :show="showForm"
+      :isedit="isedit"
       :payload="payload"
       @submit="forConfirmation"
-      @close="showForm = false"
+      @close="showForm = false, clearForm()"
     />
     <Confirmation
       @cancel="isconfirmation = false"
@@ -64,7 +82,11 @@ import DataForm from "../forms/PurchaseRequest.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import CustomTable from "@global/components/CustomTable.vue";
 import { mapGetters } from "vuex";
-import { apiCreatePurchaseRequest, apiGetAllPurchaseRequest } from "@mmis/api/procurements.api";
+import {
+  apiCreatePurchaseRequest,
+  apiGetAllPurchaseRequest,
+  apiUpdatePurchaseRequest,
+} from "@mmis/api/procurements.api";
 export default {
   components: {
     CustomTable,
@@ -98,7 +120,9 @@ export default {
       },
       isconfirmation: false,
       isnotification: false,
+      isedit: false,
       notification: {},
+      selected_item: {},
     };
   },
   methods: {
@@ -106,7 +130,6 @@ export default {
       this.isconfirmation = true;
     },
     async submit(code) {
-      console.log(code)
       if (this.user.passcode != code || code == null) {
         this.notification.message = "Incorrect passcode";
         this.notification.color = "error";
@@ -114,9 +137,12 @@ export default {
         return;
       }
       let fd = new FormData();
-      this.payload.attachments.forEach((attachment) => {
-        fd.append("attachments[]", attachment);
-      });
+
+      if (this.payload.attachments && this.payload.attachments.length) {
+        this.payload.attachments.forEach((attachment) => {
+          fd.append("attachments[]", attachment);
+        });
+      }
 
       this.payload.items.forEach((item, index) => {
         if (item.attachment) {
@@ -133,15 +159,25 @@ export default {
       fd.append("justication", this.payload.justication);
       fd.append("required_date", this.payload.required_date);
       fd.append("pr_Priority_Id", this.payload.priority);
+      fd.append("invgroup_id", this.payload.invgroup_id);
+      fd.append("item_Category_Id", this.payload.item_Category_Id);
+      fd.append("item_SubCategory_Id", this.payload.item_SubCategory_Id);
+      fd.append("pr_Document_Prefix", this.payload.pr_Document_Prefix);
+      fd.append("pr_Document_Number", this.payload.pr_Document_Number);
+      fd.append("pr_Document_Suffix", this.payload.pr_Document_Suffix);
 
-      let res = await apiCreatePurchaseRequest(fd);
-      console.log(res)
+      let res = {} 
+      if(this.isedit) res = await apiUpdatePurchaseRequest(this.payload.id, fd)
+      else res = await apiCreatePurchaseRequest(fd);
+      console.log(res);
       if (res.data.message == "success") {
         this.notification.message = "Record successfully saved";
         this.notification.color = "success";
         this.isnotification = true;
         this.isconfirmation = false;
         this.showForm = false;
+        this.isedit = false;
+        this.initialize()
       }
     },
     async initialize() {
@@ -151,9 +187,9 @@ export default {
       if (this.setting.keyword)
         params = params + "&keyword=" + this.setting.keyword;
       params = params + "&withoutadmin=true";
-      let res = await apiGetAllPurchaseRequest(params)
-      console.log(res, "purchase")
-      if(res.status == 200){
+      let res = await apiGetAllPurchaseRequest(params);
+      console.log(res, "purchase");
+      if (res.status == 200) {
         this.tableData.items = res.data.data;
         this.tableData.total = res.data.total;
         this.setting.loading = false;
@@ -167,12 +203,22 @@ export default {
       this.setting.filter = {};
       this.initialize();
     },
-    editItem(payload) {
-      this.goTo("employee-edit", { id: payload.id });
+    editItem() {
+      this.showForm = true
+      if (this.user) {
+        this.payload.requested_by = this.user.name;
+        this.payload.department = this.user.warehouse.warehouse_Description;
+      }
     },
     addItem() {
       // this.payload.
+      this.isedit = false;
+      this.clearForm()
       this.showForm = true;
+      if (this.user) {
+        this.payload.requested_by = this.user.name;
+        this.payload.department = this.user.warehouse.warehouse_Description;
+      }
     },
     remove(item) {
       axios.delete(`users/${item.id || item}`).then(({ data }) => {
@@ -181,14 +227,23 @@ export default {
       });
     },
     viewRecord(item) {
-      console.log(item, "selected item");
+      Object.assign(this.payload, item);
+      if(this.payload.pr_RequestedBy == this.user.id){
+        this.isedit = true
+      }
+      console.log(this.payload, "payloadddd")
     },
+    clearForm(){
+      if(!this.isedit){
+        this.payload = {}
+        this.payload.requested_date = new Date()
+        this.payload.items = []
+      }
+      // this.isedit = false
+    }
   },
   mounted() {
-    if (this.user) {
-      this.payload.requested_by = this.user.name;
-      this.payload.department = this.user.warehouse.warehouse_Description;
-    }
+    
   },
   computed: {
     ...mapGetters(["drawer", "user"]),
@@ -201,10 +256,10 @@ export default {
         },
         { text: "Date Request", value: "daterequested" },
         { text: "Requesting Dept.", value: "warehouse" },
-        { text: "Item group", value: "itemgroupid" },
-        { text: "Category", value: "category" },
+        { text: "Category", value: "item_Category_Id" },
+        { text: "Subcategory", value: "item_SubCategory_Id" },
         { text: "Pr. Status", value: "status" },
-        { text: "Date Approved", value: "updated_at" },
+        { text: "Date Approved", value: "pr_Branch_Level1_ApprovedDate" },
         { text: "Remarks", value: "pr_Justication" },
       ];
       if (!this.drawer) {

@@ -13,8 +13,8 @@
       </thead>
       <tbody>
         <tr v-for="(item, index) in items" :key="index">
-          <td>{{ item.id }}</td>
-          <td>{{ item.item_Name }}</td>
+          <td>{{ isedit?item.item_Id:item.id }}</td>
+          <td>{{ isedit?item.itemMaster.item_Name:item.item_Name }}</td>
           <td>
             <v-file-input
               v-model="item.attachment"
@@ -65,6 +65,10 @@ export default {
     items: {
       type: Array,
       default: () => [],
+    },
+    isedit: {
+      type: Boolean,
+      default: () => false,
     },
   },
   data() {

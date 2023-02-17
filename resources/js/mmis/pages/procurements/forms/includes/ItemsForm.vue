@@ -93,7 +93,8 @@ export default {
     initialize() {},
     search() {},
     async fetchBuildItems() {
-      let params = `warehouse_id=${this.$store.getters.user.warehouse.id}&category_id=${this.payload.category}&subcategory_id=${this.payload.sub_category}`;
+      let params = `warehouse_id=${this.$store.getters.user.warehouse.id}&category_id=${this.payload.item_Category_Id}`
+      params = params + `&subcategory_id=${this.payload.item_SubCategory_Id}&item_InventoryGroup_Id=${this.payload.invgroup_id}`;
       let res = await apiGetAllBuildItems(params);
       this.tableData.items = res.data.data;
       this.tableData.total = res.data.total;

@@ -50,7 +50,7 @@
       </v-list-item>
       <v-list-item class="mt-2" dense>
         <v-list-item-title>
-          <v-btn width="100%" small color="warning">
+          <v-btn :disabled="disabled.includes('edit')" @click="$emit('edit')" width="100%" small color="warning">
             <v-icon class="mr-2" small>mdi-pencil</v-icon>
             Edit Record
           </v-btn>
@@ -72,6 +72,12 @@ import { mapGetters } from "vuex"
 export default {
   props:{
     hide: {
+      type: Array,
+      default: () => {
+        return [];
+      },
+    },
+    disabled: {
       type: Array,
       default: () => {
         return [];

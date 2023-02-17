@@ -79,12 +79,12 @@
                                     </thead>
                                     <tbody>
                                         @foreach (Voyager::model('Permission')->all()->groupBy('table_name') as $table => $permission)
-                                            @if ($table != '')
+                                           
                                                 <tr>
                                                     <td>
                                                        <div class="padding">
-                                                        <input type="checkbox" id="{{ $table }}" class="permission-group">
-                                                        <label for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
+                                                            <input type="checkbox" id="{{ $table }}" class="permission-group">
+                                                            <label for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
                                                        </div>
                                                     </td>
                                                     @foreach ($permission as $perm)
@@ -136,7 +136,6 @@
 
                                                 </div>
                                             </div> --}}
-                                            @endif
                                     </tbody>
                                     @endforeach
                                 </table>
@@ -163,7 +162,7 @@
             $('.toggleswitch').bootstrapToggle();
 
             $('.permission-group').on('change', function() {
-                $(this).parent('td').siblings('td').find("input[type='checkbox']").prop('checked', this
+                $(this).parent('div').parent('td').siblings('td').find("input[type='checkbox']").prop('checked', this
                     .checked);
             });
 
@@ -173,14 +172,14 @@
             });
 
             $('.permission-deselect-all').on('click', function() {
-                $('div.permissions').find("input[type='checkbox']").prop('checked', false);
+                $('div.permissions').find("table input[type='checkbox']").prop('checked', false);
                 return false;
             });
 
             function parentChecked() {
                 $('.permission-group').each(function() {
                     var allChecked = true;
-                    $(this).parent('td').siblings('td').find("input[type='checkbox']").each(function() {
+                    $(this).parent('div').parent('td').siblings('td').find("input[type='checkbox']").each(function() {
                         if (!this.checked) allChecked = false;
                     });
                     $(this).prop('checked', allChecked);

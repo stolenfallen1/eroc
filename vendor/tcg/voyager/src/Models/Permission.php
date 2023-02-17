@@ -7,6 +7,7 @@ use TCG\Voyager\Facades\Voyager;
 
 class Permission extends Model
 {
+    protected $connection = 'sqlsrv';
     protected $guarded = [];
 
     public function roles()

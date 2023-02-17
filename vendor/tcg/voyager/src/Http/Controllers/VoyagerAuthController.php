@@ -22,6 +22,7 @@ class VoyagerAuthController extends Controller
 
     public function postLogin(Request $request)
     {
+       
         $this->validateLogin($request);
 
         // If the class is using the ThrottlesLogins trait, we can automatically throttle
@@ -32,15 +33,17 @@ class VoyagerAuthController extends Controller
 
             return $this->sendLockoutResponse($request);
         }
-
+      
         $credentials = $this->credentials($request);
 
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
+          
             $user = Auth::user();
             $token = $user->createToken();
+            
             return $this->sendLoginResponse($request);
         }
-
+       
         // If the login attempt was unsuccessful we will increment the number of attempts
         // to login and redirect the user back to the login form. Of course, when this
         // user surpasses their maximum number of attempts they will get locked out.

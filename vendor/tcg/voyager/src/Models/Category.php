@@ -10,6 +10,7 @@ class Category extends Model
 {
     use Translatable;
 
+    protected $connection = 'sqlsrv';
     protected $translatable = ['slug', 'name'];
 
     protected $table = 'categories';

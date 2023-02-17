@@ -161,12 +161,11 @@ class VoyagerDatabaseController extends Controller
     public function edit($table)
     {
         $this->authorize('browse_database');
-
-        if (!SchemaManager::tableExists($table)) {
-            return redirect()
-                ->route('voyager.database.index')
-                ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
-        }
+        // if (!SchemaManager::manager('sqlsrv_mmis')->tableExists($table)) {
+        //     return redirect()
+        //         ->route('voyager.database.index')
+        //         ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
+        // }
 
         $db = $this->prepareDbManager('update', $table);
 
@@ -202,13 +201,15 @@ class VoyagerDatabaseController extends Controller
 
     protected function prepareDbManager($action, $table = '')
     {
+        
         $db = new \stdClass();
 
         // Need to get the types first to register custom types
         $db->types = Type::getPlatformTypes();
 
         if ($action == 'update') {
-            $db->table = SchemaManager::listTableDetails($table);
+            $dataTypes = DB::table('data_types')->where('name', $table)->first();
+            $db->table = SchemaManager::listTableDetails($table,$dataTypes->driver);
             $db->formAction = route('voyager.database.update', $table);
         } else {
             $db->table = new Table('New Table');
@@ -307,12 +308,14 @@ class VoyagerDatabaseController extends Controller
     {
         $this->authorize('browse_database');
 
+     
         try {
-            SchemaManager::dropTable($table);
-
-            if (Request()->databasename !='core') {
+            if ((Request()->databasename !='core' || Request()->databasename !='sqlsrv')) {
                 SchemaManager::manager(Request()->databasename)->dropTable($table);
+            }else{
+                SchemaManager::dropTable($table);
             }
+
             event(new TableDeleted($table));
 
             return redirect()

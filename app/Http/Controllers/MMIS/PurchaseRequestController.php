@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 class PurchaseRequestController extends Controller
 {
     public function index(){
-       echo Auth::User();
+    
     }
 
     public function store(Request $request){

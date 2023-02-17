@@ -7,6 +7,7 @@ use TCG\Voyager\Events\SettingUpdated;
 
 class Setting extends Model
 {
+    protected $connection = 'sqlsrv';
     protected $table = 'settings';
 
     protected $guarded = [];

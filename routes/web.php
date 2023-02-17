@@ -19,6 +19,8 @@ Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthCont
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 });
+
+
 Route::group(['middleware' => 'admin.user'], function () {
     require_once __DIR__ . './mmis/mmismainroute.php';
     Route::get('user-details', [AuthController::class, 'userDetails']);

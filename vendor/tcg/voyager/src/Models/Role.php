@@ -11,6 +11,7 @@ class Role extends Model
 {
     use HasFactory;
 
+    protected $connection = 'sqlsrv';
     protected $guarded = [];
 
     public function users()

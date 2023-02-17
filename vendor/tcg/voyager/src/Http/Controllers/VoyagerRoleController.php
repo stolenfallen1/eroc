@@ -18,7 +18,7 @@ class VoyagerRoleController extends VoyagerBaseController
         $this->authorize('edit', app($dataType->model_name));
 
         //Validate fields
-        $val = $this->validateBread($request->all(), $dataType->editRows, $dataType->name, $id)->validate();
+        // $val = $this->validateBread($request->all(), $dataType->editRows, $dataType->name, $id)->validate();
 
         $data = call_user_func([$dataType->model_name, 'findOrFail'], $id);
         $this->insertUpdateData($request, $slug, $dataType->editRows, $data);

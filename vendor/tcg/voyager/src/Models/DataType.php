@@ -13,6 +13,7 @@ class DataType extends Model
 {
     use Translatable;
 
+    protected $connection = 'sqlsrv';
     protected $translatable = ['display_name_singular', 'display_name_plural'];
 
     protected $table = 'data_types';
@@ -82,32 +83,39 @@ class DataType extends Model
         $this->attributes['server_side'] = $value ? 1 : 0;
     }
 
-    public function updateDataType($requestData, $throw = false, $connection = null)
+    public function updateDataType($requestData, $throw = false,$dbconnection=null)
     {
+
         try {
-            DB::connection($connection)->beginTransaction();
+
+         
+            DB::beginTransaction();
             // Prepare data
             foreach (['generate_permissions', 'server_side'] as $field) {
                 if (!isset($requestData[$field])) {
                     $requestData[$field] = 0;
                 }
             }
-
+          
             if ($this->fill($requestData)->save()) {
+
                 $fields = $this->fields(
-                    (strlen($this->model_name) != 0)
-                    ? DB::getTablePrefix().app($this->model_name)->getTable()
-                    : DB::getTablePrefix().Arr::get($requestData, 'name')
+                   ( (strlen($this->model_name) != 0)
+                   ? DB::getTablePrefix().app($this->model_name)->getTable()
+                   : DB::getTablePrefix().Arr::get($requestData, 'name')),$dbconnection
                 );
 
+             
+                
                 $requestData = $this->getRelationships($requestData, $fields);
+              
                 foreach ($fields as $field) {
                     $dataRow = $this->rows()->firstOrNew(['field' => $field]);
 
                     foreach (['browse', 'read', 'edit', 'add', 'delete'] as $check) {
                         $dataRow->{$check} = isset($requestData["field_{$check}_{$field}"]);
                     }
-
+                 
                     $dataRow->required = !empty($requestData['field_required_'.$field]);
                     $dataRow->field = $requestData['field_'.$field];
                     $dataRow->type = $requestData['field_input_type_'.$field];
@@ -138,14 +146,14 @@ class DataType extends Model
                     Voyager::model('Permission')->generateFor($this->name);
                 }
 
-                DB::connection($connection)->commit();
+                DB::commit();
 
                 return true;
             }
 
             
         } catch (\Exception $e) {
-            DB::connection($connection)->rollBack();
+            DB::rollBack();
 
             if ($throw) {
                 throw $e;
@@ -155,13 +163,13 @@ class DataType extends Model
         return false;
     }
 
-    public function fields($name = null)
+    public function fields($name = null,$dbconnection = null)
     {
         if (is_null($name)) {
             $name = $this->name;
         }
 
-        $fields = SchemaManager::listTableColumnNames($name);
+        $fields = SchemaManager::listTableColumnNames($name,$dbconnection);
 
         if ($extraFields = $this->extraFields()) {
             foreach ($extraFields as $field) {
@@ -174,6 +182,7 @@ class DataType extends Model
 
     public function getRelationships($requestData, &$fields)
     {
+        
         if (isset($requestData['relationships'])) {
             $relationships = $requestData['relationships'];
             if (count($relationships) > 0) {
@@ -214,10 +223,10 @@ class DataType extends Model
         // Get ordered BREAD fields
         $orderedFields = $this->rows()->pluck('field')->toArray();
 
-        $_fieldOptions = SchemaManager::describeTable(
+        $_fieldOptions = SchemaManager::describeTable((
             (strlen($this->model_name) != 0)
             ? app($this->model_name)->getTable()
-            : $this->name
+            : $this->name),'sqlsrv'
         )->toArray();
 
         $fieldOptions = [];

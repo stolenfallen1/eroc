@@ -103,13 +103,13 @@ abstract class SchemaManager
         });
     }
 
-    public static function listTableColumnNames($tableName)
+    public static function listTableColumnNames($tableName,$dbconnection = null)
     {
         Type::registerCustomPlatformTypes();
 
         $columnNames = [];
 
-        foreach (static::manager()->listTableColumns($tableName) as $column) {
+        foreach (static::manager($dbconnection)->listTableColumns($tableName) as $column) {
             $columnNames[] = $column->getName();
         }
 

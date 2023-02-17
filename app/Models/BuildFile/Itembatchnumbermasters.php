@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Models\MMIS\procurement;
+namespace App\Models\BuildFile;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseOrders extends Model
+class Itembatchnumbermasters extends Model
 {
+    use HasFactory;
     protected $connection = 'sqlsrv_mmis';
-    protected $table = 'purchaseOrderMaster';
+    protected $table = 'itemBatchNumberMaster';
 }

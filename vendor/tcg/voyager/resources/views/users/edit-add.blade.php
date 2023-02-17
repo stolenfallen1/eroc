@@ -50,7 +50,11 @@
                                 <input type="email" class="form-control" id="email" name="email" placeholder="{{ __('voyager::generic.email') }}"
                                        value="{{ old('email', $dataTypeContent->email ?? '') }}">
                             </div>
-
+                            <div class="form-group">
+                                <label for="warehouse">Warehouse</label>
+                                <input type="text" class="form-control"  value="{{ old('warehouse_id', $dataTypeContent->warehouse_id ?? '1') }}" id="warehouse" name="warehouse_id" value="1" >
+                            </div>
+                          
                             <div class="form-group">
                                 <label for="password">{{ __('voyager::generic.password') }}</label>
                                 @if(isset($dataTypeContent->password))

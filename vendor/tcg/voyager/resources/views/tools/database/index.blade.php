@@ -28,7 +28,12 @@
                     </thead>
 
                 @foreach($array as $table)
-                  
+                    <?php
+                     
+                        $column['driver'] = $table['driver'];
+                        DB::table('data_types')->where('name',$table['name'])->update($column);
+                        ?>
+                   
                     @continue(in_array($table['name'], config('voyager.database.tables.hidden', [])))
                     <tr>
                         <td>
@@ -50,12 +55,12 @@
                                    class="btn-sm btn-default edit">
                                    {{ __('voyager::bread.edit_bread') }}
                                 </a>
-                                <a data-id="{{ $table['dataTypeId'] }}" data-name="{{ $table['name'] }}"
+                                <a data-id="{{ $table['dataTypeId'] }}" data-name="{{ $table['name'] }}"  data-driver="{{ $table['driver'] }}"
                                      class="btn-sm btn-danger delete">
                                      {{ __('voyager::bread.delete_bread') }}
                                 </a>
                             @else
-                                <a href="{{ route('voyager.bread.create', $table['name']) }}"
+                                <a href="{{ route('voyager.bread.create', $table['name']) }}/{{$table['driver']}}"
                                    class="btn-sm btn-default">
                                     <i class="voyager-plus"></i> {{ __('voyager::bread.add_bread') }}
                                 </a>
@@ -65,7 +70,7 @@
 
                         <td class="actions">
                             <a class="btn btn-danger btn-sm pull-right delete_table @if($table['dataTypeId']) remove-bread-warning @endif"
-                               data-table="{{ $table['prefix'].$table['name'] }}">
+                               data-table="{{ $table['prefix'].$table['name'] }}"  data-driver="{{ $table['driver'] }}">
                                <i class="voyager-trash"></i> {{ __('voyager::generic.delete') }}
                             </a>
                             <a href="{{ route('voyager.database.edit', $table['prefix'].$table['name']) }}"
@@ -118,6 +123,7 @@
                     <form action="#" id="delete_table_form" method="POST">
                         {{ method_field('DELETE') }}
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="databasename" id="drivername">
                         <input type="submit" class="btn btn-danger pull-right" value="{{ __('voyager::database.delete_table_confirm') }}">
                         <button type="button" class="btn btn-outline pull-right" style="margin-right:10px;"
                                 data-dismiss="modal">{{ __('voyager::generic.cancel') }}
@@ -219,6 +225,8 @@
                 } else {
                     $('#delete_table_name').text(table);
 
+                    driver = $(this).data('driver');
+                    $("#drivername").val(driver);
                     $('#delete_table_form')[0].action = '{{ route('voyager.database.destroy', ['database' => '__database']) }}'.replace('__database', table)
                     $('#delete_modal').modal('show');
                 }
@@ -229,7 +237,6 @@
             $('table .bread_actions').on('click', '.delete', function (e) {
                 id = $(this).data('id');
                 name = $(this).data('name');
-
                 $('#delete_bread_name').text(name);
                 $('#delete_bread_form')[0].action = '{{ route('voyager.bread.delete', '__id') }}'.replace('__id', id);
                 $('#delete_bread_modal').modal('show');

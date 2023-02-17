@@ -13,6 +13,7 @@ class DataType extends Model
 {
     use Translatable;
 
+    protected $connection = 'sqlsrv';
     protected $translatable = ['display_name_singular', 'display_name_plural'];
 
     protected $table = 'data_types';
@@ -82,10 +83,10 @@ class DataType extends Model
         $this->attributes['server_side'] = $value ? 1 : 0;
     }
 
-    public function updateDataType($requestData, $throw = false, $connection = null)
+    public function updateDataType($requestData, $throw = false, $dbconnection=null)
     {
         try {
-            DB::connection($connection)->beginTransaction();
+            DB::beginTransaction();
             // Prepare data
             foreach (['generate_permissions', 'server_side'] as $field) {
                 if (!isset($requestData[$field])) {
@@ -95,12 +96,16 @@ class DataType extends Model
 
             if ($this->fill($requestData)->save()) {
                 $fields = $this->fields(
-                    (strlen($this->model_name) != 0)
+                    ((strlen($this->model_name) != 0)
                     ? DB::getTablePrefix().app($this->model_name)->getTable()
-                    : DB::getTablePrefix().Arr::get($requestData, 'name')
+                    : DB::getTablePrefix().Arr::get($requestData, 'name')),
+                    $dbconnection
                 );
 
+
+
                 $requestData = $this->getRelationships($requestData, $fields);
+
                 foreach ($fields as $field) {
                     $dataRow = $this->rows()->firstOrNew(['field' => $field]);
 
@@ -135,17 +140,15 @@ class DataType extends Model
 
                 // It seems everything was fine. Let's check if we need to generate permissions
                 if ($this->generate_permissions) {
-                    Voyager::model('Permission')->generateFor($this->name);
+                    Voyager::model('Permission')->generateFor($this->name, $dbconnection);
                 }
 
-                DB::connection($connection)->commit();
+                DB::commit();
 
                 return true;
             }
-
-            
         } catch (\Exception $e) {
-            DB::connection($connection)->rollBack();
+            DB::rollBack();
 
             if ($throw) {
                 throw $e;
@@ -155,13 +158,13 @@ class DataType extends Model
         return false;
     }
 
-    public function fields($name = null)
+    public function fields($name = null, $dbconnection = null)
     {
         if (is_null($name)) {
             $name = $this->name;
         }
 
-        $fields = SchemaManager::listTableColumnNames($name);
+        $fields = SchemaManager::listTableColumnNames($name, $dbconnection);
 
         if ($extraFields = $this->extraFields()) {
             foreach ($extraFields as $field) {
@@ -215,9 +218,12 @@ class DataType extends Model
         $orderedFields = $this->rows()->pluck('field')->toArray();
 
         $_fieldOptions = SchemaManager::describeTable(
+            (
             (strlen($this->model_name) != 0)
             ? app($this->model_name)->getTable()
             : $this->name
+        ),
+            'sqlsrv'
         )->toArray();
 
         $fieldOptions = [];

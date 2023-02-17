@@ -18,28 +18,63 @@ abstract class SchemaManager
 
     public static function manager($table = null)
     {
-        return DB::connection($table)->getDoctrineSchemaManager();
+        $tables = 'sqlsrv';
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($table != null){
+            $tables = $table;
+        }
+       
+        return DB::connection($tables)->getDoctrineSchemaManager();
     }
 
     public static function getDatabaseConnection($table = null)
     {
-        return DB::connection($table)->getDoctrineConnection();
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($table != null){
+            $tables = $table;
+        }
+        return DB::connection($tables)->getDoctrineConnection();
     }
 
-    public static function tableExists($table)
+    public static function tableExists($table,$dbname=null)
     {
         if (!is_array($table)) {
             $table = [$table];
         }
-
-        return static::manager()->tablesExist($table);
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($table != null){
+            $tables = $dbname;
+        }
+        return static::manager($tables)->tablesExist($table);
     }
 
     public static function listTables()
     {
         $tables = [];
-
-        foreach (static::manager()->listTableNames() as $tableName) {
+        $dbname = 'sqlsrv';
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $dbname = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $dbname = Request()->driver;
+        }
+       
+        foreach (static::manager($dbname)->listTableNames() as $tableName) {
             $tables[$tableName] = static::listTableDetails($tableName);
         }
 
@@ -56,11 +91,21 @@ abstract class SchemaManager
         $columns = static::manager($dbconnect)->listTableColumns($tableName);
 
         $foreignKeys = [];
-        if (static::manager($dbconnect)->getDatabasePlatform()->supportsForeignKeyConstraints()) {
-            $foreignKeys = static::manager()->listTableForeignKeys($tableName);
+
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($dbconnect != null){
+            $tables = $dbconnect;
+        }
+        if (static::manager($tables)->getDatabasePlatform()->supportsForeignKeyConstraints()) {
+            $foreignKeys = static::manager($tables)->listTableForeignKeys($tableName);
         }
 
-        $indexes = static::manager($dbconnect)->listTableIndexes($tableName);
+        $indexes = static::manager($tables)->listTableIndexes($tableName);
 
         return new Table($tableName, $columns, $indexes, $foreignKeys, false, []);
     }
@@ -75,8 +120,16 @@ abstract class SchemaManager
     public static function describeTable($tableName, $dbconnect=null)
     {
         Type::registerCustomPlatformTypes();
-
-        $table =static::listTableDetails($tableName,$dbconnect);
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($dbconnect != null){
+            $tables = $dbconnect;
+        }
+        $table =static::listTableDetails($tableName,$tables);
 
         return collect($table->columns)->map(function ($column) use ($table) {
             $columnArr = Column::toArray($column);
@@ -103,13 +156,21 @@ abstract class SchemaManager
         });
     }
 
-    public static function listTableColumnNames($tableName)
+    public static function listTableColumnNames($tableName,$dbconnection = null)
     {
         Type::registerCustomPlatformTypes();
-
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($dbconnection != null){
+            $tables = $dbconnection;
+        }
         $columnNames = [];
 
-        foreach (static::manager()->listTableColumns($tableName) as $column) {
+        foreach (static::manager($tables)->listTableColumns($tableName) as $column) {
             $columnNames[] = $column->getName();
         }
 
@@ -121,8 +182,17 @@ abstract class SchemaManager
         if (!($table instanceof DoctrineTable)) {
             $table = Table::make($table);
         }
-
-        static::manager()->createTable($table);
+        $dbconnection = 'sqlsrv';
+       if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($dbconnection != null){
+            $tables = $dbconnection;
+        }
+        static::manager($tables)->createTable($table);
     }
 
     public static function getDoctrineTable($table)
@@ -132,8 +202,17 @@ abstract class SchemaManager
         if (!static::tableExists($table)) {
             throw SchemaException::tableDoesNotExist($table);
         }
-
-        return static::manager()->listTableDetails($table);
+        $dbconnection = 'sqlsrv';
+        if((Request()->databasename !='core' || Request()->databasename !='sqlsrv')){
+            $tables = Request()->databasename;
+        }
+        if((Request()->driver !='core' || Request()->driver !='sqlsrv')){
+            $tables = Request()->driver;
+        }
+        if($dbconnection != null){
+            $tables = $dbconnection;
+        }
+        return static::manager($tables)->listTableDetails($table);
     }
 
     public static function getDoctrineColumn($table, $column)

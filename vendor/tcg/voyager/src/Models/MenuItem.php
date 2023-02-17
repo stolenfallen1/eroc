@@ -11,6 +11,7 @@ class MenuItem extends Model
 {
     use Translatable;
 
+    protected $connection = 'sqlsrv';
     protected $translatorMethods = [
         'link' => 'translatorLink',
     ];

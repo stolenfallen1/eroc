@@ -27,7 +27,7 @@ class VoyagerBreadController extends Controller
         $count =0;
         foreach ($databaseconnection as $row) {
             $count++;
-            $tables = array_map(function ($table) use ($dataTypes) {
+            $tables = array_map(function ($table) use ($dataTypes,$row) {
                 $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
 
                 $table = [
@@ -35,6 +35,7 @@ class VoyagerBreadController extends Controller
                     'name'       => $table,
                     'slug'       => $dataTypes[$table]['slug'] ?? null,
                     'dataTypeId' => $dataTypes[$table]['id'] ?? null,
+                    'driver' => $row->driver
                 ];
 
                 return $table;
@@ -198,7 +199,7 @@ class VoyagerBreadController extends Controller
     public function update(Request $request, $id)
     {
         $this->authorize('browse_bread');
-
+      
         /* @var \TCG\Voyager\Models\DataType $dataType */
         try {
             $dataType = Voyager::model('DataType')->find($id);

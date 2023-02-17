@@ -83,12 +83,9 @@ class DataType extends Model
         $this->attributes['server_side'] = $value ? 1 : 0;
     }
 
-    public function updateDataType($requestData, $throw = false,$dbconnection=null)
+    public function updateDataType($requestData, $throw = false, $dbconnection=null)
     {
-
         try {
-
-         
             DB::beginTransaction();
             // Prepare data
             foreach (['generate_permissions', 'server_side'] as $field) {
@@ -96,26 +93,26 @@ class DataType extends Model
                     $requestData[$field] = 0;
                 }
             }
-          
-            if ($this->fill($requestData)->save()) {
 
+            if ($this->fill($requestData)->save()) {
                 $fields = $this->fields(
-                   ( (strlen($this->model_name) != 0)
-                   ? DB::getTablePrefix().app($this->model_name)->getTable()
-                   : DB::getTablePrefix().Arr::get($requestData, 'name')),$dbconnection
+                    ((strlen($this->model_name) != 0)
+                    ? DB::getTablePrefix().app($this->model_name)->getTable()
+                    : DB::getTablePrefix().Arr::get($requestData, 'name')),
+                    $dbconnection
                 );
 
-             
-                
+
+
                 $requestData = $this->getRelationships($requestData, $fields);
-              
+
                 foreach ($fields as $field) {
                     $dataRow = $this->rows()->firstOrNew(['field' => $field]);
 
                     foreach (['browse', 'read', 'edit', 'add', 'delete'] as $check) {
                         $dataRow->{$check} = isset($requestData["field_{$check}_{$field}"]);
                     }
-                 
+
                     $dataRow->required = !empty($requestData['field_required_'.$field]);
                     $dataRow->field = $requestData['field_'.$field];
                     $dataRow->type = $requestData['field_input_type_'.$field];
@@ -143,15 +140,13 @@ class DataType extends Model
 
                 // It seems everything was fine. Let's check if we need to generate permissions
                 if ($this->generate_permissions) {
-                    Voyager::model('Permission')->generateFor($this->name);
+                    Voyager::model('Permission')->generateFor($this->name, $dbconnection);
                 }
 
                 DB::commit();
 
                 return true;
             }
-
-            
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -163,13 +158,13 @@ class DataType extends Model
         return false;
     }
 
-    public function fields($name = null,$dbconnection = null)
+    public function fields($name = null, $dbconnection = null)
     {
         if (is_null($name)) {
             $name = $this->name;
         }
 
-        $fields = SchemaManager::listTableColumnNames($name,$dbconnection);
+        $fields = SchemaManager::listTableColumnNames($name, $dbconnection);
 
         if ($extraFields = $this->extraFields()) {
             foreach ($extraFields as $field) {
@@ -182,7 +177,6 @@ class DataType extends Model
 
     public function getRelationships($requestData, &$fields)
     {
-        
         if (isset($requestData['relationships'])) {
             $relationships = $requestData['relationships'];
             if (count($relationships) > 0) {
@@ -223,10 +217,13 @@ class DataType extends Model
         // Get ordered BREAD fields
         $orderedFields = $this->rows()->pluck('field')->toArray();
 
-        $_fieldOptions = SchemaManager::describeTable((
+        $_fieldOptions = SchemaManager::describeTable(
+            (
             (strlen($this->model_name) != 0)
             ? app($this->model_name)->getTable()
-            : $this->name),'sqlsrv'
+            : $this->name
+        ),
+            'sqlsrv'
         )->toArray();
 
         $fieldOptions = [];

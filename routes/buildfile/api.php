@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BuildFile\CategoryController;
 use App\Http\Controllers\BuildFile\ItemController;
+use App\Http\Controllers\BuildFile\PriorityController;
 use App\Http\Controllers\BuildFile\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,4 +18,8 @@ Route::controller(ItemController::class)->group(function () {
 
 Route::controller(UnitController::class)->group(function () {
   Route::get('units', 'index');
+});
+
+Route::controller(PriorityController::class)->group(function () {
+  Route::get('priorities', 'index');
 });

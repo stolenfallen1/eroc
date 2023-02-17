@@ -42,9 +42,7 @@ export default {
     ...mapGetters(["user"])
   },
   created(){
-    this.$store.dispatch("fetchUserDetails")
-    this.$store.dispatch("fetchCategories")
-    this.$store.dispatch("fetchUnits")
+    
   }
 };
 </script>

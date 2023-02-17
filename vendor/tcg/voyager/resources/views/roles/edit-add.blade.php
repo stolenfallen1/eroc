@@ -78,66 +78,30 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+
                                         @foreach (Voyager::model('Permission')->all()->groupBy('table_name') as $table => $permission)
-                                           
-                                                <tr>
-                                                    <td>
-                                                       <div class="padding">
-                                                            <input type="checkbox" id="{{ $table }}" class="permission-group">
-                                                            <label for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
-                                                       </div>
-                                                    </td>
-                                                    @foreach ($permission as $perm)
-                                                        <td>
-                                                            <center> <input type="checkbox"
-                                                                    id="permission-{{ $perm->id }}"
-                                                                    name="permissions[{{ $perm->id }}]"
-                                                                    class="the-permission" value="{{ $perm->id }}"
-                                                                    @if (in_array($perm->key, $role_permissions)) checked @endif>
-                                                            </center>
-                                                        </td>
-                                                    @endforeach
-                                                </tr>
-                                                {{-- <div class="panel panel-default">
-                                                <div class="panel-heading">
-                                                    <h4 class="panel-title">
-                                                        <a data-toggle="collapse"
-                                                            data-parent="#accordion{{ $table }}"
-                                                            href="#collapse{{ $table }}">
-                                                            {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</a>
-                                                    </h4>
-                                                </div>
-                                                <div id="collapse{{ $table }}" class="panel-collapse">
-                                                    <div class="container">
-
-                                                        <div class="row">
-                                                            <div class="col-lg-4">
-                                                                <input type="checkbox" id="{{ $table }}"
-                                                                    class="permission-group">
-                                                                <label
-                                                                    for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
-                                                            </div>
-
-                                                            @foreach ($permission as $perm)
-                                                                <div class="col-lg-1">
-
-                                                                    <input type="checkbox"
-                                                                        id="permission-{{ $perm->id }}"
-                                                                        name="permissions[{{ $perm->id }}]"
-                                                                        class="the-permission" value="{{ $perm->id }}"
-                                                                        @if (in_array($perm->key, $role_permissions)) checked @endif>
-                                                                    <label
-                                                                        for="permission-{{ $perm->id }}">{{ substr($perm->key, 0, strpos($perm->key, '_')) }}</label>
-                                                                </div>
-                                                            @endforeach
-
-                                                        </div>
+                                            <tr>
+                                                <td>
+                                                    <div class="padding">
+                                                        <input type="checkbox" id="{{ $table }}"
+                                                            class="permission-group">
+                                                        <label
+                                                            for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
                                                     </div>
+                                                </td>
+                                                @foreach ($permission as $perm)
+                                                    <td>
+                                                        <center> <input type="checkbox" id="permission-{{ $perm->id }}"
+                                                                name="permissions[{{ $perm->id }}]"
+                                                                class="the-permission" value="{{ $perm->id }}"
+                                                                @if (in_array($perm->key, $role_permissions)) checked @endif>
+                                                        </center>
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        @endforeach
 
-                                                </div>
-                                            </div> --}}
                                     </tbody>
-                                    @endforeach
                                 </table>
                             </div>
                         </div><!-- panel-body -->
@@ -162,7 +126,8 @@
             $('.toggleswitch').bootstrapToggle();
 
             $('.permission-group').on('change', function() {
-                $(this).parent('div').parent('td').siblings('td').find("input[type='checkbox']").prop('checked', this
+                $(this).parent('div').parent('td').siblings('td').find("input[type='checkbox']").prop(
+                    'checked', this
                     .checked);
             });
 
@@ -179,9 +144,10 @@
             function parentChecked() {
                 $('.permission-group').each(function() {
                     var allChecked = true;
-                    $(this).parent('div').parent('td').siblings('td').find("input[type='checkbox']").each(function() {
-                        if (!this.checked) allChecked = false;
-                    });
+                    $(this).parent('div').parent('td').siblings('td').find("input[type='checkbox']").each(
+                        function() {
+                            if (!this.checked) allChecked = false;
+                        });
                     $(this).prop('checked', allChecked);
                 });
             }

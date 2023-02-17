@@ -29,19 +29,19 @@ class DatabaseUpdater
      *
      * @return void
      */
-    public static function update($table)
+    public static function update($table,$dbconnection = null)
     {
         if (!is_array($table)) {
             $table = json_decode($table, true);
         }
 
-        if (!SchemaManager::tableExists($table['oldName'])) {
+        if (!SchemaManager::tableExists($table['oldName'],$dbconnection)) {
             throw SchemaException::tableDoesNotExist($table['oldName']);
         }
 
         $updater = new self($table);
 
-        $updater->updateTable();
+        $updater->updateTable($dbconnection);
     }
 
     /**
@@ -49,7 +49,7 @@ class DatabaseUpdater
      *
      * @return void
      */
-    public function updateTable()
+    public function updateTable($dbconnection = null)
     {
         // Get table new name
         if (($newName = $this->table->getName()) != $this->originalTable->getName()) {
@@ -83,9 +83,10 @@ class DatabaseUpdater
 
         // Update the table
         if ($tableDiff) {
-            SchemaManager::alterTable($tableDiff);
             if(Request()->databasename !='core'){
                 SchemaManager::manager(Request()->databasename)->alterTable($tableDiff);
+            }else{
+                SchemaManager::alterTable($tableDiff);
             }
         }
     }

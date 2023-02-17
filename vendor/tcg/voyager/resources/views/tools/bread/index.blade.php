@@ -52,7 +52,7 @@
                                     <i class="voyager-trash"></i> {{ __('voyager::generic.delete') }}
                                 </a>
                             @else
-                                <a href="{{ route('voyager.bread.create', $table['name']) }}/{{$table['driver']}}"
+                                <a href="{{ route('voyager.bread.create', $table['name']) }}/{{$table['driver']}} "
                                    class="_btn btn-default btn-sm pull-right">
                                     <i class="voyager-plus"></i> {{ __('voyager::bread.add_bread') }}
                                 </a>

@@ -53,7 +53,7 @@
       <v-autocomplete
         v-model="payload.priority"
         :items="priorities"
-        item-text="name"
+        item-text="priority_description"
         item-value="id"
         dense
         solo
@@ -161,7 +161,6 @@ export default {
       sub_categories: [],
       classifications: [],
       attachments:[],
-      priorities:[]
     };
   },
   methods: {
@@ -180,7 +179,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(["categories"]),
+    ...mapGetters(["categories", "priorities"]),
   },
   mounted(){
   }

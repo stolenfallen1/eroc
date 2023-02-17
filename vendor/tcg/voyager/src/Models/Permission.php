@@ -15,7 +15,7 @@ class Permission extends Model
         return $this->belongsToMany(Voyager::modelClass('Role'));
     }
 
-    public static function generateFor($table_name)
+    public static function generateFor($table_name,$table_driver=null)
     {
         self::firstOrCreate(['key' => 'browse_'.$table_name, 'table_name' => $table_name]);
         self::firstOrCreate(['key' => 'read_'.$table_name, 'table_name' => $table_name]);

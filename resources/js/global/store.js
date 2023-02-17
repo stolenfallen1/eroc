@@ -1,7 +1,6 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import axios from "./axios";
-import { apiGetAllUnits } from "./api/units"
+import {httpClient, httpApiClient} from "./axios";
 // import router from "@/router/router";
 
 Vue.use(Vuex);
@@ -14,7 +13,9 @@ const module = {
     main_active_route: null,
     right_items:[],
     categories:[],
-    units:[]
+    units:[],
+    status:[],
+    priorities:[]
   },
   getters: {
     drawer: state => state.drawer,
@@ -24,6 +25,8 @@ const module = {
     right_items: state => state.right_items,
     categories: state => state.categories,
     units: state => state.units,
+    status: state => state.status,
+    priorities: state => state.priorities,
   },
   mutations: {
     setDrawer(state) {
@@ -47,23 +50,48 @@ const module = {
     setUnits(state, value) {
       state.units = value;
     },
+    setStatus(state, value) {
+      state.status = value;
+    },
+    setPriorities(state, value) {
+      state.priorities = value;
+    },
   },
   actions: {
-    async fetchUnits({commit, dispatch}){
-      let res = await apiGetAllUnits()
-      commit("setUnits", res.data.units)
+    async fetchPriorities({commit, state}){
+      httpApiClient.get('priorities',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setPriorities", data.priorities)
+      })
     },
 
-    fetchCategories({commit, dispatch}){
-      axios.get('api/categories').then(({data})=>{
+    async fetchStatus({commit, state}){
+      httpApiClient.get('status',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setStatus", data.status)
+      })
+    },
+
+    async fetchUnits({commit, state}){
+      httpApiClient.get('units',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setUnits", data.units)
+      })
+    },
+
+    async fetchCategories({commit, state}){
+      console.log(state.user.api_token,"state.user")
+      httpApiClient.get('categories',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setCategories", data.categories)
       })
     },
 
-    fetchUserDetails({commit, dispatch}){
-      axios.get('user-details').then(({data})=>{
+    async fetchUserDetails({commit, dispatch}){
+      httpClient.get('user-details').then(({data})=>{
+        // this.$store.dispatch("fetchUnits")
         console.log(data)
         commit("setUser", data)
+        dispatch("fetchCategories")
+        dispatch("fetchUnits")
+        dispatch("fetchStatus")
+        dispatch("fetchPriorities")
       })
     },
 

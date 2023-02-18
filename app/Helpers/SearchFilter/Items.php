@@ -16,6 +16,7 @@ class Items
     $this->byWarehouse();
     $this->byCategory();
     $this->bySubCategory();
+    $this->byInventoryGroup();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -42,6 +43,13 @@ class Items
     $subcategory_id = Request()->subcategory_id;
     if($subcategory_id){
       $this->model->where('item_SubCategory_Id', $subcategory_id);
+    }
+  }
+  
+  private function byInventoryGroup(){
+    $item_InventoryGroup_Id = Request()->item_InventoryGroup_Id;
+    if($item_InventoryGroup_Id){
+      $this->model->where('item_InventoryGroup_Id', $item_InventoryGroup_Id);
     }
   }
 

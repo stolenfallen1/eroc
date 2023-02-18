@@ -12,23 +12,28 @@ const module = {
     active_route: null,
     main_active_route: null,
     right_items:[],
-    categories:[],
+    item_groups:[],
     units:[],
     status:[],
-    priorities:[]
+    priorities:[],
+    prsn_settings:null,
   },
   getters: {
+    prsn_settings: state => state.prsn_settings,
     drawer: state => state.drawer,
     active_route: state => state.active_route,
     main_active_route: state => state.main_active_route,
     user: state => state.user,
     right_items: state => state.right_items,
-    categories: state => state.categories,
+    item_groups: state => state.item_groups,
     units: state => state.units,
     status: state => state.status,
     priorities: state => state.priorities,
   },
   mutations: {
+    setPRSNSettings(state, value) {
+      state.prsn_settings = value;
+    },
     setDrawer(state) {
       state.drawer = !state.drawer;
     },
@@ -44,8 +49,8 @@ const module = {
     setMainActiveRoute(state, value) {
       state.main_active_route = value;
     },
-    setCategories(state, value) {
-      state.categories = value;
+    setItemGroups(state, value) {
+      state.item_groups = value;
     },
     setUnits(state, value) {
       state.units = value;
@@ -58,6 +63,12 @@ const module = {
     },
   },
   actions: {
+    async fetchSettings({commit, state}){
+      httpApiClient.get('system-settings',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setPRSNSettings", data.settings)
+      })
+    },
+
     async fetchPriorities({commit, state}){
       httpApiClient.get('priorities',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setPriorities", data.priorities)
@@ -76,10 +87,10 @@ const module = {
       })
     },
 
-    async fetchCategories({commit, state}){
+    async fetchItemGroups({commit, state}){
       console.log(state.user.api_token,"state.user")
-      httpApiClient.get('categories',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
-        commit("setCategories", data.categories)
+      httpApiClient.get('items-group',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
+        commit("setItemGroups", data.item_groups)
       })
     },
 
@@ -88,10 +99,11 @@ const module = {
         // this.$store.dispatch("fetchUnits")
         console.log(data)
         commit("setUser", data)
-        dispatch("fetchCategories")
+        dispatch("fetchItemGroups")
         dispatch("fetchUnits")
         dispatch("fetchStatus")
         dispatch("fetchPriorities")
+        dispatch("fetchSettings")
       })
     },
 

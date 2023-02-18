@@ -17,12 +17,13 @@
           :show_select="true"
           :single_select="false"
           @search="search"
-          @fetchPage="initialize"
+          @fetchPage="fetchBuildItems"
+          @refresh="fetchBuildItems"
           :height="'59vh'"
           :hide="['add-btn', 'filter', 'floater-btn']"
         >
           <template v-slot:item_OnHand="{ item }">
-            {{item.ware_house_item.item_OnHand}}
+            {{ item.ware_house_item.item_OnHand }}
           </template>
         </custom-table>
         <div class="pr-form-actions">
@@ -53,6 +54,10 @@ export default {
       type: Boolean,
       default: () => false,
     },
+    isedit: {
+      type: Boolean,
+      default: () => false,
+    }
   },
   data() {
     return {
@@ -93,21 +98,38 @@ export default {
     initialize() {},
     search() {},
     async fetchBuildItems() {
-      let params = `warehouse_id=${this.$store.getters.user.warehouse.id}&category_id=${this.payload.category}&subcategory_id=${this.payload.sub_category}`;
+      this.setting.loading = true;
+      let params = `warehouse_id=${this.$store.getters.user.warehouse.id}&category_id=${this.payload.item_Category_Id}`;
+      params =
+        params +
+        `&subcategory_id=${this.payload.item_SubCategory_Id}&item_InventoryGroup_Id=${this.payload.invgroup_id}`;
       let res = await apiGetAllBuildItems(params);
-      this.tableData.items = res.data.data;
-      this.tableData.total = res.data.total;
-      console.log(this.tableData.items, "items");
+      if (res.status == 200) {
+        this.tableData.items = res.data.data;
+        this.tableData.total = res.data.total;
+        this.setting.loading = false;
+        if(this.isedit){
+          this.payload.items.forEach((item) => {
+            this.tableData.selected.push(item.item_master);
+          });
+            console.log(this.tableData.items, "items");
+        }
+      }
     },
   },
   watch: {
-    show: {
-      handler(val) {
-        if (val) {
-          this.fetchBuildItems();
-        }
-      },
-    },
+    // show: {
+    //   handler(val) {
+    //     if (val) {
+    //       // this.payload.items.forEach((item) => {
+    //       //   this.tableData.selected.push(item);
+    //       // });
+    //       // this.tableData.selected = this.payload.items
+    //       console.log(this.tableData.selected, "selected");
+    //       // this.fetchBuildItems();
+    //     }
+    //   },
+    // },
   },
 };
 </script>

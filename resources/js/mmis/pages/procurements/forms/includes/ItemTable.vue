@@ -13,11 +13,11 @@
       </thead>
       <tbody>
         <tr v-for="(item, index) in items" :key="index">
-          <td>{{ item.id }}</td>
-          <td>{{ item.item_Name }}</td>
+          <td>{{ getId(item) }}</td>
+          <td>{{ getName(item) }}</td>
           <td>
             <v-file-input
-              v-model="item.attachment"
+              v-model="item.filename"
               style="min-width: 200px"
               solo
               dense
@@ -27,7 +27,7 @@
           </td>
           <td>
             <v-text-field
-              v-model="item.quantity"
+              v-model="item.item_Request_Qty"
               style="max-width: 100px"
               solo
               dense
@@ -37,7 +37,7 @@
           </td>
           <td>
             <v-autocomplete
-              v-model="item.unit"
+              v-model="item.item_Request_UnitofMeasurement_Id"
               solo
               :items="units"
               item-text="name"
@@ -66,14 +66,29 @@ export default {
       type: Array,
       default: () => [],
     },
+    isedit: {
+      type: Boolean,
+      default: () => false,
+    },
   },
   data() {
     return {};
   },
   methods: {
     removeItem(index) {
-      this.items.splice(index, 1);
+      // this.items.splice(index, 1);
+      this.$emit('remove', index)
     },
+    getName(item){
+      if(this.isedit)
+        if(item.item_master) return item.item_master.item_Name
+      return item.item_Name
+    },
+    getId(item){
+      if(this.isedit)
+        if(item.item_master) return item.item_Id
+      return item.id
+    }
   },
   computed: {
     ...mapGetters(["units"]),

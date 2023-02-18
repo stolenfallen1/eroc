@@ -10,6 +10,7 @@ class Categories extends Model
 {
     use HasFactory;
 
+    protected $connection = 'sqlsrv';
     protected $table = "Itemcategories";
 
     public function purchase_request(){

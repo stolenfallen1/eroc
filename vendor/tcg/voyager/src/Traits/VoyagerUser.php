@@ -86,6 +86,7 @@ trait VoyagerUser
 
     public function hasPermissionOrFail($name)
     {
+        
         if (!$this->hasPermission($name)) {
             throw new UnauthorizedHttpException(null);
         }

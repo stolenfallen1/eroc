@@ -64,11 +64,15 @@
                       method="POST" role="form">
                 @if(isset($dataType->id))
                     <input type="hidden" value="{{ $dataType->id }}" name="id">
+                    <input type="hidden" value="{{ $dataType->driver}}" name="driver">
                     {{ method_field("PUT") }}
+                @else
+                <input type="hidden" value="{{ Request()->segment(5)}}" name="driver">
                 @endif
                     <!-- CSRF TOKEN -->
                     {{ csrf_field() }}
 
+                   
                     <div class="panel panel-primary panel-bordered">
                         <div class="panel-heading">
                             <h3 class="panel-title panel-icon"><i class="voyager-bread"></i> {{ ucfirst($table) }} {{ __('voyager::bread.bread_info') }}</h3>

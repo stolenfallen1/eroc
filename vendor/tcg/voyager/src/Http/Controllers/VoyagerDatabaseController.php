@@ -36,7 +36,7 @@ class VoyagerDatabaseController extends Controller
         foreach ($databaseconnection as $row) {
             $count++;
             $tables = array_map(
-                function ($table) use ($dataTypes,$row) {
+                function ($table) use ($dataTypes, $row) {
                     $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
                     $table = [
                         'prefix'     => DB::getTablePrefix(),
@@ -51,22 +51,26 @@ class VoyagerDatabaseController extends Controller
             );
             $list[] = $tables;
         }
-        // merge all database connection 
+
+
+        $merged_array = array();
+
+
+        // merge all database connection
         $array  = [];
         for ($i=0; $i < $count; $i++) {
-            foreach ($list[$i] as $row) {
-                $array[] = array(
+            foreach ($list[$i] as $key=> $row) {
+                $array[] = 
+                        array(
                             'prefix'     =>$row['prefix'],
                             'name'       => $row['name'],
                             'slug'       => $row['slug'] ?? null,
                             'dataTypeId' => $row['dataTypeId'] ?? null,
                             'driver' => $row['driver'] ?? null,
 
-                   );
+                    );
             }
         }
-
-       
         return Voyager::view('voyager::tools.database.index')->with(compact('dataTypes', 'array'));
     }
 
@@ -111,17 +115,17 @@ class VoyagerDatabaseController extends Controller
 
             $table = Table::make($table);
             // Use the schema builder to create a new table in the database
-            if(Request()->databasename =='core'){
+            if (Request()->databasename =='core') {
                 SchemaManager::manager()->createTable($table);
-            }else{ 
-
+            } else {
                 SchemaManager::manager($databaseconnection)->createTable($table);
             }
 
             if (isset($request->create_model) && $request->create_model == 'on') {
                 $modelNamespace = config('voyager.models.namespace', app()->getNamespace().'Models\\');
                 $params = [
-                    'name' => $modelNamespace.Str::studly(Str::singular($foldername.'\\'.ucfirst($table->name))),
+                    // 'name' => $modelNamespace.Str::studly(Str::singular($foldername.'\\'.ucfirst($table->name))),
+                    'name' => $modelNamespace.$foldername.'\\'.ucfirst($table->name),
                 ];
 
                 // if (in_array('deleted_at', $request->input('field.*'))) {
@@ -132,8 +136,6 @@ class VoyagerDatabaseController extends Controller
                     $params['--migration'] = true;
                 }
                 Artisan::call('voyager:make:model', $params);
-
-              
             } elseif (isset($request->create_migration) && $request->create_migration == 'on') {
                 Artisan::call('make:migration', [
                     'name'    => 'create_'.$table->name.'_table',
@@ -161,12 +163,11 @@ class VoyagerDatabaseController extends Controller
     public function edit($table)
     {
         $this->authorize('browse_database');
-
-        if (!SchemaManager::tableExists($table)) {
-            return redirect()
-                ->route('voyager.database.index')
-                ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
-        }
+        // if (!SchemaManager::manager('sqlsrv_mmis')->tableExists($table)) {
+        //     return redirect()
+        //         ->route('voyager.database.index')
+        //         ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
+        // }
 
         $db = $this->prepareDbManager('update', $table);
 
@@ -187,7 +188,11 @@ class VoyagerDatabaseController extends Controller
         $table = json_decode($request->table, true);
 
         try {
-            DatabaseUpdater::update($table);
+            if ($request->databasename !='core') {
+                DatabaseUpdater::update($table, $request->databasename);
+            } else {
+                DatabaseUpdater::update($table, 'sqlsrv');
+            }
             // TODO: synch BREAD with Table
             // $this->cleanOldAndCreateNew($request->original_name, $request->name);
             event(new TableUpdated($table));
@@ -307,12 +312,14 @@ class VoyagerDatabaseController extends Controller
     {
         $this->authorize('browse_database');
 
-        try {
-            SchemaManager::dropTable($table);
 
-            if (Request()->databasename !='core') {
+        try {
+            if ((Request()->databasename !='core' || Request()->databasename !='sqlsrv')) {
                 SchemaManager::manager(Request()->databasename)->dropTable($table);
+            } else {
+                SchemaManager::dropTable($table);
             }
+
             event(new TableDeleted($table));
 
             return redirect()

@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class SystemSettingController extends Controller
 {
     public function getPRSNSequences(){
-        $prsn = SystemSequence::where('seq_description', 'like', '%Purchase Requisition Series Number%')->first();
+        $prsn = SystemSequence::where('seq_description', 'like', '%Purchase Requisition Series Number%')->where('isActive', true)->first();
         return response()->json(["settings" => $prsn], 200);
     }
 }

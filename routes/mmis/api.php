@@ -12,5 +12,6 @@ Route::controller(UserController::class)->group(function () {
 Route::controller(PurchaseRequestController::class)->group(function () {
   Route::get('purchase-request', [PurchaseRequestController::class, 'index']);
   Route::post('purchase-request', [PurchaseRequestController::class, 'store']);
+  Route::post('purchase-request/{id}', [PurchaseRequestController::class, 'update']);
 });
 

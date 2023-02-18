@@ -5,6 +5,7 @@ namespace App\Http\Controllers\MMIS;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Procurement\PRRequest;
 use App\Models\Approver\invStatus;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Carbon\Carbon;
@@ -22,9 +23,9 @@ class PurchaseRequestController extends Controller
         $pr = PurchaseRequest::create([
             'branch_Id' => (int)$user->branch_id,
             'warehouse_Id' => (int)$user->warehouse_id,
-            'pr_Justication' => $request->justication,
+            'pr_Justication' => $request->pr_Justication,
             'pr_Transaction_Date' => Carbon::now(),
-            'pr_Transaction_Date_Required' => Carbon::parse($request->required_date),
+            'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
             'pr_RequestedBy' => $user->id,
             'pr_Priority_Id' => $request->pr_Priority_Id,
             'invgroup_id' => $request->invgroup_id,
@@ -63,7 +64,29 @@ class PurchaseRequestController extends Controller
     }
 
     public function update(Request $request, $id){
+        $pr = PurchaseRequest::findOrfail($id);
+        $pr->update([
+            'pr_Justication' => $request->pr_Justication,
+            'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
+            'pr_Priority_Id' => $request->pr_Priority_Id,
+            'invgroup_id' => $request->invgroup_id,
+            'item_Category_Id' => $request->item_Category_Id,
+            'item_SubCategory_Id' => $request->item_SubCategory_Id,
+            'pr_Document_Number' => $request->pr_Document_Number,
+            'pr_Document_Prefix' => $request->pr_Document_Prefix,
+            'pr_Document_Suffix' => $request->pr_Document_Suffix,
+        ]);
 
+        if(isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0){
+            foreach($request->attachments as $key => $attachment){
+                $file = storeDocument($attachment, "procurements/attachments", $key);
+                $pr->purchaseRequestAttachments()->create([
+                    'filepath' => $file[0],
+                    'filename' => $file[2]
+                ]);
+            }
+        }
+        return response()->json(["message" => "success"], 200);
     }
 
     public function destroy($id){

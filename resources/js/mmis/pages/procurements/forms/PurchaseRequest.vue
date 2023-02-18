@@ -18,7 +18,7 @@
       <v-card-text>
         <v-container fluid>
           <fields :payload="payload" @select="show_item_form = true" :isedit="isedit" />
-          <item-table :items="payload.items" :isedit="isedit" />
+          <item-table :items="payload.items" :isedit="isedit" @remove="removeItem" />
           <div class="pr-form-actions">
             <v-btn class="mr-2" color="error" @click="close()">Cancel</v-btn>
             <v-btn @click="$emit('submit')" color="primary">Submit</v-btn>
@@ -28,6 +28,7 @@
     </v-card>
     <items-form
       v-if="show"
+      :isedit="isedit"
       :payload="payload"
       :show="show_item_form"
       @cancel="show_item_form = false"
@@ -39,6 +40,7 @@
 import Fields from "./includes/fields.vue";
 import ItemTable from "./includes/ItemTable.vue";
 import ItemsForm from "./includes/ItemsForm.vue";
+import { mapGetters } from "vuex"
 export default {
   components: {
     ItemTable,
@@ -62,23 +64,34 @@ export default {
   data() {
     return {
       show_item_form: false,
+      has_items:false,
+      isfetching:false
     };
   },
   methods: {
     close() {
       this.$emit("close");
     },
+    removeItem(index){
+      this.payload.items.splice(index, 1)
+    },
     setPayloadItems(val) {
       this.payload.items = val;
-      console.log(this.payload.items, "sjhdsjdh");
       this.show_item_form = false;
     },
+  },
+  computed:{
+    ...mapGetters(["prsn_settings"]),
   },
   watch: {
     show: {
       handler(val) {
         if (val && this.isedit) {
-          this.payload.items = this.payload.purchase_request_details
+          this.payload.items = this.payload.purchase_request_details.map(detail=>{
+            detail.item_Request_UnitofMeasurement_Id = parseInt(detail.item_Request_UnitofMeasurement_Id)
+            return detail
+          })
+          console.log(this.payload.items, 'hshshsh')
         }
       },
     },

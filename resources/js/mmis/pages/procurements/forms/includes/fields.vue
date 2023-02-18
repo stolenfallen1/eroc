@@ -85,7 +85,7 @@
         <v-col cols="12" xs="12" md="6">
           <p class="pa-0 ma-0">Priority</p>
           <v-autocomplete
-            v-model="payload.priority"
+            v-model="payload.pr_Priority_Id"
             :items="priorities"
             item-text="priority_description"
             item-value="id"
@@ -99,7 +99,7 @@
       </v-row>
       <p class="pa-0 ma-0">Justication</p>
       <v-textarea
-        v-model="payload.justication"
+        v-model="payload.pr_Justication"
         rows="4"
         dense
         solo
@@ -148,12 +148,12 @@
           >
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
-                v-model="payload.required_date"
+                v-model="payload.pr_Transaction_Date_Required"
                 clearable
                 readonly
                 v-bind="attrs"
                 v-on="on"
-                @click:clear="payload.required_date = null"
+                @click:clear="payload.pr_Transaction_Date_Required = null"
                 solo
                 class="mb-2"
                 hide-details="auto"
@@ -161,7 +161,7 @@
               ></v-text-field>
             </template>
             <v-date-picker
-              v-model="payload.required_date"
+              v-model="payload.pr_Transaction_Date_Required"
               @change="required_date = false"
             ></v-date-picker>
           </v-menu>
@@ -177,9 +177,9 @@
         dense
         multiple
         hide-details="auto"
+        :append-outer-icon="payload.attachments?payload.attachments.length?'mdi-eye':'':''"
+        @click:append-outer="showAttachment"
       ></v-file-input>
-      <!-- @change="convertAttachment" -->
-      <!--  -->
       <div class="d-flex flex-row-reverse">
         <v-btn
           :disabled="
@@ -233,6 +233,9 @@ export default {
     async convertAttachment() {
       console.log(this.attachments);
     },
+    showAttachment(){
+      console.log("test append")
+    }
   },
   computed: {
     ...mapGetters(["item_groups", "priorities", "prsn_settings"]),
@@ -242,6 +245,7 @@ export default {
       this.payload.item_Category_Id = parseInt(this.payload.item_Category_Id)
       this.payload.item_SubCategory_Id = parseInt(this.payload.item_SubCategory_Id)
       this.payload.invgroup_id = parseInt(this.payload.invgroup_id)
+      this.payload.pr_Priority_Id = parseInt(this.payload.pr_Priority_Id)
       this.fetchSubcategory(this.payload.item_Category_Id)
       this.fetchCategory(this.payload.item_SubCategory_Id)
     }

@@ -1,7 +1,15 @@
 <template>
   <div class="text-center ma-2">
-    <v-snackbar right top :color="data.color" v-model="isshow">
-      {{ data.message }}
+    <v-snackbar
+      :style="{ 'margin-top': calcMargin(index) }"
+      v-for="(error, index) in data.messages"
+      :key="index"
+      right
+      top
+      :color="data.color"
+      v-model="isshow"
+    >
+      {{ error }}
       <template v-slot:action="{ attrs }">
         <v-btn
           small
@@ -32,6 +40,12 @@ export default {
     return {
       isshow: false,
     };
+  },
+  methods: {
+    calcMargin(i) {
+      console.log(i)
+      return i * 50 + "px";
+    },
   },
   watch: {
     show: {

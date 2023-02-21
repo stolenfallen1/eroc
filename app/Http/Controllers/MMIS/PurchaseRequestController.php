@@ -147,6 +147,16 @@ class PurchaseRequestController extends Controller
 
     public function destroy($id)
     {
-        
+        $pr = PurchaseRequest::with('purchaseRequestAttachments', 'purchaseRequestDetails')->where('id', $id)->first();
+        foreach ($pr->purchaseRequestAttachments as $attachment) {
+            File::delete(public_path().$attachment->filepath);
+            $attachment->delete();
+        }
+        foreach ($pr->purchaseRequestDetails as $detail) {
+            File::delete(public_path().$detail->filepath);
+            $detail->delete();
+        }
+        $pr->delete();
+        return response()->json(["message" => "success"], 200);
     }
 }

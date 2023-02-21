@@ -50,7 +50,7 @@
       @filterRecord="initialize"
       @add="addItem"
       @edit="editItem"
-      @delete="editItem"
+      @delete="removeConfirmation"
     >
       <template v-slot:side_filter>
         <DataFilter :filter="setting.filter" />
@@ -64,7 +64,7 @@
       @close="(showForm = false), clearForm()"
     />
     <Confirmation
-      @cancel="isconfirmation = false"
+      @cancel="cancelConfirmation"
       @confirm="submit"
       :show="isconfirmation"
     />
@@ -88,6 +88,7 @@ import {
   apiCreatePurchaseRequest,
   apiGetAllPurchaseRequest,
   apiUpdatePurchaseRequest,
+  apiRemovePurchaseRequest
 } from "@mmis/api/procurements.api";
 export default {
   mixins: [PurchaseHelper],
@@ -124,6 +125,7 @@ export default {
       isconfirmation: false,
       isnotification: false,
       isedit: false,
+      isdelete: false,
       notification: {
         messages: [],
       },
@@ -146,9 +148,15 @@ export default {
       this.isconfirmation = true;
     },
     removeConfirmation(){
-      
+      this.isdelete = true
+      this.isconfirmation = true
+    },
+    cancelConfirmation(){
+      this.isdelete = false
+      this.isconfirmation = false
     },
     async submit(code) {
+      if(this.isdelete) return this.remove()
       if (this.user.passcode != code || code == null) {
         this.notification.messages = [];
         this.notification.messages.push("Incorrect passcode");
@@ -251,11 +259,19 @@ export default {
         this.payload.department = this.user.warehouse.warehouse_Description;
       }
     },
-    remove(item) {
-      axios.delete(`users/${item.id || item}`).then(({ data }) => {
-        this.successNotification(`Employee Deleted`);
+    async remove(item) {
+      let res = await apiRemovePurchaseRequest(this.payload.id)
+
+      if(res.status == 200){
+        this.notification.messages = [];
+        this.notification.messages.push("Record successfully removed");
+        this.notification.color = "success";
+        this.isnotification = true;
+        this.isconfirmation = false;
+        this.isdelete = false
         this.initialize();
-      });
+      }
+
     },
     viewRecord(item) {
       Object.assign(this.payload, item);

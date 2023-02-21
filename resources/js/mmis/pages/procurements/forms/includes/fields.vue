@@ -242,6 +242,7 @@ export default {
   },
   mounted() {
     if (this.isedit) {
+      this.payload.attachments = this.payload.purchase_request_attachments
       this.payload.item_Category_Id = parseInt(this.payload.item_Category_Id)
       this.payload.item_SubCategory_Id = parseInt(this.payload.item_SubCategory_Id)
       this.payload.invgroup_id = parseInt(this.payload.invgroup_id)

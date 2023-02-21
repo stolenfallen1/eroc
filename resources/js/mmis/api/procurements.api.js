@@ -14,6 +14,14 @@ export const apiUpdatePurchaseRequest = (id, payload) => httpApiClient.post(`${p
     "Content-Type": "multipart/form-data",
   },
 });
+export const apiUpdatePurchaseRequestItemAttachment = (id, payload) => httpApiClient.post(`update-item-attachment/` + id, payload, {
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
+
+export const apiRemovePurchaseRequestItem = (id) => httpApiClient.delete(`remove-item/` + id);
+
 // export const apiGetUser = (id)  => Axios.get(`${resource}/`+id);
 // export const apiCreateUser = (payload)  => Axios.post(`${resource}/create`, payload);
 // export const apiUpdateUser = (id, payload)  => Axios.put(`${resource}/`+id, payload);

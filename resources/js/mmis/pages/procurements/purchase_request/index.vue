@@ -45,11 +45,12 @@
     </custom-table>
     <right-side-bar
       :hide="['filter']"
-      :disabled="isedit ? [] : ['edit']"
+      :disabled="checkSideBtn"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
       @add="addItem"
       @edit="editItem"
+      @delete="editItem"
     >
       <template v-slot:side_filter>
         <DataFilter :filter="setting.filter" />
@@ -144,6 +145,9 @@ export default {
       console.log();
       this.isconfirmation = true;
     },
+    removeConfirmation(){
+      
+    },
     async submit(code) {
       if (this.user.passcode != code || code == null) {
         this.notification.messages = [];
@@ -164,7 +168,10 @@ export default {
         if (item.attachment) {
           fd.append(`items[${index}][attachment]`, item.attachment);
         }
-        fd.append(`items[${index}][item_Id]`, item.id);
+        if (this.isedit && item['item_Id']) {
+          fd.append(`items[${index}][id]`, item.id);
+        }
+        fd.append(`items[${index}][item_Id]`, item['item_Id']?item['item_Id']:item.id);
         fd.append(`items[${index}][item_Request_Qty]`, item.item_Request_Qty);
         fd.append(
           `items[${index}][item_Request_UnitofMeasurement_Id]`,
@@ -269,6 +276,14 @@ export default {
   mounted() {},
   computed: {
     ...mapGetters(["drawer", "user", "prsn_settings"]),
+    checkSideBtn(){
+      if(this.checkPRStatus(this.payload)){
+        return ['edit', 'delete']
+      }
+      if(!this.isedit && this.user.id != this.payload.user_id){
+        return ['edit', 'delete']
+      }
+    },
     headers() {
       let headerItems = [
         {

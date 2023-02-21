@@ -58,9 +58,9 @@
       </v-list-item>
       <v-list-item class="mt-2" dense>
         <v-list-item-title>
-          <v-btn width="100%" small color="error">
+          <v-btn @click="$emit('delete')" :disabled="disabled.includes('delete')" width="100%" small color="error">
             <v-icon class="mr-2" small>mdi-delete</v-icon>
-            Add Record
+            Remove Record
           </v-btn>
         </v-list-item-title>
       </v-list-item>

@@ -45,11 +45,12 @@
     </custom-table>
     <right-side-bar
       :hide="['filter']"
-      :disabled="isedit ? [] : ['edit']"
+      :disabled="checkSideBtn"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
       @add="addItem"
       @edit="editItem"
+      @delete="removeConfirmation"
     >
       <template v-slot:side_filter>
         <DataFilter :filter="setting.filter" />
@@ -63,7 +64,7 @@
       @close="(showForm = false), clearForm()"
     />
     <Confirmation
-      @cancel="isconfirmation = false"
+      @cancel="cancelConfirmation"
       @confirm="submit"
       :show="isconfirmation"
     />
@@ -87,6 +88,7 @@ import {
   apiCreatePurchaseRequest,
   apiGetAllPurchaseRequest,
   apiUpdatePurchaseRequest,
+  apiRemovePurchaseRequest
 } from "@mmis/api/procurements.api";
 export default {
   mixins: [PurchaseHelper],
@@ -123,6 +125,7 @@ export default {
       isconfirmation: false,
       isnotification: false,
       isedit: false,
+      isdelete: false,
       notification: {
         messages: [],
       },
@@ -144,7 +147,16 @@ export default {
       console.log();
       this.isconfirmation = true;
     },
+    removeConfirmation(){
+      this.isdelete = true
+      this.isconfirmation = true
+    },
+    cancelConfirmation(){
+      this.isdelete = false
+      this.isconfirmation = false
+    },
     async submit(code) {
+      if(this.isdelete) return this.remove()
       if (this.user.passcode != code || code == null) {
         this.notification.messages = [];
         this.notification.messages.push("Incorrect passcode");
@@ -164,7 +176,10 @@ export default {
         if (item.attachment) {
           fd.append(`items[${index}][attachment]`, item.attachment);
         }
-        fd.append(`items[${index}][item_Id]`, item.id);
+        if (this.isedit && item['item_Id']) {
+          fd.append(`items[${index}][id]`, item.id);
+        }
+        fd.append(`items[${index}][item_Id]`, item['item_Id']?item['item_Id']:item.id);
         fd.append(`items[${index}][item_Request_Qty]`, item.item_Request_Qty);
         fd.append(
           `items[${index}][item_Request_UnitofMeasurement_Id]`,
@@ -244,11 +259,19 @@ export default {
         this.payload.department = this.user.warehouse.warehouse_Description;
       }
     },
-    remove(item) {
-      axios.delete(`users/${item.id || item}`).then(({ data }) => {
-        this.successNotification(`Employee Deleted`);
+    async remove(item) {
+      let res = await apiRemovePurchaseRequest(this.payload.id)
+
+      if(res.status == 200){
+        this.notification.messages = [];
+        this.notification.messages.push("Record successfully removed");
+        this.notification.color = "success";
+        this.isnotification = true;
+        this.isconfirmation = false;
+        this.isdelete = false
         this.initialize();
-      });
+      }
+
     },
     viewRecord(item) {
       Object.assign(this.payload, item);
@@ -269,6 +292,14 @@ export default {
   mounted() {},
   computed: {
     ...mapGetters(["drawer", "user", "prsn_settings"]),
+    checkSideBtn(){
+      if(this.checkPRStatus(this.payload)){
+        return ['edit', 'delete']
+      }
+      if(!this.isedit && this.user.id != this.payload.user_id){
+        return ['edit', 'delete']
+      }
+    },
     headers() {
       let headerItems = [
         {

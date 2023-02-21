@@ -13,7 +13,7 @@ class PurchaseRequests
   }
 
   public function searchable(){
-    $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestDetails.itemMaster');
+    $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestDetails.itemMaster', 'purchaseRequestAttachments');
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

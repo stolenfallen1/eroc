@@ -16,14 +16,32 @@
           <td>{{ getId(item) }}</td>
           <td>{{ getName(item) }}</td>
           <td>
-            <v-file-input
+            <v-text-field
+              v-if="!isup"
               v-model="item.filename"
+              readonly
+              dense
+              solo
+              hide-details="auto"
+              @click="triggerUpload(index)"
+            >
+            </v-text-field>
+            <input
+              ref="file_input"
+              type="file"
+              class="hidden"
+              accept=".pdf,.jpg,.png,.jpeg"
+              @change="onFileChange($event.target.files, item)"
+            />
+            <!-- <v-file-input
+              ref="file_input"
               style="min-width: 200px"
               solo
               dense
+              @change="isedit?updateAttachment(item):''"
               prepend-icon=""
               hide-details="auto"
-            ></v-file-input>
+            ></v-file-input> -->
           </td>
           <td>
             <v-text-field
@@ -60,6 +78,10 @@
 </template>
 <script>
 import { mapGetters } from "vuex";
+import {
+  apiRemovePurchaseRequestItem,
+  apiUpdatePurchaseRequestItemAttachment,
+} from "@mmis/api/procurements.api";
 export default {
   props: {
     items: {
@@ -72,23 +94,51 @@ export default {
     },
   },
   data() {
-    return {};
+    return {
+      isup:false
+    };
   },
   methods: {
-    removeItem(index) {
-      // this.items.splice(index, 1);
-      this.$emit('remove', index)
+    async removeItem(index) {
+      if (this.isedit) {
+        if (this.items[index].item_Id) {
+          let res = await apiRemovePurchaseRequestItem(this.items[index].id);
+          if (res.status == 200) {
+            this.items.splice(index, 1);
+          }
+        } else {
+          this.items.splice(index, 1);
+        }
+      }
+      this.$emit("remove", index);
     },
-    getName(item){
-      if(this.isedit)
-        if(item.item_master) return item.item_master.item_Name
-      return item.item_Name
+    getName(item) {
+      if (this.isedit) if (item.item_master) return item.item_master.item_Name;
+      return item.item_Name;
     },
-    getId(item){
-      if(this.isedit)
-        if(item.item_master) return item.item_Id
-      return item.id
-    }
+    getId(item) {
+      if (this.isedit) if (item.item_master) return item.item_Id;
+      return item.id;
+    },
+    async onFileChange(file, item) {
+      this.isup = true
+      item.filename = file[0].name
+      item.attachment = file[0]
+      console.log(file[0], "test");
+      if (item.item_Id && this.isedit) {
+        console.log(item, "test");
+        let fd = new FormData();
+        fd.append("attachment", item.attachment);
+        let res = await apiUpdatePurchaseRequestItemAttachment(item.id, fd);
+      }
+      setTimeout(() => {
+        this.isup = false
+      }, 20);
+    },
+    triggerUpload(index) {
+      console.log(this.$refs);
+      this.$refs.file_input[index].click();
+    },
   },
   computed: {
     ...mapGetters(["units"]),

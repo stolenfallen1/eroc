@@ -18,6 +18,14 @@ export default {
       if(this.payload.items.length < 1) errors.push({message:"Item is required"})
 
       return errors;
+    },
+    checkPRStatus(payload){
+      if(payload.status){
+        if(payload.status.Status_description.toLowerCase() == 'pending'){
+          return false
+        }
+        return true
+      }
     }
   }
 }

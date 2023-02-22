@@ -1,5 +1,6 @@
 <template>
   <div>
+    <AppHeader/>
     <custom-table
       :data="setting"
       :tableData="tableData"
@@ -8,7 +9,7 @@
       @search="search"
       @add="addItem"
       @edit="editItem"
-      @remove="remove"
+      @remove="removeConfirmation"
       @fetchPage="initialize"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
@@ -42,8 +43,19 @@
       <template v-slot:warehouse="{ item }">
         {{ item.warehouse.warehouse_Description }}
       </template>
+      <template v-slot:custom-action>
+        <v-icon
+            small
+            color="success"
+            class="mr-1"
+            @click="viewPR(item)"
+          >
+            mdi-eye-outline
+          </v-icon>
+      </template>
     </custom-table>
     <right-side-bar
+      :isaction="isaction"
       :hide="['filter']"
       :disabled="checkSideBtn"
       @resetFilters="resetFilters"
@@ -83,6 +95,7 @@ import DataForm from "../forms/PurchaseRequest.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import CustomTable from "@global/components/CustomTable.vue";
 import PurchaseHelper from "@mmis/mixins/PurchaseHelper.vue";
+import AppHeader from "@mmis/components/pages/procurements/AppHeader.vue";
 import { mapGetters } from "vuex";
 import {
   apiCreatePurchaseRequest,
@@ -99,6 +112,7 @@ export default {
     RightSideBar,
     Confirmation,
     SnackBar,
+    AppHeader,
   },
   data() {
     return {
@@ -126,6 +140,7 @@ export default {
       isnotification: false,
       isedit: false,
       isdelete: false,
+      isaction: false,
       notification: {
         messages: [],
       },
@@ -133,6 +148,9 @@ export default {
     };
   },
   methods: {
+    viewPR(item){
+
+    },
     forConfirmation() {
       this.notification.messages = [];
       let errors = this.checkPRPayload(this.payload);
@@ -229,8 +247,10 @@ export default {
       let res = await apiGetAllPurchaseRequest(params);
       console.log(res, "purchase");
       if (res.status == 200) {
-        this.tableData.items = res.data.data;
-        this.tableData.total = res.data.total;
+        this.tableData.selected = []
+        this.clearForm()
+        this.tableData.items = res.data.data
+        this.tableData.total = res.data.total
         this.setting.loading = false;
       }
     },
@@ -251,6 +271,7 @@ export default {
     },
     addItem() {
       // this.payload.
+      this.tableData.selected = []
       this.isedit = false;
       this.clearForm();
       this.showForm = true;
@@ -274,7 +295,17 @@ export default {
 
     },
     viewRecord(item) {
+      if(this.payload.id){
+        this.payload = {}
+        this.payload.requested_date = new Date()
+        this.payload.items = []
+        this.tableData.selected = []
+        this.isedit = false
+        this.isaction = false
+        return
+      }
       Object.assign(this.payload, item);
+      this.isaction = true
       if (this.payload.pr_RequestedBy == this.user.id) {
         this.isedit = true;
       }

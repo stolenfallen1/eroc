@@ -2,7 +2,7 @@
   <div>
     <v-navigation-drawer width="220" v-model="isdrawer" absolute right>
       <v-list nav>
-        <v-list-group :value="true">
+        <v-list-group :value="!isaction">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-contain</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Sub-Components</v-list-item-title>
@@ -24,7 +24,7 @@
             </v-list-item>
           </v-list>
         </v-list-group>
-        <v-list-group v-if="!hide.includes('actions')" :value="false">
+        <v-list-group v-if="!hide.includes('actions')" :value="isaction">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-cursor-default-outline</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Actions</v-list-item-title>
@@ -48,6 +48,10 @@ export default {
     SideActions
   },
   props: {
+    isaction:{
+      type: Boolean,
+      default:()=>false
+    },
     hide:{
       type: Array,
       default:()=>[]

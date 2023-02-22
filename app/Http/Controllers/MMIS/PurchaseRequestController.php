@@ -108,8 +108,10 @@ class PurchaseRequestController extends Controller
 
         foreach ($request->items as $item) {
             $file = [];
-            if (isset($item['attachment']) && $item['attachment'] != null) {
-                $file = storeDocument($item['attachment'], "procurements/items");
+            if (!str_contains($attachment, 'object')) {
+                if (isset($item['attachment']) && $item['attachment'] != null) {
+                    $file = storeDocument($item['attachment'], "procurements/items");
+                }
             }
 
             if($item["id"]){

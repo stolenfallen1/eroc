@@ -193,7 +193,7 @@ export default {
     },
     height: {
       type: String,
-      default: () => "66vh",
+      default: () => "60vh",
     },
   },
   methods: {
@@ -205,9 +205,7 @@ export default {
       this.$emit("edit", item);
     },
     async remove(val, bypass) {
-      if (!bypass) if (!(await this.deleteRecord())) return;
       this.$emit("remove", val);
-      this.selected = [];
     },
     async batchDelete(selected) {
       let ids = selected.map((x) => x.id).toString();

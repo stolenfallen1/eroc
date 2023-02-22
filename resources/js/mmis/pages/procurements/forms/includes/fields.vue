@@ -172,13 +172,14 @@
       <v-file-input
         v-model="payload.attachments"
         show-size
+        accept="image/*,.pdf"
         counter
         solo
         dense
         multiple
         hide-details="auto"
         :append-outer-icon="payload.attachments?payload.attachments.length?'mdi-eye':'':''"
-        @click:append-outer="showAttachment"
+        @click:append-outer="showAttachment(payload.attachments)"
       ></v-file-input>
       <div class="d-flex flex-row-reverse">
         <v-btn
@@ -192,7 +193,7 @@
         >
       </div>
     </v-col>
-    <AttachmentViewer :show="showviewfile" :files="payload.attachments" />
+    <AttachmentViewer @close="showviewfile=false" :show="showviewfile" :files="files" />
   </v-row>
 </template>
 <script>
@@ -222,6 +223,7 @@ export default {
       sub_categories: [],
       categories: [],
       attachments: [],
+      files: [],
       showviewfile: false
     };
   },
@@ -239,7 +241,8 @@ export default {
     async convertAttachment() {
       console.log(this.attachments);
     },
-    showAttachment(){
+    showAttachment(files){
+      this.files = files
       this.showviewfile = true
       console.log("test append")
     }

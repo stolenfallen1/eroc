@@ -91,6 +91,7 @@ export default {
         if (val && this.isedit) {
           this.payload.items = this.payload.purchase_request_details.map(detail=>{
             detail.item_Request_UnitofMeasurement_Id = parseInt(detail.item_Request_UnitofMeasurement_Id)
+            detail.attachment = detail
             return detail
           })
           console.log(this.payload.items, 'hshshsh')

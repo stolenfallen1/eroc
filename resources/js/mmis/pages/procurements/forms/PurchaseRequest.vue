@@ -25,6 +25,8 @@
           </div>
         </v-container>
       </v-card-text>
+      <!-- <iframe :src="payload.purchase_request_attachments[0].filepath"
+      /> -->
     </v-card>
     <items-form
       v-if="show"

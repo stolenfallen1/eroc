@@ -192,6 +192,7 @@
         >
       </div>
     </v-col>
+    <AttachmentViewer :show="showviewfile" :files="payload.attachments" />
   </v-row>
 </template>
 <script>
@@ -200,7 +201,11 @@ import {
   apiGetAllCategories,
 } from "@global/api/categories";
 import { mapGetters } from "vuex";
+import AttachmentViewer from "@global/components/AttachmentViewer.vue"
 export default {
+  components:{
+    AttachmentViewer
+  },
   props: {
     payload: {
       type: Object,
@@ -217,6 +222,7 @@ export default {
       sub_categories: [],
       categories: [],
       attachments: [],
+      showviewfile: false
     };
   },
   methods: {
@@ -234,6 +240,7 @@ export default {
       console.log(this.attachments);
     },
     showAttachment(){
+      this.showviewfile = true
       console.log("test append")
     }
   },

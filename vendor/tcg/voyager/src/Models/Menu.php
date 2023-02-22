@@ -134,7 +134,7 @@ class Menu extends Model
                 // Exclude dashboard
                 $item->active = false;
             }
-
+          
             if ($item->children->count() > 0) {
                 $item->setRelation('children', static::processItems($item->children));
 

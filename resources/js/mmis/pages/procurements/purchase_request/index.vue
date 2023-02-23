@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <div v-if="can('browse_purchaseRequestMaster')">
+    <AppHeader/>
     <custom-table
       :data="setting"
       :tableData="tableData"
@@ -8,12 +9,12 @@
       @search="search"
       @add="addItem"
       @edit="editItem"
-      @remove="remove"
+      @remove="removeConfirmation"
       @fetchPage="initialize"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
       @refresh="initialize"
-      :hide="drawer ? ['add-btn', 'filter', 'floater-btn'] : ['floater-btn']"
+      :hide="checkPermission"
     >
       <template v-slot:custom_filter>
         <DataFilter :filter="setting.filter" />
@@ -40,11 +41,22 @@
         {{ item.status.Status_description }}
       </template>
       <template v-slot:warehouse="{ item }">
-        {{ item.warehouse.warehouse_Description }}
+        {{ item.warehouse.warehouse_description }}
+      </template>
+      <template v-slot:custom-action>
+        <v-icon
+            small
+            color="success"
+            class="mr-1"
+            @click="viewPR(item)"
+          >
+            mdi-eye-outline
+          </v-icon>
       </template>
     </custom-table>
     <right-side-bar
-      :hide="['filter']"
+      :isaction="isaction"
+      :hide="checkPermission"
       :disabled="checkSideBtn"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
@@ -55,10 +67,29 @@
       <template v-slot:side_filter>
         <DataFilter :filter="setting.filter" />
       </template>
+      <template v-slot:side-action>
+        <v-btn
+          :disabled="!payload.id" 
+          width="100%" 
+          small 
+          color="primary" 
+          @click="approvedPr"
+        >
+          <v-icon 
+            class="mr-2" 
+            small
+          >
+            mdi-thumb-up-outline
+          </v-icon>
+          Approve
+        </v-btn>
+      </template>
+
     </right-side-bar>
     <DataForm
       :show="showForm"
       :isedit="isedit"
+      :isapprove="isapprove"
       :payload="payload"
       @submit="forConfirmation"
       @close="(showForm = false), clearForm()"
@@ -73,22 +104,34 @@
       :data="notification"
       :show="isnotification"
     />
+    <Remarks @cancel="isremarks=false" :show="isremarks" :payload="payload" @submit="approvePR" />
+    <!-- <ApproveForm 
+      :show="isapprove"
+      :isedit="isedit"
+      :payload="payload"
+      @submit="forConfirmation"
+      @close="(showForm = false), clearForm()"
+    /> -->
   </div>
 </template>
 <script>
 import Confirmation from "@global/components/Confirmation.vue";
+import Remarks from "@global/components/Remarks.vue";
 import SnackBar from "@global/components/SnackBar.vue";
 import DataFilter from "../filter_forms/PurchaseRequest.vue";
 import DataForm from "../forms/PurchaseRequest.vue";
+import ApproveForm from "../forms/PurchaseRequest.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
 import CustomTable from "@global/components/CustomTable.vue";
 import PurchaseHelper from "@mmis/mixins/PurchaseHelper.vue";
+import AppHeader from "@mmis/components/pages/procurements/AppHeader.vue";
 import { mapGetters } from "vuex";
 import {
   apiCreatePurchaseRequest,
   apiGetAllPurchaseRequest,
   apiUpdatePurchaseRequest,
-  apiRemovePurchaseRequest
+  apiRemovePurchaseRequest,
+  apiApprovePurchaseRequestItems
 } from "@mmis/api/procurements.api";
 export default {
   mixins: [PurchaseHelper],
@@ -98,7 +141,10 @@ export default {
     DataForm,
     RightSideBar,
     Confirmation,
+    Remarks,
     SnackBar,
+    AppHeader,
+    ApproveForm,
   },
   data() {
     return {
@@ -122,10 +168,14 @@ export default {
         requested_date: new Date(),
         items: [],
       },
+      // hideActions:[],
       isconfirmation: false,
       isnotification: false,
       isedit: false,
       isdelete: false,
+      isaction: false,
+      isapprove: false,
+      isremarks: false,
       notification: {
         messages: [],
       },
@@ -133,6 +183,10 @@ export default {
     };
   },
   methods: {
+    
+    viewPR(item){
+
+    },
     forConfirmation() {
       this.notification.messages = [];
       let errors = this.checkPRPayload(this.payload);
@@ -157,6 +211,7 @@ export default {
     },
     async submit(code) {
       if(this.isdelete) return this.remove()
+      if(this.isapprove) return this.checkPRItemsStatus()
       if (this.user.passcode != code || code == null) {
         this.notification.messages = [];
         this.notification.messages.push("Incorrect passcode");
@@ -173,6 +228,7 @@ export default {
       }
 
       this.payload.items.forEach((item, index) => {
+        console.log(item.attachment, "item hhhhh");
         if (item.attachment) {
           fd.append(`items[${index}][attachment]`, item.attachment);
         }
@@ -223,14 +279,16 @@ export default {
       let params = this._createParams(this.tableData.options);
       params = params + this._createFilterParams(this.setting.filter);
       if (this.setting.keyword)
-        params = params + "&keyword=" + this.setting.keyword;
-      params = params + "&withoutadmin=true";
+      params = params + "&keyword=" + this.setting.keyword;
+      params = params + "&for_approval=true";
 
       let res = await apiGetAllPurchaseRequest(params);
       console.log(res, "purchase");
       if (res.status == 200) {
-        this.tableData.items = res.data.data;
-        this.tableData.total = res.data.total;
+        this.tableData.selected = []
+        this.clearForm()
+        this.tableData.items = res.data.data
+        this.tableData.total = res.data.total
         this.setting.loading = false;
       }
     },
@@ -246,18 +304,35 @@ export default {
       this.showForm = true;
       if (this.user) {
         this.payload.requested_by = this.user.name;
-        this.payload.department = this.user.warehouse.warehouse_Description;
+        this.payload.department = this.user.warehouse.warehouse_description;
       }
     },
     addItem() {
       // this.payload.
+      this.tableData.selected = []
       this.isedit = false;
       this.clearForm();
       this.showForm = true;
       if (this.user) {
         this.payload.requested_by = this.user.name;
-        this.payload.department = this.user.warehouse.warehouse_Description;
+        this.payload.department = this.user.warehouse.warehouse_description;
       }
+    },
+    checkPRItemsStatus(){
+      if (!this.checkApproveItems(this.payload)){
+        this.isconfirmation = false 
+        this.isremarks = true
+        return 
+      } 
+      this.approvePR()
+    },
+    approvedPr(){
+      this.showForm = true;
+      this.isapprove = true;
+    },
+    async approvePR(){
+      let res = await apiApprovePurchaseRequestItems(this.payload)
+      console.log(this.payload.items, "approve PR")
     },
     async remove(item) {
       let res = await apiRemovePurchaseRequest(this.payload.id)
@@ -274,7 +349,17 @@ export default {
 
     },
     viewRecord(item) {
+      if(this.payload.id){
+        this.payload = {}
+        this.payload.requested_date = new Date()
+        this.payload.items = []
+        this.tableData.selected = []
+        this.isedit = false
+        this.isaction = false
+        return
+      }
       Object.assign(this.payload, item);
+      this.isaction = true
       if (this.payload.pr_RequestedBy == this.user.id) {
         this.isedit = true;
       }
@@ -289,6 +374,9 @@ export default {
       // this.isedit = false
     },
   },
+  created(){
+    // this.checkPermission()
+  },
   mounted() {},
   computed: {
     ...mapGetters(["drawer", "user", "prsn_settings"]),
@@ -299,6 +387,17 @@ export default {
       if(!this.isedit && this.user.id != this.payload.user_id){
         return ['edit', 'delete']
       }
+    },
+    checkPermission(){
+      let hideActions
+      if(this.drawer) hideActions = ['add-btn', 'filter-btn', 'floater-btn']
+      else hideActions = ['floater-btn']
+      if(!this.can('delete_purchaseOrderMaster')) hideActions.push('delete')
+      if(!this.can('add_purchaseRequestMaster')) hideActions.push('add')
+      if(!this.can('edit_purchaseRequestMaster')) hideActions.push('edit')
+      if(!this.can('read_purchaseRequestMaster')) hideActions.push('show')
+      if(!this.isAuthorize('pr')) hideActions.push('approve')
+      return hideActions
     },
     headers() {
       let headerItems = [

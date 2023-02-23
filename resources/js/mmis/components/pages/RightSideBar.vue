@@ -2,7 +2,7 @@
   <div>
     <v-navigation-drawer width="220" v-model="isdrawer" absolute right>
       <v-list nav>
-        <v-list-group :value="true">
+        <v-list-group :value="!isaction">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-contain</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Sub-Components</v-list-item-title>
@@ -24,14 +24,17 @@
             </v-list-item>
           </v-list>
         </v-list-group>
-        <v-list-group v-if="!hide.includes('actions')" :value="false">
+        <v-list-group v-if="!hide.includes('actions')" :value="isaction">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-cursor-default-outline</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Actions</v-list-item-title>
           </template>
-          <side-actions :disabled="disabled" @add="$emit('add')" @edit="$emit('edit')" @delete="$emit('delete')">
+          <side-actions :hide="hide" :disabled="disabled" @add="$emit('add')" @edit="$emit('edit')" @delete="$emit('delete')">
             <template v-slot:side_filter>
               <slot name="side_filter" />
+            </template>
+            <template v-slot:side-actions>
+                <slot name="side-action" ></slot>
             </template>
           </side-actions>
         </v-list-group>
@@ -48,6 +51,10 @@ export default {
     SideActions
   },
   props: {
+    isaction:{
+      type: Boolean,
+      default:()=>false
+    },
     hide:{
       type: Array,
       default:()=>[]

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\File;
 use App\Http\Requests\Procurement\PRRequest;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
+use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 
@@ -109,10 +110,12 @@ class PurchaseRequestController extends Controller
         foreach ($request->items as $item) {
             $file = [];
             if (isset($item['attachment']) && $item['attachment'] != null) {
-                $file = storeDocument($item['attachment'], "procurements/items");
+                if (!str_contains($item['attachment'], 'object')) {
+                    $file = storeDocument($item['attachment'], "procurements/items");
+                }
             }
 
-            if($item["id"]){
+            if(isset($item["id"])){
                 $pr->purchaseRequestDetails()->where('id', $item['id'])->update([
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
@@ -158,5 +161,46 @@ class PurchaseRequestController extends Controller
         }
         $pr->delete();
         return response()->json(["message" => "success"], 200);
+    }
+
+    public function approveItems(Request $request){
+        if(Auth::user()->role->name == 'department head'){
+            $this->approveByDepartmentHead($request);
+        }
+    }
+
+    private function approveByDepartmentHead($request){
+        foreach ($request->items as $key => $item ) {
+            $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
+            // return Auth::user()->role->name;
+            if($prd && Auth::user()->role->name == 'department head'){
+                if(isset($item['isapproved']) && $item['isapproved'] == true){
+                    $prd->update([
+                        'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                        'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                        'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                    ]);
+                } else{
+                    $prd->update([
+                        'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                        'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+                    ]);
+                }
+            }
+        }
+        $pr = PurchaseRequest::where('id', $request->id)->first();
+        if($request->isapproved){
+            $pr->update([
+                'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+            ]);
+        }else{
+            $pr->update([
+                'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+                'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
+            ]);
+        }
     }
 }

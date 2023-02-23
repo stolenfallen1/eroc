@@ -11,6 +11,7 @@
             dense
             hide-details="auto"
             class="mb-2 mr-1"
+            :readonly="isapprove"
           ></v-text-field>
         </v-col>
         <v-col cols="12" xs="12" md="6">
@@ -22,6 +23,7 @@
             hide-details="auto"
             class="mb-2 mr-1"
             type="number"
+            :readonly="isapprove"
           ></v-text-field>
         </v-col>
         <v-col cols="12" xs="12" md="3">
@@ -32,6 +34,7 @@
             dense
             hide-details="auto"
             class="mb-2"
+            :readonly="isapprove"
           ></v-text-field>
         </v-col>
       </v-row>
@@ -49,6 +52,7 @@
             hide-details="auto"
             class="mb-2 mr-1"
             attach
+            :readonly="isapprove"
           ></v-autocomplete>
         </v-col>
         <v-col cols="12" xs="12" md="6">
@@ -64,6 +68,7 @@
             hide-details="auto"
             class="mb-2"
             attach
+            :readonly="isapprove"
           ></v-autocomplete>
         </v-col>
       </v-row>
@@ -80,6 +85,7 @@
             hide-details="auto"
             class="mb-2 mr-1"
             attach
+            :readonly="isapprove"
           ></v-autocomplete>
         </v-col>
         <v-col cols="12" xs="12" md="6">
@@ -94,6 +100,7 @@
             hide-details="auto"
             class="mb-2"
             attach
+            :readonly="isapprove"
           ></v-autocomplete>
         </v-col>
       </v-row>
@@ -105,6 +112,7 @@
         solo
         hide-details="auto"
         class="mb-2"
+        :readonly="isapprove"
       ></v-textarea>
     </v-col>
     <v-col cols="12" xs="12" md="6">
@@ -149,7 +157,7 @@
             <template v-slot:activator="{ on, attrs }">
               <v-text-field
                 v-model="payload.pr_Transaction_Date_Required"
-                clearable
+                :clearable="!isapprove"
                 readonly
                 v-bind="attrs"
                 v-on="on"
@@ -169,16 +177,28 @@
       </v-row>
 
       <p class="pa-0 ma-0">Attachment</p>
+      <v-text-field
+        :value="`${payload.attachments?payload.attachments.length + ' files':''}`"
+        readonly
+        solo
+        @click="triggerUpload"
+        class="mb-2 mr-1"
+        hide-details="auto"
+        :append-outer-icon="payload.attachments?payload.attachments.length?'mdi-eye':'':''"
+        @click:append-outer="showAttachment(payload.attachments)"
+        dense
+      ></v-text-field>
       <v-file-input
+        ref="attachments"
         v-model="payload.attachments"
         show-size
+        accept="image/*,.pdf"
         counter
         solo
         dense
+        class="d-none"
         multiple
         hide-details="auto"
-        :append-outer-icon="payload.attachments?payload.attachments.length?'mdi-eye':'':''"
-        @click:append-outer="showAttachment"
       ></v-file-input>
       <div class="d-flex flex-row-reverse">
         <v-btn
@@ -192,7 +212,7 @@
         >
       </div>
     </v-col>
-    <AttachmentViewer :show="showviewfile" :files="payload.attachments" />
+    <AttachmentViewer @close="showviewfile=false" :show="showviewfile" :files="files" />
   </v-row>
 </template>
 <script>
@@ -215,6 +235,10 @@ export default {
       type: Boolean,
       default: () => false,
     },
+    isapprove: {
+      type: Boolean,
+      default: () => false,
+    },
   },
   data() {
     return {
@@ -222,6 +246,7 @@ export default {
       sub_categories: [],
       categories: [],
       attachments: [],
+      files: [],
       showviewfile: false
     };
   },
@@ -239,7 +264,12 @@ export default {
     async convertAttachment() {
       console.log(this.attachments);
     },
-    showAttachment(){
+    triggerUpload(){
+      if(this.isapprove) return
+      this.$refs.attachments.$refs.input.click()
+    },
+    showAttachment(files){
+      this.files = files
       this.showviewfile = true
       console.log("test append")
     }
@@ -248,12 +278,14 @@ export default {
     ...mapGetters(["item_groups", "priorities", "prsn_settings"]),
   },
   mounted() {
-    if (this.isedit) {
+    if (this.isedit || this.isapprove) {
       this.payload.attachments = this.payload.purchase_request_attachments
       this.payload.item_Category_Id = parseInt(this.payload.item_Category_Id)
       this.payload.item_SubCategory_Id = parseInt(this.payload.item_SubCategory_Id)
       this.payload.invgroup_id = parseInt(this.payload.invgroup_id)
       this.payload.pr_Priority_Id = parseInt(this.payload.pr_Priority_Id)
+      this.payload.requested_by = this.payload.user.name
+      this.payload.department = this.payload.warehouse.warehouse_description
       this.fetchSubcategory(this.payload.item_Category_Id)
       this.fetchCategory(this.payload.item_SubCategory_Id)
     }

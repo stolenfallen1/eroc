@@ -39,8 +39,7 @@ class Menu extends Model
 
     public function parent_items()
     {
-        return $this->hasMany(Voyager::modelClass('MenuItem'))
-            ->whereNull('parent_id');
+        return $this->hasMany(Voyager::modelClass('MenuItem'))->whereNull('parent_id');
     }
 
     /**
@@ -54,6 +53,8 @@ class Menu extends Model
      */
     public static function display($menuName, $type = null, array $options = [])
     {
+
+
         // GET THE MENU - sort collection in blade
         $menu = Cache::remember('voyager_menu_'.$menuName, \Carbon\Carbon::now()->addDays(30), function () use ($menuName) {
             return static::where('name', '=', $menuName)
@@ -97,6 +98,7 @@ class Menu extends Model
             return $items;
         }
 
+        
         return new \Illuminate\Support\HtmlString(
             \Illuminate\Support\Facades\View::make($type, ['items' => $items, 'options' => $options])->render()
         );
@@ -118,6 +120,7 @@ class Menu extends Model
             // Translate title
             $item->title = $item->getTranslatedAttribute('title');
             // Resolve URL/Route
+            $item->vueroute = $item->vueroute;
             $item->href = $item->link(true);
 
             if ($item->href == url()->current() && $item->href != '') {

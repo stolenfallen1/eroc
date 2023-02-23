@@ -15,16 +15,19 @@
 @stop
 
 @section('content')
-    <div class="page-content container-fluid">
-        @include('voyager::alerts')
-        <div class="row roles">
-            <div class="col-md-8">
+    <div class="modal modal-info fade" tabindex="-1" id="table_info" role="dialog" data-backdrop="static" data-keyboard="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <a href="{{ route('voyager.roles.index')}}"  class="close" ><i class="voyager-close"></i>  <span aria-hidden="true">&times;</span></a>
+                    
+                    <h4 class="modal-title"><i class="voyager-list"></i> System User Modules</h4>
+                </div>
+                <form class="form-edit-add" role="form"
+                    action="@if (isset($dataTypeContent->id)) {{ route('voyager.' . $dataType->slug . '.update', $dataTypeContent->id) }}@else{{ route('voyager.' . $dataType->slug . '.store') }} @endif"
+                    method="POST" enctype="multipart/form-data">
+                    <div class="modal-body">
 
-                <div class="panel panel-bordered">
-                    <!-- form start -->
-                    <form class="form-edit-add" role="form"
-                        action="@if (isset($dataTypeContent->id)) {{ route('voyager.' . $dataType->slug . '.update', $dataTypeContent->id) }}@else{{ route('voyager.' . $dataType->slug . '.store') }} @endif"
-                        method="POST" enctype="multipart/form-data">
 
                         <!-- PUT Method if we are editing -->
                         @if (isset($dataTypeContent->id))
@@ -34,86 +37,118 @@
                         <!-- CSRF TOKEN -->
                         {{ csrf_field() }}
 
-                        <div class="panel-body">
-
-                            @if (count($errors) > 0)
-                                <div class="alert alert-danger">
-                                    <ul>
-                                        @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-
-                            @foreach ($dataType->addRows as $row)
-                                <div class="col-lg-6">
-                                    <div class="form-group">
-                                        <label for="name">{{ $row->getTranslatedAttribute('display_name') }}</label>
-                                        {!! Voyager::formField($row, $dataType, $dataTypeContent) !!}
-                                    </div>
-                                </div>
-                            @endforeach
-
-
-                            <label for="permission">{{ __('voyager::generic.permissions') }}</label><br>
-                            <a href="#" class="permission-select-all">{{ __('voyager::generic.select_all') }}</a> /
-                            <a href="#" class="permission-deselect-all">{{ __('voyager::generic.deselect_all') }}</a>
-                            <?php
-                            $role_permissions = isset($dataTypeContent) ? $dataTypeContent->permissions->pluck('key')->toArray() : [];
-                            ?>
-                            <div class="panel-group permissions checkbox" id="accordion">
-
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Module</th>
-                                            <th class=" text-center">Browse</th>
-                                            <th class=" text-center">Read</th>
-                                            <th class=" text-center">Edit</th>
-                                            <th class=" text-center">Add</th>
-                                            <th class=" text-center">Delete</th>
-                                            <th class=" text-center">Print</th>
-                                            <th class=" text-center">Post</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-
-                                        @foreach (Voyager::model('Permission')->all()->groupBy('table_name') as $table => $permission)
-                                            <tr>
-                                                <td>
-                                                    <div class="padding">
-                                                        <input type="checkbox" id="{{ $table }}"
-                                                            class="permission-group">
-                                                        <label
-                                                            for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
-                                                    </div>
-                                                </td>
-                                                @foreach ($permission as $perm)
-                                                    <td>
-                                                        <center> <input type="checkbox" id="permission-{{ $perm->id }}"
-                                                                name="permissions[{{ $perm->id }}]"
-                                                                class="the-permission" value="{{ $perm->id }}"
-                                                                @if (in_array($perm->key, $role_permissions)) checked @endif>
-                                                        </center>
-                                                    </td>
-                                                @endforeach
-                                            </tr>
-                                        @endforeach
-
-                                    </tbody>
-                                </table>
+                        @if (count($errors) > 0)
+                            <div class="alert alert-danger">
+                                <ul>
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
                             </div>
-                        </div><!-- panel-body -->
-                        <div class="panel-footer">
-                            <button type="submit" class="btn btn-primary">{{ __('voyager::generic.submit') }}</button>
-                        </div>
-                    </form>
+                        @endif
 
-                    <div style="display:none">
-                        <input type="hidden" id="upload_url" value="{{ route('voyager.upload') }}">
-                        <input type="hidden" id="upload_type_slug" value="{{ $dataType->slug }}">
+                        @foreach ($dataType->addRows as $row)
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="name">{{ $row->getTranslatedAttribute('display_name') }}</label>
+                                    {!! Voyager::formField($row, $dataType, $dataTypeContent) !!}
+                                </div>
+                            </div>
+                        @endforeach
+                        <a href="#" class="permission-select-all">{{ __('voyager::generic.select_all') }}</a> /
+                        <a href="#" class="permission-deselect-all">{{ __('voyager::generic.deselect_all') }}</a>
+                        <?php
+                        $role_permissions = isset($dataTypeContent) ? $dataTypeContent->permissions->pluck('key')->toArray() : [];
+                        ?>
+                        <div class="panel-group permissions checkbox" >
+                            <div class="accordion" id="accordionExample" style="height: 350px;overflow-x: auto;">
+
+
+                                @foreach (App\Models\Database\Database::with('permissions')->get()->groupBy('driver') as $modules => $module)
+                                    @php
+                                        $databaseconnection = App\Models\Database\Database::where('driver', $modules)->first();
+                                    @endphp
+                                    <div class="card">
+                                        <div class="card-header" id="headingOne{{ $modules }}">
+                                            <h4 class="mb-0">
+
+                                                <label data-toggle="collapse" data-target="#collapseOne{{ $modules }}"
+                                                    aria-expanded="true"
+                                                    aria-controls="collapseOne{{ $modules }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $databaseconnection->description)) }}</strong></label>
+                                            </h4>
+                                        </div>
+
+                                        <div id="collapseOne{{ $modules }}" class="collapse"
+                                            aria-labelledby="headingOne{{ $modules }}"
+                                            data-parent="#accordionExample" >
+                                            <div >
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Module</th>
+                                                            <th class=" text-center">Browse</th>
+                                                            <th class=" text-center">Read</th>
+                                                            <th class=" text-center">Edit</th>
+                                                            <th class=" text-center">Add</th>
+                                                            <th class=" text-center">Delete</th>
+                                                            <th class=" text-center">Print</th>
+                                                            <th class=" text-center">Post</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (Voyager::model('Permission')->all()->where('driver', $modules)->groupBy('table_name') as $table => $permission)
+                                                            <tr>
+                                                                <td>
+                                                                    <div class="padding">
+                                                                        <input type="checkbox" id="{{ $table }}"
+                                                                            class="permission-group">
+                                                                        <label
+                                                                            for="{{ $table }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $table)) }}</strong></label>
+                                                                    </div>
+                                                                </td>
+                                                                @foreach ($permission as $perm)
+                                                                    <td>
+                                                                        <center> <input type="checkbox"
+                                                                                id="permission-{{ $perm->id }}"
+                                                                                name="permissions[{{ $perm->id }}]"
+                                                                                class="the-permission"
+                                                                                value="{{ $perm->id }}"
+                                                                                @if (in_array($perm->key, $role_permissions)) checked @endif>
+                                                                        </center>
+                                                                    </td>
+                                                                @endforeach
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                       
                     </div>
+                    <div class="modal-footer">
+                        <div style="display:none">
+                            <input type="hidden" id="upload_url" value="{{ route('voyager.upload') }}">
+                            <input type="hidden" id="upload_type_slug" value="{{ $dataType->slug }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">{{ __('voyager::generic.submit') }}</button>
+                </form>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="page-content container-fluid">
+        @include('voyager::alerts')
+        <div class="row roles">
+            <div class="col-md-8">
+
+                <div class="panel panel-bordered">
+                    <!-- form start -->
+
                 </div>
             </div>
         </div>
@@ -123,6 +158,7 @@
 @section('javascript')
     <script>
         $('document').ready(function() {
+            $('#table_info').modal('show');
             $('.toggleswitch').bootstrapToggle();
 
             $('.permission-group').on('change', function() {

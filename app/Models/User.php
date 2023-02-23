@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use PDO;
+use Laravel\Sanctum\HasApiTokens;
+use App\Models\Approver\InvApprover;
 use App\Models\BuildFile\Warehouses;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use PDO;
 
 class User extends \TCG\Voyager\Models\User
 {
@@ -48,12 +49,18 @@ class User extends \TCG\Voyager\Models\User
         'email_verified_at' => 'datetime',
     ];
 
-    protected $with = ['warehouse'];
+    protected $with = ['warehouse','approvaldetail'];
 
     public function warehouse()
     {
         return $this->belongsTo(Warehouses::class, 'warehouse_id', 'id');
     }
+
+    public function approvaldetail()
+    {
+        return $this->hasOne(InvApprover::class, 'user_id', 'id');
+    }
+    
     public function createToken()
     {
         $token = sha1(time());

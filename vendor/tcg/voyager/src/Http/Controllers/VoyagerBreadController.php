@@ -132,17 +132,16 @@ class VoyagerBreadController extends Controller
         $this->authorize('browse_bread');
 
         try {
+            
             $dataType = Voyager::model('DataType');
 
             $res = $dataType->updateDataType($request->all(), true,$request->driver);
 
-            $data = $res
-                ? $this->alertSuccess(__('voyager::bread.success_created_bread'))
-                : $this->alertError(__('voyager::bread.error_creating_bread'));
+            $data = $res ? $this->alertSuccess(__('voyager::bread.success_created_bread')) : $this->alertError(__('voyager::bread.error_creating_bread'));
             if ($res) {
                 event(new BreadAdded($dataType, $data));
             }
-
+           
             return redirect()->route('voyager.bread.index')->with($data);
         } catch (Exception $e) {
             return redirect()->route('voyager.bread.index')->with($this->alertException($e, 'Saving Failed'));

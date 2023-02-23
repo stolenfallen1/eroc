@@ -6,7 +6,7 @@ use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Model;
 
 
-class invStatus extends Model
+class InvStatus extends Model
 {
     protected $connection = "sqlsrv";
     protected $table = 'invStatus';

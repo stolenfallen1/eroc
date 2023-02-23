@@ -9,6 +9,7 @@ const module = {
   state: {
     drawer:true,
     user:null,
+    user_permissions:[],
     active_route: null,
     main_active_route: null,
     right_items:[],
@@ -24,6 +25,7 @@ const module = {
     active_route: state => state.active_route,
     main_active_route: state => state.main_active_route,
     user: state => state.user,
+    user_permissions: state => state.user_permissions,
     right_items: state => state.right_items,
     item_groups: state => state.item_groups,
     units: state => state.units,
@@ -42,6 +44,9 @@ const module = {
     },
     setUser(state, value) {
       state.user = value;
+    },
+    setUserPermissions(state, value) {
+      state.user_permissions = value;
     },
     setRightItems(state, value) {
       state.right_items = value;
@@ -99,6 +104,9 @@ const module = {
         // this.$store.dispatch("fetchUnits")
         console.log(data)
         commit("setUser", data)
+        if(data.role){
+          commit("setUserPermissions", data.role.permissions)
+        }
         dispatch("fetchItemGroups")
         dispatch("fetchUnits")
         dispatch("fetchStatus")

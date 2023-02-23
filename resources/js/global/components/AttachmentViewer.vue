@@ -56,21 +56,13 @@ export default {
       handler(val) {
         if(val.length){
           console.log(val,"value")
+          this.src_files = []
           val.forEach(file => {
-            if(file.filepath){
-              this.src_files.push(file.filepath);
+            if(file.attachment){
+              this.src_files.push(URL.createObjectURL(file.attachment));
             }else{
-              this.src_files.push(URL.createObjectURL(file));
+              this.src_files.push(file.filepath);
             }
-            console.log(file, "update file")
-            // var reader = new FileReader();
-            // reader.onload = function () {
-            //   console.log(reader);
-            // };
-            
-            // let url = reader.readAsDataURL(file)
-            // console.log(file, "files")
-            // console.log(, "urls")
           });
         }
       },

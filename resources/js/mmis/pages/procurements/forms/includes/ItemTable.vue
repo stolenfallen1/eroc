@@ -9,6 +9,8 @@
             <th class="text-left">Attachment</th>
             <th class="text-left">Qty</th>
             <th class="text-left">UOM</th>
+            <th class="text-left" v-if="isapprove">APPD Qty</th>
+            <th class="text-left" v-if="isapprove">APPD UOM</th>
             <th class="text-left">Action</th>
           </tr>
         </thead>
@@ -24,8 +26,8 @@
                 dense
                 solo
                 hide-details="auto"
-                :append-outer-icon="item.attachment?'mdi-eye':''"
-                @click:append-outer="showAttachment(item.attachment)"
+                :append-outer-icon="item.attachment||item.filepath?'mdi-eye':''"
+                @click:append-outer="showAttachment(item)"
                 @click="triggerUpload(index)"
               >
               </v-text-field>
@@ -36,15 +38,6 @@
                 accept=".pdf,.jpg,.png,.jpeg"
                 @change="onFileChange($event.target.files, item)"
               />
-              <!-- <v-file-input
-                ref="file_input"
-                style="min-width: 200px"
-                solo
-                dense
-                @change="isedit?updateAttachment(item):''"
-                prepend-icon=""
-                hide-details="auto"
-              ></v-file-input> -->
             </td>
             <td>
               <v-text-field
@@ -54,6 +47,7 @@
                 dense
                 hide-details="auto"
                 type="number"
+                :readonly="isapprove"
               ></v-text-field>
             </td>
             <td>
@@ -66,13 +60,54 @@
                 dense
                 hide-details="auto"
                 attach
+                :readonly="isapprove"
               >
               </v-autocomplete>
             </td>
-            <td>
-              <v-btn @click="removeItem(index)" text small color="primary">
+            <td v-if="isapprove">
+              <v-text-field
+                v-model="item.item_Request_Department_Approved_Qty"
+                style="max-width: 100px"
+                solo
+                dense
+                hide-details="auto"
+                type="number"
+              ></v-text-field>
+            </td>
+            <td v-if="isapprove">
+              <v-autocomplete
+                v-model="item.item_Request_Department_Approved_UnitofMeasurement_Id"
+                solo
+                :items="units"
+                item-text="name"
+                item-value="id"
+                dense
+                hide-details="auto"
+                attach
+              >
+              </v-autocomplete>
+            </td>
+            <td v-if="!isapprove">
+              <v-btn @click="removeItem(index)" text small fab icon color="primary">
                 <v-icon> mdi-close </v-icon>
               </v-btn>
+            </td>
+            <td v-else>
+              <v-tooltip top>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn 
+                    @click="approveItem(item)" 
+                    text small 
+                    fab icon 
+                    v-bind="attrs"
+                    v-on="on"
+                  >
+                    <v-icon v-if="item.isapproved" color="success"> mdi-thumb-up-outline </v-icon>
+                    <v-icon v-else color="error"> mdi-thumb-down-outline </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{!item.isapproved==true?'Decline':'Approve'}}</span>
+              </v-tooltip>
             </td>
           </tr>
         </tbody>
@@ -101,6 +136,10 @@ export default {
       type: Boolean,
       default: () => false,
     },
+    isapprove: {
+      type: Boolean,
+      default: () => false,
+    },
   },
   data() {
     return {
@@ -109,13 +148,24 @@ export default {
       showviewfile:false
     };
   },
+  
   methods: {
+    approveItem(item){
+      this.isup = true
+      item.isapproved = !item.isapproved;
+      console.log(item, "approve")
+      setTimeout(() => {
+        this.isup = false
+      }, 20);
+    },
     showAttachment(file){
+      this.files = []
       this.files.push(file)
       this.showviewfile = true
     },
     async removeItem(index) {
       if (this.isedit) {
+        console.log(this.items)
         if (this.items[index].item_Id) {
           let res = await apiRemovePurchaseRequestItem(this.items[index].id);
           if (res.status == 200) {
@@ -128,11 +178,11 @@ export default {
       this.$emit("remove", index);
     },
     getName(item) {
-      if (this.isedit) if (item.item_master) return item.item_master.item_Name;
-      return item.item_Name;
+      if (this.isedit||this.isapprove) if (item.item_master) return item.item_master.item_name;
+      return item.item_name;
     },
     getId(item) {
-      if (this.isedit) if (item.item_master) return item.item_Id;
+      if (this.isedit || this.isapprove) if (item.item_master) return item.item_Id;
       return item.id;
     },
     async onFileChange(file, item) {
@@ -149,6 +199,7 @@ export default {
       }, 20);
     },
     triggerUpload(index) {
+      if(this.isapprove) return
       console.log(this.$refs);
       this.$refs.file_input[index].click();
     },

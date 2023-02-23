@@ -26,6 +26,14 @@ export default {
         }
         return true
       }
+    },
+    checkApproveItems(payload){
+      let flag = false
+      if(payload.items.some(item => item.isapproved == true)){
+        flag = true
+      }
+      payload.isapproved = flag
+      return flag
     }
   }
 }

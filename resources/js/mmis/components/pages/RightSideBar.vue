@@ -29,9 +29,12 @@
           <template v-slot:activator>
             <v-list-item-title>Actions</v-list-item-title>
           </template>
-          <side-actions :disabled="disabled" @add="$emit('add')" @edit="$emit('edit')" @delete="$emit('delete')">
+          <side-actions :hide="hide" :disabled="disabled" @add="$emit('add')" @edit="$emit('edit')" @delete="$emit('delete')">
             <template v-slot:side_filter>
               <slot name="side_filter" />
+            </template>
+            <template v-slot:side-actions>
+                <slot name="side-action" ></slot>
             </template>
           </side-actions>
         </v-list-group>

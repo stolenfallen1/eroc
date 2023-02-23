@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\BuildFile\Warehouses;
+use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -54,6 +55,12 @@ class User extends \TCG\Voyager\Models\User
     {
         return $this->belongsTo(Warehouses::class, 'warehouse_id', 'id');
     }
+
+    public function purchaseRequest()
+    {
+        return $this->hasMany(PurchaseRequest::class, 'pr_RequestedBy', 'id');
+    }
+
     public function createToken()
     {
         $token = sha1(time());

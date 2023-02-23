@@ -5,6 +5,7 @@ httpApiClient.defaults.headers.common['Authorization'] = 'Bearer ' + store.gette
 
 export const apiGetAllPurchaseRequest = (query) => httpApiClient.get(`${purchase}?` + query);
 export const apiRemovePurchaseRequest = (id) => httpApiClient.delete(`${purchase}/` + id);
+export const apiApprovePurchaseRequestItems = (payload) => httpApiClient.post(`${purchase}-items/`, payload);
 export const apiCreatePurchaseRequest = (payload) => httpApiClient.post(`${purchase}`, payload, {
   headers: {
     "Content-Type": "multipart/form-data",

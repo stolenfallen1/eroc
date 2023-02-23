@@ -13,7 +13,9 @@
   </v-card>
 </template>
 <script>
+import AuthHelper from "@mmis/mixins/AuthHelper.vue"
 export default{
+  mixins:[AuthHelper],
   data(){
     return{
 

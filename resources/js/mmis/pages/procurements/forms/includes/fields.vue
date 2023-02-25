@@ -202,6 +202,7 @@
       ></v-file-input>
       <div class="d-flex flex-row-reverse">
         <v-btn
+          v-if="!isapprove"
           :disabled="
             !payload.item_SubCategory_Id || !payload.item_Category_Id || !payload.department
           "

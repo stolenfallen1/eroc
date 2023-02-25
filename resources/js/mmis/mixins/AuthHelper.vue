@@ -4,9 +4,7 @@ export default {
     can(val){
       return this.$store.getters.user_permissions.some(permission => permission.key == val)
     },
-    isdone(){
-      
-    }
+    
   }
 }
 </script>

@@ -126,7 +126,7 @@
             v-if="!hide.includes('edit-btn')"
             color="primary"
             class="mr-1"
-            @click="$emit('edit', item)"
+            @click.stop="$emit('edit', item)"
           >
             mdi-pencil-outline
           </v-icon>
@@ -135,7 +135,7 @@
             v-if="!hide.includes('delete-btn')"
             color="error"
             class="mr-1"
-            @click="remove(item)"
+            @click.stop="remove(item)"
           >
             mdi-delete-outline
           </v-icon>

@@ -379,7 +379,7 @@ export default {
 
     },
     viewRecord(item) {
-      if(this.payload.id){
+      if(this.payload.id && item.id == this.payload.id){
         this.payload = {}
         this.payload.requested_date = new Date()
         this.payload.items = []

@@ -2,7 +2,7 @@
   <v-dialog
     v-model="show"
     hide-overlay
-    width="1050"
+    width="1250"
     transition="dialog-bottom-transition"
     scrollable
     persistent
@@ -17,11 +17,12 @@
       </v-toolbar>
       <v-card-text>
         <v-container fluid>
-          <fields :payload="payload" @select="show_item_form = true" :isedit="isedit" />
-          <item-table :items="payload.items" :isedit="isedit" @remove="removeItem" />
+          <fields :payload="payload" @select="show_item_form = true" :isedit="isedit" :isapprove="isapprove" />
+          <item-table v-if="!show_item_form" :items="payload.items" :isedit="isedit" @remove="removeItem" :isapprove="isapprove" />
           <div class="pr-form-actions">
             <v-btn class="mr-2" color="error" @click="close()">Cancel</v-btn>
-            <v-btn @click="$emit('submit')" color="primary">Submit</v-btn>
+            <v-btn v-if="isapprove" @click="$emit('submit')" color="primary">Submit</v-btn>
+            <v-btn v-else @click="$emit('submit')" color="primary">Submit</v-btn>
           </div>
         </v-container>
       </v-card-text>
@@ -58,6 +59,10 @@ export default {
       type: Boolean,
       default: () => false,
     },
+    isapprove: {
+      type: Boolean,
+      default: () => false,
+    },
     payload: {
       type: Object,
       default: () => {},
@@ -78,6 +83,23 @@ export default {
       this.payload.items.splice(index, 1)
     },
     setPayloadItems(val) {
+      if(this.isedit) {
+        val.map(val_item=>{
+          let exist = false
+          this.payload.items.map(item=>{
+            if(item.item_Id == val_item.id) {
+              console.log(val_item.id, "test")
+              exist = true
+            }
+          })
+          if(!exist) {
+            this.payload.items.push(val_item)
+          }
+        })
+        console.log(this.payload.items, "item after push")
+        this.show_item_form = false;
+        return
+      }
       this.payload.items = val;
       this.show_item_form = false;
     },
@@ -88,9 +110,15 @@ export default {
   watch: {
     show: {
       handler(val) {
-        if (val && this.isedit) {
+        if (val && (this.isedit || this.isapprove)) {
           this.payload.items = this.payload.purchase_request_details.map(detail=>{
             detail.item_Request_UnitofMeasurement_Id = parseInt(detail.item_Request_UnitofMeasurement_Id)
+            if(this.isapprove){
+              detail.item_Request_Department_Approved_UnitofMeasurement_Id = parseInt(detail.item_Request_Department_Approved_UnitofMeasurement_Id)
+              if(this.$store.getters.user.role.name == 'administrator' || this.$store.getters.user.role.name == 'consultant'){
+                detail.isapproved = detail.pr_DepartmentHead_ApprovedBy?true:false
+              }
+            }
             return detail
           })
           console.log(this.payload.items, 'hshshsh')

@@ -2,8 +2,9 @@
 export default {
   methods:{
     can(val){
-      test.map
+      return this.$store.getters.user_permissions.some(permission => permission.key == val)
     },
+    
   }
 }
 </script>

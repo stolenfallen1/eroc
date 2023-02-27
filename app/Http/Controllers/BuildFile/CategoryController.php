@@ -12,14 +12,23 @@ class CategoryController extends Controller
 {
     public function getAllCategory()
     {
-        $categories = Itemcategories::where(['invgroup_id' => Request()->invgroup_id, 'isactive' => 1])->get();
-        return response()->json(['categories' => $categories], 200);
+        $category = Itemcategories::query();
+        if(Request()->invgroup_id){
+            $category->where('invgroup_id', Request()->invgroup_id)->get();
+        }
+        $category->where('isactive', 1);
+
+        return response()->json(['categories' => $category->get()], 200);
     }
 
     public function getAllSubCategories()
     {
-        $sub_categories = Itemsubcategories::where(['category_id' => Request()->category_id, 'isactive' => 1])->get();
-        return response()->json(['subcategories' => $sub_categories], 200);
+        $sub_category = Itemsubcategories::query();
+        if(Request()->category_id){
+            $sub_category->where('category_id', Request()->category_id)->get();
+        }
+        $sub_category->where('isactive', 1);
+        return response()->json(['subcategories' => $sub_category->get()], 200);
     }
     
     public function getAllClassifications()

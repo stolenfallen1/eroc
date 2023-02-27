@@ -7,6 +7,7 @@ use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\Itemsubcategories;
 use App\Models\BuildFile\Priority;
 use App\Models\BuildFile\Warehouses;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -39,6 +40,10 @@ class PurchaseRequest extends Model
 
     public  function warehouse(){
         return $this->belongsTo(Warehouses::class, 'warehouse_Id');
+    }
+
+    public  function user(){
+        return $this->belongsTo(User::class, 'pr_RequestedBy');
     }
 
     public  function category(){

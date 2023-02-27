@@ -4,7 +4,7 @@
       <v-list-item dense>
         <v-list-item-title>
           <v-menu
-             v-if="!hide.includes('filter')"
+            v-if="!hide.includes('filter')"
             offset-y
             left
             nudge-left="190"
@@ -40,7 +40,7 @@
           </v-menu>
         </v-list-item-title>
       </v-list-item>
-      <v-list-item dense>
+      <v-list-item dense v-if="!hide.includes('add')">
         <v-list-item-title>
           <v-btn :disabled="!user.warehouse" @click="$emit('add')" class="mt-2" width="100%" small color="primary">
             <v-icon class="mr-2" small>mdi-plus</v-icon>
@@ -48,7 +48,7 @@
           </v-btn>
         </v-list-item-title>
       </v-list-item>
-      <v-list-item class="mt-2" dense>
+      <v-list-item class="mt-2" dense v-if="!hide.includes('edit')">
         <v-list-item-title>
           <v-btn :disabled="disabled.includes('edit')" @click="$emit('edit')" width="100%" small color="warning">
             <v-icon class="mr-2" small>mdi-pencil</v-icon>
@@ -56,12 +56,17 @@
           </v-btn>
         </v-list-item-title>
       </v-list-item>
-      <v-list-item class="mt-2" dense>
+      <v-list-item v-if="!hide.includes('delete')" class="mt-2" dense>
         <v-list-item-title>
           <v-btn @click="$emit('delete')" :disabled="disabled.includes('delete')" width="100%" small color="error">
             <v-icon class="mr-2" small>mdi-delete</v-icon>
             Remove Record
           </v-btn>
+        </v-list-item-title>
+      </v-list-item>
+      <v-list-item v-if="!hide.includes('approve')" class="mt-2" dense>
+        <v-list-item-title>
+          <slot name="side-actions" ></slot>
         </v-list-item-title>
       </v-list-item>
     </v-list>

@@ -8,7 +8,7 @@
     <!-- Sizes your content based upon application components -->
     <v-main v-if="user">
       <!-- Provides the application the proper gutter -->
-      <v-container fluid>
+      <v-container class="ma-0 pa-0" fluid>
         <!-- If using vue-router -->
         <router-view
           :class="isdrawer ? 'router-main-container' : ''"

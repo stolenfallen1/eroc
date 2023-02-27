@@ -62,7 +62,7 @@
         Add record
       </v-btn>
       <v-menu
-        v-if="!hide.includes('filter')"
+        v-if="!hide.includes('filter-btn')"
         offset-y
         left
         nudge-bottom="5"
@@ -123,7 +123,7 @@
           <slot name="custom-action" :item="item"> </slot>
           <v-icon
             small
-            v-if="!hide.includes('edit')"
+            v-if="!hide.includes('edit-btn')"
             color="primary"
             class="mr-1"
             @click="$emit('edit', item)"
@@ -132,7 +132,7 @@
           </v-icon>
           <v-icon
             small
-            v-if="!hide.includes('delete')"
+            v-if="!hide.includes('delete-btn')"
             color="error"
             class="mr-1"
             @click="remove(item)"
@@ -193,7 +193,7 @@ export default {
     },
     height: {
       type: String,
-      default: () => "66vh",
+      default: () => "60vh",
     },
   },
   methods: {
@@ -205,9 +205,7 @@ export default {
       this.$emit("edit", item);
     },
     async remove(val, bypass) {
-      if (!bypass) if (!(await this.deleteRecord())) return;
       this.$emit("remove", val);
-      this.selected = [];
     },
     async batchDelete(selected) {
       let ids = selected.map((x) => x.id).toString();

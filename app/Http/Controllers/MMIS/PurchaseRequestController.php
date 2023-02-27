@@ -166,27 +166,28 @@ class PurchaseRequestController extends Controller
     public function approveItems(Request $request){
         if(Auth::user()->role->name == 'department head'){
             $this->approveByDepartmentHead($request);
+        } else if(Auth::user()->role->name == 'administrator') {
+            $this->approveByAdministrator($request);
         }
+        return response()->json(["message" => "success"], 200);
     }
 
     private function approveByDepartmentHead($request){
         foreach ($request->items as $key => $item ) {
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             // return Auth::user()->role->name;
-            if($prd && Auth::user()->role->name == 'department head'){
-                if(isset($item['isapproved']) && $item['isapproved'] == true){
-                    $prd->update([
-                        'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
-                        'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
-                        'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                        'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                    ]);
-                } else{
-                    $prd->update([
-                        'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
-                        'pr_DepartmentHead_CancelledDate' => Carbon::now(),
-                    ]);
-                }
+            if(isset($item['isapproved']) && $item['isapproved'] == true){
+                $prd->update([
+                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                    'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                    'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                    'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                ]);
+            } else{
+                $prd->update([
+                    'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                    'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+                ]);
             }
         }
         $pr = PurchaseRequest::where('id', $request->id)->first();
@@ -200,6 +201,41 @@ class PurchaseRequestController extends Controller
                 'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
                 'pr_DepartmentHead_CancelledDate' => Carbon::now(),
                 'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
+                'pr_Status_Id' => 3
+            ]);
+        }
+    }
+
+    private function approveByAdministrator($request){
+        foreach ($request->items as $key => $item ) {
+            $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
+            if(isset($item['isapproved']) && $item['isapproved'] == true){
+                $prd->update([
+                    'pr_Branch_Level1_ApprovedBy' => Auth::user()->id,
+                    'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
+                    'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                    'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                ]);
+            } else{
+                $prd->update([
+                    'pr_Branch_Level1_CancelledBy' => Auth::user()->id,
+                    'pr_Branch_Level1_CancelledDate' => Carbon::now(),
+                ]);
+            }
+        }
+        $pr = PurchaseRequest::where('id', $request->id)->first();
+        if($request->isapproved){
+            $pr->update([
+                'pr_Branch_Level1_ApprovedBy' => Auth::user()->id,
+                'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
+                'pr_Status_Id' => 6
+            ]);
+        }else{
+            $pr->update([
+                'pr_Branch_Level1_CancelledBy' => Auth::user()->id,
+                'pr_Branch_Level1_CancelledDate' => Carbon::now(),
+                'pr_Branch_Level1_Cancelled_Remarks' => $request->remarks,
+                'pr_Status_Id' => 3
             ]);
         }
     }

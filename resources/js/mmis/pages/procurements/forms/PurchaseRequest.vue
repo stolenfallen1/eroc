@@ -113,7 +113,12 @@ export default {
         if (val && (this.isedit || this.isapprove)) {
           this.payload.items = this.payload.purchase_request_details.map(detail=>{
             detail.item_Request_UnitofMeasurement_Id = parseInt(detail.item_Request_UnitofMeasurement_Id)
-            // detail.attachment = detail
+            if(this.isapprove){
+              detail.item_Request_Department_Approved_UnitofMeasurement_Id = parseInt(detail.item_Request_Department_Approved_UnitofMeasurement_Id)
+              if(this.$store.getters.user.role.name == 'administrator' || this.$store.getters.user.role.name == 'consultant'){
+                detail.isapproved = detail.pr_DepartmentHead_ApprovedBy?true:false
+              }
+            }
             return detail
           })
           console.log(this.payload.items, 'hshshsh')

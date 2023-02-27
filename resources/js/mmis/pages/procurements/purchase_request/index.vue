@@ -1,6 +1,6 @@
 <template>
   <div v-if="can('browse_purchaseRequestMaster')">
-    <AppHeader/>
+    <AppHeader :setting="setting" @change="changeTab"/>
     <custom-table
       :data="setting"
       :tableData="tableData"
@@ -38,7 +38,10 @@
         {{ item.subcategory ? item.subcategory.name : "..." }}
       </template>
       <template v-slot:status="{ item }">
-        {{ item.status.Status_description }}
+        {{ getStatus(item)}}
+      </template>
+      <template v-slot:approved_date="{ item }">
+        {{ getApprovedDate(item)}}
       </template>
       <template v-slot:warehouse="{ item }">
         {{ item.warehouse.warehouse_description }}
@@ -153,6 +156,8 @@ export default {
         keyword: "",
         loading: false,
         filter: {},
+        tab:0,
+        param_tab:1,
       },
       tableData: {
         items: [],
@@ -274,13 +279,17 @@ export default {
         this.initialize();
       }
     },
+    changeTab(tab){
+      this.setting.param_tab = tab;
+      this.initialize();
+    },
     async initialize() {
       this.setting.loading = true;
       let params = this._createParams(this.tableData.options);
       params = params + this._createFilterParams(this.setting.filter);
       if (this.setting.keyword)
       params = params + "&keyword=" + this.setting.keyword;
-      params = params + "&for_approval=true";
+      params = params + `&tab=${this.setting.param_tab}`;
 
       let res = await apiGetAllPurchaseRequest(params);
       console.log(res, "purchase");
@@ -295,6 +304,15 @@ export default {
     search() {
       this.tableData.options.page = 1;
       this.initialize();
+    },
+    getStatus(item) { 
+      if(this.setting.tab == 1) return 'Approved'
+      else return item.status.Status_description
+    },
+    getApprovedDate(item){
+      if(this.setting.tab == 0) return '...'
+      if(this.setting.tab == 1) return this._dateFormat(item.pr_DepartmentHead_ApprovedDate)
+      if(this.setting.tab == 2 || this.setting.tab == 3) return this._dateFormat(item.pr_Branch_Level1_ApprovedDate)
     },
     resetFilters() {
       this.setting.filter = {};
@@ -332,7 +350,19 @@ export default {
     },
     async approvePR(){
       let res = await apiApprovePurchaseRequestItems(this.payload)
-      console.log(this.payload.items, "approve PR")
+      if(res.status == 200){
+        console.log(this.payload.items, "approve PR")
+        this.notification.messages = [];
+        this.notification.messages.push("Record successfully saved");
+        this.notification.color = "success";
+        this.isnotification = true;
+        this.isconfirmation = false;
+        this.showForm = false;
+        this.isedit = false;
+        this.isapprove = false;
+        this.isremarks = false;
+        this.initialize();
+      }
     },
     async remove(item) {
       let res = await apiRemovePurchaseRequest(this.payload.id)
@@ -355,6 +385,7 @@ export default {
         this.payload.items = []
         this.tableData.selected = []
         this.isedit = false
+        this.isapprove = false
         this.isaction = false
         return
       }
@@ -367,9 +398,14 @@ export default {
     },
     clearForm() {
       if (!this.isedit) {
+        this.tableData.selected = []
         this.payload = {};
         this.payload.requested_date = new Date();
         this.payload.items = [];
+        this.tableData.selected = []
+        this.isedit = false
+        this.isapprove = false
+        this.isaction = false
       }
       // this.isedit = false
     },
@@ -392,11 +428,11 @@ export default {
       let hideActions
       if(this.drawer) hideActions = ['add-btn', 'filter-btn', 'floater-btn']
       else hideActions = ['floater-btn']
-      if(!this.can('delete_purchaseOrderMaster')) hideActions.push('delete')
-      if(!this.can('add_purchaseRequestMaster')) hideActions.push('add')
-      if(!this.can('edit_purchaseRequestMaster')) hideActions.push('edit')
+      if(!this.can('delete_purchaseRequestMaster') || this.hasActions(this.setting)) hideActions.push('delete')
+      if(!this.can('add_purchaseRequestMaster') || this.hasActions(this.setting)) hideActions.push('add')
+      if(!this.can('edit_purchaseRequestMaster') || this.hasActions(this.setting)) hideActions.push('edit')
       if(!this.can('read_purchaseRequestMaster')) hideActions.push('show')
-      if(!this.isAuthorize('pr')) hideActions.push('approve')
+      if(!this.isAuthorize('pr') || this.hasActions(this.setting)) hideActions.push('approve')
       return hideActions
     },
     headers() {
@@ -411,7 +447,7 @@ export default {
         { text: "Category", value: "item_Category_Id" },
         { text: "Subcategory", value: "item_SubCategory_Id" },
         { text: "Pr. Status", value: "status" },
-        { text: "Date Approved", value: "pr_Branch_Level1_ApprovedDate" },
+        { text: "Date Approved", value: "approved_date" },
         { text: "Remarks", value: "pr_Justication" },
       ];
       if (!this.drawer) {

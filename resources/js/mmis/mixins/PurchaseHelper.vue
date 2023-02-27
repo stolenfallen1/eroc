@@ -34,6 +34,34 @@ export default {
       }
       payload.isapproved = flag
       return flag
+    },
+    hasActions(setting){
+      console.log(setting, "has actions")
+      if(setting.param_tab > 1) {
+        return true
+      }else{
+        return false
+      }
+    },
+    hasTab(tab){
+      if(this.$store.getters.user.role.name == 'administrator'){
+        if(tab=='consultant'){
+          return false
+        }
+      }else if(this.$store.getters.user.role.name == 'consultant'){
+        if(tab=='administrator'){
+          return false
+        }
+      }
+      return true
+    },
+    hasFilter(field){
+      if(this.$store.getters.user.role.name == 'staff' || this.$store.getters.user.role.name == 'department head'){
+        if(field=='branch' || field=='department'){
+          return false
+        }
+      }
+      return true
     }
   }
 }

@@ -7,8 +7,8 @@
             <th class="text-left">Item Code</th>
             <th class="text-left">Item Name / Description</th>
             <th class="text-left">Attachment</th>
-            <th class="text-left">Qty</th>
-            <th class="text-left">UOM</th>
+            <th class="text-left" v-if="$store.getters.user.role.name != 'administrator' && $store.getters.user.role.name != 'consultant'">Qty</th>
+            <th class="text-left" v-if="$store.getters.user.role.name != 'administrator' && $store.getters.user.role.name != 'consultant'">UOM</th>
             <th class="text-left" v-if="isapprove">APPD Qty</th>
             <th class="text-left" v-if="isapprove">APPD UOM</th>
             <th class="text-left">Action</th>
@@ -39,7 +39,7 @@
                 @change="onFileChange($event.target.files, item)"
               />
             </td>
-            <td>
+            <td v-if="$store.getters.user.role.name != 'administrator' && $store.getters.user.role.name != 'consultant'">
               <v-text-field
                 v-model="item.item_Request_Qty"
                 style="max-width: 100px"
@@ -50,7 +50,7 @@
                 :readonly="isapprove"
               ></v-text-field>
             </td>
-            <td>
+            <td v-if="$store.getters.user.role.name != 'administrator' && $store.getters.user.role.name != 'consultant'">
               <v-autocomplete
                 v-model="item.item_Request_UnitofMeasurement_Id"
                 solo
@@ -70,6 +70,7 @@
                 style="max-width: 100px"
                 solo
                 dense
+                :readonly="$store.getters.user.role.name == 'administrator' || $store.getters.user.role.name == 'consultant'"
                 hide-details="auto"
                 type="number"
               ></v-text-field>
@@ -84,6 +85,7 @@
                 dense
                 hide-details="auto"
                 attach
+                :readonly="$store.getters.user.role.name == 'administrator' || $store.getters.user.role.name == 'consultant'"
               >
               </v-autocomplete>
             </td>

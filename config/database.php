@@ -104,6 +104,30 @@ return [
             'prefix_indexes' => true,
         ],
        
+        'sqlsrv_sampledb' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_SAMPLEDB', 'localhost'),
+            'port' => env('DB_PORT_SAMPLEDB', '1433'),
+            'database' => env('DB_DATABASE_SAMPLEDB', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+        'sqlsrv_sampletest' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_SAMPLEtest', 'localhost'),
+            'port' => env('DB_PORT_SAMPLEtest', '1433'),
+            'database' => env('DB_DATABASE_SAMPLEtest', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
         
     ],
 

@@ -2,9 +2,10 @@
 
 namespace App\Models\BuildFile;
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class Priority extends Model
 {

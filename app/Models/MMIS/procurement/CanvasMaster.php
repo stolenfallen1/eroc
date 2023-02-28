@@ -9,5 +9,5 @@ class CanvasMaster extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_mmis';
-    protected $table = 'canvassMaster';
+    protected $table = 'canvasMaster';
 }

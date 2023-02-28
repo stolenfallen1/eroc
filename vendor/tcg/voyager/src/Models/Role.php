@@ -27,7 +27,7 @@ class Role extends Model
     {
         return $this->belongsToMany(Voyager::modelClass('Permission'));
     }
-
+    
     protected static function newFactory()
     {
         return RoleFactory::new();

@@ -16,7 +16,7 @@
         @include('voyager::alerts')
         <div class="row">
             <div class="col-md-12">
-
+                <label>Search Table</label>
                 <input id="myInput" type="text" placeholder="Search.." class="form-control">
                 <br>
                 <table class="table table-striped database-tables" id="myTable">

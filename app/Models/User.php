@@ -6,6 +6,7 @@ use PDO;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Approver\InvApprover;
 use App\Models\BuildFile\Warehouses;
+use Illuminate\Notifications\Notifiable;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -56,6 +57,11 @@ class User extends \TCG\Voyager\Models\User
         return $this->belongsTo(Warehouses::class, 'warehouse_id', 'id');
     }
 
+    public function approvaldetail()
+    {
+        return $this->hasOne(InvApprover::class, 'user_id', 'id');
+    }
+    
     public function purchaseRequest()
     {
         return $this->hasMany(PurchaseRequest::class, 'pr_RequestedBy', 'id');

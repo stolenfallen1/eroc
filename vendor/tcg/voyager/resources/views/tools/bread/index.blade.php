@@ -14,8 +14,10 @@
         @include('voyager::alerts')
         <div class="row">
             <div class="col-md-12">
-
-                <table class="table table-striped database-tables">
+                <label>Search Table</label>
+                <input id="myInput" type="text" placeholder="Search.." class="form-control">
+                <br>
+                <table class="table table-striped database-tables"  id="myTable"> 
                     <thead>
                         <tr>
                             <th>{{ __('voyager::database.table_name') }}</th>
@@ -173,6 +175,14 @@
                             Extra: val.extra
                         });
                         $('#table_info').modal('show');
+                    });
+                });
+            });
+            $(document).ready(function() {
+                $("#myInput").on("keyup", function() {
+                    var value = $(this).val().toLowerCase();
+                    $("#myTable tr").filter(function() {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
                     });
                 });
             });

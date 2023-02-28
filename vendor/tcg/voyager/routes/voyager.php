@@ -57,6 +57,8 @@ Route::group(['as' => 'voyager.'], function () {
             // do nothing, might just be because table not yet migrated.
         }
 
+
+       
         // Menu Routes
         Route::group([
             'as'     => 'menus.',

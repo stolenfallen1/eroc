@@ -55,26 +55,27 @@
                                 </div>
                             </div>
                         @endforeach
-                        <a href="#" class="permission-select-all">{{ __('voyager::generic.select_all') }}</a> /
-                        <a href="#" class="permission-deselect-all">{{ __('voyager::generic.deselect_all') }}</a>
+                      
+                              
                         <?php
                         $role_permissions = isset($dataTypeContent) ? $dataTypeContent->permissions->pluck('key')->toArray() : [];
                         ?>
+                           <a href="#" class="permission-select-all">{{ __('voyager::generic.select_all') }}</a> /
+                           <a href="#" class="permission-deselect-all">{{ __('voyager::generic.deselect_all') }}</a>
+                      
                         <div class="panel-group permissions checkbox" >
                             <div class="accordion" id="accordionExample" style="height: 350px;overflow-x: auto;">
-
-
                                 @foreach (App\Models\Database\Database::with('permissions')->get()->groupBy('driver') as $modules => $module)
                                     @php
                                         $databaseconnection = App\Models\Database\Database::where('driver', $modules)->first();
                                     @endphp
+                                     
                                     <div class="card">
                                         <div class="card-header" id="headingOne{{ $modules }}">
                                             <h4 class="mb-0">
-
                                                 <label data-toggle="collapse" data-target="#collapseOne{{ $modules }}"
                                                     aria-expanded="true"
-                                                    aria-controls="collapseOne{{ $modules }}"><strong>{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $databaseconnection->description)) }}</strong></label>
+                                                    aria-controls="collapseOne{{ $modules }}"><strong><i  class="voyager-data"></i > {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $databaseconnection->description)) }}</strong></label>
                                             </h4>
                                         </div>
 
@@ -82,7 +83,12 @@
                                             aria-labelledby="headingOne{{ $modules }}"
                                             data-parent="#accordionExample" >
                                             <div >
-                                                <table class="table">
+                                                <div class="form-group">
+                                                    <input  type="text" placeholder="Search.." class="form-control myInput" attrdriver="{{$modules}}" >
+                                                </div>
+                                            </div>
+                                            <div >
+                                                <table class="table" id="{{$modules}}">
                                                     <thead>
                                                         <tr>
                                                             <th>Module</th>
@@ -187,7 +193,13 @@
                     $(this).prop('checked', allChecked);
                 });
             }
-
+            $("body").on("keyup",'.myInput', function() {
+                    var value = $(this).val().toLowerCase();
+                    var driver = $(this).attr('attrdriver');
+                    $("#"+driver+" tr").filter(function() {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                    });
+                });
             parentChecked();
 
             $('.the-permission').on('change', function() {

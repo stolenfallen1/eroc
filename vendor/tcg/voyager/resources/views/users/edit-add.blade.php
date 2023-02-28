@@ -52,6 +52,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="warehouse">Warehouse</label>
+
+                             
                                 <input type="text" class="form-control"  value="{{ old('warehouse_id', $dataTypeContent->warehouse_id ?? '1') }}" id="warehouse" name="warehouse_id" value="1" >
                             </div>
                           
@@ -69,7 +71,6 @@
                                     <label for="default_role">{{ __('voyager::profile.role_default') }}</label>
                                     @php
                                         $dataTypeRows = $dataType->{(isset($dataTypeContent->id) ? 'editRows' : 'addRows' )};
-
                                         $row     = $dataTypeRows->where('field', 'user_belongsto_role_relationship')->first();
                                         $options = $row->details;
                                     @endphp

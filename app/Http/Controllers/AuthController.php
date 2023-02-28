@@ -27,15 +27,17 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             return true;
         });
         $data['module'] = $modulelist;
-        return Auth::user();
+        $data['usersdetails'] = Auth::user();
+        $data['submodule'] = $this->systemsubcomponents();
+        return $data;
     }
 
-    public function systemsubcomponents(Request $request){
+    public function systemsubcomponents(){
       
         // default value for admin 
         $menuid = '1';
         // request module id module id 
-        $module_id = '48';
+        $module_id = '124';
 
         // submodule list base module id 
         $items = Voyager::model('MenuItem')->with('childrensub')->where('menu_id',$menuid)->where('parent_id',$module_id)->get();

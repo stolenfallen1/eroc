@@ -16,6 +16,14 @@ export default {
       if(!payload.item_SubCategory_Id) errors.push({message:"Subcategory is required"})
       if(!payload.item_Category_Id) errors.push({message:"Category is required"})
       if(this.payload.items.length < 1) errors.push({message:"Item is required"})
+      payload.items.map(item => {
+        if(!item.item_Request_Qty || item.item_Request_Qty == 0){
+          errors.push({message:"Quantity is required"})
+        }
+        if(!item.item_Request_UnitofMeasurement_Id || item.item_Request_UnitofMeasurement_Id == 0){
+          errors.push({message:"Unit of measurement is required"})
+        }
+      })
 
       return errors;
     },

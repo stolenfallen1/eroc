@@ -129,6 +129,10 @@ tr.v-data-table__selected {
   z-index: 2 !important;
 }
 
+.v-input input {
+  font-size: 0.8rem;
+}
+
 /**
  * Pages imports
  */

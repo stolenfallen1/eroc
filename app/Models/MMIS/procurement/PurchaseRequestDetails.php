@@ -20,4 +20,8 @@ class PurchaseRequestDetails extends Model
     public function itemMaster(){
         return $this->belongsTo(Itemmasters::class, 'item_Id');
     }
+
+    public function canvases(){
+        return $this->hasMany(CanvasMaster::class, 'pr_request_details_id', 'id');
+    }
 }

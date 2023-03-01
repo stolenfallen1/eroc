@@ -37,9 +37,9 @@
   </v-dialog>
 </template>
 <script>
-import Fields from "./includes/fields.vue";
-import ItemTable from "./includes/ItemTable.vue";
-import ItemsForm from "./includes/ItemsForm.vue";
+import Fields from "./includes/purchase_request/fields.vue";
+import ItemTable from "./includes/purchase_request/ItemTable.vue";
+import ItemsForm from "./includes/purchase_request/ItemsForm.vue";
 import { mapGetters } from "vuex"
 export default {
   props:{

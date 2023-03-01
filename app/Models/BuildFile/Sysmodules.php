@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Sysmodules extends Model
 {
     use HasFactory;
+    protected $connection = "sqlsrv";
+    protected $table = "sysModules";
 }

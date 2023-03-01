@@ -36,6 +36,7 @@ class DataType extends Model
         'default_search_key',
         'scope',
         'details',
+        'driver',
     ];
 
     public function rows()
@@ -93,8 +94,10 @@ class DataType extends Model
                     $requestData[$field] = 0;
                 }
             }
-
+           
             if ($this->fill($requestData)->save()) {
+               
+                $requestData['driver'] = $dbconnection;
                 $fields = $this->fields(
                     ((strlen($this->model_name) != 0)
                     ? DB::getTablePrefix().app($this->model_name)->getTable()

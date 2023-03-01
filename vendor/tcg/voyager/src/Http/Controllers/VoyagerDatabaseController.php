@@ -163,13 +163,18 @@ class VoyagerDatabaseController extends Controller
     public function edit($table)
     {
         $this->authorize('browse_database');
-        // if (!SchemaManager::manager('sqlsrv_mmis')->tableExists($table)) {
-        //     return redirect()
-        //         ->route('voyager.database.index')
-        //         ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
-        // }
+        $dbconnection = DB::table('data_types')->where('slug',strtolower($table))->first();
+        $dbdriver = 'sqlsrv';
+        if(!empty($dbconnection)){
+            $dbdriver = $dbconnection->driver;
+        }
+        if (!SchemaManager::tableExists($table,$dbdriver)) {
+            return redirect()
+                ->route('voyager.database.index')
+                ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
+        }
 
-        $db = $this->prepareDbManager('update', $table);
+        $db = $this->prepareDbManager('update', $table,$dbdriver);
 
         return Voyager::view('voyager::tools.database.edit-add', compact('db'));
     }
@@ -205,7 +210,7 @@ class VoyagerDatabaseController extends Controller
                ->with($this->alertSuccess(__('voyager::database.success_create_table', ['table' => $table['name']])));
     }
 
-    protected function prepareDbManager($action, $table = '')
+    protected function prepareDbManager($action, $table = '',$dbconnection=null)
     {
         $db = new \stdClass();
 
@@ -213,7 +218,7 @@ class VoyagerDatabaseController extends Controller
         $db->types = Type::getPlatformTypes();
 
         if ($action == 'update') {
-            $db->table = SchemaManager::listTableDetails($table);
+            $db->table = SchemaManager::listTableDetails($table,$dbconnection);
             $db->formAction = route('voyager.database.update', $table);
         } else {
             $db->table = new Table('New Table');

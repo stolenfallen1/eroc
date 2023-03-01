@@ -9,7 +9,6 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
-
     <!-- Favicon -->
     <?php $admin_favicon = Voyager::setting('admin.icon_image', ''); ?>
     @if ($admin_favicon == '')
@@ -17,7 +16,6 @@
     @else
         <link rel="shortcut icon" href="{{ Voyager::image($admin_favicon) }}" type="image/png">
     @endif
-
 
 
     <!-- App CSS -->
@@ -115,7 +113,7 @@
         .checkbox label,
         .radio label {
 
-            /* padding-left: 0px; */
+            padding-left: 0px;
         }
 
         .roles .table>tbody>tr>td,
@@ -128,10 +126,106 @@
             padding: 8px 0px 10px 30px;
             vertical-align: top;
         }
+
+        .voyager .table>thead>tr>th {
+            background: #549dc5;
+            border-color: #d4d1d1;
+        }
+
+        .table>tfoot>tr>th,
+        .table>thead>tr>th {
+            color: #f7f7f8;
+            font-weight: 400;
+        }
+
+        .table th a {
+            color: #e8eef4;
+        }
+
+        .panel-bordered>.panel-body {
+            overflow: hidden;
+            padding: 30px 10px 10px;
+        }
+
+        .tab-content>div {
+            padding: 5px;
+        }
+
+        .voyager .nav-tabs,
+        .voyager .nav-tabs>li>a:hover {
+            background-color: #ffffff;
+        }
+
+        .nav-tabs>li.active>a,
+        .nav-tabs>li.active>a:focus,
+        .nav-tabs>li.active>a:hover {
+            background-color: #ffffff;
+            border-color: transparent transparent #62a8ea;
+            color: #191818;
+            font-weight: 900;
+        }
+
+        .usermanager .row>[class*=col-] {
+            margin-bottom: 2px;
+        }
+
+        .usermanager .panel-bordered>.panel-body {
+            overflow: hidden;
+            padding: 5px 5px 5px 5px;
+        }
+
+        .usermanager .table>tbody>tr>td,
+        .table>tbody>tr>th,
+        .table>tfoot>tr>td,
+        .table>tfoot>tr>th,
+        .table>thead>tr>td {
+            border-top: none;
+            line-height: 1.428571429;
+            padding: 2px 0px 0px 0px;
+            vertical-align: middle;
+        }
+
+        .usermanager .table>tbody>tr>th label {
+            margin-top: 5px;
+            vertical-align: middle;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .usermanager .table>tbody>tr>th {
+            width: 30%;
+        }
+
+        .usermanager .table>tbody>tr>td {
+            width: 70%;
+        }
+
+        .dnone {
+            display: none !important;
+        }
+
+        .form-control {
+            background-color: #fff;
+            background-image: none;
+            border: 1px solid #b5b8b9;
+            color: #1c1e1f;
+        }
+
+        .panel-body .select2-selection {
+            border: 1px solid #b5b8b9;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
     </style>
 
     @if (!empty(config('voyager.additional_css')))
         <!-- Additional CSS -->
+
         @foreach (config('voyager.additional_css') as $css)
             <link rel="stylesheet" type="text/css" href="{{ asset($css) }}">
         @endforeach

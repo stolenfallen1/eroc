@@ -41,10 +41,12 @@ class MenuItem extends Model
 
     public function children()
     {
-        return $this->hasMany(Voyager::modelClass('MenuItem'), 'parent_id')
-            ->with('children');
+        return $this->hasMany(Voyager::modelClass('MenuItem'), 'parent_id')->with('children');
     }
-
+    public function childrensub()
+    {
+        return $this->hasMany(Voyager::modelClass('MenuItem'), 'parent_id')->with('childrensub');
+    }
     public function menu()
     {
         return $this->belongsTo(Voyager::modelClass('Menu'));
@@ -62,6 +64,7 @@ class MenuItem extends Model
 
     protected function prepareLink($absolute, $route, $parameters, $url)
     {
+
         if (is_null($parameters)) {
             $parameters = [];
         }
@@ -73,7 +76,7 @@ class MenuItem extends Model
         } elseif (is_object($parameters)) {
             $parameters = json_decode(json_encode($parameters), true);
         }
-
+       
         if (!is_null($route)) {
             if (!Route::has($route)) {
                 return '#';
@@ -85,7 +88,6 @@ class MenuItem extends Model
         if ($absolute) {
             return url($url);
         }
-
         return $url;
     }
 

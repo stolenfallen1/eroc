@@ -4,6 +4,7 @@ const purchase = "purchase-request";
 httpApiClient.defaults.headers.common['Authorization'] = 'Bearer ' + store.getters.user.api_token
 
 export const apiGetAllPurchaseRequest = (query) => httpApiClient.get(`${purchase}?` + query);
+export const apiGetPurchaseRequest = (id) => httpApiClient.get(`${purchase}/` + id);
 export const apiRemovePurchaseRequest = (id) => httpApiClient.delete(`${purchase}/` + id);
 export const apiApprovePurchaseRequestItems = (payload) => httpApiClient.post(`${purchase}-items/`, payload);
 export const apiCreatePurchaseRequest = (payload) => httpApiClient.post(`${purchase}`, payload, {

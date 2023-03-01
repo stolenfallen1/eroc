@@ -329,8 +329,8 @@ export default {
       this.initialize();
     },
     editItem(item) {
-      console.log(item, "edit")
       if(item){
+        console.log(item, "edit")
         this.viewRecord(item)
       }
       setTimeout(() => {

@@ -88,6 +88,9 @@ class PurchaseRequests
     else if (Request()->tab == 4){
       $this->forAdministrator();
     }
+    else if (Request()->tab == 5){
+      $this->forCanvas();
+    }
   }
 
   private function forApproval(){
@@ -129,6 +132,10 @@ class PurchaseRequests
 
   private function forAdministrator(){
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->where('invgroup_id', '!=', 2);
+  }
+
+  private function forCanvas(){
+    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null);
   }
 
 }

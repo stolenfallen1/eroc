@@ -22,6 +22,12 @@ class PurchaseRequestController extends Controller
         return (new PurchaseRequests)->searchable();
     }
 
+    public function show($id)
+    {
+        return PurchaseRequest::with('warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
+            'purchaseRequestAttachments', 'user', 'purchaseRequestDetails.itemMaster', 'purchaseRequestDetails.canvases')->findOrFail($id);
+    }
+
     public function store(Request $request)
     {
         $status = invStatus::where('Status_description', 'like', '%pending%')->select('id')->first()->id;

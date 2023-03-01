@@ -4,6 +4,7 @@ namespace App\Models\MMIS\procurement;
 
 use App\Models\Approver\invStatus;
 use App\Models\BuildFile\Itemcategories;
+use App\Models\BuildFile\ItemGroup;
 use App\Models\BuildFile\Itemsubcategories;
 use App\Models\BuildFile\Priority;
 use App\Models\BuildFile\Warehouses;
@@ -52,5 +53,15 @@ class PurchaseRequest extends Model
 
     public  function subcategory(){
         return $this->belongsTo(Itemsubcategories::class, 'item_SubCategory_Id');
+    }
+
+    public function itemGroup()
+    {
+        return $this->belongsTo(ItemGroup::class, 'invgroup_id');
+    }
+
+    public function canvases()
+    {
+        return $this->hasMany(CanvasMaster::class, 'pr_request_id', 'id');
     }
 }

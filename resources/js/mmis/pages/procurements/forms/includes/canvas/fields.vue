@@ -1,7 +1,9 @@
 <template>
   <v-row>
     <v-col cols="12" xs="12" md="6">
-      <p v-if="prsn_settings.isSystem == 0" class="pa-0 ma-0">Purchase number</p>
+      <p v-if="prsn_settings.isSystem == 0" class="pa-0 ma-0">
+        Purchase number
+      </p>
       <v-row no-gutters v-if="prsn_settings.isSystem == 0">
         <v-col cols="12" xs="12" md="3">
           <v-text-field
@@ -11,7 +13,7 @@
             dense
             hide-details="auto"
             class="mb-2 mr-1"
-            :readonly="isapprove"
+            readonly
           ></v-text-field>
         </v-col>
         <v-col cols="12" xs="12" md="6">
@@ -23,7 +25,7 @@
             hide-details="auto"
             class="mb-2 mr-1"
             type="number"
-            :readonly="isapprove"
+            readonly
           ></v-text-field>
         </v-col>
         <v-col cols="12" xs="12" md="3">
@@ -34,74 +36,56 @@
             dense
             hide-details="auto"
             class="mb-2"
-            :readonly="isapprove"
+            readonly
           ></v-text-field>
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col cols="12" xs="12" md="6">
           <p class="pa-0 ma-0">Item group</p>
-          <v-autocomplete
-            v-model="payload.invgroup_id"
+          <v-text-field
+            v-model="payload.item_group.name"
             solo
-            :items="item_groups"
-            item-text="name"
-            item-value="id"
-            @change="fetchCategory"
             dense
             hide-details="auto"
             class="mb-2 mr-1"
-            attach
-            :readonly="isapprove"
-          ></v-autocomplete>
+            readonly
+          ></v-text-field>
         </v-col>
         <v-col cols="12" xs="12" md="6">
           <p class="pa-0 ma-0">Category</p>
-          <v-autocomplete
-            v-model="payload.item_Category_Id"
+          <v-text-field
+            v-model="payload.category.name"
             solo
-            :items="categories"
-            item-text="name"
-            item-value="id"
-            @change="fetchSubcategory"
             dense
             hide-details="auto"
             class="mb-2"
-            attach
-            :readonly="isapprove"
-          ></v-autocomplete>
+            readonly
+          ></v-text-field>
         </v-col>
       </v-row>
       <v-row no-gutters>
         <v-col cols="12" xs="12" md="6">
           <p class="pa-0 ma-0">Sub category</p>
-          <v-autocomplete
-            v-model="payload.item_SubCategory_Id"
+          <v-text-field
+            v-model="payload.subcategory.name"
             solo
-            :items="sub_categories"
-            item-text="name"
-            item-value="id"
             dense
             hide-details="auto"
             class="mb-2 mr-1"
-            attach
-            :readonly="isapprove"
-          ></v-autocomplete>
+            readonly
+          ></v-text-field>
         </v-col>
         <v-col cols="12" xs="12" md="6">
           <p class="pa-0 ma-0">Priority</p>
-          <v-autocomplete
-            v-model="payload.pr_Priority_Id"
-            :items="priorities"
-            item-text="priority_description"
-            item-value="id"
+          <v-text-field
+            v-model="payload.priority.priority_description"
             dense
             solo
             hide-details="auto"
             class="mb-2"
-            attach
-            :readonly="isapprove"
-          ></v-autocomplete>
+            readonly
+          ></v-text-field>
         </v-col>
       </v-row>
       <p class="pa-0 ma-0">Justication</p>
@@ -112,13 +96,13 @@
         solo
         hide-details="auto"
         class="mb-2"
-        :readonly="isapprove"
+        readonly
       ></v-textarea>
     </v-col>
     <v-col cols="12" xs="12" md="6">
       <p class="pa-0 ma-0">Requested By</p>
       <v-text-field
-        v-model="payload.requested_by"
+        v-model="payload.user.name"
         readonly
         solo
         dense
@@ -128,7 +112,7 @@
 
       <p class="pa-0 ma-0">Department</p>
       <v-text-field
-        v-model="payload.department"
+        v-model="payload.warehouse.warehouse_description"
         readonly
         solo
         class="mb-2"
@@ -149,46 +133,37 @@
         </v-col>
         <v-col cols="12" xs="12" md="6">
           <p class="pa-0 ma-0">Date Required</p>
-          <v-menu
-            v-model="required_date"
-            :close-on-content-click="false"
-            max-width="290"
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="payload.pr_Transaction_Date_Required"
-                :clearable="!isapprove"
-                readonly
-                v-bind="attrs"
-                v-on="on"
-                @click:clear="payload.pr_Transaction_Date_Required = null"
-                solo
-                class="mb-2"
-                hide-details="auto"
-                dense
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="payload.pr_Transaction_Date_Required"
-              @change="required_date = false"
-            ></v-date-picker>
-          </v-menu>
+          <v-text-field
+            :value="_dateFormat(payload.pr_Transaction_Date_Required)"
+            readonly
+            solo
+            class="mb-2"
+            hide-details="auto"
+            dense
+          ></v-text-field>
         </v-col>
       </v-row>
 
       <p class="pa-0 ma-0">Attachment</p>
       <v-text-field
-        :value="`${payload.attachments?payload.attachments.length + ' files':''}`"
+        :value="`${
+          payload.purchase_request_attachments ? payload.purchase_request_attachments.length + ' files' : ''
+        }`"
         readonly
         solo
-        @click="triggerUpload"
         class="mb-2 mr-1"
         hide-details="auto"
-        :append-outer-icon="payload.attachments?payload.attachments.length?'mdi-eye':'':''"
-        @click:append-outer="showAttachment(payload.attachments)"
+        :append-outer-icon="
+          payload.purchase_request_attachments
+            ? payload.purchase_request_attachments.length
+              ? 'mdi-eye'
+              : ''
+            : ''
+        "
+        @click:append-outer="showAttachment(payload.purchase_request_attachments)"
         dense
       ></v-text-field>
-      <v-file-input
+      <!-- <v-file-input
         ref="attachments"
         v-model="payload.attachments"
         show-size
@@ -199,21 +174,27 @@
         class="d-none"
         multiple
         hide-details="auto"
-      ></v-file-input>
-      <div class="d-flex flex-row-reverse">
+      ></v-file-input> -->
+      <!-- <div class="d-flex flex-row-reverse">
         <v-btn
           v-if="!isapprove"
           :disabled="
-            !payload.item_SubCategory_Id || !payload.item_Category_Id || !payload.department
+            !payload.item_SubCategory_Id ||
+            !payload.item_Category_Id ||
+            !payload.department
           "
           class="mt-2"
           color="primary"
           @click="$emit('select')"
           >Select item</v-btn
         >
-      </div>
+      </div> -->
     </v-col>
-    <AttachmentViewer @close="showviewfile=false" :show="showviewfile" :files="files" />
+    <AttachmentViewer
+      @close="showviewfile = false"
+      :show="showviewfile"
+      :files="files"
+    />
   </v-row>
 </template>
 <script>
@@ -222,10 +203,10 @@ import {
   apiGetAllCategories,
 } from "@global/api/categories";
 import { mapGetters } from "vuex";
-import AttachmentViewer from "@global/components/AttachmentViewer.vue"
+import AttachmentViewer from "@global/components/AttachmentViewer.vue";
 export default {
-  components:{
-    AttachmentViewer
+  components: {
+    AttachmentViewer,
   },
   props: {
     payload: {
@@ -248,7 +229,7 @@ export default {
       categories: [],
       attachments: [],
       files: [],
-      showviewfile: false
+      showviewfile: false,
     };
   },
   methods: {
@@ -265,30 +246,32 @@ export default {
     async convertAttachment() {
       console.log(this.attachments);
     },
-    triggerUpload(){
-      if(this.isapprove) return
-      this.$refs.attachments.$refs.input.click()
+    triggerUpload() {
+      if (this.isapprove) return;
+      this.$refs.attachments.$refs.input.click();
     },
-    showAttachment(files){
-      this.files = files
-      this.showviewfile = true
-      console.log("test append")
-    }
+    showAttachment(files) {
+      this.files = files;
+      this.showviewfile = true;
+      console.log("test append");
+    },
   },
   computed: {
     ...mapGetters(["item_groups", "priorities", "prsn_settings"]),
   },
   mounted() {
     if (this.isedit || this.isapprove) {
-      this.payload.attachments = this.payload.purchase_request_attachments
-      this.payload.item_Category_Id = parseInt(this.payload.item_Category_Id)
-      this.payload.item_SubCategory_Id = parseInt(this.payload.item_SubCategory_Id)
-      this.payload.invgroup_id = parseInt(this.payload.invgroup_id)
-      this.payload.pr_Priority_Id = parseInt(this.payload.pr_Priority_Id)
-      this.payload.requested_by = this.payload.user.name
-      this.payload.department = this.payload.warehouse.warehouse_description
-      this.fetchSubcategory(this.payload.item_Category_Id)
-      this.fetchCategory(this.payload.item_SubCategory_Id)
+      this.payload.attachments = this.payload.purchase_request_attachments;
+      this.payload.item_Category_Id = parseInt(this.payload.item_Category_Id);
+      this.payload.item_SubCategory_Id = parseInt(
+        this.payload.item_SubCategory_Id
+      );
+      this.payload.invgroup_id = parseInt(this.payload.invgroup_id);
+      this.payload.pr_Priority_Id = parseInt(this.payload.pr_Priority_Id);
+      this.payload.requested_by = this.payload.user.name;
+      this.payload.department = this.payload.warehouse.warehouse_description;
+      this.fetchSubcategory(this.payload.item_Category_Id);
+      this.fetchCategory(this.payload.item_SubCategory_Id);
     }
   },
 };

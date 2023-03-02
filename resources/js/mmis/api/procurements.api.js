@@ -1,6 +1,7 @@
 import { httpApiClient } from "@global/axios";
 import { store } from "@global/store"
 const purchase = "purchase-request";
+const canvas = "canvas";
 httpApiClient.defaults.headers.common['Authorization'] = 'Bearer ' + store.getters.user.api_token
 
 export const apiGetAllPurchaseRequest = (query) => httpApiClient.get(`${purchase}?` + query);
@@ -25,9 +26,12 @@ export const apiUpdatePurchaseRequestItemAttachment = (id, payload) => httpApiCl
 
 export const apiRemovePurchaseRequestItem = (id) => httpApiClient.delete(`remove-item/` + id);
 
-// export const apiGetUser = (id)  => Axios.get(`${resource}/`+id);
-// export const apiCreateUser = (payload)  => Axios.post(`${resource}/create`, payload);
-// export const apiUpdateUser = (id, payload)  => Axios.put(`${resource}/`+id, payload);
-// export const apiToggleVerifiedStatus = (id)  => Axios.put(`${resource}/toggle-verfied/${id}`);
-
-// export const apiDeleteUser = (id)  => Axios.delete(`${resource}/`+id);
+// canvas
+export const apiAddCanvas = (payload) => httpApiClient.post(`${canvas}`, payload, {
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
+export const apiGetAllCanvas = (query) => httpApiClient.get(`${canvas}?` + query);
+export const apiRemoveCanvas = (id) => httpApiClient.delete(`${canvas}/${id}`);
+export const apiUpdateIsRecommended = (id, payload) => httpApiClient.put(`update-isrecommended/${id}`, payload);

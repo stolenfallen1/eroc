@@ -43,7 +43,6 @@ export default {
   },
   methods: {
     calcMargin(i) {
-      console.log(i)
       return i * 50 + "px";
     },
   },

@@ -110,17 +110,18 @@
             ></v-text-field>
           </v-col>
         </v-row>
-        <SupplierTable :canvases="selected_item.canvases" />
+        <SupplierTable :canvases="canvases" @setIsRecommended="setIsRecommended" @delete="removeCanvas" />
         <div class="d-flex flex-row-reverse">
           <v-btn color="primary" @click="show_supplier_form = true">Submit supplier</v-btn>
           <v-btn @click="show_supplier_form=true" color="success" class="mr-2">Add supplier</v-btn>
         </div>
       </v-card-text>
     </v-card>
-    <SupplierForm :selected_item="selected_item" :show="show_supplier_form" @close="closeForm"/>
+    <SupplierForm :data="payload" :selected_item="selected_item" :show="show_supplier_form" @close="closeForm"/>
   </v-dialog>
 </template>
 <script>
+import { apiGetAllCanvas, apiUpdateIsRecommended, apiRemoveCanvas } from "@mmis/api/procurements.api.js"
 import SupplierTable from "./SupplierTable.vue"
 import SupplierForm from "./SupplierForm.vue"
 export default {
@@ -146,15 +147,50 @@ export default {
     return {
       isfetching: false,
       show_supplier_form: false,
+      canvases:[]
     };
   },
   methods: {
+    async removeCanvas(canvas){
+      let res = await apiRemoveCanvas(canvas.id)
+      if(res.status == 200){
+        this.fetchAllCanvas()
+      }
+    },
+    async setIsRecommended(canvas){
+      let res = await apiUpdateIsRecommended(canvas.id, {is_recommended: canvas.isRecommended, details_id: canvas.pr_request_details_id})
+      if(res.status == 200){
+        this.fetchAllCanvas()
+      }
+      console.log(canvas)
+    },
+    async fetchAllCanvas(){
+      let params = 'details_id=' + this.selected_item.id
+      let res = await apiGetAllCanvas(params)
+      if(res.status == 200){
+        this.canvases = res.data.data
+      }
+      console.log(res, "status")
+    },
     close() {
       this.$emit("close");
     },
-    closeForm() {
+    closeForm(val) {
+      if(val){
+        this.fetchAllCanvas()
+      }
       this.show_supplier_form = false;
     },
   },
+  watch:{
+    show:{
+      handler(val){
+        console.log(val,"peste")
+        if(val){
+          this.fetchAllCanvas()
+        }
+      }, immediate:true, deep: true
+    }
+  }
 };
 </script>

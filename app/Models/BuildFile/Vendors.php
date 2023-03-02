@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Vendors extends Model
 {
     use HasFactory;
+    protected $connection = "sqlsrv";
     protected $table = 'vendors';
 }

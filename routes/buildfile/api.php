@@ -3,6 +3,7 @@
 use App\Http\Controllers\BuildFile\CategoryController;
 use App\Http\Controllers\BuildFile\ItemController;
 use App\Http\Controllers\BuildFile\PriorityController;
+use App\Http\Controllers\BuildFile\SupplierController;
 use App\Http\Controllers\BuildFile\SystemSettingController;
 use App\Http\Controllers\BuildFile\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -28,4 +29,8 @@ Route::controller(PriorityController::class)->group(function () {
 
 Route::controller(SystemSettingController::class)->group(function () {
   Route::get('system-settings', 'getPRSNSequences');
+});
+
+Route::controller(SupplierController::class)->group(function () {
+  Route::get('suppliers', 'index');
 });

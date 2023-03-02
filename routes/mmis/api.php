@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MMIS\UserController;
 
 Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
@@ -18,5 +18,12 @@ Route::controller(PurchaseRequestController::class)->group(function () {
   Route::delete('purchase-request/{id}', [PurchaseRequestController::class, 'destroy']);
   Route::delete('remove-item/{id}', [PurchaseRequestController::class, 'removeItem']);
   Route::post('update-item-attachment/{id}', [PurchaseRequestController::class, 'updateItemAttachment']);
+});
+
+Route::controller(CanvasController::class)->group(function () {
+  Route::get('canvas', 'index');
+  Route::post('canvas', 'store');
+  Route::delete('canvas/{id}', 'destroy');
+  Route::put('update-isrecommended/{id}', 'updateIsRecommended');
 });
 

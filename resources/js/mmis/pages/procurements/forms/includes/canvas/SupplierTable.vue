@@ -20,7 +20,7 @@
             <td>{{canvas.canvas_item_amount}}</td>
             <td>{{canvas.canvas_Item_Qty}}</td>
             <td>{{canvas.unit.name}}</td>
-            <td>{{canvas.canvas_lead_time + 'Days'}}</td>
+            <td>{{canvas.canvas_lead_time + ' Days'}}</td>
             <td class="text-center">
               <v-icon @click="viewAttachment(canvas)" color="success">mdi-eye</v-icon>
             </td>

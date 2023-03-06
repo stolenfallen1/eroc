@@ -27,16 +27,16 @@
           <td class="text-center">
             {{ getUOM(item.item_Branch_Level1_Approved_UnitofMeasurement_Id) }}
           </td>
-          <td class="text-center">{{ item.price }}</td>
-          <td class="text-center">{{ item.total }}</td>
+          <td class="text-center">{{ item.recommended_canvas?item.recommended_canvas.canvas_item_amount:'...' }}</td>
+          <td class="text-center">{{ item.recommended_canvas?parseFloat(item.recommended_canvas.canvas_item_net_amount).toFixed(4):'...' }}</td>
           <td class="text-center">{{ _dateFormat(item.pr_Branch_Level1_ApprovedDate) }}</td>
           <td class="text-center">
             <v-icon @click="addCanvas(item)" color="success">mdi-plus</v-icon>
           </td>
-          <td class="text-center">{{ item.recommended_supplier?item.recommended_supplier.vendor_name: '...' }}</td>
+          <td class="text-center">{{ item.recommended_canvas?item.recommended_canvas.vendor.vendor_Name: '...' }}</td>
           <td class="text-center">
-            <v-icon v-if="checkbox1" @click="checkbox1=!checkbox1" color="primary">mdi-checkbox-outline</v-icon>
-            <v-icon v-else @click="checkbox1=!checkbox1">mdi-checkbox-blank-outline</v-icon>
+            <v-icon v-if="item.is_submitted" @click="item.is_submitted=!item.is_submitted" color="primary">mdi-checkbox-outline</v-icon>
+            <v-icon :disabled="item.recommended_canvas==null" v-else @click="item.is_submitted=!item.is_submitted">mdi-checkbox-blank-outline</v-icon>
           </td>
         </tr>
       </tbody>

@@ -134,6 +134,10 @@ tr.v-data-table__selected {
   font-size: 0.8rem;
 }
 
+.class-snackbar {
+  position: absolute;
+}
+
 /**
  * Pages imports
  */

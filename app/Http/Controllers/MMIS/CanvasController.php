@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Models\MMIS\procurement\CanvasMaster;
 use App\Helpers\SearchFilter\Procurements\Canvases;
+use App\Models\MMIS\procurement\PurchaseRequestDetails;
 
 class CanvasController extends Controller
 {
@@ -74,4 +75,14 @@ class CanvasController extends Controller
         $canvas->delete();
         return response()->json(['message' => 'success'], 200);
     }
+    
+    public function submitCanvasItem(Request $request)
+    {
+        PurchaseRequestDetails::whereIn('id', $request->items)->update([
+            'is_submitted' => true
+        ]);
+        return response()->json(['message' => 'success'], 200);
+    }
+
+
 }

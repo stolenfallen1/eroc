@@ -24,8 +24,14 @@ class PurchaseRequestController extends Controller
 
     public function show($id)
     {
-        return PurchaseRequest::with('warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
-            'purchaseRequestAttachments', 'user', 'purchaseRequestDetails.itemMaster', 'purchaseRequestDetails.canvases')->findOrFail($id);
+        return PurchaseRequest::with(['warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
+            'purchaseRequestAttachments', 'user', 'purchaseRequestDetails'=>function($q){
+                $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                    $query->whereHas('canvases', function($query1){
+                        $query1->where('is_submitted', false)->orWhere('is_submitted', null);
+                    })->orWhereDoesntHave('canvases');
+                });
+            }])->findOrFail($id);
     }
 
     public function store(Request $request)

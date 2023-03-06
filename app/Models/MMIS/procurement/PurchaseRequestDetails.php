@@ -3,6 +3,7 @@
 namespace App\Models\MMIS\procurement;
 
 use App\Models\BuildFile\Itemmasters;
+use App\Models\BuildFile\Vendors;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,4 +25,10 @@ class PurchaseRequestDetails extends Model
     public function canvases(){
         return $this->hasMany(CanvasMaster::class, 'pr_request_details_id', 'id');
     }
+
+    public function recommendedCanvas()
+    {
+        return $this->hasOne(CanvasMaster::class, 'pr_request_details_id')->where('isRecommended', 1);
+    }
+    
 }

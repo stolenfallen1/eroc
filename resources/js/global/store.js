@@ -103,9 +103,9 @@ const module = {
       httpClient.get('user-details').then(({data})=>{
         // this.$store.dispatch("fetchUnits")
         console.log(data)
-        commit("setUser", data)
-        if(data.role){
-          commit("setUserPermissions", data.role.permissions)
+        commit("setUser", data.usersdetails)
+        if(data.usersdetails.role){
+          commit("setUserPermissions", data.usersdetails.role.permissions)
         }
         dispatch("fetchItemGroups")
         dispatch("fetchUnits")

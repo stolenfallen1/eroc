@@ -50,6 +50,17 @@
       <template v-slot:side_filter>
         <DataFilter :filter="setting.filter" />
       </template>
+      <template v-slot:side-action>
+        <v-btn
+          :disabled="!pr_id"
+          width="100%"
+          small
+          color="primary"
+        >
+          <v-icon class="mr-2" small> mdi-thumb-up-outline </v-icon>
+          Approve
+        </v-btn>
+      </template>
     </right-side-bar>
     <DataForm :show="showForm" :pr_id="pr_id" @close="showForm = false" />
   </div>
@@ -159,7 +170,7 @@ export default {
         if ( !this.can("add_canvassMaster") || this.hasActions(this.setting) )
           hideActions.push("add");
         if (!this.can("read_purchaseRequestMaster")) hideActions.push("show");
-        if (!this.isAuthorize("pr") || this.hasActions(this.setting))
+        if (!this.isAuthorize("canvas") || this.hasActions(this.setting))
           hideActions.push("approve");
       } 
       else {
@@ -171,7 +182,7 @@ export default {
         if ( !this.can("edit_purchaseRequestMaster") || this.hasActions(this.setting) )
           hideActions.push("edit-btn");
         if (!this.can("read_purchaseRequestMaster")) hideActions.push("show-btn");
-        if (!this.isAuthorize("pr") || this.hasActions(this.setting))
+        if (!this.isAuthorize("canvas") || this.hasActions(this.setting))
           hideActions.push("approve-btn");
       } 
       return hideActions;

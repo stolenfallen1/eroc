@@ -91,6 +91,9 @@ class PurchaseRequests
     else if (Request()->tab == 5){
       $this->forCanvas();
     }
+    else if (Request()->tab == 6){
+      $this->canvasForApproval();
+    }
   }
 
   private function forApproval(){
@@ -135,7 +138,17 @@ class PurchaseRequests
   }
 
   private function forCanvas(){
-    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null);
+    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+      $q->where('is_submitted', false)->orWhere('is_submitted', null);
+    })->where(function($query){
+      $query->whereHas('canvases', function($q){
+        $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+      })->orWhereDoesntHave('canvases');
+    });
+  }
+  
+  private function canvasForApproval(){
+    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->where('is_submitted', false);
   }
 
 }

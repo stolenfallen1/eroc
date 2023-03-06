@@ -110,23 +110,50 @@
             ></v-text-field>
           </v-col>
         </v-row>
-        <SupplierTable :canvases="selected_item.canvases" />
+        <SupplierTable
+          :canvases="canvases"
+          @setIsRecommended="recommendConfirmation"
+          @delete="removeConfirmation"
+        />
         <div class="d-flex flex-row-reverse">
-          <v-btn color="primary" @click="show_supplier_form = true">Submit supplier</v-btn>
-          <v-btn @click="show_supplier_form=true" color="success" class="mr-2">Add supplier</v-btn>
+          <v-btn color="primary" @click="$emit('close')">close</v-btn>
+          <v-btn @click="show_supplier_form = true" color="success" class="mr-2"
+            >Add supplier</v-btn
+          >
         </div>
       </v-card-text>
     </v-card>
-    <SupplierForm :selected_item="selected_item" :show="show_supplier_form" @close="closeForm"/>
+    <SupplierForm
+      :data="payload"
+      :selected_item="selected_item"
+      :show="show_supplier_form"
+      @close="closeForm"
+    />
+    <Confirmation
+      @cancel="cancelConfirmation"
+      @confirm="confirmAction"
+      :show="isconfirmation"
+    />
+    <SnackBar
+      class="class-snackbar"
+      @close="isnotification = false"
+      :data="notification"
+      :show="isnotification"
+    />
   </v-dialog>
 </template>
 <script>
-import SupplierTable from "./SupplierTable.vue"
-import SupplierForm from "./SupplierForm.vue"
+import {
+  apiGetAllCanvas,
+  apiUpdateIsRecommended,
+  apiRemoveCanvas,
+} from "@mmis/api/procurements.api.js";
+import SupplierTable from "./SupplierTable.vue";
+import SupplierForm from "./SupplierForm.vue";
 export default {
-  components:{
+  components: {
     SupplierTable,
-    SupplierForm
+    SupplierForm,
   },
   props: {
     show: {
@@ -146,15 +173,104 @@ export default {
     return {
       isfetching: false,
       show_supplier_form: false,
+      canvases: [],
+      selected_canvas: {},
+      isconfirmation: false,
+      isdelete: false,
+      isnotification: false,
+      notification: {
+        messages: [],
+      },
     };
   },
   methods: {
+    cancelConfirmation() {
+      this.selected_canvas = {};
+      this.isdelete = false;
+      this.isconfirmation = false;
+      this.fetchAllCanvas();
+    },
+    confirmAction(code) {
+      if (this.$store.getters.user.passcode != code || code == null) {
+        this.showNotification("Incorrect passcode", "error")
+        this.isnotification = true;
+        return;
+      }
+      this.isconfirmation = false;
+      if (this.isdelete) return this.removeCanvas();
+      this.setIsRecommended();
+    },
+    showNotification(message, color){
+      this.notification.messages = [];
+      this.notification.messages.push(message);
+      this.notification.color = color;
+    },
+    removeConfirmation(canvas) {
+      Object.assign(this.selected_canvas, canvas);
+      this.isdelete = true;
+      this.isconfirmation = true;
+    },
+    recommendConfirmation(canvas) {
+      Object.assign(this.selected_canvas, canvas);
+      this.isconfirmation = true;
+    },
+    async removeCanvas() {
+      let res = await apiRemoveCanvas(this.selected_canvas.id);
+      if (res.status == 200) {
+        this.showNotification("Canvas successfully removed", "success")
+        this.isnotification = true;
+        this.selected_canvas = {};
+        this.isdelete = false;
+        this.fetchAllCanvas();
+      }
+    },
+    async setIsRecommended() {
+      let res = await apiUpdateIsRecommended(this.selected_canvas.id, {
+        is_recommended: this.selected_canvas.isRecommended,
+        details_id: this.selected_canvas.pr_request_details_id,
+      });
+      if (res.status == 200) {
+        this.showNotification("Canvas successfully set as recommended", "success")
+        this.isnotification = true;
+        this.selected_canvas = {};
+        this.isdelete = false;
+        this.fetchAllCanvas();
+      }
+    },
+    async fetchAllCanvas() {
+      let params = "details_id=" + this.selected_item.id;
+      let res = await apiGetAllCanvas(params);
+      if (res.status == 200) {
+        this.canvases = res.data.data;
+      }
+      console.log(res, "status");
+    },
     close() {
       this.$emit("close");
     },
-    closeForm() {
+    closeForm(val) {
+      if (val) {
+        this.fetchAllCanvas();
+      }
       this.show_supplier_form = false;
+    },
+  },
+  watch: {
+    show: {
+      handler(val) {
+        console.log(val, "peste");
+        if (val) {
+          this.fetchAllCanvas();
+        }
+      },
+      immediate: true,
+      deep: true,
     },
   },
 };
 </script>
+<style lang="scss" scoped>
+.class-snackbar {
+  position: absolute;
+}
+</style>

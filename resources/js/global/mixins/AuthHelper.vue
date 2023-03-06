@@ -6,6 +6,10 @@ export default {
         'department head',
         'administrator'
       ],
+      canvas_approver_roles:[
+        'comptroller',
+        'administrator'
+      ],
 
     }
   },
@@ -15,6 +19,7 @@ export default {
     },
     isAuthorize(tab){
       if(tab == 'pr') return this.pr_approver_roles.some(role => role == this.$store.getters.user.role.name)
+      if(tab == 'canvas') return this.pr_approver_roles.some(role => role == this.$store.getters.user.role.name)
     }
   }
 }

@@ -1,10 +1,10 @@
 <template>
   <v-row>
     <v-col cols="12" xs="12" md="6">
-      <p v-if="prsn_settings.isSystem == 0" class="pa-0 ma-0">
+      <p class="pa-0 ma-0">
         Purchase number
       </p>
-      <v-row no-gutters v-if="prsn_settings.isSystem == 0">
+      <v-row no-gutters>
         <v-col cols="12" xs="12" md="3">
           <v-text-field
             placeholder="Prefix"

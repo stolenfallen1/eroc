@@ -3,3 +3,4 @@ js/chunks/*.js
 css/*.css
 ./mix-manifest.json
 procurements/*
+canvas/*

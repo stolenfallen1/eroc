@@ -1,7 +1,6 @@
 <template>
   <v-dialog
     v-model="show"
-    hide-overlay
     width="1250"
     transition="dialog-bottom-transition"
     scrollable
@@ -21,6 +20,11 @@
           :items="payload.purchase_request_details"
           @addCanvas="showCanvasForm"
         />
+      <div class="d-flex flex-row-reverse">
+        <v-btn :disabled="isSubmitted" color="primary" @click="confirmSubmit"
+          >Submit canvas</v-btn
+        >
+      </div>
       </v-card-text>
     </v-card>
     <CanvasForm
@@ -29,13 +33,24 @@
       :payload="payload"
       @close="closeForm"
     />
+    <Confirmation
+      @cancel="cancelConfirmation"
+      @confirm="confirmAction"
+      :show="isconfirmation"
+    />
+    <SnackBar
+      class="class-snackbar"
+      @close="isnotification = false"
+      :data="notification"
+      :show="isnotification"
+    />
   </v-dialog>
 </template>
 <script>
 import Field from "./includes/canvas/fields.vue";
 import CanvasForm from "./includes/canvas/CanvasForm.vue";
 import ItemTable from "./includes/canvas/ItemTable.vue";
-import { apiGetPurchaseRequest } from "@mmis/api/procurements.api";
+import { apiGetPurchaseRequest, apiSubmitCanvas } from "@mmis/api/procurements.api";
 export default {
   components: {
     Field,
@@ -56,13 +71,50 @@ export default {
     return {
       isfetching: true,
       show_canvas_form: false,
+      isnotification: false,
+      isconfirmation: false,
+      notification: {
+        messages: [],
+      },
       selected_item: {},
       payload: {},
     };
   },
   methods: {
+    cancelConfirmation(){
+      this.isconfirmation = false;
+    },
+    confirmAction(code){
+      if (this.$store.getters.user.passcode != code || code == null) {
+        this.showNotification("Incorrect passcode", "error")
+        this.isnotification = true;
+        return;
+      }
+      this.submitCanvas()
+    },
+    confirmSubmit(){
+      this.isconfirmation = true
+    },
+    showNotification(message, color){
+      this.notification.messages = [];
+      this.notification.messages.push(message);
+      this.notification.color = color;
+    },
+    async submitCanvas(){
+      let payload = this.payload.purchase_request_details.map(detail=>{
+        if(detail.is_submitted == true){
+          return detail.id
+        }
+      })
+      let res = await apiSubmitCanvas({items: payload})
+      if(res.status == 200){
+        this.showNotification("Item successfully submitted", "success")
+        this.isnotification = true;
+      }
+    },
     closeForm() {
       this.show_canvas_form = false;
+      this.fetchPR();
     },
     showCanvasForm(item) {
       Object.assign(this.selected_item, item);
@@ -82,6 +134,19 @@ export default {
         this.isfetching = false;
       }
     },
+  },
+  computed:{
+    isSubmitted(){
+      let submitted = true
+      if(this.payload.purchase_request_details){
+        if(this.payload.purchase_request_details.length > 0) {
+          this.payload.purchase_request_details.map(details=>{
+            if(details.is_submitted==true) submitted = false
+          })
+        }
+      }
+      return submitted
+    }
   },
   watch: {
     pr_id: {

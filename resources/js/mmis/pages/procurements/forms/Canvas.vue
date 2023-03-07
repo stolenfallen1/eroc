@@ -22,7 +22,7 @@
         />
       <div class="d-flex flex-row-reverse">
         <v-btn :disabled="isSubmitted" color="primary" @click="confirmSubmit"
-          >Submit canvas</v-btn
+          >{{isapproved?'Submit':'Submit canvas'}}</v-btn
         >
       </div>
       </v-card-text>
@@ -66,6 +66,10 @@ export default {
       type: Number,
       required: true,
     },
+    isapproved:{
+      type: Boolean,
+      required: true,
+    }
   },
   data() {
     return {
@@ -89,6 +93,9 @@ export default {
         this.showNotification("Incorrect passcode", "error")
         this.isnotification = true;
         return;
+      }
+      if(this.isapproved){
+        this.$emit('submit')
       }
       this.submitCanvas()
     },

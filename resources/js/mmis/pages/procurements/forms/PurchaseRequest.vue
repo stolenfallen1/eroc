@@ -126,5 +126,11 @@ export default {
       },
     },
   },
+  mounted(){
+    this.$store.dispatch("fetchPriorities")
+    this.$store.dispatch("fetchStatus")
+    this.$store.dispatch("fetchUnits")
+    this.$store.dispatch("fetchItemGroups")
+  }
 };
 </script>

@@ -75,31 +75,36 @@ const module = {
     },
 
     async fetchPriorities({commit, state}){
+      if(state.priorities.length) return
       httpApiClient.get('priorities',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setPriorities", data.priorities)
       })
     },
 
     async fetchStatus({commit, state}){
+      if(state.status.length) return
       httpApiClient.get('status',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setStatus", data.status)
       })
     },
 
     async fetchUnits({commit, state}){
+      if(state.units.length) return
       httpApiClient.get('units',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setUnits", data.units)
       })
     },
 
     async fetchItemGroups({commit, state}){
+      if(state.item_groups.length) return
       console.log(state.user.api_token,"state.user")
       httpApiClient.get('items-group',{ headers: { Authorization: 'Bearer ' + state.user.api_token } }).then(({data})=>{
         commit("setItemGroups", data.item_groups)
       })
     },
 
-    async fetchUserDetails({commit, dispatch}){
+    async fetchUserDetails({commit, dispatch, state}){
+      if(state.user != null) return
       httpClient.get('user-details').then(({data})=>{
         // this.$store.dispatch("fetchUnits")
         console.log(data)
@@ -107,11 +112,11 @@ const module = {
         if(data.usersdetails.role){
           commit("setUserPermissions", data.usersdetails.role.permissions)
         }
-        dispatch("fetchItemGroups")
-        dispatch("fetchUnits")
-        dispatch("fetchStatus")
-        dispatch("fetchPriorities")
         dispatch("fetchSettings")
+        // dispatch("fetchItemGroups")
+        // dispatch("fetchUnits")
+        // dispatch("fetchStatus")
+        // dispatch("fetchPriorities")
       })
     },
 

@@ -64,7 +64,7 @@
         </v-btn>
       </template>
     </right-side-bar>
-    <DataForm :show="showForm" :pr_id="pr_id" @close="showForm = false" />
+    <DataForm :show="showForm" :pr_id="pr_id" @close="showForm = false" :isapproved="isapproved" @success="success" />
   </div>
 </template>
 <script>
@@ -120,6 +120,7 @@ export default {
   },
   methods: {
     async initialize() {
+      this.setting.loading = true;
       if(this.user.role.name=="comptroller") this.setting.param_tab = 6
       let params = this._createParams(this.tableData.options);
       params = params + this._createFilterParams(this.setting.filter);
@@ -135,6 +136,11 @@ export default {
         this.tableData.total = res.data.total;
         this.setting.loading = false;
       }
+    },
+    success(){
+      this.isapproved = false;
+      this.showForm = false;
+      this.pr_id = 0
     },
     changeTab(tab) {
       this.setting.param_tab = tab;

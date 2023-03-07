@@ -23,20 +23,82 @@
         <tr v-for="(item, index) in items" :key="index">
           <td class="text-center">{{ item.id }}</td>
           <td class="text-center">{{ item.item_master.item_name }}</td>
-          <td class="text-center">{{ item.item_Branch_Level1_Approved_Qty }}</td>
+          <td class="text-center">
+            {{ item.item_Branch_Level1_Approved_Qty }}
+          </td>
           <td class="text-center">
             {{ getUOM(item.item_Branch_Level1_Approved_UnitofMeasurement_Id) }}
           </td>
-          <td class="text-center">{{ item.recommended_canvas?item.recommended_canvas.canvas_item_amount:'...' }}</td>
-          <td class="text-center">{{ item.recommended_canvas?parseFloat(item.recommended_canvas.canvas_item_net_amount).toFixed(4):'...' }}</td>
-          <td class="text-center">{{ _dateFormat(item.pr_Branch_Level1_ApprovedDate) }}</td>
+          <td class="text-center">
+            {{
+              item.recommended_canvas
+                ? item.recommended_canvas.canvas_item_amount
+                : "..."
+            }}
+          </td>
+          <td class="text-center">
+            {{
+              item.recommended_canvas
+                ? parseFloat(
+                    item.recommended_canvas.canvas_item_net_amount
+                  ).toFixed(4)
+                : "..."
+            }}
+          </td>
+          <td class="text-center">
+            {{ _dateFormat(item.pr_Branch_Level1_ApprovedDate) }}
+          </td>
           <td class="text-center">
             <v-icon @click="addCanvas(item)" color="success">mdi-plus</v-icon>
           </td>
-          <td class="text-center">{{ item.recommended_canvas?item.recommended_canvas.vendor.vendor_Name: '...' }}</td>
           <td class="text-center">
-            <v-icon v-if="item.is_submitted" @click="item.is_submitted=!item.is_submitted" color="primary">mdi-checkbox-outline</v-icon>
-            <v-icon :disabled="item.recommended_canvas==null" v-else @click="item.is_submitted=!item.is_submitted">mdi-checkbox-blank-outline</v-icon>
+            {{
+              item.recommended_canvas
+                ? item.recommended_canvas.vendor.vendor_Name
+                : "..."
+            }}
+          </td>
+          <td
+            v-if="$store.getters.user.role.name != 'comptroller'"
+            class="text-center"
+          >
+            <v-icon
+              v-if="item.is_submitted"
+              @click="setIsSubmitted(item)"
+              color="primary"
+              >mdi-checkbox-outline</v-icon
+            >
+            <v-icon
+              :disabled="item.recommended_canvas == null"
+              v-else
+              @click="setIsSubmitted(item)"
+              >mdi-checkbox-blank-outline</v-icon
+            >
+          </td>
+          <td v-show="!ischanged" v-else class="text-center">
+            <v-tooltip top :color="item.isapproved?'primary':'error'">
+              <template v-slot:activator="{ on, attrs }">
+                <v-icon 
+                  v-if="item.isapproved" 
+                  color="primary"
+                  v-bind="attrs" v-on="on"
+                  @click="toogleAction(item)"
+                > 
+                  mdi-thumb-up-outline
+                  </v-icon>
+                <v-icon 
+                  v-else 
+                  color="error" 
+                  v-bind="attrs" 
+                  v-on="on"
+                  @click="toogleAction(item)"
+                >
+                  mdi-thumb-down-outline
+                </v-icon>
+              </template>
+              <span v-if="item.isapproved">Approved</span>
+              <span v-else>Declined</span>
+            </v-tooltip>
           </td>
         </tr>
       </tbody>
@@ -52,11 +114,23 @@ export default {
     },
   },
   data() {
-    return{
-      checkbox1:true
-    }
+    return {
+      checkbox1: true,
+      ischanged: false,
+    };
   },
   methods: {
+    toogleAction(item){
+      this.ischanged = true;
+      item.isapproved = !item.isapproved;
+      setTimeout(() => {
+        this.ischanged = false;
+      }, 50);
+    },
+    setIsSubmitted(item) {
+      if (this.$store.getters.user.role.name != "purchaser") return;
+      item.is_submitted = !item.is_submitted;
+    },
     addCanvas(item) {
       this.$emit("addCanvas", item);
     },

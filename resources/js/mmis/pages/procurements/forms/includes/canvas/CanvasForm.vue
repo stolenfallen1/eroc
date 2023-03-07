@@ -117,7 +117,7 @@
         />
         <div class="d-flex flex-row-reverse">
           <v-btn color="primary" @click="$emit('close')">close</v-btn>
-          <v-btn @click="show_supplier_form = true" color="success" class="mr-2"
+          <v-btn v-if="$store.getters.user.role.name=='purchaser'" @click="show_supplier_form = true" color="success" class="mr-2"
             >Add supplier</v-btn
           >
         </div>

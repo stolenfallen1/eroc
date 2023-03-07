@@ -29,7 +29,7 @@
               <v-icon v-else @click="setIsRecommended(canvas)">mdi-checkbox-blank-outline</v-icon>
             </td>
             <td class="text-center">
-              <v-icon color="error" @click="$emit('delete', canvas)">mdi-delete</v-icon>
+              <v-icon :disabled="$store.getters.user.role.name!='purchaser'" color="error" @click="$emit('delete', canvas)">mdi-delete</v-icon>
             </td>
           </tr>
         </tbody>
@@ -54,6 +54,7 @@ export default {
   },
   methods:{
     setIsRecommended(canvas){
+      if(this.$store.getters.user.role.name!='purchaser') return
       this.$emit('setIsRecommended', canvas)
     },
     viewAttachment(canvas){

@@ -4,6 +4,7 @@ namespace App\Helpers\SearchFilter\Procurements;
 
 use Carbon\Carbon;
 use App\Models\MMIS\procurement\PurchaseRequest;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseRequests
 {
@@ -12,6 +13,7 @@ class PurchaseRequests
   public function __construct()
   {
     $this->model = PurchaseRequest::query();
+    // $this->model = DB::connection('sqlsrv_mmis')->table('purchaseRequestMaster');
     $this->authUser = auth()->user();
   }
 
@@ -148,7 +150,13 @@ class PurchaseRequests
   }
   
   private function canvasForApproval(){
-    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->where('is_submitted', false);
+    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+      $q->where('is_submitted', true);
+    })->where(function($query){
+      $query->whereHas('canvases', function($q){
+        $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+      });
+    });
   }
 
 }

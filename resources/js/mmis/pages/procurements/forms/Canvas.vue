@@ -131,6 +131,10 @@ export default {
 
       if (res.status == 200) {
         this.payload = res.data;
+        this.payload.purchase_request_details.map(detail=>{
+          detail.isapproved = true;
+          return detail
+        })
         this.isfetching = false;
       }
     },

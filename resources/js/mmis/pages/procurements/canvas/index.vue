@@ -42,6 +42,7 @@
       </template>
     </custom-table>
     <right-side-bar
+      :disabled="checkSideBtn"
       :hide="checkPermission"
       @resetFilters="resetFilters"
       @filterRecord="initialize"
@@ -56,6 +57,7 @@
           width="100%"
           small
           color="primary"
+          @click="approveItem"
         >
           <v-icon class="mr-2" small> mdi-thumb-up-outline </v-icon>
           Approve
@@ -103,6 +105,7 @@ export default {
       },
       loading: false,
       showForm: false,
+      isapproved: false,
       pr_id: 0,
       // payload: {
       //   requested_date: new Date(),
@@ -117,6 +120,7 @@ export default {
   },
   methods: {
     async initialize() {
+      if(this.user.role.name=="comptroller") this.setting.param_tab = 6
       let params = this._createParams(this.tableData.options);
       params = params + this._createFilterParams(this.setting.filter);
       if (this.setting.keyword)
@@ -150,6 +154,10 @@ export default {
     addItem() {
       this.showForm = true;
     },
+    approveItem() {
+      this.isapproved = true;
+      this.showForm = true;
+    },
     remove(item) {
       axios.delete(`users/${item.id || item}`).then(({ data }) => {
         this.successNotification(`Employee Deleted`);
@@ -162,7 +170,12 @@ export default {
     },
   },
   computed: {
-    ...mapGetters(["drawer"]),
+    ...mapGetters(["drawer", "user"]),
+    checkSideBtn() {
+      if (!this.$store.getters.user.id || this.pr_id == 0) {
+        return ["add"];
+      }
+    },
     checkPermission() {
       let hideActions;
       if (this.drawer){
@@ -170,7 +183,7 @@ export default {
         if ( !this.can("add_canvassMaster") || this.hasActions(this.setting) )
           hideActions.push("add");
         if (!this.can("read_purchaseRequestMaster")) hideActions.push("show");
-        if (!this.isAuthorize("canvas") || this.hasActions(this.setting))
+        if (!this.isAuthorize("canvas") || !this.hasActions(this.setting))
           hideActions.push("approve");
       } 
       else {

@@ -24,13 +24,22 @@ class PurchaseRequestController extends Controller
 
     public function show($id)
     {
+        $role = Auth::user()->role->name;
         return PurchaseRequest::with(['warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
-            'purchaseRequestAttachments', 'user', 'purchaseRequestDetails'=>function($q){
-                $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
-                    $query->whereHas('canvases', function($query1){
-                        $query1->where('is_submitted', false)->orWhere('is_submitted', null);
-                    })->orWhereDoesntHave('canvases');
-                });
+            'purchaseRequestAttachments', 'user', 'purchaseRequestDetails'=>function($q) use($role){
+                if($role=='comptroller'){
+                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                        $query->whereHas('canvases', function($query1){
+                            $query1->where('is_submitted', true);
+                        });
+                    });
+                }else{
+                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                        $query->whereHas('canvases', function($query1){
+                            $query1->where('is_submitted', false)->orWhere('is_submitted', null);
+                        })->orWhereDoesntHave('canvases');
+                    });
+                }
             }])->findOrFail($id);
     }
 

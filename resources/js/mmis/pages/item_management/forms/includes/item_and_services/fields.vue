@@ -491,9 +491,6 @@ export default {
       required_date: false,
       sub_categories: [],
       categories: [],
-      attachments: [],
-      files: [],
-      showviewfile: false,
     };
   },
   methods: {
@@ -507,24 +504,10 @@ export default {
       let res = await apiGetAllCategories(params);
       this.categories = res.data.categories;
     },
-    async convertAttachment() {
-      console.log(this.attachments);
-    },
-    triggerUpload() {
-      if (this.isapprove) return;
-      this.$refs.attachments.$refs.input.click();
-    },
-    showAttachment(files) {
-      this.files = files;
-      this.showviewfile = true;
-      console.log("test append");
-    },
   },
   computed: {
     ...mapGetters([
       "item_groups",
-      "priorities",
-      "prsn_settings",
       "brand",
       "units",
       "drug_administration",

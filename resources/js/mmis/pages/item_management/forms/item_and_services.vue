@@ -35,28 +35,15 @@
             >
         </v-card-actions>
       </v-card>
-      <!-- <iframe :src="payload.purchase_request_attachments[0].filepath"
-        /> -->
     </v-card>
-    <items-form
-      v-if="show"
-      :isedit="isedit"
-      :payload="payload"
-      :show="show_item_form"
-      @cancel="show_item_form = false"
-      @selected="setPayloadItems"
-    />
+   
   </v-dialog>
 </template>
   <script>
 import Fields from "./includes/item_and_services/fields.vue";
-import ItemTable from "./includes/item_and_services/ItemTable.vue";
-import ItemsForm from "./includes/item_and_services/ItemsForm.vue";
 import { mapGetters } from "vuex";
 export default {
   components: {
-    ItemTable,
-    ItemsForm,
     Fields,
   },
   props: {
@@ -91,35 +78,14 @@ export default {
     removeItem(index) {
       this.payload.items.splice(index, 1);
     },
-    setPayloadItems(val) {
-      if (this.isedit) {
-        val.map((val_item) => {
-          let exist = false;
-          this.payload.items.map((item) => {
-            if (item.item_Id == val_item.id) {
-              console.log(val_item.id, "test");
-              exist = true;
-            }
-          });
-          if (!exist) {
-            this.payload.items.push(val_item);
-          }
-        });
-        console.log(this.payload.items, "item after push");
-        this.show_item_form = false;
-        return;
-      }
-      this.payload.items = val;
-      this.show_item_form = false;
-    },
+   
   },
   computed: {
-    ...mapGetters(["prsn_settings"]),
   },
   watch: {
     show: {
       handler(val) {
-        if (val && (this.isedit || this.isapprove)) {
+        if (val && (this.isedit)) {
           console.log(this.payload.items, "hshshsh");
         }
       },

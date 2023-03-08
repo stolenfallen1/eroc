@@ -24,6 +24,7 @@ class Permission extends Model
         self::firstOrCreate(['key' => 'delete_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver]);
         self::firstOrCreate(['key' => 'print_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver]);
         self::firstOrCreate(['key' => 'post_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver]);
+        self::firstOrCreate(['key' => 'approved_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver]);
     }
     
     public static function removeFrom($table_name)

@@ -1,8 +1,9 @@
 <template>
   <div>
-    <v-navigation-drawer width="220" v-model="isdrawer" absolute right>
+    <v-navigation-drawer width="200" v-model="isdrawer" app    right>
       <v-list nav>
-        <v-list-group :value="!isaction">
+        <v-subheader>Sub Explorer</v-subheader>
+        <v-list-group :value="true">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-contain</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Sub-Components</v-list-item-title>
@@ -12,7 +13,6 @@
               v-for="(child, i) in right_items"
               @click="selectedRoute(child.route)"
               :key="i"
-              class="ml-4"
               dense
               link
               :class="{ 'active-route': active_route == child.route }"
@@ -24,7 +24,7 @@
             </v-list-item>
           </v-list>
         </v-list-group>
-        <v-list-group v-if="!hide.includes('actions')" :value="isaction">
+        <v-list-group v-if="!hide.includes('actions')" :value="true">
           <v-icon class="list-icon" slot="prependIcon" small color="white">mdi-cursor-default-outline</v-icon>
           <template v-slot:activator>
             <v-list-item-title>Actions</v-list-item-title>
@@ -101,4 +101,5 @@ export default {
   display: grid;
   place-items: center;
 }
+
 </style>

@@ -22,6 +22,7 @@ Route::group(['middleware' => 'auth:api'], function ()  {
     require_once __DIR__ . '/buildfile/api.php';
     require_once __DIR__ . '/approver/api.php';
     require_once __DIR__ . '/mmis/api.php';
+    require_once __DIR__ . '/itemandservices/api.php';
     Route::post('test', [UserController::class, 'store']);
     Route::get('test', [PurchaseRequestController::class, 'index']);
 });

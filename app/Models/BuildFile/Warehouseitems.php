@@ -11,6 +11,7 @@ class Warehouseitems extends Model
 
     protected $table = "warehouseitems";
 
+    protected $guarded = [];
     public function itemMaster()
     {
         return $this->belongsTo(Itemmasters::class, 'item_Id', 'id');

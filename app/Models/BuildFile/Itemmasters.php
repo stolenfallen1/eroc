@@ -2,10 +2,14 @@
 
 namespace App\Models\BuildFile;
 
+use App\Models\BuildFile\ItemGroup;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Itemcategories;
+use App\Models\BuildFile\Warehouseitems;
+use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 
 class Itemmasters extends Model
 {
@@ -13,7 +17,7 @@ class Itemmasters extends Model
     protected $connection = "sqlsrv";
     protected $table = 'ItemMaster';
     protected $guarded = [];
-
+    
     public function wareHouseItems(){
         return $this->hasMany(Warehouseitems::class, 'item_Id', 'id');
     }
@@ -24,5 +28,17 @@ class Itemmasters extends Model
 
     public function purchaseRequest(){
         return $this->hasMany(PurchaseOrderDetails::class, 'item_Id', 'id');
+    }
+
+    public function itemGroup(){
+        return $this->belongsTo(ItemGroup::class, 'item_InventoryGroup_Id');
+    }
+
+    public function itemCategory(){
+        return $this->belongsTo(Itemcategories::class, 'item_Category_Id');
+    }
+
+    public function unit(){
+        return $this->belongsTo(Unitofmeasurement::class, 'item_UnitOfMeasure_Id');
     }
 }

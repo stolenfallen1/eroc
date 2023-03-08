@@ -13,10 +13,12 @@ class Items
   }
 
   public function searchable(){
+    $this->model->with('itemGroup','itemCategory','unit');
     $this->byWarehouse();
     $this->byCategory();
     $this->bySubCategory();
     $this->byInventoryGroup();
+    $this->model->where('item_InventoryGroup_Id',Request()->tab);
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

@@ -27,9 +27,9 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             return true;
         });
         $data['module'] = $modulelist;
-        $data['usersdetails'] = Auth::user();
+        $data['usersdetails'] =Auth::user();
         $data['submodule'] = $this->systemsubcomponents();
-        return $data;
+        return  $data;
     }
 
     public function systemsubcomponents(){

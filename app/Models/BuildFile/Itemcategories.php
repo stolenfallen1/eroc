@@ -2,9 +2,10 @@
 
 namespace App\Models\BuildFile;
 
+use App\Models\BuildFile\Itemmasters;
+use Illuminate\Database\Eloquent\Model;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class Itemcategories extends Model
 {
@@ -16,4 +17,6 @@ class Itemcategories extends Model
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'item_Category_Id', 'id');
     }
+
+    
 }

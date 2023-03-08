@@ -99,6 +99,7 @@
                                                             <th class=" text-center">Delete</th>
                                                             <th class=" text-center">Print</th>
                                                             <th class=" text-center">Post</th>
+                                                            <th class=" text-center">Approved</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -113,6 +114,7 @@
                                                                     </div>
                                                                 </td>
                                                                 @foreach ($permission as $perm)
+
                                                                     <td>
                                                                         <center> <input type="checkbox"
                                                                                 id="permission-{{ $perm->id }}"

@@ -1,12 +1,12 @@
 <template>
   <div>
-    <v-navigation-drawer width="220" v-model="isdrawer" app>
-      <div class="logo">MMIS</div>
-      <v-list nav>
+    <v-navigation-drawer  v-model="isdrawer" app>
+      <v-list nav >
+        <v-subheader>Main Explorer</v-subheader>
         <v-list-group
           v-for="(menu, index) in menus"
           :key="index"
-          :value="index==0"
+          :value="true"
           dense
         >
           <v-icon class="list-icon" slot="prependIcon" small color="white">{{
@@ -19,7 +19,6 @@
             v-for="(child, i) in menu.children"
             @click="selectedRoute(child)"
             :key="i"
-            class="ml-4"
             dense
             link
             :class="{ 'active-route': main_active_route == child.route }"
@@ -101,4 +100,5 @@ export default {
   display: grid;
   place-items: center;
 }
+
 </style>

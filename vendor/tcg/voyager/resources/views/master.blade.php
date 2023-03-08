@@ -221,6 +221,10 @@
             margin-bottom: 10px;
             margin-top: 10px;
         }
+        .table {
+            color: #060606;
+            font-weight: 400;
+        }
     </style>
 
     @if (!empty(config('voyager.additional_css')))

@@ -265,7 +265,7 @@
                                                     <tbody>
                                                         <tr>
                                                             <th>
-                                                                <label for="idnumber">User ID</label>
+                                                                <label for="idnumber">Usercode</label>
                                                             </th>
                                                             <td>
                                                                 <input type="text" class="form-control" id="idnumber"
@@ -342,8 +342,7 @@
                                                             name="subsystem[{{ $subsystem->id }}]" class="the-permission"
                                                             value="{{ $subsystem->id }}"
                                                             @if (in_array($subsystem->id, $system_useraccess)) checked @endif>
-                                                        <label
-                                                            for="{{ $key }}"><strong>{{ $subsystem->subsystem_description }}</strong></label>
+                                                        <label for="{{ $key }}"><strong>{{ $subsystem->subsystem_description }}</strong></label>
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -356,7 +355,6 @@
                                 </div>
                             </div>
                             <div class="modal-footer">
-                               
                                 <button type="submit" class="btn btn-primary pull-right save">
                                     {{ __('voyager::generic.save') }}
                                 </button>

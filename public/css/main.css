@@ -138,6 +138,10 @@ tr.v-data-table__selected {
   position: absolute;
 }
 
+body {
+  zoom: 0.99;
+}
+
 /**
  * Pages imports
  */

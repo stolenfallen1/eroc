@@ -138,9 +138,8 @@ abstract class Controller extends BaseController
                 }
             }
         }
-
+      
         $data->save();
-
         // Save translations
         if (count($translations) > 0) {
             $data->saveTranslations($translations);
@@ -251,7 +250,7 @@ abstract class Controller extends BaseController
                 }
             }
         }
-
+        
         return Validator::make($data, $rules, $messages, $customAttributes);
     }
 

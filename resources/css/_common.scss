@@ -116,7 +116,8 @@ body {
 .active-route div {
     color: white;
 }
-.v-list{
+
+.v-list {
     padding-top: 0 !important;
 }
 
@@ -124,13 +125,18 @@ tr.v-data-table__selected {
     background: #6ebaf3 !important;
 }
 
-.v-navigation-drawer{
+.v-navigation-drawer {
     z-index: 2 !important;
 }
 
 .v-input input {
     font-size: .8rem;
 }
+
 .class-snackbar {
     position: absolute;
+}
+
+body {
+    zoom: 0.990;
 }

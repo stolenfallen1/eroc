@@ -26,5 +26,6 @@ Route::controller(CanvasController::class)->group(function () {
   Route::delete('canvas/{id}', 'destroy');
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');
   Route::post('submit-canvas', 'submitCanvasItem');
+  Route::post('approve-canvas', 'approveCanvasItem');
 });
 

@@ -125,14 +125,10 @@
   </div>
 </template>
 <script>
-import Confirmation from "@global/components/Confirmation.vue";
-import Remarks from "@global/components/Remarks.vue";
-import SnackBar from "@global/components/SnackBar.vue";
 import DataFilter from "../filter_forms/PurchaseRequest.vue";
 import DataForm from "../forms/PurchaseRequest.vue";
 import ApproveForm from "../forms/PurchaseRequest.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
-import CustomTable from "@global/components/CustomTable.vue";
 import PurchaseHelper from "@mmis/mixins/PurchaseHelper.vue";
 import AppHeader from "@mmis/components/pages/procurements/AppHeader.vue";
 import { mapGetters } from "vuex";
@@ -146,13 +142,13 @@ import {
 export default {
   mixins: [PurchaseHelper],
   components: {
-    CustomTable,
+    // CustomTable,
     DataFilter,
     DataForm,
     RightSideBar,
-    Confirmation,
-    Remarks,
-    SnackBar,
+    // Confirmation,
+    // Remarks,
+    // SnackBar,
     AppHeader,
     ApproveForm,
   },

@@ -7,10 +7,10 @@
 
         <form action="{{ route('voyager.login') }}" method="POST">
             {{ csrf_field() }}
-            <div class="form-group form-group-default" id="emailGroup">
-                <label>{{ __('voyager::generic.email') }}</label>
+            <div class="form-group form-group-default" id="idnumberGroup">
+                <label>Usercode</label>
                 <div class="controls">
-                    <input type="text" name="email" id="email" value="{{ old('email') }}" placeholder="{{ __('voyager::generic.email') }}" class="form-control" required>
+                    <input type="text" name="idnumber" id="idnumber" value="{{ old('idnumber') }}" placeholder="Usercode" class="form-control" required>
                 </div>
             </div>
 
@@ -54,7 +54,7 @@
     <script>
         var btn = document.querySelector('button[type="submit"]');
         var form = document.forms[0];
-        var email = document.querySelector('[name="email"]');
+        var idnumber = document.querySelector('[name="idnumber"]');
         var password = document.querySelector('[name="password"]');
         btn.addEventListener('click', function(ev){
             if (form.checkValidity()) {
@@ -64,15 +64,15 @@
                 ev.preventDefault();
             }
         });
-        email.focus();
-        document.getElementById('emailGroup').classList.add("focused");
+        idnumber.focus();
+        document.getElementById('idnumberGroup').classList.add("focused");
 
-        // Focus events for email and password fields
-        email.addEventListener('focusin', function(e){
-            document.getElementById('emailGroup').classList.add("focused");
+        // Focus events for idnumber and password fields
+        idnumber.addEventListener('focusin', function(e){
+            document.getElementById('idnumberGroup').classList.add("focused");
         });
-        email.addEventListener('focusout', function(e){
-            document.getElementById('emailGroup').classList.remove("focused");
+        idnumber.addEventListener('focusout', function(e){
+            document.getElementById('idnumberGroup').classList.remove("focused");
         });
 
         password.addEventListener('focusin', function(e){

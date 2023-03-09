@@ -72,14 +72,13 @@ import AppHeader from "@mmis/components/pages/canvas/AppHeader.vue"
 import DataFilter from "../filter_forms/PurchaseRequest.vue";
 import DataForm from "../forms/Canvas.vue";
 import RightSideBar from "@mmis/components/pages/RightSideBar.vue";
-import CustomTable from "@global/components/CustomTable.vue";
 import CanvasHelper from "@mmis/mixins/CanvasHelper.vue"
 import {apiGetAllPurchaseRequest} from "@mmis/api/procurements.api"
 import { mapGetters } from "vuex";
 export default {
   mixins:[CanvasHelper],
   components: {
-    CustomTable,
+    // CustomTable,
     DataFilter,
     DataForm,
     RightSideBar,

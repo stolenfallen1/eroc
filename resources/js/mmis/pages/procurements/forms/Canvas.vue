@@ -21,7 +21,7 @@
           @addCanvas="showCanvasForm"
         />
       <div class="d-flex flex-row-reverse">
-        <v-btn :disabled="isSubmitted" color="primary" @click="confirmSubmit"
+        <v-btn :disabled="isSubmitted" color="primary" @click="isapproved?checkStatus():confirmSubmit()"
           >{{isapproved?'Submit':'Submit canvas'}}</v-btn
         >
       </div>
@@ -44,13 +44,19 @@
       :data="notification"
       :show="isnotification"
     />
+    <Remarks
+      @cancel="isremarks = false"
+      :show="isremarks"
+      :payload="payload"
+      @submit="approveCanvas"
+    />
   </v-dialog>
 </template>
 <script>
 import Field from "./includes/canvas/fields.vue";
 import CanvasForm from "./includes/canvas/CanvasForm.vue";
 import ItemTable from "./includes/canvas/ItemTable.vue";
-import { apiGetPurchaseRequest, apiSubmitCanvas } from "@mmis/api/procurements.api";
+import { apiGetPurchaseRequest, apiSubmitCanvas, apiApproveCanvas } from "@mmis/api/procurements.api";
 export default {
   components: {
     Field,
@@ -77,6 +83,7 @@ export default {
       show_canvas_form: false,
       isnotification: false,
       isconfirmation: false,
+      isremarks: false,
       notification: {
         messages: [],
       },
@@ -94,10 +101,17 @@ export default {
         this.isnotification = true;
         return;
       }
-      if(this.isapproved){
-        this.$emit('submit')
-      }
+      this.isconfirmation = false
+      if(this.isapproved) return this.approveCanvas()
       this.submitCanvas()
+    },
+    checkStatus(){
+      this.payload.purchase_request_details.map(details=>{
+        if(!details.isapproved){
+          this.isremarks = true
+        }
+      })
+      if(!this.isremarks) this.confirmSubmit()
     },
     confirmSubmit(){
       this.isconfirmation = true
@@ -106,6 +120,20 @@ export default {
       this.notification.messages = [];
       this.notification.messages.push(message);
       this.notification.color = color;
+    },
+    async approveCanvas(remarks=null){
+      let payload = this.payload.purchase_request_details.map(detail=>{
+        return {item_id: detail.id, status: detail.isapproved, remarks: remarks}
+      })
+      console.log(payload, "test")
+      let res = await apiApproveCanvas({items: payload})
+
+      if(res.status == 200){
+        this.isremarks = false
+        this.isapproved = false
+        
+        this.$emit('submit')
+      }
     },
     async submitCanvas(){
       let payload = this.payload.purchase_request_details.map(detail=>{

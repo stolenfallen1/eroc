@@ -2,16 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use TCG\Voyager\Facades\Voyager;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends \TCG\Voyager\Http\Controllers\Controller
 {
-    public function userDetails(){
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+        if ($this->guard()->attempt($credentials, $request->has('remember'))) {
+          
+            $user = Auth::user();
+            $token = $user->createToken();
+            $user->load('role.permissions', 'roles');
+            
+            return response()->json(['user' => $user, 'access_token' => $token], 200);
+            // return $this->sendLoginResponse($request);
+        }
+        return $request->all();
 
-        // get user details 
-       
+    }
+
+    public function logout()
+    {
+        Auth::user()->revokeToken();
+        Auth::guard('web')->logout();
+
+        return response()->json(['message' => 'success'], 200);
+    }
+
+    public function userDetails(){
+        // get user details
 
         // get all user module 
         $modulelist = Voyager::model('MenuItem')->whereNull('parent_id')->where('menu_id','1')->orderBy('order','asc')->get();
@@ -27,9 +50,9 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             return true;
         });
         $data['module'] = $modulelist;
-        $data['usersdetails'] = Auth::user();
+        $data['details'] = Auth::user();
         $data['submodule'] = $this->systemsubcomponents();
-        return $data;
+        return response()->json(['user' => $data], 200);
     }
 
     public function systemsubcomponents(){
@@ -62,5 +85,9 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             return response()->json(["message" => 'success'], 200);
         }
         return response()->json(["message" => 'Incorrect passcode'], 403);
+    }
+    protected function guard()
+    {
+        return Auth::guard('web');
     }
 }

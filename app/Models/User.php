@@ -74,4 +74,9 @@ class User extends \TCG\Voyager\Models\User
         $this->save();
         return $token;
     }
+    public function revokeToken()
+    {
+        $this->api_token = null;
+        $this->save();
+    }
 }

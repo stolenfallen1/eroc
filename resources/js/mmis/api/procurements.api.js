@@ -36,3 +36,4 @@ export const apiGetAllCanvas = (query) => httpApiClient.get(`${canvas}?` + query
 export const apiRemoveCanvas = (id) => httpApiClient.delete(`${canvas}/${id}`);
 export const apiUpdateIsRecommended = (id, payload) => httpApiClient.put(`update-isrecommended/${id}`, payload);
 export const apiSubmitCanvas = (payload) => httpApiClient.post(`submit-${canvas}`, payload);
+export const apiApproveCanvas = (payload) => httpApiClient.post(`approve-${canvas}`, payload);

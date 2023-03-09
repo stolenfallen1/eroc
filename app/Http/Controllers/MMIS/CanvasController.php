@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use App\Models\MMIS\procurement\CanvasMaster;
 use App\Helpers\SearchFilter\Procurements\Canvases;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
+use Carbon\Carbon;
 
 class CanvasController extends Controller
 {
@@ -82,6 +83,42 @@ class CanvasController extends Controller
             'is_submitted' => true
         ]);
         return response()->json(['message' => 'success'], 200);
+    }
+
+    public function approveCanvasItem(Request $request)
+    {
+        $authUser = Auth::user();
+        foreach ($request->items as $key => $item) {
+            $detail = PurchaseRequestDetails::where('id', $item['item_id'])->first();
+            if($item['status'] == true){
+                if($authUser->role->name == 'purchaser'){
+                    $detail->recommendedCanvas()->update([
+                        'canvas_Level1_ApprovedBy' => $authUser->id,
+                        'canvas_Level1_ApprovedDate' => Carbon::now(),
+                    ]);
+                }else if($authUser->role->name == 'comptroller'){
+                    $detail->recommendedCanvas()->update([
+                        'canvas_Level2_ApprovedBy' => $authUser->id,
+                        'canvas_Level2_ApprovedDate' => Carbon::now(),
+                    ]);
+                }
+            }else{
+                if($authUser->role->name == 'purchaser'){
+                    $detail->recommendedCanvas()->update([
+                        'canvas_Level1_CancelledBy' => $authUser->id,
+                        'canvas_Level1_CancelledDate' => Carbon::now(),
+                        'canvas_Level1_Cancelled_Remarks' => $item['remarks'],
+                    ]);
+                }else if($authUser->role->name == 'comptroller'){
+                    $detail->recommendedCanvas()->update([
+                        'canvas_Level2_CancelledBy' => $authUser->id,
+                        'canvas_Level2_CancelledDate' => Carbon::now(),
+                        'canvas_Level2_Cancelled_Remarks' => $item['remarks'],
+                    ]);
+                }
+                
+            }
+        }
     }
 
 

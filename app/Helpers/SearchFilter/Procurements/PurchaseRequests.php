@@ -151,12 +151,15 @@ class PurchaseRequests
   
   private function canvasForApproval(){
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
-      $q->where('is_submitted', true);
-    })->where(function($query){
-      $query->whereHas('canvases', function($q){
-        $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+      $q->where('is_submitted', true)->whereHas('recommendedCanvas', function($q1){
+        $q1->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
       });
     });
+    // ->where(function($query){
+      // $query->whereHas('canvases', function($q){
+      //   $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+      // });
+    // });
   }
 
 }

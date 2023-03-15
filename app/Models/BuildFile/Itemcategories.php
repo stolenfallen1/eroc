@@ -12,7 +12,7 @@ class Itemcategories extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "Itemcategories";
+    protected $table = "invItemCategories";
 
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'item_Category_Id', 'id');

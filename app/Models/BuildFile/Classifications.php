@@ -8,4 +8,6 @@ class Classifications extends Model
 {
     use HasFactory;
     protected $table = 'Itemsubcategoryclassification';
+    protected $connection = "sqlsrv";
+    protected $guarded = [];
 }

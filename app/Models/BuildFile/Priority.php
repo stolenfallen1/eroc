@@ -12,7 +12,7 @@ class Priority extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "invPriority";
+    protected $table = "mscPriority";
 
     public function purchaseRequests(){
         return $this->hasMany(PurchaseRequest::class, 'pr_Priority_Id', 'id');

@@ -13,16 +13,20 @@ class PurchaseRequestDetails extends Model
     protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseRequestDetail';
     protected $guarded = [];
+    protected $appends = ['full_path'];
 
-    public function purchaseRequest(){
+    public function purchaseRequest()
+    {
         return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');
     }
 
-    public function itemMaster(){
+    public function itemMaster()
+    {
         return $this->belongsTo(Itemmasters::class, 'item_Id');
     }
 
-    public function canvases(){
+    public function canvases()
+    {
         return $this->hasMany(CanvasMaster::class, 'pr_request_details_id', 'id');
     }
 
@@ -30,5 +34,11 @@ class PurchaseRequestDetails extends Model
     {
         return $this->hasOne(CanvasMaster::class, 'pr_request_details_id')->where('isRecommended', 1);
     }
-    
+
+    public function getFullPathAttribute()
+    {
+        if ($this->filepath) {
+            return config('app.url') . $this->filepath;
+        }
+    }
 }

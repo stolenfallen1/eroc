@@ -12,9 +12,17 @@ class PurchaseRequestAttachment extends Model
     protected $connection = "sqlsrv_mmis";
     protected $table = "purchaseRequestAttachment";
     protected $guarded = [];
+    protected $appends = ['full_path'];
 
     public function purchaseRequest(){
         return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');
+    }
+
+    public function getFullPathAttribute()
+    {
+        if ($this->filepath) {
+            return config('app.url') . $this->filepath;
+        }
     }
 }
  

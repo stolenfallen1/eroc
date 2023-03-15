@@ -71,9 +71,9 @@ class ItemandServicesController extends Controller
             'isActive'=> (int) '1'
         ]);
         $item->wareHouseItems()->create([
-            'warehouse_Id' => Auth()->user()->id,
-            'warehuse_Group_Id' => Auth()->user()->id,
-            'item_UnitofMeasurement_Id' => (int) $request->item_UnitofMeasurement_Id,
+            'warehouse_Id' => Auth()->user()->branch_id,
+            'warehuse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
+            'item_UnitofMeasurement_Id' => (int) $request->item_UnitOfMeasure_Id,
             'item_ListCost' =>'0',
             'isReOrder' =>'0',
             'isLotNo_Required' =>'0',
@@ -160,6 +160,24 @@ class ItemandServicesController extends Controller
         $items = Itemmasters::with('wareHouseItems')->where('id', $id)->first();
         $items->wareHouseItems()->where('item_Id',$items->id)->delete();
         $items->delete();
+        return response()->json(["message" => "success"], 200);
+    }
+
+    public function addToLocation($id)
+    {
+        $item = Itemmasters::findOrfail($id);
+        $item->wareHouseItems()->create([
+            'warehouse_Id' => Auth()->user()->branch_id,
+            'warehuse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
+            'item_UnitofMeasurement_Id' => (int) $item->item_UnitOfMeasure_Id,
+            'item_ListCost' =>'0',
+            'isReOrder' =>'0',
+            'isLotNo_Required' =>'0',
+            'created_at' => Carbon::now(),
+            'DateCreated' => Carbon::now(),
+            'isActive' =>'1',
+            'CreatedBy'=>Auth()->user()->id,
+        ]);
         return response()->json(["message" => "success"], 200);
     }
 }

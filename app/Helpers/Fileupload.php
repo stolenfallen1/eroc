@@ -72,4 +72,15 @@
 
         return $imageName;
     }
+
+    function generateCompleteSequence($prefix, $number, $suffix, $delimeter=""){
+        $sq = $number;
+        if($prefix){
+            $sq = $prefix . $delimeter . $number;
+        }
+        if($suffix){
+            $sq = $sq . $delimeter . $suffix;
+        }
+        return $sq;
+    }
 ?>

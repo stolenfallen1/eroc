@@ -8,4 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Drugadministration extends Model
 {
     use HasFactory;
+    protected $table = 'mscDrugadministrations';
+    protected $connection = "sqlsrv";
+    protected $guarded = [];
 }

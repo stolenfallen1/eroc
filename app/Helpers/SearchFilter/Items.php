@@ -2,6 +2,7 @@
 
 namespace App\Helpers\SearchFilter;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
 
 class Items
@@ -23,6 +24,7 @@ class Items
     $this->searchColumns();
     $this->withWareHouseItems();
     $this->byWarehouse();
+    $this->forLocation();
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -37,6 +39,14 @@ class Items
         foreach ($searchable as $column) {
           $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
         }
+      });
+    }
+  }
+
+  private function forLocation(){
+    if(Request()->for_location){
+      $this->model->with('wareHouseItems')->whereDoesntHave('wareHouseItems', function ($query) {
+        $query->where('warehouse_Id', Auth::user()->warehouse_id);
       });
     }
   }

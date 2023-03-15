@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class InvStatus extends Model
 {
     protected $connection = "sqlsrv";
-    protected $table = 'invStatus';
+    protected $table = 'mscStatus';
 
     public function purchaseRequests(){
         return $this->hasMany(PurchaseRequest::class, 'pr_Status_Id', 'id');

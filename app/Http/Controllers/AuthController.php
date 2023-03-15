@@ -12,6 +12,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
+       
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
           
             $user = Auth::user();
@@ -21,7 +22,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             return response()->json(['user' => $user, 'access_token' => $token], 200);
             // return $this->sendLoginResponse($request);
         }
-        return $request->all();
+        return response()->json(["message" => 'Invalid login'], 403);
 
     }
 

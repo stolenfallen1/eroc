@@ -15,6 +15,7 @@
           <template v-slot:activator>
             <v-list-item-title>{{ menu.name }}</v-list-item-title>
           </template>
+          
           <v-list-item
             v-for="(child, i) in menu.children"
             @click="selectedRoute(child)"

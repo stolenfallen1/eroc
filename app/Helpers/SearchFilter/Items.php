@@ -16,13 +16,13 @@ class Items
   {
     $this->model->with('itemGroup', 'itemCategory', 'unit');
     $this->byBranch();
-    $this->byWarehouse();
     $this->byCategory();
     $this->bySubCategory();
     $this->byInventoryGroup();
     $this->byTab();
     $this->searchColumns();
     $this->withWareHouseItems();
+    $this->byWarehouse();
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -56,18 +56,17 @@ class Items
 
   private function byWarehouse()
   {
-    $warehouse = Request()->warehouse_id;
+    $warehouse = Request()->warehouse;
     if ($warehouse) {
-      $this->model->whereHas('wareHouseItems', function ($q) use ($warehouse) {
-        $q->where('warehouse_Id', $warehouse);
+      $this->model->with('wareHouseItems')->whereHas('wareHouseItems', function ($query) use ($warehouse) {
+        $query->where('warehouse_Id', $warehouse);
       });
-      $this->model->with('wareHouseItem');
     }
   }
 
   private function byBranch()
   {
-    $branch = Request()->branch_id;
+    return $branch = Request()->branch_id;
     if ($branch) {
       $this->model->whereHas('wareHouseItems', function ($q) use ($branch) {
         $q->whereHas('warehouse', function($q1) use ($branch) {

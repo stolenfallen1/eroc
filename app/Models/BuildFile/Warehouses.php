@@ -16,4 +16,14 @@ class Warehouses extends Model
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'warehouse_Id', 'id');
     }
+
+    public function branch(){
+        return $this->belongsTo(Branchs::class, 'warehouse_Branch_Id');
+    }
+
+    public function warehouseGroup(){
+        return $this->belongsTo(Warehousegroups::class, 'warehouse_Group_Id');
+    }
+
+
 }

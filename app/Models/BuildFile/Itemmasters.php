@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Itemmasters extends Model
 {
     use HasFactory;
-    protected $connection = "sqlsrv";
     protected $table = 'ItemMaster';
+    protected $connection = "sqlsrv";
     protected $guarded = [];
     
     public function wareHouseItems(){

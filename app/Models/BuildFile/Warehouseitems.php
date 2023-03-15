@@ -9,11 +9,18 @@ class Warehouseitems extends Model
 {
     use HasFactory;
 
-    protected $table = "warehouseitems";
+    protected $table = "CDG_MMIS.dbo.warehouseitems";
+    protected $connection = "sqlsrv_mmis";
 
     protected $guarded = [];
+
     public function itemMaster()
     {
-        return $this->belongsTo(Itemmasters::class, 'item_Id', 'id');
+        return $this->belongsTo(Itemmasters::class, 'item_Id');
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouses::class, 'warehouse_Id', 'id');
     }
 }

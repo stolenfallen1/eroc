@@ -8,12 +8,14 @@ use App\Models\Approver\invStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use App\Models\BuildFile\SystemSequence;
 use App\Http\Requests\Procurement\PRRequest;
 use App\Models\MMIS\procurement\PurchaseRequest;
-use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
-use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
+use App\Models\MMIS\procurement\PurchaseRequestAttachment;
+use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseRequestController extends Controller
 {
@@ -47,48 +49,77 @@ class PurchaseRequestController extends Controller
     {
         $status = invStatus::where('Status_description', 'like', '%pending%')->select('id')->first()->id;
         $user = Auth::user();
-        $pr = PurchaseRequest::create([
-            'branch_Id' => (int)$user->branch_id,
-            'warehouse_Id' => (int)$user->warehouse_id,
-            'pr_Justication' => $request->pr_Justication,
-            'pr_Transaction_Date' => Carbon::now(),
-            'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
-            'pr_RequestedBy' => $user->id,
-            'pr_Priority_Id' => $request->pr_Priority_Id,
-            'invgroup_id' => $request->invgroup_id,
-            'item_Category_Id' => $request->item_Category_Id,
-            'item_SubCategory_Id' => $request->item_SubCategory_Id,
-            'pr_Document_Number' => $request->pr_Document_Number,
-            'pr_Document_Prefix' => $request->pr_Document_Prefix,
-            'pr_Document_Suffix' => $request->pr_Document_Suffix,
-            'pr_Status_Id' => $status ?? null,
-        ]);
-        if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
-            foreach ($request->attachments as $key => $attachment) {
-                $file = storeDocument($attachment, "procurements/attachments", $key);
-                $pr->purchaseRequestAttachments()->create([
-                    'filepath' => $file[0],
-                    'filename' => $file[2]
+        $sequence = SystemSequence::where('seq_description', 'like', '%Purchase Requisition Series Number%')
+            ->where(['isActive' => true, 'branch_id' => $user->branch_id])->first();
+        $number = $request->pr_Document_Number;
+        $prefix = $request->pr_Document_Prefix;
+        $suffex = $request->pr_Document_Suffix;
+        if($sequence && $sequence->isSystem){
+            $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
+            $prefix = $sequence->seq_prefix;
+            $suffex = $sequence->seq_suffix;
+        }
+
+        DB::connection('sqlsrv')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+
+        try {
+            $pr = PurchaseRequest::create([
+                'branch_Id' => (int)$user->branch_id,
+                'warehouse_Id' => (int)$user->warehouse_id,
+                'pr_Justication' => $request->pr_Justication,
+                'pr_Transaction_Date' => Carbon::now(),
+                'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
+                'pr_RequestedBy' => $user->id,
+                'pr_Priority_Id' => $request->pr_Priority_Id,
+                'invgroup_id' => $request->invgroup_id,
+                'item_Category_Id' => $request->item_Category_Id,
+                'item_SubCategory_Id' => $request->item_SubCategory_Id,
+                'pr_Document_Number' => $number,
+                'pr_Document_Prefix' => $prefix ?? "",
+                'pr_Document_Suffix' => $suffex ?? "",
+                'pr_Status_Id' => $status ?? null,
+            ]);
+            if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
+                foreach ($request->attachments as $key => $attachment) {
+                    $file = storeDocument($attachment, "procurements/attachments", $key);
+                    $pr->purchaseRequestAttachments()->create([
+                        'filepath' => $file[0],
+                        'filename' => $file[2]
+                    ]);
+                }
+            }
+            // return $request->items;
+    
+            foreach ($request->items as $item) {
+                $filepath = [];
+                if (isset($item['attachment']) && $item['attachment'] != null) {
+                    $filepath = storeDocument($item['attachment'], "procurements/items");
+                }
+                $pr->purchaseRequestDetails()->create([
+                    'filepath' => $filepath[0] ?? null,
+                    'filename' => $filepath[2] ?? null,
+                    'item_Id' => $item['item_Id'],
+                    'item_Request_Qty' => $item['item_Request_Qty'],
+                    'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
-        }
-        // return $request->items;
 
-        foreach ($request->items as $item) {
-            $filepath = [];
-            if (isset($item['attachment']) && $item['attachment'] != null) {
-                $filepath = storeDocument($item['attachment'], "procurements/items");
-            }
-            $pr->purchaseRequestDetails()->create([
-                'filepath' => $filepath[0] ?? null,
-                'filename' => $filepath[2] ?? null,
-                'item_Id' => $item['item_Id'],
-                'item_Request_Qty' => $item['item_Request_Qty'],
-                'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+            $sequence->update([
+                'seq_no' => (int) $sequence->seq_no + 1,
+                'recent_generated' => generateCompleteSequence($prefix, $number, $suffex, "-"),
             ]);
-        }
 
-        return response()->json(["message" => "success"], 200);
+            DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+            return response()->json(["message" => "success"], 200);
+        } catch (\Exception  $e) {
+            DB::connection('sqlsrv')->rollback();
+            DB::connection('sqlsrv_mmis')->rollback();
+            return response()->json(["error" => $e], 200);
+        }
+        
+
     }
 
     public function update(Request $request, $id)

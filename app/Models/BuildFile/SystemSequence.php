@@ -10,5 +10,6 @@ class SystemSequence extends Model
     use HasFactory;
     protected $connection = "sqlsrv";
     protected $table = 'sysCentralSequences';
+    protected $guarded = [];
     
 }

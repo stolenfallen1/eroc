@@ -10,13 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Itemcategories extends Model
 {
     use HasFactory;
-
     protected $connection = "sqlsrv";
     protected $table = "Itemcategories";
-
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'item_Category_Id', 'id');
     }
-
-    
 }

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Itemmasters extends Model
 {
     use HasFactory;
-    protected $table = 'ItemMaster';
+    protected $table = 'invItemMaster';
     protected $connection = "sqlsrv";
     protected $guarded = [];
     
@@ -40,5 +40,10 @@ class Itemmasters extends Model
 
     public function unit(){
         return $this->belongsTo(Unitofmeasurement::class, 'item_UnitOfMeasure_Id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brands::class, 'item_Brand_Id', 'id');
     }
 }

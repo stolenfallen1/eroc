@@ -9,5 +9,5 @@ class Unitofmeasurement extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = 'Unitofmeasurements';
+    protected $table = 'mscUnitofmeasurements';
 }

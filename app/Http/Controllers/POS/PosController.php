@@ -17,7 +17,7 @@ class PosController extends Controller
     public function index(Request $request)
     {
         // ->where('warehouse_id',Request()->departmentid)
-        $data = Warehouseitems::with('itemMaster')->where('isactive','1')->get();
+        $data = Warehouseitems::with('itemMaster','unit','itemMaster.brand')->where('warehouse_id',Request()->departmentid)->where('isactive','1')->offset(0)->limit(1000)->get();
         return response()->json(["data"=>$data,"message" => "success"], 200);
     }
 

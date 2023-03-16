@@ -8,5 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Antibioticclass extends Model
 {
     use HasFactory;
-    protected $table = 'antibioticclass';
+    protected $table = 'mscAntibioticclass';
+    protected $connection = "sqlsrv";
+    protected $guarded = [];
 }

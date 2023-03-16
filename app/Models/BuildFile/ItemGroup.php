@@ -11,7 +11,7 @@ class ItemGroup extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "itemInventoryGroup";
+    protected $table = "invItemInventoryGroup";
 
     public function categories(){
         return $this->hasMany(Itemcategories::class, 'invgroup_id', 'id');

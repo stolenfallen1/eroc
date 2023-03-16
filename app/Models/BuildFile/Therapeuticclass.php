@@ -8,5 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Therapeuticclass extends Model
 {
     use HasFactory;
-    protected $table = 'therapeuticclass';
+    
+    protected $connection = "sqlsrv";
+    protected $table = 'mscTherapeuticclass';
 }

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Brands extends Model
 {
     use HasFactory;
-    protected $connection = "sqlsrv";
+
     protected $table = 'invItembrands';
+    protected $connection = "sqlsrv";
+    protected $guarded = [];
 }

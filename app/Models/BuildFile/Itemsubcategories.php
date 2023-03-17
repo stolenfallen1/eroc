@@ -11,7 +11,7 @@ class Itemsubcategories extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "Itemsubcategories";
+    protected $table = "invItemSubCategories";
 
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'item_SubCategory_Id', 'id');

@@ -291,4 +291,52 @@ class ItemandServicesController extends Controller
         ]);
         return response()->json(["message" => "success"], 200);
     }
+
+    public function updatePhysicalCount(Request $request, Warehouseitems $warehouse_item){
+
+        DB::connection('sqlsrv')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+
+        try {
+            $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory physical count%')->where('isActive', 1)->first();
+            $warehouse_item->update([
+                'item_OnHand' => $request->item_OnHand,
+                'item_Last_Inventory_Count' => $warehouse_item->item_OnHand,
+                'item_Manual_Count' => $request->item_OnHand,
+                'ModifiedDate' => Carbon::now(),
+                'ModifiedBy' => Auth::user()->id,
+            ]);
+
+            InventoryTransaction::create([
+                'branch_Id' => Auth::user()->branch_id,
+                'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
+                'warehouse_Id' => Auth()->user()->warehouse_id,
+                'transaction_Item_Id' => $warehouse_item->item_Id,
+                'transaction_Item_Barcode' => $request->item_Barcode,
+                'transaction_Date' => Carbon::now(),
+                'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
+                'transaction_Item_UnitofMeasurement_Id' => $warehouse_item->item_UnitOfMeasure_Id,
+                'transaction_Qty' => $request->item_OnHand,
+                'transaction_Item_OnHand' => $request->item_OnHand,
+                'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
+                'transaction_UserID' =>  Auth::user()->id,
+                'createdBy' =>  Auth::user()->id,
+                'transaction_count_by' =>  $request->count_by ?? Auth::user()->id,
+                'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+            ]);
+
+            $sequence->update([
+                'seq_no' => (int) $sequence->seq_no + 1,
+                'recent_generated' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
+            ]);
+            
+            DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+            return response()->json(["message" => "success"], 200);
+        } catch (\Exception $th) {
+           DB::connection('sqlsrv')->rollback();
+           DB::connection('sqlsrv_mmis')->rollBack();
+        }
+    }
 }

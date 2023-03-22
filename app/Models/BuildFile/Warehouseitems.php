@@ -2,14 +2,16 @@
 
 namespace App\Models\BuildFile;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\BuildFile\Brands;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Unitofmeasurement;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Warehouseitems extends Model
 {
     use HasFactory;
 
-    protected $table = "CDG_MMIS.dbo.warehouseitems";
+    protected $table = "warehouseitems";
     protected $connection = "sqlsrv_mmis";
 
     protected $guarded = [];
@@ -23,4 +25,11 @@ class Warehouseitems extends Model
     {
         return $this->belongsTo(Warehouses::class, 'warehouse_Id', 'id');
     }
+    public function unit()
+    {
+        return $this->belongsTo(Unitofmeasurement::class, 'item_UnitofMeasurement_Id', 'id');
+    }
+    
+    
+    
 }

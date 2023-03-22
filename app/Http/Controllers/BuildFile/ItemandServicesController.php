@@ -9,8 +9,8 @@ use App\Helpers\SearchFilter\Items;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
-use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatch;
@@ -22,6 +22,7 @@ class ItemandServicesController extends Controller
         return (new Items)->searchable();
     }
 
+    
     public function checkNameDuplication(Request $request)
     {
         return Itemmasters::where('item_name', 'like', '%' . $request->name . '%')->where('item_InventoryGroup_Id', $request->tab)->exists();

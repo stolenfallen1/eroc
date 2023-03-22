@@ -198,7 +198,7 @@
             $("body").on("keyup",'.myInput', function() {
                     var value = $(this).val().toLowerCase();
                     var driver = $(this).attr('attrdriver');
-                    $("#"+driver+" tr").filter(function() {
+                    $("#"+driver+" tr td").filter(function() {
                         $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
                     });
                 });

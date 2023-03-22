@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserManager\UserManagerController;
+use App\Http\Controllers\BuildFile\ItemandServicesController;
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +22,6 @@ Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 });
 
-
 Route::group(['middleware' => 'admin.user'], function () {
     require_once __DIR__ . './mmis/mmismainroute.php';
     Route::get('user-details', [AuthController::class, 'userDetails']);
@@ -29,3 +29,4 @@ Route::group(['middleware' => 'admin.user'], function () {
         return view('layouts.main');
     })->where('any', '.*');
 });
+

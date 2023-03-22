@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Itemmasters extends Model
 {
     use HasFactory;
-    protected $table = 'invItemMaster';
+    protected $table = 'CDG_CORE.dbo.invItemMaster';
     protected $connection = "sqlsrv";
     protected $guarded = [];
     
@@ -43,6 +43,10 @@ class Itemmasters extends Model
         return $this->belongsTo(Unitofmeasurement::class, 'item_UnitOfMeasure_Id');
     }
 
+    public function brand()
+    {
+        return $this->belongsTo(Brands::class, 'item_Brand_Id', 'id');
+    }
     public function batchs(){
         return $this->hasMany(ItemBatch::class, 'item_Id', 'id');
     }

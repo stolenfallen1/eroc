@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BuildFile\Systerminals;
 use App\Models\User;
 use Illuminate\Http\Request;
 use TCG\Voyager\Facades\Voyager;
@@ -14,16 +15,36 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
         $credentials = $request->only('email', 'password');
        
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
-          
+
+            if(!$this->checkTerminal()){
+                return response()->json(["message" => 'Your not allowed to access'], 200);
+            }
+
             $user = Auth::user();
             $token = $user->createToken();
             $user->load('role.permissions', 'roles');
-            
             return response()->json(['user' => $user, 'access_token' => $token], 200);
             // return $this->sendLoginResponse($request);
         }
-        return response()->json(["message" => 'Invalid login'], 403);
+        return response()->json(["message" => 'Warning: Enter valid idnumber and password before proceeding!'], 200);
 
+    }
+
+    private function checkTerminal(){
+        $termninal = '';
+        if(Auth::user()->role->name == 'Pharmacist'){
+            $hostname = gethostname();
+            $ipaddress = gethostbyname($hostname);
+         
+            $checksystemtermnial = Systerminals::where('terminal_name',$hostname)->where('terminal_ip_address',$ipaddress)->first();
+            if(!$checksystemtermnial){
+                return false;
+            }
+            $termninal = $checksystemtermnial;
+            return $termninal;
+        }else{
+            return true;
+        }
     }
 
     public function logout()
@@ -33,6 +54,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
 
         return response()->json(['message' => 'success'], 200);
     }
+
 
     public function userDetails(){
         // get user details
@@ -50,8 +72,16 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             }
             return true;
         });
+
+        if(!$this->checkTerminal()){
+            return response()->json(["message" => 'Your not allowed to access'], 403);
+        }
+        $user = Auth::user();
+        
+        $user->sysTerminal = $this->checkTerminal();
+        $user->serverIP =  config('app.pos_server_ip');
         $data['module'] = $modulelist;
-        $data['details'] = Auth::user();
+        $data['details'] = $user;
         $data['submodule'] = $this->systemsubcomponents();
         return response()->json(['user' => $data], 200);
     }

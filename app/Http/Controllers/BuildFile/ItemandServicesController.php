@@ -17,6 +17,7 @@ class ItemandServicesController extends Controller
         return (new Items)->searchable();
     }
 
+    
     public function store(Request $request)
     {
 

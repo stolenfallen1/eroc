@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Itemmasters extends Model
 {
     use HasFactory;
-    protected $table = 'invItemMaster';
+    protected $table = 'CDG_CORE.dbo.invItemMaster';
     protected $connection = "sqlsrv";
     protected $guarded = [];
     

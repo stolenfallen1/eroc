@@ -104,12 +104,12 @@ return [
             'prefix_indexes' => true,
         ],
        
-        'sqlsrv_sampledb' => [
+        'sqlsrv_pos' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_SAMPLEDB', 'localhost'),
-            'port' => env('DB_PORT_SAMPLEDB', '1433'),
-            'database' => env('DB_DATABASE_SAMPLEDB', 'forge'),
+            'host' => env('DB_HOST_POS', '10.4.15.201'),
+            'port' => env('DB_PORT_POS', '1433'),
+            'database' => env('DB_DATABASE_POS', 'forge'),
             'username' => env('DB_USERNAME', 'forge'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',

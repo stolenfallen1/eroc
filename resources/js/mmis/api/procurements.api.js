@@ -28,9 +28,9 @@ export const apiRemovePurchaseRequestItem = (id) => httpApiClient.delete(`remove
 
 // canvas
 export const apiAddCanvas = (payload) => httpApiClient.post(`${canvas}`, payload, {
-  headers: {
-    "Content-Type": "multipart/form-data",
-  },
+    headers: {
+        "Content-Type": "multipart/form-data",
+    },
 });
 export const apiGetAllCanvas = (query) => httpApiClient.get(`${canvas}?` + query);
 export const apiRemoveCanvas = (id) => httpApiClient.delete(`${canvas}/${id}`);

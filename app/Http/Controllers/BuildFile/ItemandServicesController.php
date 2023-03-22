@@ -13,6 +13,7 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\InventoryTransaction;
+use App\Models\MMIS\inventory\ItemBatch;
 
 class ItemandServicesController extends Controller
 {
@@ -214,6 +215,11 @@ class ItemandServicesController extends Controller
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
             $item = Itemmasters::findOrfail($id);
+            $onhand = 0;
+            if($request->item_BatchNo_Id){
+                $batch = ItemBatch::findOrfail($request->item_BatchNo_Id);
+                $onhand = $batch->item_Qty;
+            }
             $warehourse_item = $item->wareHouseItems()->create([
                 'warehouse_Id' => Auth()->user()->warehouse_id,
                 'branch_id' => Auth()->user()->branch_id,
@@ -227,7 +233,7 @@ class ItemandServicesController extends Controller
                 'item_Selling_Price_In' => $request->item_Selling_Price_In ?? NULL,
                 'item_Minimum_StockLevel' => $request->item_Minimum_StockLevel,
                 'item_Maximum_StockLevel' => $request->item_Maximum_StockLevel,
-                'item_OnHand' => $request->item_OnHand,
+                'item_OnHand' => $onhand,
                 'isExpiryDate_Required' => $request->isExpiryDate_Required,
                 'isLotNo_Required' => $request->isLotNo_Required,
                 'isModelNo_Required' => $request->isModelNo_Required,
@@ -290,5 +296,58 @@ class ItemandServicesController extends Controller
             'ModifiedBy'=>Auth()->user()->id,
         ]);
         return response()->json(["message" => "success"], 200);
+    }
+
+    public function updatePhysicalCount(Request $request, Warehouseitems $warehouse_item){
+        // return $request->all();
+        DB::connection('sqlsrv')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        
+        try {
+            ItemBatch::where('id', $request['batch']['id'])->update([
+                'item_Qty' => $request->item_OnHand,
+            ]);
+            $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
+            $onhand = ItemBatch::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            $warehouse_item->update([
+                'item_OnHand' => $onhand,
+                'item_Last_Inventory_Count' => $warehouse_item->item_OnHand,
+                'item_Manual_Count' => $request->item_OnHand,
+                'ModifiedDate' => Carbon::now(),
+                'ModifiedBy' => Auth::user()->id,
+            ]);
+
+            InventoryTransaction::create([
+                'branch_Id' => Auth::user()->branch_id,
+                'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
+                'warehouse_Id' => Auth()->user()->warehouse_id,
+                'transaction_Item_Id' => $warehouse_item->item_Id,
+                'transaction_Item_Barcode' => $request->item_Barcode,
+                'transaction_Date' => Carbon::now(),
+                'transaction_Item_Batch_Detail' => $request['batch']['batch_Number'],
+                'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
+                'transaction_Item_UnitofMeasurement_Id' => $warehouse_item->item_UnitOfMeasure_Id,
+                'transaction_Qty' => $request->item_OnHand,
+                'transaction_Item_OnHand' => $onhand,
+                'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
+                'transaction_UserID' =>  Auth::user()->id,
+                'createdBy' =>  Auth::user()->id,
+                'transaction_count_by' =>  $request->count_by ?? Auth::user()->id,
+                'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+            ]);
+
+            $sequence->update([
+                'seq_no' => (int) $sequence->seq_no + 1,
+                'recent_generated' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
+            ]);
+            
+            DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+            return response()->json(["message" => "success"], 200);
+        } catch (\Exception $th) {
+           DB::connection('sqlsrv')->rollback();
+           DB::connection('sqlsrv_mmis')->rollBack();
+        }
     }
 }

@@ -1,9 +1,10 @@
 <?php
 
-use App\Http\Controllers\MMIS\PurchaseRequestController;
-use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\MMIS\PurchaseRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +20,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('login', [AuthController::class, 'login']);
 
 Route::group(['middleware' => 'auth:api'], function ()  {
+    Route::controller(UserController::class)->group(function () {
+        Route::get('department/users', 'getDepartmentUsers');
+    });
     Route::get('user-details', [AuthController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);
     require_once __DIR__ . '/buildfile/api.php';

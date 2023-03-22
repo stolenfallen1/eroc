@@ -29,7 +29,7 @@ class ItemBatch extends Model
 
     public function getDisplayTextAttribute()
     {
-        return $this->batch_Number . ' - ' . Carbon::parse($this->item_Expiry_Date)->toDateString() . ' - ' . $this->item_Qty;
+        return 'Batch no. ' . $this->batch_Number . ' Qty ' . $this->item_Qty. ' Expiry no. ' . Carbon::parse($this->item_Expiry_Date)->toDateString();
     }
 
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\POS;
 
+use DB;
 use Carbon\Carbon;
 use App\Models\POS\Orders;
 use Jenssegers\Agent\Agent;
@@ -12,9 +13,10 @@ use App\Helpers\PosSearchFilter\Items;
 use App\Models\BuildFile\Genericnames;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
+use App\Models\MMIS\inventory\ItemBatch;
 use App\Models\BuildFile\Itembatchnumbermasters;
 use Karmendra\LaravelAgentDetector\AgentDetector;
-use DB;
+
 class PosController extends Controller
 {
     /**
@@ -30,57 +32,10 @@ class PosController extends Controller
         return response()->json(["data"=>$data,"settings"=>$possetting,"message" => "success"], 200);
     }
 
-    public function index2()
-    {
-        // Get the agent instance
-        $agent =  new Agent();
-
-        // Get the browser information
-        $browserName = $agent->browser();
-        $browserVersion = $agent->version($browserName);
-
-        // Get the device information
-        $deviceType = $agent->deviceType();
-        $deviceModel = $agent->device();
-
-        // Get the operating system information
-        $osName = $agent->platform();
-        $osVersion = $agent->version($osName);
- 
-
-        $hostname = gethostname();
-        $ipaddress = gethostbyname($hostname);
-        $deviceId = $deviceType.'-'.  $osName.'-' .$deviceModel.'-' . $osVersion;
-        // Create an array with the data
-        $data = [
-            'browser_name' => $browserName,
-            'browser_version' => $browserVersion,
-            'device_type' => $deviceType,
-            'device_model' => $deviceModel,
-            'os_name' => $osName,
-            'os_version' => $osVersion,
-            'hostname' => $hostname,
-            'ipaddress' => $ipaddress,
-            'deviceId' => $deviceId,
-        ];
-
-        // You can store the data in a database or return it as a response
-        return $data;
-    }
-
-    public function index3(Request $request)
-    {
-        $ad = new AgentDetector(request()->header('User-Agent'));
-
-        echo $ad->device();
-        echo $ad->deviceBrand();
-        echo $ad->deviceModel();
-        echo $ad->platform();
-        echo $ad->platformVersion();
-    }
+   
     public function getbatchno(Request $request)
     {
-        $data = Itembatchnumbermasters::where('item_Id', Request()->id)->where('warehouse_id', Request()->departmentid)->select('id', 'batch_Number', 'item_Expiry_Date', 'item_Qty')->get();
+        $data = ItemBatch::where('item_Id', Request()->id)->where('warehouse_id', Request()->departmentid)->select('id', 'batch_Number', 'item_Expiry_Date', 'item_Qty')->get();
         return response()->json(["data"=>$data,"message" => "success"], 200);
     }
 

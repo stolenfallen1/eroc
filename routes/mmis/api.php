@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use Illuminate\Support\Facades\Route;
@@ -27,5 +28,11 @@ Route::controller(CanvasController::class)->group(function () {
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');
   Route::post('submit-canvas', 'submitCanvasItem');
   Route::post('approve-canvas', 'approveCanvasItem');
+});
+
+Route::controller(BatchController::class)->group(function () {
+  Route::get('item/batch', 'getItemBatchs');
+  Route::post('batch', 'store');
+  Route::put('batch', 'update');
 });
 

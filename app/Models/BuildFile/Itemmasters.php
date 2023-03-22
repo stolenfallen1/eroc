@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\Unitofmeasurement;
+use App\Models\MMIS\inventory\ItemBatch;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -46,4 +47,9 @@ class Itemmasters extends Model
     {
         return $this->belongsTo(Brands::class, 'item_Brand_Id', 'id');
     }
+    public function batchs(){
+        return $this->hasMany(ItemBatch::class, 'item_Id', 'id');
+    }
+
+
 }

@@ -23,6 +23,7 @@ class Items
     $this->byTab();
     $this->searchColumns();
     $this->withWareHouseItems();
+    $this->withWareHouseItem();
     $this->byWarehouse();
     $this->forLocation();
     $per_page = Request()->per_page;
@@ -57,6 +58,12 @@ class Items
     }
   }
 
+  private function withWareHouseItem(){
+    if(Request()->wareHouseItem){
+      $this->model->with('wareHouseItem');
+    }
+  }
+
   private function byTab()
   {
     if (Request()->tab) {
@@ -66,7 +73,7 @@ class Items
 
   private function byWarehouse()
   {
-    $warehouse = Request()->warehouse;
+    $warehouse = Request()->warehouse_id;
     if ($warehouse) {
       $this->model->with('wareHouseItems')->whereHas('wareHouseItems', function ($query) use ($warehouse) {
         $query->where('warehouse_Id', $warehouse);

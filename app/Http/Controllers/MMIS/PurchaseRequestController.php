@@ -74,7 +74,7 @@ class PurchaseRequestController extends Controller
                 'pr_Priority_Id' => $request->pr_Priority_Id,
                 'invgroup_id' => $request->invgroup_id,
                 'item_Category_Id' => $request->item_Category_Id,
-                'item_SubCategory_Id' => $request->item_SubCategory_Id,
+                'item_SubCategory_Id' => $request->item_SubCategory_Id ?? NULL,
                 'pr_Document_Number' => $number,
                 'pr_Document_Prefix' => $prefix ?? "",
                 'pr_Document_Suffix' => $suffex ?? "",

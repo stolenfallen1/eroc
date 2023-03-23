@@ -12,11 +12,21 @@ use App\Http\Controllers\BuildFile\DrugAdministrationController;
 use App\Http\Controllers\BuildFile\GenericNameController;
 use App\Http\Controllers\BuildFile\SystemSettingController;
 use App\Http\Controllers\BuildFile\TherapeuticClassController;
+use App\Http\Controllers\BuildFile\VendorController;
 
 Route::controller(CategoryController::class)->group(function () {
   Route::get('categories', 'getAllCategory');
   Route::get('sub-categories', 'getAllSubCategories');
   Route::get('classifications', 'getAllClassifications');
+  Route::get('supplier-categories', 'getAllSupplierCategories');
+  Route::get('supplier-terms', 'getAllSupplierTerms');
+});
+
+Route::controller(VendorController::class)->group(function () {
+  Route::get('vendors', 'index');
+  Route::post('vendors', 'store');
+  Route::put('vendors/{vendor}', 'update');
+  Route::delete('vendors/{vendor}', 'destroy');
 });
 
 Route::controller(ItemController::class)->group(function () {

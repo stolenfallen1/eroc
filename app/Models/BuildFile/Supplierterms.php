@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Supplierterms extends Model
 {
-    protected $connection = "sqlsrv";
     protected $table = 'mscSupplierterms';
+    protected $connection = "sqlsrv";
+    protected $guarded = [];
+
+    public function vendors(){
+        return $this->hasMany(Vendors::class, 'vendor_TermsId', 'id');
+    }
 }

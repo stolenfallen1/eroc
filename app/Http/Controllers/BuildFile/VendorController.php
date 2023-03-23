@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Http\Controllers\BuildFile;
+
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use App\Models\BuildFile\Vendors;
+use App\Http\Controllers\Controller;
+use App\Helpers\SearchFilter\Vendors as SearchFilterVendors;
+
+class VendorController extends Controller
+{
+    public function index(){
+        return (new SearchFilterVendors)->searchable();
+    }
+
+    public function store(Request $request){
+        Vendors::create($request->all());
+    }
+
+    public function update(Request $request, Vendors $vendor){
+        $vendor->update($request->all());
+    }
+
+    public function destroy(Vendors $vendor){
+        $vendor->update([
+            'deleted_at' => Carbon::now()
+        ]);
+    }
+}

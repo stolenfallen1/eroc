@@ -11,7 +11,7 @@ class Warehouseitems extends Model
 {
     use HasFactory;
 
-    protected $table = "warehouseitems";
+    protected $table = "CDG_MMIS.dbo.warehouseitems";
     protected $connection = "sqlsrv_mmis";
 
     protected $guarded = [];

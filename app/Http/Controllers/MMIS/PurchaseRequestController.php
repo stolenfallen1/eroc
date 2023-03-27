@@ -29,13 +29,21 @@ class PurchaseRequestController extends Controller
         $role = Auth::user()->role->name;
         return PurchaseRequest::with(['warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
             'purchaseRequestAttachments', 'user', 'purchaseRequestDetails'=>function($q) use($role){
-                if($role=='comptroller'){
+                if(Request()->tab==6){
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
-                        $query->whereHas('canvases', function($query1){
-                            $query1->where('is_submitted', true);
+                        $query->whereHas('recommendedCanvas', function($query1){
+                            $query1->where('is_submitted', true)->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
                         });
                     });
-                }else{
+                }else if(Request()->tab==7){
+                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                        $query->whereHas('recommendedCanvas', function($query1){
+                            $query1->where('is_submitted', true)->where('canvas_Level2_ApprovedBy', '!=', null)
+                            ->orWhere('canvas_Level2_CancelledBy', '!=', null);
+                        });
+                    });
+                }
+                else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('canvases', function($query1){
                             $query1->where('is_submitted', false)->orWhere('is_submitted', null);

@@ -46,10 +46,6 @@ Route::controller(SystemSettingController::class)->group(function () {
   Route::get('system-settings', 'getPRSNSequences');
 });
 
-Route::controller(SupplierController::class)->group(function () {
-  Route::get('suppliers', 'index');
-});
-
 Route::controller(BrandController::class)->group(function () {
   Route::get('brand', 'index');
 });

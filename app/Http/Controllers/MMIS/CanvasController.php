@@ -23,7 +23,7 @@ class CanvasController extends Controller
         $authUser = Auth::user();
         $discount_amount = 0;
         $total_amount = $request->canvas_item_amount * $request->canvas_Item_Qty;
-        if($request->canvas_discount_percent || $request->attachments != null){
+        if($request->canvas_discount_percent){
             $discount_amount = $total_amount * ($request->canvas_discount_percent / 100);
         }
 

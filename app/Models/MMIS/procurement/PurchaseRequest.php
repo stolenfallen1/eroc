@@ -19,6 +19,7 @@ class PurchaseRequest extends Model
     protected $table = 'purchaseRequestMaster';
 
     protected $guarded = [];
+    protected $appends = ['code'];
     // protected $fillable = [
 
     // ];
@@ -63,5 +64,9 @@ class PurchaseRequest extends Model
     public function canvases()
     {
         return $this->hasMany(CanvasMaster::class, 'pr_request_id', 'id');
+    }
+
+    public function getCodeAttribute(){
+        return generateCompleteSequence($this->pr_Document_Prefix, $this->pr_Document_Number, $this->pr_Document_Suffix, "-");
     }
 }

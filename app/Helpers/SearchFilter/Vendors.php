@@ -16,6 +16,7 @@ class Vendors
   public function searchable()
   {
     $this->withInactive();
+    $this->byPRDetail();
     $this->model->where('deleted_at', NULL);
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
@@ -31,6 +32,14 @@ class Vendors
         foreach ($searchable as $column) {
           $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
         }
+      });
+    }
+  }
+
+  private function byPRDetail(){
+    if(Request()->detail_id){
+      $this->model->whereDoesntHave('canvases', function($q){
+        $q->where('pr_request_details_id', Request()->detail_id);
       });
     }
   }

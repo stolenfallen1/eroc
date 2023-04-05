@@ -8,6 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseOrderDetails extends Model
 {
     use HasFactory;
-    protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseOrderDetail';
+    protected $connection = 'sqlsrv_mmis';
+
+    protected $guarded = [];
+
+    public function purchaseOrder(){
+        return $this->belongsTo(purchaseOrderMaster::class, 'po_id');
+    }
+
+    public function canvas(){
+        return $this->belongsTo(CanvasMaster::class, 'canvas_id');
+    }
+
+    public function purchaseRequestDetail(){
+        return $this->belongsTo(PurchaseRequestDetails::class, 'pr_detail_id');
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Models\BuildFile;
 
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,10 @@ class Warehouses extends Model
 
     public function batchs(){
         return $this->hasMany(ItemBatch::class, 'warehouse_id', 'id');
+    }
+
+    public function purchaseOrders(){
+        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_branch_id', 'id');
     }
 
 

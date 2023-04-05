@@ -99,6 +99,12 @@ class PurchaseRequests
     else if (Request()->tab == 7){
       $this->approveCanvas();
     }
+    else if (Request()->tab == 8){
+      $this->purchaserApproval();
+    }
+    else if (Request()->tab == 9){
+      $this->forPurchaseOrder();
+    }
   }
 
   private function forApproval(){
@@ -144,7 +150,8 @@ class PurchaseRequests
 
   private function forCanvas(){
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){
-      $q->where(function($query){
+      $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
+      ->where(function($query){
         $query->whereHas('canvases', function($q){
           $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         })->orWhereDoesntHave('canvases');
@@ -169,5 +176,25 @@ class PurchaseRequests
         });
     });
   }
+
+  private function purchaserApproval(){
+    $this->model->where('branch_Id', '!=', 1)->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+      $q->where('is_submitted', true)
+        ->whereHas('recommendedCanvas', function($q1){
+          $q1->where('canvas_Level1_ApprovedBy', null)->where('canvas_Level1_CancelledBy', null);
+        });
+    });
+  }
+
+  private function forPurchaseOrder(){
+    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+      $q->where('is_submitted', true)
+      ->whereHas('recommendedCanvas', function($q1){
+        $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
+      })->whereDoesntHave('purchaseOrderDetails');
+    });
+  }
+
+
 
 }

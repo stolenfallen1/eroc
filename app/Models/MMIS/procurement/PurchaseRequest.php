@@ -66,6 +66,11 @@ class PurchaseRequest extends Model
         return $this->hasMany(CanvasMaster::class, 'pr_request_id', 'id');
     }
 
+    public function purchaseOrder()
+    {
+        return $this->hasMany(purchaseOrderMaster::class, 'pr_request_id', 'id');
+    }
+
     public function getCodeAttribute(){
         return generateCompleteSequence($this->pr_Document_Prefix, $this->pr_Document_Number, $this->pr_Document_Suffix, "-");
     }

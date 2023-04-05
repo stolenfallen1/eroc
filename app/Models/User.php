@@ -6,6 +6,7 @@ use PDO;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Approver\InvApprover;
 use App\Models\BuildFile\Warehouses;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Notifications\Notifiable;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -65,6 +66,11 @@ class User extends \TCG\Voyager\Models\User
     public function purchaseRequest()
     {
         return $this->hasMany(PurchaseRequest::class, 'pr_RequestedBy', 'id');
+    }
+
+    public function purchaseOrders()
+    {
+        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_userid', 'id');
     }
 
     public function createToken()

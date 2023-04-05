@@ -8,6 +8,8 @@ use App\Http\Controllers\BuildFile\CategoryController;
 use App\Http\Controllers\BuildFile\PriorityController;
 use App\Http\Controllers\BuildFile\SupplierController;
 use App\Http\Controllers\BuildFile\AntibioticController;
+use App\Http\Controllers\BuildFile\BranchController;
+use App\Http\Controllers\BuildFile\DepartmentController;
 use App\Http\Controllers\BuildFile\DrugAdministrationController;
 use App\Http\Controllers\BuildFile\GenericNameController;
 use App\Http\Controllers\BuildFile\SystemSettingController;
@@ -36,6 +38,7 @@ Route::controller(ItemController::class)->group(function () {
 
 Route::controller(UnitController::class)->group(function () {
   Route::get('units', 'index');
+  Route::get('currencies', 'getCurrencies');
 });
 
 Route::controller(PriorityController::class)->group(function () {
@@ -64,4 +67,12 @@ Route::controller(DrugAdministrationController::class)->group(function () {
 
 Route::controller(TherapeuticClassController::class)->group(function () {
   Route::get('therapeutic-class', 'index');
+});
+
+Route::controller(BranchController::class)->group(function () {
+  Route::get('branches', 'index');
+});
+
+Route::controller(DepartmentController::class)->group(function () {
+  Route::get('departments', 'index');
 });

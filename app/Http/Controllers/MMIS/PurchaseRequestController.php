@@ -42,6 +42,13 @@ class PurchaseRequestController extends Controller
                             ->orWhere('canvas_Level2_CancelledBy', '!=', null);
                         });
                     });
+                }else if(Request()->tab==9){
+                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                        $query->whereHas('recommendedCanvas', function($query1){
+                            $query1->where('is_submitted', true)->where('canvas_Level2_ApprovedBy', '!=', null)
+                            ->orWhere('canvas_Level2_CancelledBy', '!=', null);
+                        });
+                    })->whereDoesntHave('purchaseOrderDetails');
                 }
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){

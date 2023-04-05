@@ -2,6 +2,8 @@
 
 namespace App\Models\BuildFile;
 
+use App\Models\MMIS\procurement\CanvasMaster;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +46,14 @@ class Vendors extends Model
 
     public function term(){
         return $this->belongsTo(Supplierterms::class, 'vendor_TermsId');
+    }
+
+    public function canvases(){
+        return $this->hasMany(CanvasMaster::class, 'vendor_id', 'id');
+    }
+
+    public function purchaseOrders(){
+        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_vendor_id', 'id');
     }
 
 }

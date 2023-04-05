@@ -35,6 +35,10 @@ class PurchaseRequestDetails extends Model
         return $this->hasOne(CanvasMaster::class, 'pr_request_details_id')->where('isRecommended', 1);
     }
 
+    public function purchaseOrderDetails(){
+        return $this->hasMany(PurchaseOrderDetails::class, 'pr_detail_id', 'id');
+    }
+
     public function getFullPathAttribute()
     {
         if ($this->filepath) {

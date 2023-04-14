@@ -3,6 +3,7 @@
 namespace App\Models\MMIS\procurement;
 
 use App\Models\Approver\InvStatus;
+use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
 use App\Models\BuildFile\Warehouses;
 use App\Models\User;
@@ -31,8 +32,12 @@ class purchaseOrderMaster extends Model
         return $this->belongsTo(Vendors::class, 'po_Document_vendor_id');
     }
 
+    public function branch(){
+        return $this->belongsTo(Branchs::class, 'po_Document_branch_id');
+    }
+
     public function warehouse(){
-        return $this->belongsTo(Warehouses::class, 'po_Document_branch_id');
+        return $this->belongsTo(Warehouses::class, 'po_Document_warehouse_id');
     }
 
     public function status(){
@@ -41,6 +46,14 @@ class purchaseOrderMaster extends Model
 
     public function user(){
         return $this->belongsTo(User::class, 'po_Document_userid');
+    }
+
+    public function administrator(){
+        return $this->belongsTo(User::class, 'admin_approved_by');
+    }
+
+    public function comptroller(){
+        return $this->belongsTo(User::class, 'comptroller_approved_by');
     }
 
     public function getCodeAttribute(){

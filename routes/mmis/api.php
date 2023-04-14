@@ -33,7 +33,9 @@ Route::controller(CanvasController::class)->group(function () {
 
 Route::controller(PurchaseOrderController::class)->group(function () {
   Route::get('purchase-orders', 'index');
+  Route::get('purchase-order/{id}', 'show');
   Route::post('purchase-order', 'store');
+  Route::post('approve-purchase-order', 'approve');
 });
 
 Route::controller(BatchController::class)->group(function () {

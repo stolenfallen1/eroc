@@ -3,6 +3,7 @@
 namespace App\Models\MMIS\procurement;
 
 use App\Models\BuildFile\Itemmasters;
+use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\BuildFile\Vendors;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +38,10 @@ class PurchaseRequestDetails extends Model
 
     public function purchaseOrderDetails(){
         return $this->hasMany(PurchaseOrderDetails::class, 'pr_detail_id', 'id');
+    }
+
+    public function unit(){
+        return $this->belongsTo(Unitofmeasurement::class, 'item_Request_Department_Approved_UnitofMeasurement_Id');
     }
 
     public function getFullPathAttribute()

@@ -3,6 +3,7 @@
 namespace App\Models\MMIS\procurement;
 
 use App\Models\Approver\invStatus;
+use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\ItemGroup;
 use App\Models\BuildFile\Itemsubcategories;
@@ -48,6 +49,10 @@ class PurchaseRequest extends Model
         return $this->belongsTo(User::class, 'pr_RequestedBy');
     }
 
+    public  function administrator(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy');
+    }
+
     public  function category(){
         return $this->belongsTo(Itemcategories::class, 'item_Category_Id');
     }
@@ -69,6 +74,11 @@ class PurchaseRequest extends Model
     public function purchaseOrder()
     {
         return $this->hasMany(purchaseOrderMaster::class, 'pr_request_id', 'id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branchs::class, 'branch_Id');
     }
 
     public function getCodeAttribute(){

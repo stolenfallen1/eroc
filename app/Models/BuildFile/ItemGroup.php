@@ -11,7 +11,7 @@ class ItemGroup extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "invItemInventoryGroup";
+    protected $table = "CDG_CORE.dbo.invItemInventoryGroup";
 
     public function categories(){
         return $this->hasMany(Itemcategories::class, 'invgroup_id', 'id');

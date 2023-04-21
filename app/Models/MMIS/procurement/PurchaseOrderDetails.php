@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class PurchaseOrderDetails extends Model
 {
     use HasFactory;
-    protected $table = 'purchaseOrderDetail';
+    protected $table = 'CDG_MMIS.dbo.purchaseOrderDetail';
     protected $connection = 'sqlsrv_mmis';
 
     protected $guarded = [];

@@ -29,6 +29,24 @@ class PurchaseOrderController extends Controller
         }, 'vendor', 'warehouse', 'user'])->findOrfail($id);
     }
 
+    public function getByNumber()
+    {
+        return purchaseOrderMaster::with(['details'=>function($q){
+            $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+        }, 'purchaseRequest' => function($q){
+            $q->with('user', 'itemGroup', 'category');
+        }, 'vendor', 'warehouse', 'user'])
+        ->where(function($q){
+            $q->where(function($q1){
+                $q1->where('po_Document_total_net_amount', '<', 100000)->where('corp_admin_approved_by', '!=', NULL);
+            })->orWhere(function($q2){
+                $q2->where('po_Document_total_net_amount', '>', 99999)->where('ysl_approved_by', '!=', NULL);
+            });
+        })
+        ->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", Request()->number )
+        ->first();
+    }
+
     public function store(Request $request) {
 
         DB::connection('sqlsrv')->beginTransaction();

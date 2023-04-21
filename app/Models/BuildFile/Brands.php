@@ -9,7 +9,7 @@ class Brands extends Model
 {
     use HasFactory;
 
-    protected $table = 'invItembrands';
+    protected $table = 'CDG_CORE.dbo.invItembrands';
     protected $connection = "sqlsrv";
     protected $guarded = [];
 }

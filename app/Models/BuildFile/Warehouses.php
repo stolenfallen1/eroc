@@ -2,6 +2,7 @@
 
 namespace App\Models\BuildFile;
 
+use App\Models\MMIS\inventory\Delivery;
 use App\Models\MMIS\inventory\ItemBatch;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
@@ -32,7 +33,12 @@ class Warehouses extends Model
     }
 
     public function purchaseOrders(){
-        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_branch_id', 'id');
+        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_warehouse_id', 'id');
+    }
+
+    public function deliveries()
+    {
+        return $this->hasMany(Delivery::class, 'rr_Document_Warehouse_Id', 'id');
     }
 
 

@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class Unitofmeasurement extends Model
 {
     use HasFactory;
+    protected $table = 'CDG_CORE.dbo.mscUnitofmeasurements';
     protected $connection = "sqlsrv";
-    protected $table = 'mscUnitofmeasurements';
 }

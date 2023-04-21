@@ -86,6 +86,14 @@ class BatchController extends Controller
         }
     }
 
+    public function checkAvailability()
+    {
+        if(ItemBatch::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item])->exists()){
+            return response()->json(['message' => 'duplicate'], 200);
+        }
+        return response()->json(['message' => 'available'], 200);
+    }
+
     public function update(Request $request, ItemBatch $batch){
 
     }

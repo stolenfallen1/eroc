@@ -11,7 +11,7 @@ class CanvasMaster extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_mmis';
-    protected $table = 'canvasMaster';
+    protected $table = 'CDG_MMIS.dbo.canvasMaster';
     protected $guarded = [];
 
     public function purchaseRequestDetail(){
@@ -34,5 +34,10 @@ class CanvasMaster extends Model
     public function unit()
     {
         return $this->belongsTo(Unitofmeasurement::class, 'canvas_Item_UnitofMeasurement_Id');
+    }
+
+    public function purchaseOrderDetails()
+    {
+        return $this->hasMany(PurchaseOrderDetails::class, 'canvas_id', 'id');
     }
 }

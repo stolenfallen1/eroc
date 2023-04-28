@@ -8,15 +8,27 @@ use App\Http\Controllers\BuildFile\CategoryController;
 use App\Http\Controllers\BuildFile\PriorityController;
 use App\Http\Controllers\BuildFile\SupplierController;
 use App\Http\Controllers\BuildFile\AntibioticController;
+use App\Http\Controllers\BuildFile\BranchController;
+use App\Http\Controllers\BuildFile\DepartmentController;
 use App\Http\Controllers\BuildFile\DrugAdministrationController;
 use App\Http\Controllers\BuildFile\GenericNameController;
 use App\Http\Controllers\BuildFile\SystemSettingController;
 use App\Http\Controllers\BuildFile\TherapeuticClassController;
+use App\Http\Controllers\BuildFile\VendorController;
 
 Route::controller(CategoryController::class)->group(function () {
   Route::get('categories', 'getAllCategory');
   Route::get('sub-categories', 'getAllSubCategories');
   Route::get('classifications', 'getAllClassifications');
+  Route::get('supplier-categories', 'getAllSupplierCategories');
+  Route::get('supplier-terms', 'getAllSupplierTerms');
+});
+
+Route::controller(VendorController::class)->group(function () {
+  Route::get('vendors', 'index');
+  Route::post('vendors', 'store');
+  Route::put('vendors/{vendor}', 'update');
+  Route::delete('vendors/{vendor}', 'destroy');
 });
 
 Route::controller(ItemController::class)->group(function () {
@@ -26,6 +38,7 @@ Route::controller(ItemController::class)->group(function () {
 
 Route::controller(UnitController::class)->group(function () {
   Route::get('units', 'index');
+  Route::get('currencies', 'getCurrencies');
 });
 
 Route::controller(PriorityController::class)->group(function () {
@@ -34,10 +47,6 @@ Route::controller(PriorityController::class)->group(function () {
 
 Route::controller(SystemSettingController::class)->group(function () {
   Route::get('system-settings', 'getPRSNSequences');
-});
-
-Route::controller(SupplierController::class)->group(function () {
-  Route::get('suppliers', 'index');
 });
 
 Route::controller(BrandController::class)->group(function () {
@@ -58,4 +67,12 @@ Route::controller(DrugAdministrationController::class)->group(function () {
 
 Route::controller(TherapeuticClassController::class)->group(function () {
   Route::get('therapeutic-class', 'index');
+});
+
+Route::controller(BranchController::class)->group(function () {
+  Route::get('branches', 'index');
+});
+
+Route::controller(DepartmentController::class)->group(function () {
+  Route::get('departments', 'index');
 });

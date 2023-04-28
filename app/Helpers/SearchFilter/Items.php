@@ -73,7 +73,7 @@ class Items
 
   private function byWarehouse()
   {
-    $warehouse = Request()->warehouse_id;
+    $warehouse = Request()->warehouse_idd;
     if ($warehouse) {
       $this->model->with('wareHouseItems')->whereHas('wareHouseItems', function ($query) use ($warehouse) {
         $query->where('warehouse_Id', $warehouse);

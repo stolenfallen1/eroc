@@ -17,6 +17,7 @@ use App\Http\Controllers\MMIS\PurchaseRequestController;
 |
 */
 
+
 Route::post('login', [AuthController::class, 'login']);
 
 Route::group(['middleware' => 'auth:api'], function ()  {
@@ -25,10 +26,9 @@ Route::group(['middleware' => 'auth:api'], function ()  {
     });
     Route::get('user-details', [AuthController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);
+    require_once __DIR__ . './pos/api.php'; 
     require_once __DIR__ . '/buildfile/api.php';
     require_once __DIR__ . '/approver/api.php';
     require_once __DIR__ . '/mmis/api.php';
     require_once __DIR__ . '/itemandservices/api.php';
-    Route::post('test', [UserController::class, 'store']);
-    Route::get('test', [PurchaseRequestController::class, 'index']);
 });

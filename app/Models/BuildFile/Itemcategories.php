@@ -10,13 +10,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Itemcategories extends Model
 {
     use HasFactory;
-
     protected $connection = "sqlsrv";
-    protected $table = "invItemCategories";
+    protected $table = "CDG_CORE.dbo.invItemCategories";
 
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'item_Category_Id', 'id');
     }
-
-    
 }

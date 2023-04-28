@@ -7,5 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Itemdetails extends Model
 {
     use HasFactory;
-    protected $table = 'Itemdetails';
+
+    protected $connection = "sqlsrv";
+    protected $table = 'invItemDetails';
 }

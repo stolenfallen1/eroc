@@ -9,11 +9,12 @@ use App\Helpers\SearchFilter\Items;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
-use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\inventory\ItemModel;
 
 class ItemandServicesController extends Controller
 {
@@ -22,6 +23,7 @@ class ItemandServicesController extends Controller
         return (new Items)->searchable();
     }
 
+    
     public function checkNameDuplication(Request $request)
     {
         return Itemmasters::where('item_name', 'like', '%' . $request->name . '%')->where('item_InventoryGroup_Id', $request->tab)->exists();
@@ -217,8 +219,13 @@ class ItemandServicesController extends Controller
             $item = Itemmasters::findOrfail($id);
             $onhand = 0;
             if($request->item_BatchNo_Id){
-                $batch = ItemBatch::findOrfail($request->item_BatchNo_Id);
-                $onhand = $batch->item_Qty;
+                if($request->isLotNo_Required){
+                    $batch = ItemBatch::findOrfail($request->item_BatchNo_Id);
+                    $onhand = $batch->item_Qty;
+                }else{
+                    $batch = ItemModel::findOrfail($request->item_ModelNo);
+                    $onhand = $batch->item_Qty;
+                }
             }
             $warehourse_item = $item->wareHouseItems()->create([
                 'warehouse_Id' => Auth()->user()->warehouse_id,
@@ -299,17 +306,24 @@ class ItemandServicesController extends Controller
     }
 
     public function updatePhysicalCount(Request $request, Warehouseitems $warehouse_item){
-        // return $request->all();
+        // return $warehouse_item;
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         
         try {
-            ItemBatch::where('id', $request['batch']['id'])->update([
-                'item_Qty' => $request->item_OnHand,
-            ]);
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
             $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
-            $onhand = ItemBatch::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            if($warehouse_item->isModelNo_Required){
+                ItemModel::where('id', $request['model']['id'])->update([
+                    'item_Qty' => $request->item_OnHand,
+                ]);
+                $onhand = ItemModel::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            }else{
+                ItemBatch::where('id', $request['batch']['id'])->update([
+                    'item_Qty' => $request->item_OnHand,
+                ]);
+                $onhand = ItemBatch::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            }
             $warehouse_item->update([
                 'item_OnHand' => $onhand,
                 'item_Last_Inventory_Count' => $warehouse_item->item_OnHand,
@@ -325,7 +339,8 @@ class ItemandServicesController extends Controller
                 'transaction_Item_Id' => $warehouse_item->item_Id,
                 'transaction_Item_Barcode' => $request->item_Barcode,
                 'transaction_Date' => Carbon::now(),
-                'transaction_Item_Batch_Detail' => $request['batch']['batch_Number'],
+                'transaction_Item_Batch_Detail' => $request['batch']?$request['batch']['batch_Number']:NULL,
+                'transaction_Item_Model_Number' => $request['model']?$request['model']['model_Number']:NULL,
                 'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
                 'transaction_Item_UnitofMeasurement_Id' => $warehouse_item->item_UnitOfMeasure_Id,
                 'transaction_Qty' => $request->item_OnHand,

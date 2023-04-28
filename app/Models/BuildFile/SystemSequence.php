@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class SystemSequence extends Model
 {
     use HasFactory;
+    protected $table = 'CDG_CORE.dbo.sysCentralSequences';
     protected $connection = "sqlsrv";
-    protected $table = 'sysCentralSequences';
     protected $guarded = [];
     
 }

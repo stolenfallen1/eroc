@@ -17,8 +17,17 @@ class CanvasAttachment extends Model
         'filename', 'filepath',
     ];
 
+    protected $appends = ['full_path'];
+
     public function canvas(){
         return $this->belongsTo(CanvasMaster::class, 'canvas_id');
+    }
+
+    public function getFullPathAttribute()
+    {
+        if ($this->filepath) {
+            return config('app.url') . $this->filepath;
+        }
     }
 
 }

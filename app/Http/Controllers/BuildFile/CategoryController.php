@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Classifications;
 use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\Itemsubcategories;
+use App\Models\BuildFile\Supplierterms;
+use App\Models\BuildFile\Suppliertypes;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -35,5 +37,17 @@ class CategoryController extends Controller
     {
         $classifications = Classifications::where(['subcategory_id' => Request()->sub_category_id, 'isactive' => 1])->get();
         return response()->json(['classifications' => $classifications], 200);
+    }
+
+    public function getAllSupplierCategories()
+    {
+        $categories = Suppliertypes::where('isactive', 1)->get();
+        return response()->json(['categories' => $categories], 200);
+    }
+
+    public function getAllSupplierTerms()
+    {
+        $terms = Supplierterms::where('isactive', 1)->get();
+        return response()->json(['terms' => $terms], 200);
     }
 }

@@ -42,6 +42,8 @@ Route::controller(PurchaseOrderController::class)->group(function () {
 
 Route::controller(BatchController::class)->group(function () {
   Route::get('item/batch', 'getItemBatchs');
+  Route::get('item/models', 'getItemModels');
+  Route::post('models', 'storeModel');
   Route::post('batch', 'store');
   Route::put('batch', 'update');
   Route::get('check-batch', 'checkAvailability');

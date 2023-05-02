@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\GetIP;
-use App\Helpers\PosSearchFilter\Terminal;
-use App\Models\BuildFile\Systerminals;
 use App\Models\User;
+use App\Helpers\GetIP;
 use Illuminate\Http\Request;
+use App\Models\POS\POSSettings;
 use TCG\Voyager\Facades\Voyager;
+use App\Models\POS\POSBIRSettings;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\PosSearchFilter\Terminal;
 
-class AuthController extends \TCG\Voyager\Http\Controllers\Controller
+class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
 {
     protected $shift;
    
@@ -19,6 +20,17 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
         $credentials = $request->only('email', 'password');
        
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
+            
+            if(!$this->checkTerminal()){
+                return response()->json(["message" => 'Your not allowed to access'], 200);
+            }
+            User::where('id',Auth::user()->id)->update(
+                [
+                    'user_ipaddress'=>(new GetIP)->value(),
+                    'terminal_id'=>(new Terminal)->terminal_details()->id,
+                    'shift'=>Request()->shift ?? '',
+                ]
+            );
             $user = Auth::user();
             $token = $user->createToken();
             $user->load('role.permissions', 'roles');
@@ -28,27 +40,23 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
         return response()->json(["message" => 'Warning: Enter valid email and password before proceeding!'], 200);
     }
     
+
     public function checkTerminal(){
         $termninal = '';
         $hostname = gethostname();
         $ipaddress = (new GetIP)->value();
-        if(Auth::user()->role->name == 'Pharmacist' || Auth::user()->role->name == 'Pharmacist Assistant' || Auth::user()->role->name == 'Pharmacist cashier') {
-            $checksystemtermnial = (new Terminal)->terminal_details();
-            if(!$checksystemtermnial){
-                return false;
-            }
-            $termninal = $checksystemtermnial;
-            return $termninal;
-        }else{
-            return true;
+        $checksystemtermnial = (new Terminal)->terminal_details();
+        if(!$checksystemtermnial){
+            return false;
         }
+        $termninal = $checksystemtermnial;
+        return $termninal;
     }
 
     public function logout()
     {
         Auth::user()->revokeToken();
         Auth::guard('web')->logout();
-
         return response()->json(['message' => 'success'], 200);
     }
 
@@ -70,12 +78,9 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             return true;
         });
 
-        if(!$this->checkTerminal()){
-            return response()->json(["message" => 'Your not allowed to access'], 403);
-        }
-
         $user = Auth::user();
         $user->sysTerminal = $this->checkTerminal();
+        $user->pos_setting = POSSettings::where('isActive','1')->first();
         $user->serverIP =  config('app.pos_server_ip');
         $data['module'] = $modulelist;
         $data['details'] = $user;

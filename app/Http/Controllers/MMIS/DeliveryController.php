@@ -54,6 +54,7 @@ class DeliveryController extends Controller
                 'po_Document_Number' => $request['po_Document_number'],
                 'po_Document_Prefix' => $request['po_Document_prefix'],
                 'po_Document_Suffix' => $request['po_Document_suffix'],
+                'po_id' => $request['id'],
                 'rr_Status' => 11,
             ]);
 

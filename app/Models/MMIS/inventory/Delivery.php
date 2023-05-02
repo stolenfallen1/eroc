@@ -4,6 +4,7 @@ namespace App\Models\MMIS\inventory;
 
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Warehouses;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,6 +18,10 @@ class Delivery extends Model
 
     public function branch(){
         return $this->belongsTo(Branchs::class, 'rr_Document_Branch_Id');
+    }
+
+    public function purchaseOrder(){
+        return $this->belongsTo(purchaseOrderMaster::class, 'po_id');
     }
 
     public function warehouse(){

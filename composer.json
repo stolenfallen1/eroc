@@ -26,6 +26,7 @@
         "laravel/sail": "^1.0.1",
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^5.10",
+        "phpstan/phpstan": "^1.10",
         "phpunit/phpunit": "^9.5.10"
     },
     "autoload": {
@@ -35,7 +36,7 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/Helpers/FileUpload.php"
+            "app/Helpers/Fileupload.php"
         ]
     },
     "autoload-dev": {

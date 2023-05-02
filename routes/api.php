@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthPOSController;
+use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 
 /*
@@ -17,18 +19,21 @@ use App\Http\Controllers\MMIS\PurchaseRequestController;
 |
 */
 
-
 Route::post('login', [AuthController::class, 'login']);
+Route::post('pos/login', [AuthPOSController::class, 'login']);
+Route::get('get-setting', [SettingController::class, 'index']);
 
 Route::group(['middleware' => 'auth:api'], function ()  {
     Route::controller(UserController::class)->group(function () {
         Route::get('department/users', 'getDepartmentUsers');
     });
     Route::get('user-details', [AuthController::class, 'userDetails']);
+    Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
+
     Route::post('logout', [AuthController::class, 'logout']);
-    require_once __DIR__ . './pos/api.php'; 
-    require_once __DIR__ . '/buildfile/api.php';
-    require_once __DIR__ . '/approver/api.php';
-    require_once __DIR__ . '/mmis/api.php';
-    require_once __DIR__ . '/itemandservices/api.php';
+    require_once ('pos/api.php'); 
+    require_once ('buildfile/api.php');
+    require_once ('approver/api.php');
+    require_once ('mmis/api.php');
+    require_once ('itemandservices/api.php');
 });

@@ -31,9 +31,9 @@ Route::group(['middleware' => 'auth:api'], function ()  {
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
 
     Route::post('logout', [AuthController::class, 'logout']);
-    require_once __DIR__ . './pos/api.php'; 
-    require_once __DIR__ . '/buildfile/api.php';
-    require_once __DIR__ . '/approver/api.php';
-    require_once __DIR__ . '/mmis/api.php';
-    require_once __DIR__ . '/itemandservices/api.php';
+    require_once ('pos/api.php'); 
+    require_once ('buildfile/api.php');
+    require_once ('approver/api.php');
+    require_once ('mmis/api.php');
+    require_once ('itemandservices/api.php');
 });

@@ -44,6 +44,7 @@ class PurchaseOrderController extends Controller
             });
         })
         ->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", Request()->number )
+        ->whereDoesntHave('delivery')
         ->first();
     }
 

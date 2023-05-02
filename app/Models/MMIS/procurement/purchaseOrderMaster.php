@@ -6,6 +6,7 @@ use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
 use App\Models\BuildFile\Warehouses;
+use App\Models\MMIS\inventory\Delivery;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,10 @@ class purchaseOrderMaster extends Model
 
     public function details(){
         return $this->hasMany(PurchaseOrderDetails::class, 'po_id', 'id');
+    }
+
+    public function delivery(){
+        return $this->hasMany(Delivery::class, 'po_id', 'id');
     }
 
     public function purchaseRequest(){

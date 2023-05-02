@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Models\BuildFile;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class MscPaymentMethod extends Model
+{
+    use HasFactory;
+    protected $table = 'CDG_CORE.dbo.mscPaymentMethods';
+    protected $connection = "sqlsrv";
+}

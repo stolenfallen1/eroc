@@ -50,6 +50,4 @@ class Itemmasters extends Model
     public function batchs(){
         return $this->hasMany(ItemBatch::class, 'item_Id', 'id');
     }
-
-
 }

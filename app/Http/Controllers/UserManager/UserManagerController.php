@@ -392,6 +392,7 @@ class UserManagerController extends \TCG\Voyager\Http\Controllers\Controller
             $request['branch_id'] = $request->branch_id ?? '';
             $request['mobileno'] = $request->mobileno ?? '';
             $request['idnumber'] = $request->idnumber ?? '';
+            $request['passcode'] = $request->idnumber ?? '';
 
             
             $this->insertUpdateData($request, $slug, $dataType->editRows, $data);
@@ -494,7 +495,7 @@ class UserManagerController extends \TCG\Voyager\Http\Controllers\Controller
             $request['branch_id'] = $request->branch_id ?? '';
             $request['mobileno'] = $request->mobileno ?? '';
             $request['idnumber'] = $request->idnumber ?? '';
-
+            $request['passcode'] = $request->idnumber ?? '';
             
 
             $data = $this->insertUpdateData($request, $slug, $dataType->addRows, new $dataType->model_name());

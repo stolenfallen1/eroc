@@ -23,10 +23,14 @@ class Customer
     public function searchColumns()
     {
         if (Request()->keyword) {
-            $this->model->where(function ($query) {
-                $query->where('customer_last_name', 'LIKE',Request()->keyword.'%');
-                $query->orWhere('customer_first_name', 'LIKE',Request()->keyword.'%');
-            });
+            if(isset(Request()->keyword['keywordlastname'])){
+                return  $this->model->where('customer_last_name', 'LIKE','%'.Request()->keyword['keywordlastname'].'%');
+            }
+            if(isset(Request()->keyword['keywordfirstname'])){
+               return $this->model->where('customer_first_name', 'LIKE',Request()->keyword['keywordfirstname'].'%');
+            }
+        }else{
+            return  $this->model->where('customer_last_name', 'LIKE','walkin%');
         }
     }
 

@@ -18,6 +18,8 @@ class ItemBatch extends Model
     protected $guarded = [];
 
     protected $appends = ['display_text'];
+ 
+    protected $fillable = ['batch_Number','display_text','id','item_Expiry_Date','item_Qty','item_Qty_Used'];
 
     public function item(){
         return $this->belongsTo(Itemmasters::class, 'item_Id');
@@ -29,7 +31,7 @@ class ItemBatch extends Model
 
     public function getDisplayTextAttribute()
     {
-        return 'Batch no. ' . $this->batch_Number . ' -  Qty  ' . (int)$this->item_Qty. ' -  Expiry no. ' . Carbon::parse($this->item_Expiry_Date)->toDateString();
+        return $this->batch_Number . ' -  Expiry Date :' . Carbon::parse($this->item_Expiry_Date)->format('d/m/Y'). ' -  QTY : '.((float)$this->item_Qty - $this->item_Qty_Used);
     }
 
 }

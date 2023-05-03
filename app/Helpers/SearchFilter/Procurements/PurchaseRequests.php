@@ -153,7 +153,8 @@ class PurchaseRequests
       $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
       ->where(function($query){
         $query->whereHas('canvases', function($q){
-          $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+          $q->where('is_submitted', false)->orWhere('is_submitted', null);
+          // $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         })->orWhereDoesntHave('canvases');
       });
     });

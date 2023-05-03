@@ -55,7 +55,7 @@ class PurchaseRequestController extends Controller
                         $query->whereHas('canvases', function($query1){
                             $query1->where('is_submitted', false)->orWhere('is_submitted', null);
                         })->orWhereDoesntHave('canvases');
-                    });
+                    })->where('pr_Branch_Level1_ApprovedBy', '!=', NULL);
                 }
             }])->findOrFail($id);
     }

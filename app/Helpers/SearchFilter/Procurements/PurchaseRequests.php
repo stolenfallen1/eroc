@@ -150,10 +150,12 @@ class PurchaseRequests
 
   private function forCanvas(){
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){
-      $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
-      ->where(function($query){
-        $query->whereHas('canvases', function($q){
-          $q->where('is_submitted', false)->orWhere('is_submitted', null);
+      // $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
+      $q->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->where(function($query){
+        $query->whereHas('canvases', function($q1){
+          $q1->whereDoesntHave('purchaseRequestDetail', function($q2){
+            $q2->where('is_submitted', true);
+          });
           // $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         })->orWhereDoesntHave('canvases');
       });

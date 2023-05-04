@@ -30,22 +30,23 @@ class PurchaseRequestController extends Controller
         return PurchaseRequest::with(['warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
             'purchaseRequestAttachments', 'user', 'purchaseRequestDetails'=>function($q) use($role){
                 if(Request()->tab==6){
-                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
+                    ->where(function($query){
                         $query->whereHas('recommendedCanvas', function($query1){
-                            $query1->where('is_submitted', true)->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+                            $query1->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
                         });
-                    });
+                    })->where('is_submitted', true);
                 }else if(Request()->tab==7){
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('recommendedCanvas', function($query1){
-                            $query1->where('is_submitted', true)->where('canvas_Level2_ApprovedBy', '!=', null)
+                            $query1->where('canvas_Level2_ApprovedBy', '!=', null)
                             ->orWhere('canvas_Level2_CancelledBy', '!=', null);
                         });
-                    });
+                    })->where('is_submitted', true);
                 }else if(Request()->tab==9){
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('recommendedCanvas', function($query1){
-                            $query1->where('is_submitted', true)->where('canvas_Level2_ApprovedBy', '!=', null)
+                            $query1->where('canvas_Level2_ApprovedBy', '!=', null)
                             ->orWhere('canvas_Level2_CancelledBy', '!=', null);
                         });
                     })->whereDoesntHave('purchaseOrderDetails');
@@ -53,7 +54,9 @@ class PurchaseRequestController extends Controller
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('canvases', function($query1){
-                            $query1->where('is_submitted', false)->orWhere('is_submitted', null);
+                            $query1->whereDoesntHave('purchaseRequestDetail', function($q1){
+                                $q1->where('is_submitted', true);
+                            });
                         })->orWhereDoesntHave('canvases');
                     })->where('pr_Branch_Level1_ApprovedBy', '!=', NULL);
                 }

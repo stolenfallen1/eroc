@@ -51,14 +51,17 @@ class DeliveryController extends Controller
                 'rr_Document_TotalDiscountAmount' => $request['po_Document_discount_amount'],
                 'rr_Document_TotalNetAmount' => $request['po_Document_total_net_amount'],
                 'rr_Document_Remarks' => $request['rr_Document_Remarks'],
-                'rr_Document_Branch_Id' => $request['purchase_request']['branch_Id'],
-                'rr_Document_Warehouse_Group_Id' => $request['warehouse']['warehouse_Group_Id'],
-                'rr_Document_Warehouse_Id' => $request['purchase_request']['warehouse_Id'],
+
+                'rr_Document_Branch_Id' => Auth::user()->branch_id,
+                'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
+                'rr_Document_Warehouse_Id' => Auth::user()->warehouse_id,
+
                 'po_Document_Number' => $request['po_Document_number'],
                 'po_Document_Prefix' => $request['po_Document_prefix'],
                 'po_Document_Suffix' => $request['po_Document_suffix'],
                 'po_id' => $request['id'],
                 'rr_Status' => $request['rr_Status'],
+                'rr_received_by' => Auth::user()->id,
             ]);
             
             $sequence->update([

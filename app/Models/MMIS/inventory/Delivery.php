@@ -7,6 +7,7 @@ use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
 use App\Models\BuildFile\Warehouses;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -45,6 +46,11 @@ class Delivery extends Model
     public function status()
     {
         return $this->belongsTo(InvStatus::class, 'rr_Status');
+    }
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'rr_received_by');
     }
 
     public function getPoNumberAttribute(){

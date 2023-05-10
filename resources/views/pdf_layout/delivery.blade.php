@@ -143,8 +143,8 @@
             <td class="underline">{{$pdf_data['delivery']['purchaseOrder']['purchaseRequest']['code']}}</td>
           </tr>
           <tr>
-            <td class="left-width">Sales Invoice</td>
-            <td class="mid-width underline">{{$pdf_data['delivery']['rr_Document_Invoice_No']}}</td>
+            <td class="left-width">RR No.</td>
+            <td class="mid-width underline">{{$pdf_data['delivery']['code']}}</td>
             <td class="right-width">Ref. PO No.</td>
             <td class="underline">{{$pdf_data['delivery']['po_number']}}</td>
           </tr>

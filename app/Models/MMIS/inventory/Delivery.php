@@ -19,7 +19,7 @@ class Delivery extends Model
 
     protected $guarded = [];
 
-    protected $appends = ['po_number'];
+    protected $appends = ['po_number', 'code'];
 
     public function branch(){
         return $this->belongsTo(Branchs::class, 'rr_Document_Branch_Id');
@@ -55,5 +55,9 @@ class Delivery extends Model
 
     public function getPoNumberAttribute(){
         return generateCompleteSequence($this->po_Document_Prefix, $this->po_Document_Number, $this->po_Document_Suffix, "-");
+    }
+
+    public function getCodeAttribute(){
+        return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-");
     }
 }

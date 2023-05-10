@@ -86,7 +86,7 @@ Route::get('/print-delivery/{id}', function ($id){
     ];
     $pdf = PDF::loadView('pdf_layout.delivery', ['pdf_data' => $pdf_data]);
 
-    return $pdf->stream('Purchase order-'.$id.'.pdf');
+    return $pdf->stream('delivery-'.$id.'.pdf');
 });
 
 Route::group(['middleware' => 'admin.user'], function () {

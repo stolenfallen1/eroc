@@ -18,9 +18,31 @@ class Deliveries
   public function searchable(){
     $this->model->with('status', 'vendor', 'warehouse');
     $this->byTab();
+    $this->searcColumns();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
+  }
+
+  public function searcColumns(){
+    $searchable = ['rr_Document_Invoice_No', 'rr_number', 'po_number'];
+    if (Request()->keyword) {
+      $keyword = Request()->keyword;
+      $this->model->where(function ($q) use ($keyword, $searchable) {
+        foreach ($searchable as $column) {
+          if($column == 'rr_number'){
+            $q->orWhereRaw("CONCAT(rr_Document_Prefix,'',rr_Document_Number,'',rr_Document_Suffix) = ?", $keyword );
+          }else if($column == 'po_number'){
+            $q->orWhereRaw("CONCAT(po_Document_Prefix,'',po_Document_Number,'',po_Document_Suffix) = ?", $keyword );
+          }
+          
+          else{
+            $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
+          }
+
+        }
+      });
+    }
   }
 
   public function byTab()

@@ -108,7 +108,7 @@ class PurchaseRequests
   }
 
   private function forApproval(){
-    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff'){
+    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || $this->authUser->role->name == 'dietary'){
 
       $this->model->where('warehouse_Id', $this->authUser->warehouse_id)
       ->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);

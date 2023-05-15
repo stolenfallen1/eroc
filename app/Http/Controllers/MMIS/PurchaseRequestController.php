@@ -97,6 +97,7 @@ class PurchaseRequestController extends Controller
                 'pr_Document_Prefix' => $prefix ?? "",
                 'pr_Document_Suffix' => $suffex ?? "",
                 'pr_Status_Id' => $status ?? null,
+                'isPersihable' => $request->isPersihable ?? 0,
             ]);
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
                 foreach ($request->attachments as $key => $attachment) {

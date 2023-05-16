@@ -235,7 +235,7 @@ class PurchaseRequestController extends Controller
     }
 
     public function approveItems(Request $request){
-        if(Auth::user()->role->name == 'department head'){
+        if(Auth::user()->role->name == 'department head' || Auth::user()->role->name == 'dietary head'){
             $this->approveByDepartmentHead($request);
         } else if(Auth::user()->role->name == 'administrator') {
             $this->approveByAdministrator($request);

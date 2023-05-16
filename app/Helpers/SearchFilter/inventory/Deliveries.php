@@ -19,6 +19,21 @@ class Deliveries
     $this->model->with('status', 'vendor', 'warehouse');
     $this->byTab();
     $this->searcColumns();
+    if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
+      $this->model->whereHas('purchaseOrder', function($q){
+        $q->whereHas('purchaseRequest', function($q1){
+          $q1->where('isPersihable', 1);
+        });
+      });
+    }else{
+      $this->model->whereHas('purchaseOrder', function($q){
+        $q->whereHas('purchaseRequest', function($q1){
+          $q1->where(function($q2){
+            $q2->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+          });
+        });
+      });
+    }
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

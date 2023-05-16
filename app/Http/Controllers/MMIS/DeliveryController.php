@@ -78,7 +78,26 @@ class DeliveryController extends Controller
                 $item_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'];
                 $discount_percent = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_percent'];
                 $discount_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_amount'];
-                if($delivery->rr_Status == 5){
+
+                // if($delivery->rr_Status == 5 && (Auth::user()->role->name != 'dietary' && Auth::user()->role->name != 'dietary head')){
+                //     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
+                //     if($vat_rate){
+                //         if($request['vendor']['isVATInclusive'] == 0){
+                //             $vat_amount = $total_amount * ($vat_rate / 100);
+                //             $total_amount += $vat_amount;
+                //         }
+                //     }
+                //     if($discount_percent){
+                //         $discount_amount = $total_amount * ($discount_percent / 100);
+                //         $overall_discount_amount += $discount_amount;
+                //     }
+                //     $total_net = $total_amount - $discount_amount;
+                //     $overall_total_net += $total_net;
+                //     $overall_total_amount += $total_amount;
+                // }
+
+                if($delivery->rr_Status == 5 || $detail['rr_Detail_Item_ListCost']){
+                    $item_amount = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
                     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
                     if($vat_rate){
                         if($request['vendor']['isVATInclusive'] == 0){
@@ -94,6 +113,7 @@ class DeliveryController extends Controller
                     $overall_total_net += $total_net;
                     $overall_total_amount += $total_amount;
                 }
+
                 $delivery_item = DeliveryItems::create([
                     'rr_id' => $delivery->id,
                     'rr_Detail_Item_Id' => $detail['item']['id'],
@@ -162,7 +182,7 @@ class DeliveryController extends Controller
                     ]);
                 }
             }
-            if($delivery->rr_Status == 5){
+            if($delivery->rr_Status == 5 || $detail['rr_Detail_Item_ListCost']){
                 $delivery->update([
                     'rr_Document_TotalDiscountAmount' => $overall_discount_amount,
                     'rr_Document_TotalNetAmount' => $overall_total_net,

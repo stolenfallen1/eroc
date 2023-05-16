@@ -52,7 +52,7 @@ class PurchaseOrderController extends Controller
                 $q->where('isPersihable', 1);
             }else{
                 $q->where(function($q1){
-                    $q1->where('isPersihable', 0)->where('isPersihable', NULL);
+                    $q1->where('isPersihable', 0)->orWhere('isPersihable', NULL);
                 });
             }
         })

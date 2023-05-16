@@ -108,7 +108,8 @@ class PurchaseRequests
   }
 
   private function forApproval(){
-    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || $this->authUser->role->name == 'dietary'){
+    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' 
+      || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
 
       $this->model->where('warehouse_Id', $this->authUser->warehouse_id)
       ->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
@@ -160,6 +161,12 @@ class PurchaseRequests
         })->orWhereDoesntHave('canvases');
       });
     });
+
+    if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
+      $this->model->where('isPersihable', 1);
+    }else{
+      $this->model->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+    }
   }
   
   private function canvasForApproval(){
@@ -196,6 +203,13 @@ class PurchaseRequests
         $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
       })->whereDoesntHave('purchaseOrderDetails');
     });
+    if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
+      $this->model->where('isPersihable', 1);
+    }else{
+      $this->model->where(function($q){
+        $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+      });
+    }
   }
 
 

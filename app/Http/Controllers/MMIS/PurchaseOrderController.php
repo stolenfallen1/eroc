@@ -47,6 +47,15 @@ class PurchaseOrderController extends Controller
         ->whereDoesntHave('delivery', function($q){
             $q->where('rr_Status', 11);
         })
+        ->whereHas('purchaseRequest', function($q){
+            if(Auth::user()->role->name == 'dietary' || Auth::user()->role->name == 'dietary head'){
+                $q->where('isPersihable', 1);
+            }else{
+                $q->where(function($q1){
+                    $q1->where('isPersihable', 0)->where('isPersihable', NULL);
+                });
+            }
+        })
         ->first();
     }
 

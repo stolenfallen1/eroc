@@ -25,6 +25,7 @@ Route::controller(PurchaseRequestController::class)->group(function () {
 
 Route::controller(CanvasController::class)->group(function () {
   Route::get('canvas', 'index');
+  Route::get('count-for-po', 'countForPO');
   Route::post('canvas', 'store');
   Route::delete('canvas/{id}', 'destroy');
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');

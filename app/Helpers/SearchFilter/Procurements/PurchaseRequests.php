@@ -179,7 +179,7 @@ class PurchaseRequests
   }
 
   private function approveCanvas(){
-    $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+    $this->model->with('purchaseOrder')->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
       $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function($q1){
           $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);

@@ -19,7 +19,7 @@ class ItemBatch extends Model
 
     protected $appends = ['display_text'];
  
-    protected $fillable = ['batch_Number','display_text','id','item_Expiry_Date','item_Qty','item_Qty_Used'];
+    // protected $fillable = ['batch_Number','display_text','id','item_Expiry_Date','item_Qty','item_Qty_Used'];
 
     public function item(){
         return $this->belongsTo(Itemmasters::class, 'item_Id');

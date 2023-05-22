@@ -4,14 +4,15 @@ namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\BuildFile\Vendors;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\MMIS\procurement\CanvasMaster;
+use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Helpers\SearchFilter\Procurements\Canvases;
-use App\Models\BuildFile\Vendors;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 
 class CanvasController extends Controller
@@ -19,6 +20,25 @@ class CanvasController extends Controller
     public function index()
     {
         return (new Canvases)->searchable();
+    }
+
+    public function countForPO()
+    {
+        $model = PurchaseRequest::query();
+        $model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+        $q->where('is_submitted', true)
+        ->whereHas('recommendedCanvas', function($q1){
+            $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
+        })->whereDoesntHave('purchaseOrderDetails');
+        });
+        if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){
+            $model->where('isPersihable', 1);
+        }else{
+            $model->where(function($q){
+                $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+            });
+        } 
+        return $model->count();
     }
 
     public function store(Request $request)

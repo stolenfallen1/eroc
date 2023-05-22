@@ -84,12 +84,12 @@ class BatchController extends Controller
                 ]);
             }
     
-            DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
+            DB::connection('sqlsrv')->commit();
             return response()->json(["batch" => $batch], 200);
         } catch (\Exception $e) {
-            DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
+            DB::connection('sqlsrv')->rollback();
             return response()->json(["error" => $e], 200);
         }
     }

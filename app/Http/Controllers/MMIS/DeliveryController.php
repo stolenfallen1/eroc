@@ -78,25 +78,25 @@ class DeliveryController extends Controller
                 $item_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'];
                 $discount_percent = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_percent'];
                 $discount_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_amount'];
-
+                
                 // if($delivery->rr_Status == 5 && (Auth::user()->role->name != 'dietary' && Auth::user()->role->name != 'dietary head')){
-                //     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
-                //     if($vat_rate){
-                //         if($request['vendor']['isVATInclusive'] == 0){
-                //             $vat_amount = $total_amount * ($vat_rate / 100);
-                //             $total_amount += $vat_amount;
-                //         }
-                //     }
-                //     if($discount_percent){
-                //         $discount_amount = $total_amount * ($discount_percent / 100);
-                //         $overall_discount_amount += $discount_amount;
-                //     }
-                //     $total_net = $total_amount - $discount_amount;
+                    //     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
+                    //     if($vat_rate){
+                        //         if($request['vendor']['isVATInclusive'] == 0){
+                            //             $vat_amount = $total_amount * ($vat_rate / 100);
+                            //             $total_amount += $vat_amount;
+                            //         }
+                            //     }
+                            //     if($discount_percent){
+                                //         $discount_amount = $total_amount * ($discount_percent / 100);
+                                //         $overall_discount_amount += $discount_amount;
+                                //     }
+                                //     $total_net = $total_amount - $discount_amount;
                 //     $overall_total_net += $total_net;
                 //     $overall_total_amount += $total_amount;
                 // }
-
-                if($delivery->rr_Status == 5 || $detail['rr_Detail_Item_ListCost']){
+                
+                if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
                     $item_amount = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
                     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
                     if($vat_rate){
@@ -158,7 +158,7 @@ class DeliveryController extends Controller
                     ]);
                     
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
+                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
                     // return $detail['purchase_request_detail'];
                     InventoryTransaction::create([
                         'branch_Id' => $delivery->rr_Document_Branch_Id,
@@ -181,8 +181,60 @@ class DeliveryController extends Controller
                         'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
                     ]);
                 }
+
+                foreach ($detail['free_goods'] as $key1 => $batch) {
+                    
+                    $warehouse_item = Warehouseitems::where([
+                    'branch_id' => $delivery->rr_Document_Branch_Id,
+                    'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
+                    'item_Id' => $batch['item_Id'],
+                    ])->first();
+                    
+                    $warehouse_item->update([
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                    ]);
+
+                    ItemBatch::create([
+                        'branch_id' => $delivery->rr_Document_Branch_Id,
+                        'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                        'batch_Number' => $batch['batch_Number'],
+                        'batch_Transaction_Date' => Carbon::now(),
+                        'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
+                        'item_Id' => $batch['item_Id'],
+                        'item_Qty' => $batch['item_Qty'],
+                        'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                        'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
+                        'isConsumed' => 0,
+                        'delivery_item_id' => $delivery_item->id,
+                    ]);
+                    
+                    $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                    // return $detail['purchase_request_detail'];
+                    InventoryTransaction::create([
+                        'branch_Id' => $delivery->rr_Document_Branch_Id,
+                        'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
+                        'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
+                        'transaction_Item_Id' =>  $batch['item_Id'],
+                        'transaction_Date' => Carbon::now(),
+                        'trasanction_Reference_Number' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
+                        'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                        'transaction_Qty' => $batch['item_Qty'],
+                        'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $batch['item_Qty'],
+                        'transaction_Item_ListCost' => $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'],
+                        'transaction_UserID' =>  Auth::user()->id,
+                        'createdBy' =>  Auth::user()->id,
+                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        'isFreeGoods' =>  "1",
+                    ]);
+                    
+                    $sequence1->update([
+                        'seq_no' => (int) $sequence->seq_no + 1,
+                        'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
+                    ]);
+                }
             }
-            if($delivery->rr_Status == 5 || $detail['rr_Detail_Item_ListCost']){
+            if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
                 $delivery->update([
                     'rr_Document_TotalDiscountAmount' => $overall_discount_amount,
                     'rr_Document_TotalNetAmount' => $overall_total_net,

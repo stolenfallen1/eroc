@@ -152,7 +152,8 @@ class PurchaseRequests
   private function forCanvas(){
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){
       // $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
-      $q->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->where(function($query){
+      $q->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)
+      ->where(function($query){
         $query->whereHas('canvases', function($q1){
           $q1->whereDoesntHave('purchaseRequestDetail', function($q2){
             $q2->where('is_submitted', true);
@@ -165,7 +166,9 @@ class PurchaseRequests
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
       $this->model->where('isPersihable', 1);
     }else{
-      $this->model->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+      $this->model->where(function($q2){
+        $q2->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+      });
     }
   }
   

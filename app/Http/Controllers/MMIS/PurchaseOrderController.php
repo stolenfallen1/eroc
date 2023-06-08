@@ -31,7 +31,9 @@ class PurchaseOrderController extends Controller
 
     public function getByNumber()
     {
-        return purchaseOrderMaster::with(['details'=>function($q){
+        return purchaseOrderMaster::with(['latestdelivery.items' => function($q){
+            $q->where('rr_Detail_Item_Qty_BackOrder', '!=', 0);
+        }, 'details'=>function($q){
             $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
         }, 'purchaseRequest' => function($q){
             $q->with('user', 'itemGroup', 'category');

@@ -29,6 +29,10 @@ class purchaseOrderMaster extends Model
         return $this->hasMany(Delivery::class, 'po_id', 'id');
     }
 
+    public function latestdelivery(){
+        return $this->hasOne(Delivery::class, 'po_id', 'id')->orderBy('created_at', 'desc');
+    }
+
     public function purchaseRequest(){
         return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');
     }

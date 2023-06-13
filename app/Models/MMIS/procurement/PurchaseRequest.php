@@ -49,6 +49,18 @@ class PurchaseRequest extends Model
         return $this->belongsTo(User::class, 'pr_RequestedBy');
     }
 
+    public  function departmentApprovedBy(){
+        return $this->belongsTo(User::class, 'pr_DepartmentHead_ApprovedBy');
+    }
+
+    public  function administratorApprovedBy(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy');
+    }
+
+    public  function departmentDeclinedBy(){
+        return $this->belongsTo(User::class, 'pr_DepartmentHead_CancelledBy');
+    }
+
     public  function administrator(){
         return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy');
     }

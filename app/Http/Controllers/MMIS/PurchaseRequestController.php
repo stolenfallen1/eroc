@@ -28,7 +28,8 @@ class PurchaseRequestController extends Controller
     {
         $role = Auth::user()->role->name;
         return PurchaseRequest::with(['warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
-            'purchaseRequestAttachments', 'user', 'purchaseRequestDetails'=>function($q) use($role){
+            'purchaseRequestAttachments', 'user', 'departmentApprovedBy', 'departmentDeclinedBy', 'administratorApprovedBy',
+            'purchaseRequestDetails'=>function($q) use($role){
                 if(Request()->tab==6){
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
                     ->where(function($query){
@@ -50,6 +51,8 @@ class PurchaseRequestController extends Controller
                             ->orWhere('canvas_Level2_CancelledBy', '!=', null);
                         });
                     })->whereDoesntHave('purchaseOrderDetails');
+                }else if(Request()->tab==10){
+                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor', 'recommendedCanvas.canvaser', 'unit');
                 }
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){

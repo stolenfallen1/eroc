@@ -52,7 +52,11 @@ class PurchaseRequestController extends Controller
                         });
                     })->whereDoesntHave('purchaseOrderDetails');
                 }else if(Request()->tab==10){
-                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor', 'recommendedCanvas.canvaser', 'unit');
+                    $q->with(['itemMaster', 'canvases', 'recommendedCanvas' => function($q){
+                        $q->with('vendor', 'canvaser', 'unit');
+                    }, 'unit', 'PurchaseOrderDetails' => function($query1){
+                        $query1->with('purchaseOrder.user', 'unit');
+                    }]);
                 }
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){

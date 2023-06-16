@@ -37,7 +37,7 @@ class PurchaseRequestDetails extends Model
     }
 
     public function purchaseOrderDetails(){
-        return $this->hasMany(PurchaseOrderDetails::class, 'pr_detail_id', 'id');
+        return $this->hasOne(PurchaseOrderDetails::class, 'pr_detail_id', 'id');
     }
 
     public function unit(){

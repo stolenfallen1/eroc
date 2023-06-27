@@ -9,6 +9,7 @@ use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
 use App\Models\MMIS\inventory\Delivery;
+use App\Models\MMIS\inventory\StockTransfer;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,6 +66,26 @@ Route::get('/print-purchase-request/{id}', function ($id){
     $pdf = PDF::loadView('pdf_layout.purchaser_request', ['pdf_data' => $pdf_data]);
 
     return $pdf->stream('Purchase order-'.$id.'.pdf');
+});
+
+Route::get('/print-stock-transfer/{id}', function ($id){
+    $stock_transfer = StockTransfer::with('delivery', 'purchaseRequest', 'purchaseOrder', 'warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy')->findOrfail($id);
+    $qrCode = QrCode::size(200)->generate(config('app.url').'/print-stock-transfer/'.$id);
+    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
+    $imageData = base64_encode(file_get_contents($imagePath));
+    $qrData = base64_encode($qrCode);
+    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+    $pdf_data = [
+        'logo' => $imageSrc,
+        'qr' => $qrSrc,
+        'stock_transfer' => $stock_transfer,
+        'transaction_date' => Carbon::parse($stock_transfer->rr_Document_Transaction_Date)->format('Y-m-d'),
+        'po_date' => Carbon::parse($stock_transfer['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
+    ];
+    $pdf = PDF::loadView('pdf_layout.stock_transfer', ['pdf_data' => $pdf_data]);
+
+    return $pdf->stream('stock_transfer-'.$id.'.pdf');
 });
 
 Route::get('/print-delivery/{id}', function ($id){

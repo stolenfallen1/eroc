@@ -252,6 +252,22 @@ class DeliveryController extends Controller
         }
     }
 
+    public function warehouseDelivery($id){
+        try {
+            $deliveries = Delivery::where('rr_Document_Warehouse_Id', $id)
+            // ->where(function($query){
+            //     $query->whereHas('stockTransfer', function($q){
+            //         $q->where('status', 1002);
+            //     })
+            // })
+            ->whereDoesntHave('stockTransfer')
+            ->get();
+            return $deliveries;
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e], 200);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         # code...

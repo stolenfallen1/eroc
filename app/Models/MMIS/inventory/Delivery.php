@@ -33,6 +33,10 @@ class Delivery extends Model
         return $this->belongsTo(Warehouses::class, 'rr_Document_Warehouse_Id');
     }
 
+    public function stockTransfer(){
+        return $this->hasOne(StockTransfer::class, 'delivery_id', 'id');
+    }
+
     public function items()
     {
         return $this->hasMany(DeliveryItems::class, 'rr_id', 'id');

@@ -15,6 +15,11 @@ class DeliveryItems extends Model
 
     protected $guarded = [];
 
+    public function batchs()
+    {
+        return $this->hasMany(ItemBatch::class, 'delivery_item_id', 'id');
+    }
+
     public function delivery()
     {
         return $this->belongsTo(Delivery::class, 'rr_id');

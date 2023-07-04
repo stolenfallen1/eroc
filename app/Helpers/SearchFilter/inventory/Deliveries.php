@@ -18,6 +18,7 @@ class Deliveries
   public function searchable(){
     $this->model->with('status', 'vendor', 'warehouse');
     $this->byTab();
+    $this->byWarehouse();
     $this->searcColumns();
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
       $this->model->whereHas('purchaseOrder', function($q){
@@ -37,6 +38,10 @@ class Deliveries
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
+  }
+
+  public function byWarehouse(){
+    $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id);
   }
 
   public function searcColumns(){

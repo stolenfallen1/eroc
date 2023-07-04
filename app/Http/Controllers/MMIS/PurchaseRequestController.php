@@ -95,7 +95,7 @@ class PurchaseRequestController extends Controller
                 'pr_Justication' => $request->pr_Justication,
                 'pr_Transaction_Date' => Carbon::now(),
                 'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
-                'pr_RequestedBy' => $user->id,
+                'pr_RequestedBy' => $user->idnumber,
                 'pr_Priority_Id' => $request->pr_Priority_Id,
                 'invgroup_id' => $request->invgroup_id,
                 'item_Category_Id' => $request->item_Category_Id,
@@ -256,14 +256,14 @@ class PurchaseRequestController extends Controller
             // return Auth::user()->role->name;
             if(isset($item['isapproved']) && $item['isapproved'] == true){
                 $prd->update([
-                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
                     'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
                     'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                     'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             } else{
                 $prd->update([
-                    'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                    'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
                     'pr_DepartmentHead_CancelledDate' => Carbon::now(),
                 ]);
             }
@@ -271,12 +271,12 @@ class PurchaseRequestController extends Controller
         $pr = PurchaseRequest::where('id', $request->id)->first();
         if($request->isapproved){
             $pr->update([
-                'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
                 'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
             ]);
         }else{
             $pr->update([
-                'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
                 'pr_DepartmentHead_CancelledDate' => Carbon::now(),
                 'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
                 'pr_Status_Id' => 3
@@ -289,14 +289,14 @@ class PurchaseRequestController extends Controller
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             if(isset($item['isapproved']) && $item['isapproved'] == true){
                 $prd->update([
-                    'pr_Branch_Level1_ApprovedBy' => Auth::user()->id,
+                    'pr_Branch_Level1_ApprovedBy' => Auth::user()->idnumber,
                     'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
                     'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                     'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             } else{
                 $prd->update([
-                    'pr_Branch_Level1_CancelledBy' => Auth::user()->id,
+                    'pr_Branch_Level1_CancelledBy' => Auth::user()->idnumber,
                     'pr_Branch_Level1_CancelledDate' => Carbon::now(),
                 ]);
             }
@@ -304,13 +304,13 @@ class PurchaseRequestController extends Controller
         $pr = PurchaseRequest::where('id', $request->id)->first();
         if($request->isapproved){
             $pr->update([
-                'pr_Branch_Level1_ApprovedBy' => Auth::user()->id,
+                'pr_Branch_Level1_ApprovedBy' => Auth::user()->idnumber,
                 'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
                 'pr_Status_Id' => 6
             ]);
         }else{
             $pr->update([
-                'pr_Branch_Level1_CancelledBy' => Auth::user()->id,
+                'pr_Branch_Level1_CancelledBy' => Auth::user()->idnumber,
                 'pr_Branch_Level1_CancelledDate' => Carbon::now(),
                 'pr_Branch_Level1_Cancelled_Remarks' => $request->remarks,
                 'pr_Status_Id' => 3

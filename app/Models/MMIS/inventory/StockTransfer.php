@@ -35,7 +35,7 @@ class StockTransfer extends Model
 
     public function tranferBy()
     {
-        return $this->belongsTo(User::class, 'transfer_by');
+        return $this->belongsTo(User::class, 'transfer_by', 'idnumber');
     }
 
     public function purchaseRequest()
@@ -55,6 +55,6 @@ class StockTransfer extends Model
 
     public function receivedBy()
     {
-        return $this->belongsTo(User::class, 'received_by');
+        return $this->belongsTo(User::class, 'received_by', 'idnumber');
     }
 }

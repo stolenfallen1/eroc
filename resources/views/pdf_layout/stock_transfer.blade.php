@@ -93,9 +93,12 @@
           }
           .signatory-section1{
             margin-top: 20px;
+            margin-left: 10px;
             float: left;
           }
           .signatory-section2{
+            margin-top: 20px;
+            margin-right: 10px;
             float: right;
           }
           .comptroller{
@@ -119,7 +122,7 @@
       <div class="header-section">
         <img src="{{ $pdf_data['logo'] }}" alt="Example Image" width="100" height="100">
         <div class="header-text">
-          <h3>{{$pdf_data['delivery']['branch']['name']}}</h3>
+          <h3>{{$pdf_data['stock_transfer']['delivery']['branch']['name']}}</h3>
           <h5 style="margin: -20px !important;">OSMEÑA BLVD, CEBU CITY, 6000 CEBU</h5>
           <h5>TIN 000-309-308-000</h5>
         </div>
@@ -131,28 +134,28 @@
       <table class="info-section">
         <tbody>
           <tr>
-            <td class="left-width">Supplier Name</td>
-            <td class="mid-width underline">{{$pdf_data['delivery']['vendor']['vendor_Name']}}</td>
-            <td class="right-width">Date Received</td>
+            <td class="left-width">Invoice number</td>
+            <td class="mid-width underline">{{$pdf_data['stock_transfer']['delivery']['rr_Document_Invoice_No']}}</td>
+            <td class="right-width">Transfer date</td>
             <td class="underline">{{$pdf_data['transaction_date']}}</td>
           </tr>
           <tr>
-            <td class="left-width">Address</td>
-            <td class="mid-width underline">{{$pdf_data['delivery']['vendor']['vendor_ContactPerson']}}</td>
-            <td class="right-width">PR No.</td>
-            <td class="underline">{{$pdf_data['delivery']['purchaseOrder']['purchaseRequest']['code']}}</td>
-          </tr>
-          <tr>
             <td class="left-width">RR No.</td>
-            <td class="mid-width underline">{{$pdf_data['delivery']['code']}}</td>
-            <td class="right-width">Ref. PO No.</td>
-            <td class="underline">{{$pdf_data['delivery']['po_number']}}</td>
+            <td class="mid-width underline">{{$pdf_data['stock_transfer']['delivery']['code']}}</td>
+            <td class="right-width">PR No.</td>
+            <td class="underline">{{$pdf_data['stock_transfer']['delivery']['purchaseOrder']['purchaseRequest']['code']}}</td>
           </tr>
           <tr>
-            <td class="left-width">Tel No.</td>
-            <td class="mid-width underline">{{$pdf_data['delivery']['vendor']['vendor_TelNo']}}</td>
-            <td class="right-width">Date of PO.</td>
-            <td class="underline">{{$pdf_data['po_date']}}</td>
+            <td class="left-width">Sender</td>
+            <td class="mid-width underline">{{$pdf_data['stock_transfer']['warehouseSender']['warehouse_description']}}</td>
+            <td class="right-width">PO No.</td>
+            <td class="underline">{{$pdf_data['stock_transfer']['delivery']['po_number']}}</td>
+          </tr>
+          <tr>
+            <td class="left-width">Receiver</td>
+            <td class="mid-width underline">{{$pdf_data['stock_transfer']['warehouseReceiver']['warehouse_description']}}</td>
+            <td class="right-width">Delivery date</td>
+            <td class="underline">{{$pdf_data['delivery_date']}}</td>
           </tr>
         </tbody>
       </table>
@@ -167,9 +170,9 @@
           <th>Amount</th>
         </thead>
         <tbody>
-          @foreach ($pdf_data['delivery']['items'] as $detail)
+          @foreach ($pdf_data['stock_transfer']['delivery']['items'] as $detail)
               <tr>
-                <td class="item-td" >{{ $pdf_data['delivery']['rr_Document_Invoice_No'] }}</td>
+                <td class="item-td" >{{ $pdf_data['stock_transfer']['delivery']['rr_Document_Invoice_No'] }}</td>
                 <td class="item-td" >{{ $detail['item']['id'] }}</td>
                 <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
                 <td class="item-td" >{{ (int)$detail['rr_Detail_Item_Qty_Received'] }}</td>
@@ -181,7 +184,7 @@
           <tr>
             <td colspan="5"></td>
             <td class="item-td">Total Amount</td>
-            <td class="item-td">{{number_format($pdf_data['delivery']['rr_Document_TotalNetAmount'], 4)}}</td>
+            <td class="item-td">{{number_format($pdf_data['stock_transfer']['delivery']['rr_Document_TotalNetAmount'], 4)}}</td>
           </tr>
         </tbody>
       </table>
@@ -195,20 +198,22 @@
       </div>
       <table class="signatory-section1">
         <tbody>
-          <tr><td class="underline item-td">{{$pdf_data['delivery']['receiver']['name']}}</td></tr>
-          <tr><td class="item-td">Received by</td></tr>
+          <tr><td>TRANSFER BY :</td></tr>
+          <tr><td style="padding-top:10px; text-transform: uppercase;" class="item-td underline">{{$pdf_data['stock_transfer']['tranferBy']['name']}}</td></tr>
+          {{-- <tr><td class="underline item-td">{{$pdf_data['stock_transfer']['tranferBy']['name']}}</td></tr>
+          <tr><td class="item-td">Transfer by</td></tr> --}}
           {{-- <tr><td class=" comptroller underline item-td">{{$pdf_data['delivery']['comptroller']['name']}}</td></tr> --}}
           {{-- <tr><td class="item-td">Purchasing Comptroller</td></tr> --}}
         </tbody>
       </table>
-      {{-- <table class="signatory-section2"> --}}
-        {{-- <tbody> --}}
-          {{-- <tr><td>ORDERED BY :</td></tr> --}}
-          {{-- <tr><td style="padding-top:10px; text-transform: uppercase;" class="item-td underline">{{$pdf_data['delivery']['purchaseRequest']['user']['name']}}</td></tr> --}}
-          {{-- <tr><td> ( ) Central Supply </td></tr> --}}
-          {{-- <tr><td> ( ) Pharmacy </td></tr> --}}
-          {{-- <tr><td> ( ) Others Engineering Department </td></tr> --}}
-        {{-- </tbody> --}}
-      {{-- </table> --}}
+      <table class="signatory-section2">
+        <tbody>
+          <tr><td class="margin-bottom:10px;">RECEIVED BY :</td></tr>
+          <tr><td style="padding-top:20px; text-transform: uppercase;" class="item-td underline">{{'   '}}</td></tr>
+          {{-- <tr><td> ( ) Central Supply </td></tr>
+          <tr><td> ( ) Pharmacy </td></tr>
+          <tr><td> ( ) Others Engineering Department </td></tr> --}}
+        </tbody>
+      </table>
     </body>
 </html>

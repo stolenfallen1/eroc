@@ -59,6 +59,7 @@ Route::controller(DeliveryController::class)->group(function () {
 });
 
 Route::controller(StockTransferController::class)->group(function () {
+  Route::put('stock-transfer-approved/{stock_transfer}', 'receiveTransfer');
   Route::get('stock-transfer', 'index');
   Route::post('stock-transfer', 'store');
 });

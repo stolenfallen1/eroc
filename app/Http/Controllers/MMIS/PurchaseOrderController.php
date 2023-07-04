@@ -97,7 +97,7 @@ class PurchaseOrderController extends Controller
                     'po_Document_vat_amount' => $purchase_order['po_Document_vat_amount'],
                     'po_Document_total_net_amount' => $purchase_order['po_Document_total_net_amount'],
                     'pr_request_id' => $purchase_order['pr_request_id'],
-                    'po_Document_userid' => $authUser->id,
+                    'po_Document_userid' => $authUser->idnumber,
                     'po_status_id' => 1,
     
                 ]);
@@ -157,13 +157,13 @@ class PurchaseOrderController extends Controller
         foreach ($request['details'] as $key => $detail) {
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'comptroller_approved_by' => auth()->user()->id,
+                    'comptroller_approved_by' => auth()->user()->idnumber,
                     'comptroller_approved_date' => Carbon::now()
                 ]);
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'comptroller_cancelled_by' => auth()->user()->id,
+                    'comptroller_cancelled_by' => auth()->user()->idnumber,
                     'comptroller_cancelled_date' => Carbon::now(),
                     'comptroller_cancelled_remarks' => $request->remarks
                 ]);
@@ -171,13 +171,13 @@ class PurchaseOrderController extends Controller
         }
         if($isdecline){
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'comptroller_cancelled_by' => auth()->user()->id,
+                'comptroller_cancelled_by' => auth()->user()->idnumber,
                 'comptroller_cancelled_date' => Carbon::now(),
                 'comptroller_cancelled_remarks' =>  $request->remarks
             ]);
         }else{
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'comptroller_approved_by' => auth()->user()->id,
+                'comptroller_approved_by' => auth()->user()->idnumber,
                 'comptroller_approved_date' => Carbon::now(),
             ]);
         }
@@ -188,13 +188,13 @@ class PurchaseOrderController extends Controller
         foreach ($request['details'] as $key => $detail) {
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'admin_approved_by' => auth()->user()->id,
+                    'admin_approved_by' => auth()->user()->idnumber,
                     'admin_approved_date' => Carbon::now()
                 ]);
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'admin_cancelled_by' => auth()->user()->id,
+                    'admin_cancelled_by' => auth()->user()->idnumber,
                     'admin_cancelled_date' => Carbon::now(),
                     'admin_cancelled_remarks' => $request->remarks
                 ]);
@@ -202,13 +202,13 @@ class PurchaseOrderController extends Controller
         }
         if($isdecline){
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'admin_cancelled_by' => auth()->user()->id,
+                'admin_cancelled_by' => auth()->user()->idnumber,
                 'admin_cancelled_date' => Carbon::now(),
                 'admin_cancelled_remarks' =>  $request->remarks
             ]);
         }else{
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'admin_approved_by' => auth()->user()->id,
+                'admin_approved_by' => auth()->user()->idnumber,
                 'admin_approved_date' => Carbon::now(),
             ]);
         }
@@ -219,13 +219,13 @@ class PurchaseOrderController extends Controller
         foreach ($request['details'] as $key => $detail) {
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'corp_admin_approved_by' => auth()->user()->id,
+                    'corp_admin_approved_by' => auth()->user()->idnumber,
                     'corp_admin_approved_date' => Carbon::now()
                 ]);
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'corp_admin_cancelled_by' => auth()->user()->id,
+                    'corp_admin_cancelled_by' => auth()->user()->idnumber,
                     'corp_admin_cancelled_date' => Carbon::now(),
                     'corp_admin_cancelled_remarks' => $request->remarks
                 ]);
@@ -233,13 +233,13 @@ class PurchaseOrderController extends Controller
         }
         if($isdecline){
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'corp_admin_cancelled_by' => auth()->user()->id,
+                'corp_admin_cancelled_by' => auth()->user()->idnumber,
                 'corp_admin_cancelled_date' => Carbon::now(),
                 'corp_admin_cancelled_remarks' =>  $request->remarks
             ]);
         }else{
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'corp_admin_approved_by' => auth()->user()->id,
+                'corp_admin_approved_by' => auth()->user()->idnumber,
                 'corp_admin_approved_date' => Carbon::now(),
             ]);
         }
@@ -250,13 +250,13 @@ class PurchaseOrderController extends Controller
         foreach ($request['details'] as $key => $detail) {
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'ysl_approved_by' => auth()->user()->id,
+                    'ysl_approved_by' => auth()->user()->idnumber,
                     'ysl_approved_date' => Carbon::now()
                 ]);
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'ysl_cancelled_by' => auth()->user()->id,
+                    'ysl_cancelled_by' => auth()->user()->idnumber,
                     'ysl_cancelled_date' => Carbon::now(),
                     'ysl_cancelled_remarks' => $request->remarks
                 ]);
@@ -264,13 +264,13 @@ class PurchaseOrderController extends Controller
         }
         if($isdecline){
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'ysl_cancelled_by' => auth()->user()->id,
+                'ysl_cancelled_by' => auth()->user()->idnumber,
                 'ysl_cancelled_date' => Carbon::now(),
                 'ysl_cancelled_remarks' =>  $request->remarks
             ]);
         }else{
             purchaseOrderMaster::where('id', $request['id'])->update([
-                'ysl_approved_by' => auth()->user()->id,
+                'ysl_approved_by' => auth()->user()->idnumber,
                 'ysl_approved_date' => Carbon::now(),
             ]);
         }

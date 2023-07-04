@@ -69,7 +69,7 @@ Route::get('/print-purchase-request/{id}', function ($id){
 });
 
 Route::get('/print-stock-transfer/{id}', function ($id){
-    $stock_transfer = StockTransfer::with('delivery', 'purchaseRequest', 'purchaseOrder', 'warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy')->findOrfail($id);
+    $stock_transfer = StockTransfer::with('delivery.branch', 'purchaseRequest', 'purchaseOrder', 'warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy')->findOrfail($id);
     $qrCode = QrCode::size(200)->generate(config('app.url').'/print-stock-transfer/'.$id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
@@ -80,8 +80,8 @@ Route::get('/print-stock-transfer/{id}', function ($id){
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'stock_transfer' => $stock_transfer,
-        'transaction_date' => Carbon::parse($stock_transfer->rr_Document_Transaction_Date)->format('Y-m-d'),
-        'po_date' => Carbon::parse($stock_transfer['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
+        'transaction_date' => Carbon::parse($stock_transfer->created_at)->format('Y-m-d'),
+        'delivery_date' => Carbon::parse($stock_transfer['delivery']['created_at'])->format('Y-m-d')
     ];
     $pdf = PDF::loadView('pdf_layout.stock_transfer', ['pdf_data' => $pdf_data]);
 

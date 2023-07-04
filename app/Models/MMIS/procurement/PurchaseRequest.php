@@ -46,23 +46,23 @@ class PurchaseRequest extends Model
     }
 
     public  function user(){
-        return $this->belongsTo(User::class, 'pr_RequestedBy');
+        return $this->belongsTo(User::class, 'pr_RequestedBy', 'idnumber');
     }
 
     public  function departmentApprovedBy(){
-        return $this->belongsTo(User::class, 'pr_DepartmentHead_ApprovedBy');
+        return $this->belongsTo(User::class, 'pr_DepartmentHead_ApprovedBy', 'idnumber');
     }
 
     public  function administratorApprovedBy(){
-        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy');
+        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy', 'idnumber');
     }
 
     public  function departmentDeclinedBy(){
-        return $this->belongsTo(User::class, 'pr_DepartmentHead_CancelledBy');
+        return $this->belongsTo(User::class, 'pr_DepartmentHead_CancelledBy', 'idnumber');
     }
 
     public  function administrator(){
-        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy');
+        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy', 'idnumber');
     }
 
     public  function category(){

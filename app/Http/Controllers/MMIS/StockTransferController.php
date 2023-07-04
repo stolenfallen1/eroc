@@ -36,7 +36,7 @@ class StockTransferController extends Controller
             $stock_transfer = StockTransfer::create([
                 'sender_warehouse' => $authUser->warehouse_id, 
                 'receiver_warehouse' => $request->warehouse_id,
-                'transfer_by' => $authUser->id, 
+                'transfer_by' => $authUser->idnumber, 
                 'delivery_id' => $request->delivery_id, 
                 'pr_id' => $delivery->purchaseOrder->pr_request_id,
                 'po_id' => $delivery->purchaseOrder->id, 
@@ -101,8 +101,8 @@ class StockTransferController extends Controller
                         'transaction_Qty' => $batch['item_Qty'],
                         'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand - $batch['item_Qty'],
                         'transaction_Item_ListCost' => $delivery->rr_Detail_Item_ListCost,
-                        'transaction_UserID' =>  Auth::user()->id,
-                        'createdBy' =>  Auth::user()->id,
+                        'transaction_UserID' =>  Auth::user()->idnumber,
+                        'createdBy' =>  Auth::user()->idnumber,
                         'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                     ]);
 
@@ -124,8 +124,8 @@ class StockTransferController extends Controller
                         'transaction_Qty' => $batch['item_Qty'],
                         'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand + $batch['item_Qty'],
                         'transaction_Item_ListCost' => $delivery->rr_Detail_Item_ListCost,
-                        'transaction_UserID' =>  Auth::user()->id,
-                        'createdBy' =>  Auth::user()->id,
+                        'transaction_UserID' =>  Auth::user()->idnumber,
+                        'createdBy' =>  Auth::user()->idnumber,
                         'transaction_Acctg_TransType' =>  $transaction1->transaction_code ?? '',
                     ]);
 
@@ -139,7 +139,8 @@ class StockTransferController extends Controller
             }
 
             $stock_transfer->update([
-                'status' => 1003
+                'status' => 1003, 
+                'received_by' => Auth::user()->idnumber
             ]);
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();

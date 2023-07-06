@@ -15,12 +15,14 @@ use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
+use App\Models\MMIS\TestModel;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseRequestController extends Controller
 {
     public function index()
     {
+        return TestModel::get();
         return (new PurchaseRequests)->searchable();
     }
 

@@ -22,7 +22,7 @@ class PurchaseRequestController extends Controller
 {
     public function index()
     {
-        return TestModel::get();
+        // return TestModel::get();
         return (new PurchaseRequests)->searchable();
     }
 

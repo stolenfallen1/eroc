@@ -16,7 +16,7 @@ class CategoryController extends Controller
     {
         $category = Itemcategories::query();
         if(Request()->invgroup_id){
-            $category->where('invgroup_id', Request()->invgroup_id)->get();
+            $category->where('invgroup_id', Request()->invgroup_id);
         }
         $category->where('isactive', 1);
 

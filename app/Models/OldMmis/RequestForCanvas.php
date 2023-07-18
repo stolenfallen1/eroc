@@ -11,4 +11,8 @@ class RequestForCanvas extends Model
     protected $connection = 'mysql';
     protected $table = 'request_for_canvas';
     protected $guarded = [];
+
+    public function purchaseRequest(){
+        return $this->belongsTo(PurchaseRequest::class, 'prnumber', 'prnumber');
+    }
 }

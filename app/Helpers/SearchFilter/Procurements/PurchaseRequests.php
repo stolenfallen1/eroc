@@ -117,7 +117,6 @@ class PurchaseRequests
       $this->model->with('purchaseRequestDetails.itemMaster');
 
     }else if( $this->authUser->role->name == 'administrator' ){
-      
       $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
       ->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('invgroup_id', '!=', 2);
 
@@ -126,7 +125,6 @@ class PurchaseRequests
       }]);
 
     }else if( $this->authUser->role->name == 'consultant' ){
-
       $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
       ->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('invgroup_id', 2);
 

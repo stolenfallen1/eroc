@@ -4,6 +4,7 @@ namespace App\Helpers\SearchFilter;
 
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
+use App\Models\BuildFile\Warehouses;
 
 class Items
 {
@@ -66,8 +67,13 @@ class Items
 
   private function byTab()
   {
-    if (Request()->tab) {
-      $this->model->where('item_InventoryGroup_Id', Request()->tab);
+    if(Request()->tab=="0"){
+      $warehouse = Warehouses::with('itemGroups')->findOrFail(Auth::user()->warehouse_id);
+      $this->model->where('item_InventoryGroup_Id', $warehouse->itemGroups[0]->id);
+    }else{
+      if (Request()->tab) {
+        $this->model->where('item_InventoryGroup_Id', Request()->tab);
+      }
     }
   }
 

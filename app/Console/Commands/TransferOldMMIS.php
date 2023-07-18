@@ -39,7 +39,7 @@ class TransferOldMMIS extends Command
      */
     public function handle()
     {
-        $purchase_orders = PurchaseRequest::with('')
+        $purchase_requests = PurchaseRequest::with('canvas')
         ->where('appd_admin', 'Approved')
         ->whereHas('purchaseOrders', function($q){
             $q->where(function($q){
@@ -47,7 +47,9 @@ class TransferOldMMIS extends Command
             })->wheredoesnthave('deliveries')
             ->where('receivingstatus', '');
         })
-        ->count();
-        echo($purchase_orders);
+        ->get();
+        foreach ($purchase_requests as $key => $purchase_request) {
+            dd($purchase_request);
+        }
     }
 }

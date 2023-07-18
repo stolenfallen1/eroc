@@ -2,9 +2,10 @@
 
 namespace App\Models\OldMMIS;
 
+use App\Models\OldMMIS\Canvas;
 use App\Models\OldMmis\PurchaseOrder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PurchaseRequest extends Model
 {
@@ -20,5 +21,13 @@ class PurchaseRequest extends Model
 
     public function purchaseOrders(){
         return $this->hasMany(PurchaseOrder::class, 'prnumber', 'prnumber');
+    }
+
+    public function purchaseForCanvas(){
+        return $this->hasOne(RequestForCanvas::class, 'prnumber', 'prnumber');
+    }
+
+    public function canvas(){
+        return $this->hasMany(Canvas::class, 'prnumber', 'prnumber');
     }
 }

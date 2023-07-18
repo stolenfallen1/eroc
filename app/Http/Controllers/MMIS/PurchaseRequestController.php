@@ -129,6 +129,7 @@ class PurchaseRequestController extends Controller
                     'filename' => $filepath[2] ?? null,
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
+                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
@@ -200,6 +201,7 @@ class PurchaseRequestController extends Controller
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                 ]);
             }else{
                 $pr->purchaseRequestDetails()->create([
@@ -207,6 +209,7 @@ class PurchaseRequestController extends Controller
                     'filename' => $file[2] ?? null,
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
+                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
@@ -246,11 +249,48 @@ class PurchaseRequestController extends Controller
     public function approveItems(Request $request){
         if(Auth::user()->role->name == 'department head' || Auth::user()->role->name == 'dietary head'){
             $this->approveByDepartmentHead($request);
-        } else if(Auth::user()->role->name == 'administrator') {
+        } else if(Auth::user()->role->name == 'administrator' || Auth::user()->role->name == 'consultant') {
             $this->approveByAdministrator($request);
-        }
+        } 
+        // else if(Auth::user()->role->name == 'consultant') {
+        //     $this->approveByConsultant($request);
+        // }
         return response()->json(["message" => "success"], 200);
     }
+
+    // private function approveByConsultant($request){
+    //     foreach ($request->items as $key => $item ) {
+    //         $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
+    //         // return Auth::user()->role->name;
+    //         if(isset($item['isapproved']) && $item['isapproved'] == true){
+    //             $prd->update([
+    //                 'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+    //                 'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+    //                 'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+    //                 'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+    //             ]);
+    //         } else{
+    //             $prd->update([
+    //                 'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
+    //                 'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+    //             ]);
+    //         }
+    //     }
+    //     $pr = PurchaseRequest::where('id', $request->id)->first();
+    //     if($request->isapproved){
+    //         $pr->update([
+    //             'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+    //             'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+    //         ]);
+    //     }else{
+    //         $pr->update([
+    //             'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
+    //             'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+    //             'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
+    //             'pr_Status_Id' => 3
+    //         ]);
+    //     }
+    // }
 
     private function approveByDepartmentHead($request){
         foreach ($request->items as $key => $item ) {

@@ -16,7 +16,7 @@ class ItemController extends Controller
     }
 
     public function getItemGroup(){
-        return $item_groups = Warehouses::with('itemGroups')->findOrfail(Auth::user()->warehouse_id);
+        $item_groups = Warehouses::with('itemGroups')->findOrfail(Auth::user()->warehouse_id);
         return response()->json(['item_groups' => $item_groups->itemGroups], 200);
     }
 }

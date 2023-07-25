@@ -59,6 +59,12 @@ class PurchaseRequestController extends Controller
                     }, 'unit', 'PurchaseOrderDetails' => function($query1){
                         $query1->with('purchaseOrder.user', 'unit');
                     }]);
+                }else if(Request()->tab==8){
+                    $q->with(['itemMaster', 'canvases', 'recommendedCanvas' => function($q){
+                        $q->with('vendor', 'canvaser', 'unit');
+                    }, 'unit', 'PurchaseOrderDetails' => function($query1){
+                        $query1->with('purchaseOrder.user', 'unit');
+                    }])->where('is_submitted', true);
                 }
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){

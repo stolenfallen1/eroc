@@ -138,6 +138,9 @@ class DeliveryController extends Controller
                     'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
                     'item_Id' => $batch['item_Id'],
                     ])->first();
+
+                    if(!$warehouse_item)
+                        return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
                         'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']

@@ -39,7 +39,7 @@ class TransferOldMMIS extends Command
      */
     public function handle()
     {
-        $purchase_requests = PurchaseRequest::with('canvas')
+        $purchase_requests = PurchaseRequest::with('canvas.supplier')
         ->where('appd_admin', 'Approved')
         ->whereHas('purchaseOrders', function($q){
             $q->where(function($q){

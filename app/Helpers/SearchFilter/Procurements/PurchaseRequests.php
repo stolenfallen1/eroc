@@ -32,9 +32,10 @@ class PurchaseRequests
     return $this->model->paginate($per_page);
   }
   
+  // $this->authUser->role->name == 'consultant' ||
   private function byBranch(){
     if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || 
-        $this->authUser->role->name == 'consultant' || $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
+      $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
     {
       $this->model->where('branch_Id', $this->authUser->branch_id);
     }
@@ -136,7 +137,11 @@ class PurchaseRequests
   }
 
   private function forDepartmentHead(){
-    $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('warehouse_Id', $this->authUser->warehouse_id);
+    if($this->authUser->role->name == 'administrator'){
+      $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);
+    }else{
+      $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('warehouse_Id', $this->authUser->warehouse_id);
+    }
   }
 
   private function forConsultant(){
@@ -148,6 +153,7 @@ class PurchaseRequests
   }
 
   private function forCanvas(){
+
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){
       // $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
       $q->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)
@@ -160,6 +166,10 @@ class PurchaseRequests
         })->orWhereDoesntHave('canvases');
       });
     });
+
+    if($this->authUser->branch_id != 1){
+      $this->model->where('branch_id', $this->authUser->branch_id);
+    }
 
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
       $this->model->where('isPersihable', 1);
@@ -174,7 +184,10 @@ class PurchaseRequests
     $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
       $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function($q1){
-          $q1->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+          $q1->where(function($q2){
+            $q2->where('branch_id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
+            ->orWhere('branch_id', 1);
+          })->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         });
     });
   }
@@ -189,12 +202,15 @@ class PurchaseRequests
   }
 
   private function purchaserApproval(){
-    $this->model->where('branch_Id', '!=', 1)->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
-      $q->where('is_submitted', true)
-        ->whereHas('recommendedCanvas', function($q1){
-          $q1->where('canvas_Level1_ApprovedBy', null)->where('canvas_Level1_CancelledBy', null);
-        });
-    });
+    $this->model->where('branch_Id', '!=', 1)
+      ->where('pr_Branch_Level1_ApprovedBy', '!=', null)
+      ->whereHas('purchaseRequestDetails', function($q){
+        $q->where('is_submitted', true)
+          ->whereHas('recommendedCanvas', function($q1){
+            $q1->where('canvas_Level1_ApprovedBy', null)->where('canvas_Level1_CancelledBy', null)
+            ->where('canvas_Branch_Id', '!=', 1);
+          });
+      });
   }
 
   private function forPurchaseOrder(){
@@ -204,6 +220,7 @@ class PurchaseRequests
         $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
       })->whereDoesntHave('purchaseOrderDetails');
     });
+    if($this->authUser->branch_id != 1) $this->model->where('branch_id', $this->authUser->branch_id);
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
       $this->model->where('isPersihable', 1);
     }else{

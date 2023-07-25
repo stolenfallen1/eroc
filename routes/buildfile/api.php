@@ -63,6 +63,7 @@ Route::controller(GenericNameController::class)->group(function () {
 
 Route::controller(DrugAdministrationController::class)->group(function () {
   Route::get('drug-administration', 'index');
+  Route::get('dosage-forms', 'dosageForms');
 });
 
 Route::controller(TherapeuticClassController::class)->group(function () {

@@ -37,7 +37,8 @@ class CanvasController extends Controller
             $model->where(function($q){
                 $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
             });
-        } 
+        }
+        if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 
         return $model->count();
     }
 
@@ -164,7 +165,7 @@ class CanvasController extends Controller
         try {
             
             foreach ($request->items as $key => $item) {
-                $detail = PurchaseRequestDetails::where('id', $item['item_id'])->first();
+                $detail = PurchaseRequestDetails::with('purchaseRequest')->where('id', $item['item_id'])->first();
                 if($item['status'] == true){
                     if($authUser->role->name == 'purchaser'){
                         $detail->recommendedCanvas()->update([

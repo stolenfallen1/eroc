@@ -2,6 +2,7 @@
 
 namespace App\Helpers\SearchFilter;
 
+use App\Models\BuildFile\Itemcategories;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
 use App\Models\BuildFile\Warehouses;
@@ -68,11 +69,22 @@ class Items
   private function byTab()
   {
     if(Request()->tab=="0"){
-      $warehouse = Warehouses::with('itemGroups')->findOrFail(Auth::user()->warehouse_id);
-      $this->model->where('item_InventoryGroup_Id', $warehouse->itemGroups[0]->id);
+      $warehouse = Warehouses::with('itemGroups.categories')->findOrFail(Auth::user()->warehouse_id);
+      // return $category = $warehouse->itemGroups[0]->categories->pluck('id');
+      if(sizeof($warehouse->itemGroups)){
+        $this->model->where('item_InventoryGroup_Id', $warehouse->itemGroups[0]->id);
+        if(Request()->for_item_master){
+          $category = $warehouse->itemGroups[0]->categories->pluck('id');
+          $this->model->whereIn('item_Category_Id',  $category);
+        }
+      }else{
+        $this->model->where('item_InventoryGroup_Id', 0);
+      }
     }else{
       if (Request()->tab) {
         $this->model->where('item_InventoryGroup_Id', Request()->tab);
+        $category = Itemcategories::where('invgroup_id', Request()->tab)->get()->pluck('id');
+        $this->model->whereIn('item_Category_Id',  $category);
       }
     }
   }
@@ -82,14 +94,14 @@ class Items
     $warehouse = Request()->warehouse_idd;
     if ($warehouse) {
       $this->model->with('wareHouseItems')->whereHas('wareHouseItems', function ($query) use ($warehouse) {
-        $query->where('warehouse_Id', $warehouse);
+        $query->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id);
       });
     }
   }
 
   private function byBranch()
   {
-    return $branch = Request()->branch_id;
+    $branch = Request()->branch_id;
     if ($branch) {
       $this->model->whereHas('wareHouseItems', function ($q) use ($branch) {
         $q->whereHas('warehouse', function($q1) use ($branch) {

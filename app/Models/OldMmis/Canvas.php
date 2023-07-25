@@ -15,4 +15,8 @@ class Canvas extends Model
     public function purchaseRequest(){
         return $this->belongsTo(PurchaseRequest::class, 'prnumber', 'prnumber');
     }
+
+    public function supplier(){
+        return $this->belongsTo(Supplier::class, 'supplier', 'id');
+    }
 }

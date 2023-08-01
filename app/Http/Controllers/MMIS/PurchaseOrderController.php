@@ -39,11 +39,25 @@ class PurchaseOrderController extends Controller
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])
         ->where(function($q){
+
             $q->where(function($q1){
-                $q1->where('po_Document_total_net_amount', '<', 100000)->where('corp_admin_approved_by', '!=', NULL);
-            })->orWhere(function($q2){
-                $q2->where('po_Document_total_net_amount', '>', 99999)->where('ysl_approved_by', '!=', NULL);
+                $q1->whereHas('purchaseRequest', function($query){
+                    $query->where('invgroup_id', 2);
+                })->where(function($q2){
+                    $q2->where('corp_admin_approved_by', '!=', NULL)->orWhere('admin_approved_by', '!=', NULL);
+                });
+            })->orWhere(function($q1){
+                $q1->whereHas('purchaseRequest', function($query){
+                    $query->where('invgroup_id', '!=', 2);
+                })->where(function($q2){
+                    $q2->where(function($q3){
+                        $q3->where('po_Document_total_net_amount', '<', 100000)->where('corp_admin_approved_by', '!=', NULL);
+                    })->orWhere(function($q3){
+                        $q3->where('po_Document_total_net_amount', '>', 99999)->where('ysl_approved_by', '!=', NULL);
+                    });
+                });
             });
+
         })
         ->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", Request()->number )
         ->whereDoesntHave('delivery', function($q){

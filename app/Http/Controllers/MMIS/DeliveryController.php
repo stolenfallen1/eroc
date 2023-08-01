@@ -64,7 +64,7 @@ class DeliveryController extends Controller
                 'po_Document_Suffix' => $request['po_Document_suffix'],
                 'po_id' => $request['id'],
                 'rr_Status' => $request['rr_Status'],
-                'rr_received_by' => Auth::user()->id,
+                'rr_received_by' => Auth::user()->idnumber,
             ]);
             
             $sequence->update([
@@ -113,7 +113,7 @@ class DeliveryController extends Controller
                     $overall_total_net += $total_net;
                     $overall_total_amount += $total_amount;
                 }
-
+                
                 $delivery_item = DeliveryItems::create([
                     'rr_id' => $delivery->id,
                     'rr_Detail_Item_Id' => $detail['item']['id'],
@@ -138,6 +138,9 @@ class DeliveryController extends Controller
                     'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
                     'item_Id' => $batch['item_Id'],
                     ])->first();
+
+                    if(!$warehouse_item)
+                        return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
                         'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
@@ -159,6 +162,7 @@ class DeliveryController extends Controller
                     
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                     $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+
                     // return $detail['purchase_request_detail'];
                     InventoryTransaction::create([
                         'branch_Id' => $delivery->rr_Document_Branch_Id,
@@ -171,8 +175,8 @@ class DeliveryController extends Controller
                         'transaction_Qty' => $batch['item_Qty'],
                         'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $batch['item_Qty'],
                         'transaction_Item_ListCost' => $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'],
-                        'transaction_UserID' =>  Auth::user()->id,
-                        'createdBy' =>  Auth::user()->id,
+                        'transaction_UserID' =>  Auth::user()->idnumber,
+                        'createdBy' =>  Auth::user()->idnumber,
                         'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                     ]);
                     
@@ -180,58 +184,62 @@ class DeliveryController extends Controller
                         'seq_no' => (int) $sequence->seq_no + 1,
                         'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
                     ]);
+
                 }
 
-                foreach ($detail['free_goods'] as $key1 => $batch) {
-                    
-                    $warehouse_item = Warehouseitems::where([
-                    'branch_id' => $delivery->rr_Document_Branch_Id,
-                    'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
-                    'item_Id' => $batch['item_Id'],
-                    ])->first();
-                    
-                    $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
-                    ]);
-
-                    ItemBatch::create([
+                if(isset($detail['free_goods'])){
+                    foreach ($detail['free_goods'] as $key1 => $batch) {
+                        return "test";
+                        
+                        $warehouse_item = Warehouseitems::where([
                         'branch_id' => $delivery->rr_Document_Branch_Id,
-                        'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
-                        'batch_Number' => $batch['batch_Number'],
-                        'batch_Transaction_Date' => Carbon::now(),
-                        'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
-                        'item_Id' => $batch['item_Id'],
-                        'item_Qty' => $batch['item_Qty'],
-                        'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
-                        'isConsumed' => 0,
-                        'delivery_item_id' => $delivery_item->id,
-                    ]);
-                    
-                    $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
-                    // return $detail['purchase_request_detail'];
-                    InventoryTransaction::create([
-                        'branch_Id' => $delivery->rr_Document_Branch_Id,
-                        'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
                         'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
-                        'transaction_Item_Id' =>  $batch['item_Id'],
-                        'transaction_Date' => Carbon::now(),
-                        'trasanction_Reference_Number' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
-                        'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        'transaction_Qty' => $batch['item_Qty'],
-                        'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $batch['item_Qty'],
-                        'transaction_Item_ListCost' => $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'],
-                        'transaction_UserID' =>  Auth::user()->id,
-                        'createdBy' =>  Auth::user()->id,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
-                        'isFreeGoods' =>  "1",
-                    ]);
-                    
-                    $sequence1->update([
-                        'seq_no' => (int) $sequence->seq_no + 1,
-                        'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
-                    ]);
+                        'item_Id' => $batch['item_Id'],
+                        ])->first();
+                        
+                        $warehouse_item->update([
+                            'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                        ]);
+    
+                        ItemBatch::create([
+                            'branch_id' => $delivery->rr_Document_Branch_Id,
+                            'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                            'batch_Number' => $batch['batch_Number'],
+                            'batch_Transaction_Date' => Carbon::now(),
+                            'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
+                            'item_Id' => $batch['item_Id'],
+                            'item_Qty' => $batch['item_Qty'],
+                            'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                            'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
+                            'isConsumed' => 0,
+                            'delivery_item_id' => $delivery_item->id,
+                        ]);
+                        
+                        $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+                        $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                        // return $detail['purchase_request_detail'];
+                        InventoryTransaction::create([
+                            'branch_Id' => $delivery->rr_Document_Branch_Id,
+                            'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
+                            'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
+                            'transaction_Item_Id' =>  $batch['item_Id'],
+                            'transaction_Date' => Carbon::now(),
+                            'trasanction_Reference_Number' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
+                            'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                            'transaction_Qty' => $batch['item_Qty'],
+                            'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $batch['item_Qty'],
+                            'transaction_Item_ListCost' => $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'],
+                            'transaction_UserID' =>  Auth::user()->idnumber,
+                            'createdBy' =>  Auth::user()->idnumber,
+                            'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                            'isFreeGoods' =>  "1",
+                        ]);
+                        
+                        $sequence1->update([
+                            'seq_no' => (int) $sequence->seq_no + 1,
+                            'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
+                        ]);
+                    }
                 }
             }
             if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
@@ -254,12 +262,14 @@ class DeliveryController extends Controller
 
     public function warehouseDelivery($id){
         try {
-            $deliveries = Delivery::where('rr_Document_Warehouse_Id', $id)
-            // ->where(function($query){
-            //     $query->whereHas('stockTransfer', function($q){
-            //         $q->where('status', 1002);
-            //     })
-            // })
+            $deliveries = Delivery::where('rr_Document_Warehouse_Id',  Auth::user()->warehouse_id)
+            ->where(function($query) use($id){
+                $query->whereHas('purchaseOrder', function($q) use($id){
+                    $q->whereHas('purchaseRequest', function($q1) use($id){
+                        $q1->where('warehouse_Id', $id);
+                    });
+                });
+            })
             ->whereDoesntHave('stockTransfer')
             ->get();
             return $deliveries;

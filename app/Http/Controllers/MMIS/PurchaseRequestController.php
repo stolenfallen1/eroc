@@ -15,12 +15,14 @@ use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
+use App\Models\MMIS\TestModel;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseRequestController extends Controller
 {
     public function index()
     {
+        // return TestModel::get();
         return (new PurchaseRequests)->searchable();
     }
 
@@ -57,6 +59,12 @@ class PurchaseRequestController extends Controller
                     }, 'unit', 'PurchaseOrderDetails' => function($query1){
                         $query1->with('purchaseOrder.user', 'unit');
                     }]);
+                }else if(Request()->tab==8){
+                    $q->with(['itemMaster', 'canvases', 'recommendedCanvas' => function($q){
+                        $q->with('vendor', 'canvaser', 'unit');
+                    }, 'unit', 'PurchaseOrderDetails' => function($query1){
+                        $query1->with('purchaseOrder.user', 'unit');
+                    }])->where('is_submitted', true);
                 }
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
@@ -95,7 +103,7 @@ class PurchaseRequestController extends Controller
                 'pr_Justication' => $request->pr_Justication,
                 'pr_Transaction_Date' => Carbon::now(),
                 'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
-                'pr_RequestedBy' => $user->id,
+                'pr_RequestedBy' => $user->idnumber,
                 'pr_Priority_Id' => $request->pr_Priority_Id,
                 'invgroup_id' => $request->invgroup_id,
                 'item_Category_Id' => $request->item_Category_Id,
@@ -127,6 +135,7 @@ class PurchaseRequestController extends Controller
                     'filename' => $filepath[2] ?? null,
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
+                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
@@ -198,6 +207,7 @@ class PurchaseRequestController extends Controller
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                 ]);
             }else{
                 $pr->purchaseRequestDetails()->create([
@@ -205,6 +215,7 @@ class PurchaseRequestController extends Controller
                     'filename' => $file[2] ?? null,
                     'item_Id' => $item['item_Id'],
                     'item_Request_Qty' => $item['item_Request_Qty'],
+                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
@@ -246,8 +257,46 @@ class PurchaseRequestController extends Controller
             $this->approveByDepartmentHead($request);
         } else if(Auth::user()->role->name == 'administrator') {
             $this->approveByAdministrator($request);
+        } 
+        else if(Auth::user()->role->name == 'consultant') {
+            $this->approveByConsultant($request);
         }
         return response()->json(["message" => "success"], 200);
+    }
+
+    private function approveByConsultant($request){
+        foreach ($request->items as $key => $item ) {
+            $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
+            // return Auth::user()->role->name;
+            if(isset($item['isapproved']) && $item['isapproved'] == true){
+                $prd->update([
+                    'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
+                    'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
+                    'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                    'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                ]);
+            } else{
+                $prd->update([
+                    'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
+                    'pr_Branch_Level2_CancelledDate' => Carbon::now(),
+                ]);
+            }
+        }
+        $pr = PurchaseRequest::where('id', $request->id)->first();
+        if($request->isapproved){
+            $pr->update([
+                'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
+                'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
+                'pr_Status_Id' => 6
+            ]);
+        }else{
+            $pr->update([
+                'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
+                'pr_Branch_Level2_CancelledDate' => Carbon::now(),
+                'pr_Branch_Level2_Cancelled_Remarks' => $request->remarks,
+                'pr_Status_Id' => 3
+            ]);
+        }
     }
 
     private function approveByDepartmentHead($request){
@@ -256,14 +305,14 @@ class PurchaseRequestController extends Controller
             // return Auth::user()->role->name;
             if(isset($item['isapproved']) && $item['isapproved'] == true){
                 $prd->update([
-                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
                     'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
                     'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                     'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             } else{
                 $prd->update([
-                    'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                    'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
                     'pr_DepartmentHead_CancelledDate' => Carbon::now(),
                 ]);
             }
@@ -271,12 +320,12 @@ class PurchaseRequestController extends Controller
         $pr = PurchaseRequest::where('id', $request->id)->first();
         if($request->isapproved){
             $pr->update([
-                'pr_DepartmentHead_ApprovedBy' => Auth::user()->id,
+                'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
                 'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
             ]);
         }else{
             $pr->update([
-                'pr_DepartmentHead_CancelledBy' => Auth::user()->id,
+                'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
                 'pr_DepartmentHead_CancelledDate' => Carbon::now(),
                 'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
                 'pr_Status_Id' => 3
@@ -289,14 +338,14 @@ class PurchaseRequestController extends Controller
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             if(isset($item['isapproved']) && $item['isapproved'] == true){
                 $prd->update([
-                    'pr_Branch_Level1_ApprovedBy' => Auth::user()->id,
+                    'pr_Branch_Level1_ApprovedBy' => Auth::user()->idnumber,
                     'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
                     'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                     'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             } else{
                 $prd->update([
-                    'pr_Branch_Level1_CancelledBy' => Auth::user()->id,
+                    'pr_Branch_Level1_CancelledBy' => Auth::user()->idnumber,
                     'pr_Branch_Level1_CancelledDate' => Carbon::now(),
                 ]);
             }
@@ -304,13 +353,13 @@ class PurchaseRequestController extends Controller
         $pr = PurchaseRequest::where('id', $request->id)->first();
         if($request->isapproved){
             $pr->update([
-                'pr_Branch_Level1_ApprovedBy' => Auth::user()->id,
+                'pr_Branch_Level1_ApprovedBy' => Auth::user()->idnumber,
                 'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
                 'pr_Status_Id' => 6
             ]);
         }else{
             $pr->update([
-                'pr_Branch_Level1_CancelledBy' => Auth::user()->id,
+                'pr_Branch_Level1_CancelledBy' => Auth::user()->idnumber,
                 'pr_Branch_Level1_CancelledDate' => Carbon::now(),
                 'pr_Branch_Level1_Cancelled_Remarks' => $request->remarks,
                 'pr_Status_Id' => 3

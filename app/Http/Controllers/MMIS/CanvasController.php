@@ -37,7 +37,8 @@ class CanvasController extends Controller
             $model->where(function($q){
                 $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
             });
-        } 
+        }
+        if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 
         return $model->count();
     }
 
@@ -73,7 +74,7 @@ class CanvasController extends Controller
                 'canvas_Document_Number' => $number,
                 'canvas_Document_Prefix' => $prefix,
                 'canvas_Document_Suffix' => $suffix,
-                'canvas_Document_CanvassBy' => Auth::user()->id,
+                'canvas_Document_CanvassBy' => Auth::user()->idnumber,
                 'canvas_Document_Transaction_Date' => Carbon::now(),
                 'requested_date' => Carbon::parse($request->requested_date),
                 'canvas_Branch_Id' => $authUser->branch_id,
@@ -164,16 +165,16 @@ class CanvasController extends Controller
         try {
             
             foreach ($request->items as $key => $item) {
-                $detail = PurchaseRequestDetails::where('id', $item['item_id'])->first();
+                $detail = PurchaseRequestDetails::with('purchaseRequest')->where('id', $item['item_id'])->first();
                 if($item['status'] == true){
                     if($authUser->role->name == 'purchaser'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level1_ApprovedBy' => $authUser->id,
+                            'canvas_Level1_ApprovedBy' => $authUser->idnumber,
                             'canvas_Level1_ApprovedDate' => Carbon::now(),
                         ]);
                     }else if($authUser->role->name == 'comptroller'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level2_ApprovedBy' => $authUser->id,
+                            'canvas_Level2_ApprovedBy' => $authUser->idnumber,
                             'canvas_Level2_ApprovedDate' => Carbon::now(),
                             'canvas_Document_Approved_Number' => generateCompleteSequence($prefix, $number, $suffix, "")
                         ]);
@@ -181,13 +182,13 @@ class CanvasController extends Controller
                 }else{
                     if($authUser->role->name == 'purchaser'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level1_CancelledBy' => $authUser->id,
+                            'canvas_Level1_CancelledBy' => $authUser->idnumber,
                             'canvas_Level1_CancelledDate' => Carbon::now(),
                             'canvas_Level1_Cancelled_Remarks' => $item['remarks'],
                         ]);
                     }else if($authUser->role->name == 'comptroller'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level2_CancelledBy' => $authUser->id,
+                            'canvas_Level2_CancelledBy' => $authUser->idnumber,
                             'canvas_Level2_CancelledDate' => Carbon::now(),
                             'canvas_Level2_Cancelled_Remarks' => $item['remarks'],
                         ]);

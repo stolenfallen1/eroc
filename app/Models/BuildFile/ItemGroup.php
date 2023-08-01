@@ -20,4 +20,8 @@ class ItemGroup extends Model
     public function purchaseRequests(){
         return $this->hasMany(PurchaseRequest::class, 'invgroup_id', 'id');
     }
+
+    public function warehouses(){
+        return $this->belongsToMany(Warehouses::class, 'invItemInventoryGroup_mappings', 'ItemInventoryGroup_id', 'warehouse_id');
+    }
 }

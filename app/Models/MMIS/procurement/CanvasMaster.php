@@ -28,7 +28,7 @@ class CanvasMaster extends Model
     }
 
     public function canvaser(){
-        return $this->belongsTo(User::class, 'canvas_Document_CanvassBy');
+        return $this->belongsTo(User::class, 'canvas_Document_CanvassBy', 'idnumber');
     }
 
     public function vendor()

@@ -60,17 +60,17 @@ class User extends \TCG\Voyager\Models\User
 
     public function approvaldetail()
     {
-        return $this->hasOne(InvApprover::class, 'user_id', 'id');
+        return $this->hasOne(InvApprover::class, 'user_id', 'idnumber');
     }
     
     public function purchaseRequest()
     {
-        return $this->hasMany(PurchaseRequest::class, 'pr_RequestedBy', 'id');
+        return $this->hasMany(PurchaseRequest::class, 'pr_RequestedBy', 'idnumber');
     }
 
     public function purchaseOrders()
     {
-        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_userid', 'id');
+        return $this->hasMany(purchaseOrderMaster::class, 'po_Document_userid', 'idnumber');
     }
 
     public function createToken()

@@ -54,7 +54,7 @@ class Delivery extends Model
 
     public function receiver()
     {
-        return $this->belongsTo(User::class, 'rr_received_by');
+        return $this->belongsTo(User::class, 'rr_received_by', 'idnumber');
     }
 
     public function getPoNumberAttribute(){

@@ -23,14 +23,14 @@ class Deliveries
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
       $this->model->whereHas('purchaseOrder', function($q){
         $q->whereHas('purchaseRequest', function($q1){
-          $q1->where('isPersihable', 1);
+          $q1->where('isPerishable', 1);
         });
       });
     }else{
       $this->model->whereHas('purchaseOrder', function($q){
         $q->whereHas('purchaseRequest', function($q1){
           $q1->where(function($q2){
-            $q2->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+            $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
           });
         });
       });

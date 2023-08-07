@@ -18,7 +18,7 @@ class PurchaseRequests
   }
 
   public function searchable(){
-    $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestAttachments', 'user');
+    $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestAttachments', 'user', 'itemGroup');
     $this->byBranch();
     $this->byTab();
     $this->byItemGroup();

@@ -5,6 +5,7 @@ use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\DeliveryController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
+use App\Http\Controllers\MMIS\StockRequisitionController;
 use App\Http\Controllers\MMIS\StockTransferController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,5 +63,11 @@ Route::controller(StockTransferController::class)->group(function () {
   Route::put('stock-transfer-approved/{stock_transfer}', 'receiveTransfer');
   Route::get('stock-transfer', 'index');
   Route::post('stock-transfer', 'store');
+});
+
+Route::controller(StockRequisitionController::class)->group(function () {
+  Route::put('stock-requisition-approved/{stock_requisition}', 'receiveTransfer');
+  Route::get('stock-requisitions', 'index');
+  Route::post('stock-requisition', 'store');
 });
 

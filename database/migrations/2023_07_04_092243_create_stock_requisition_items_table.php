@@ -14,16 +14,19 @@ class CreateStockRequisitionItemsTable extends Migration
     public function up()
     {
         Schema::create('stock_requisition_items', function (Blueprint $table) {
-            $table->id();
+            $table->id()->autoIncrement();
             $table->unsignedBigInteger('stock_requisition_id');
             $table->unsignedBigInteger('warehouse_item_id');
             $table->unsignedBigInteger('item_id');
             $table->double('quantity');
+            $table->unsignedBigInteger('unit_id');
+
             $table->unsignedBigInteger('department_head_approved_by')->nullable();
             $table->dateTime('department_head_approved_date')->nullable();
             $table->unsignedBigInteger('department_head_declined_by')->nullable();
             $table->dateTime('department_head_declined_date')->nullable();
             $table->longText('department_head_declined_remarks')->nullable();
+            
             $table->unsignedBigInteger('administrator_approved_by')->nullable();
             $table->dateTime('administrator_approved_date')->nullable();
             $table->unsignedBigInteger('administrator_declined_by')->nullable();

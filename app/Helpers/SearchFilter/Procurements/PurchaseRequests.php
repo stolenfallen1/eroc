@@ -209,10 +209,10 @@ class PurchaseRequests
     }
 
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
-      $this->model->where('isPersihable', 1);
+      $this->model->where('isPerishable', 1);
     }else{
       $this->model->where(function($q2){
-        $q2->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+        $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
       });
     }
   }
@@ -259,10 +259,10 @@ class PurchaseRequests
     });
     if($this->authUser->branch_id != 1) $this->model->where('branch_id', $this->authUser->branch_id);
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
-      $this->model->where('isPersihable', 1);
+      $this->model->where('isPerishable', 1);
     }else{
       $this->model->where(function($q){
-        $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+        $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
       });
     }
   }

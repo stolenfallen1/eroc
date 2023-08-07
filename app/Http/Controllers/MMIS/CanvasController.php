@@ -32,10 +32,10 @@ class CanvasController extends Controller
         })->whereDoesntHave('purchaseOrderDetails');
         });
         if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){
-            $model->where('isPersihable', 1);
+            $model->where('isPerishable', 1);
         }else{
             $model->where(function($q){
-                $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+                $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
             });
         }
         if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 

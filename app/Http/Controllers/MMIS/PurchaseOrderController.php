@@ -65,10 +65,10 @@ class PurchaseOrderController extends Controller
         })
         ->whereHas('purchaseRequest', function($q){
             if(Auth::user()->role->name == 'dietary' || Auth::user()->role->name == 'dietary head'){
-                $q->where('isPersihable', 1);
+                $q->where('isPerishable', 1);
             }else{
                 $q->where(function($q1){
-                    $q1->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+                    $q1->where('isPerishable', 0)->orWhere('isPerishable', NULL);
                 });
             }
         })

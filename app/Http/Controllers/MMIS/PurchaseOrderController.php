@@ -34,7 +34,7 @@ class PurchaseOrderController extends Controller
         return purchaseOrderMaster::with(['latestdelivery.items' => function($q){
             $q->where('rr_Detail_Item_Qty_BackOrder', '!=', 0);
         }, 'details'=>function($q){
-            $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            $q->with('item.authWarehouseItem', 'unit', 'purchaseRequestDetail.recommendedCanvas');
         }, 'purchaseRequest' => function($q){
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])

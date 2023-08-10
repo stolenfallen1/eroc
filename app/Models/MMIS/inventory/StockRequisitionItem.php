@@ -12,6 +12,10 @@ class StockRequisitionItem extends Model
 {
     use HasFactory;
 
+    protected $connection = 'sqlsrv_mmis';
+    protected $table = 'CDG_MMIS.dbo.stock_requisition_items';
+    protected $guarded = [];
+
     public function stockRequisition(){
         return $this->belongsTo(StockRequisition::class);
     }

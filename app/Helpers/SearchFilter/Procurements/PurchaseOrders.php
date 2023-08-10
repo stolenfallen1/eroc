@@ -92,17 +92,27 @@ class PurchaseOrders
   private function forApproval(){
     if(Request()->branch == 1){
       if($this->authUser->role->name == 'comptroller'){
-        $this->model->where(['comptroller_approved_date' => null, 'comptroller_cancelled_date' => null]);
+        $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
       }
       else if($this->authUser->role->name == 'administrator'){
         $this->model->where('comptroller_approved_date', '!=', null)->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
       }
     }else{
       if($this->authUser->role->name == 'comptroller'){
-        $this->model->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => null, 'comptroller_cancelled_date' => null]);
+        $this->model->where(function($q){
+          $q->whereHas('purchaseRequest', function($q1){
+            $q1->where('invgroup_id', 2);
+          })->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
+        })->orWhere(function($q){
+          $q->whereHas('purchaseRequest', function($q1){
+            $q1->where('invgroup_id', '!=', 2);
+          })->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => null, 'comptroller_cancelled_date' => null]);
+        });
+        // $this->model->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => null, 'comptroller_cancelled_date' => null]);
       }
       else if($this->authUser->role->name == 'administrator'){
-        $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
+
+        $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
       }
     }
     if($this->authUser->role->name == 'corporate admin'){

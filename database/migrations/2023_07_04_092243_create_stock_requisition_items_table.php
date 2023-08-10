@@ -21,15 +21,15 @@ class CreateStockRequisitionItemsTable extends Migration
             $table->double('quantity');
             $table->unsignedBigInteger('unit_id');
 
-            $table->unsignedBigInteger('department_head_approved_by')->nullable();
+            $table->string('department_head_approved_by')->nullable();
             $table->dateTime('department_head_approved_date')->nullable();
-            $table->unsignedBigInteger('department_head_declined_by')->nullable();
+            $table->string('department_head_declined_by')->nullable();
             $table->dateTime('department_head_declined_date')->nullable();
             $table->longText('department_head_declined_remarks')->nullable();
             
-            $table->unsignedBigInteger('administrator_approved_by')->nullable();
+            $table->string('administrator_approved_by')->nullable();
             $table->dateTime('administrator_approved_date')->nullable();
-            $table->unsignedBigInteger('administrator_declined_by')->nullable();
+            $table->string('administrator_declined_by')->nullable();
             $table->dateTime('administrator_declined_date')->nullable();
             $table->longText('administrator_declined_remarks')->nullable();
             $table->timestamps();

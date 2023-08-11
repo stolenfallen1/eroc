@@ -18,7 +18,7 @@ class SettingController extends Controller
      */
     public function index()
     {
-        $schedule = mscShiftSchedules::where('isActive','1')->select('shifts_code','Shift_description','beginning_military_hour')->get();
+        $schedule = DB::connection('sqlsrv_pos')->table('vwShift')->where('isActive','1')->select('shifts_code','Shift_description','beginning_military_hour')->get();
         $all = Array('shifts_code'=>'0','Shift_description'=>'All Shift','beginning_military_hour'=>'0');
         $array = [];
         $array[] = $all;
@@ -34,7 +34,7 @@ class SettingController extends Controller
 
     public function schedule()
     {
-        $schedule = mscShiftSchedules::where('isActive','1')->where('beginning_military_hour','<',Carbon::now()->format('H'))->where('end_military_hour','>',Carbon::now()->format('H'))->select('shifts_code','Shift_description','beginning_military_hour')->get();
+        $schedule = DB::connection('sqlsrv_pos')->table('vwShift')->where('isActive','1')->where('beginning_military_hour','<',Carbon::now()->format('H'))->where('end_military_hour','>',Carbon::now()->format('H'))->select('shifts_code','Shift_description','beginning_military_hour')->get();
         $all = Array('shifts_code'=>'0','Shift_description'=>'All Shift','beginning_military_hour'=>'0');
         $array = [];
         $array[] = $all;

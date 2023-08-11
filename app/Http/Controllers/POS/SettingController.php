@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Systerminals;
 use App\Models\BuildFile\mscShiftSchedules;
 use Carbon\Carbon;
-
+use DB;
 class SettingController extends Controller
 {
     /**

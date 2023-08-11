@@ -9,7 +9,7 @@ class OpenningDetails extends Model
 {
     use HasFactory; 
     protected $connection = 'sqlsrv_pos';
-    protected $table = 'CDG_POS.dbo.CashOnHand_detail';
+    protected $table = 'CashOnHand_detail';
     protected $guarded = [];
     
 }

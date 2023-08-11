@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Systerminals;
 use App\Models\BuildFile\mscShiftSchedules;
+use Carbon\Carbon;
 
 class SettingController extends Controller
 {
@@ -17,11 +18,34 @@ class SettingController extends Controller
      */
     public function index()
     {
-        $data['schedule'] = mscShiftSchedules::where('isActive','1')->select('shifts_code','Shift_description')->get();
+        $schedule = mscShiftSchedules::where('isActive','1')->select('shifts_code','Shift_description','beginning_military_hour')->get();
+        $all = Array('shifts_code'=>'0','Shift_description'=>'All Shift','beginning_military_hour'=>'0');
+        $array = [];
+        $array[] = $all;
+        foreach($schedule as $row){
+            $array[] = $row;
+        }
+       
+        $data['schedule'] = $array;
         $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);
     }
 
+
+    public function schedule()
+    {
+        $schedule = mscShiftSchedules::where('isActive','1')->where('beginning_military_hour','<',Carbon::now()->format('H'))->where('end_military_hour','>',Carbon::now()->format('H'))->select('shifts_code','Shift_description','beginning_military_hour')->get();
+        $all = Array('shifts_code'=>'0','Shift_description'=>'All Shift','beginning_military_hour'=>'0');
+        $array = [];
+        $array[] = $all;
+        foreach($schedule as $row){
+            $array[] = $row;
+        }
+        $data['schedule'] = $array;
+        $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+        return response()->json($data,200);
+    }
+    
     /**
      * Show the form for creating a new resource.
      *

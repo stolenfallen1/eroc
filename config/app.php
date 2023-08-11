@@ -1,5 +1,4 @@
 <?php
-
 return [
 
     /*
@@ -177,7 +176,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         SimpleSoftwareIO\QrCode\QrCodeServiceProvider::class,
-
+        Maatwebsite\Excel\ExcelServiceProvider::class,
     ],
 
     /*
@@ -235,6 +234,7 @@ return [
         'Agent' => Jenssegers\Agent\Facades\Agent::class,
         'AgentDetector' => Karmendra\LaravelAgentDetector\Facades\AgentDetector::class,
         'QrCode' => SimpleSoftwareIO\QrCode\Facades\QrCode::class,
+        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
     ],
 
 ];

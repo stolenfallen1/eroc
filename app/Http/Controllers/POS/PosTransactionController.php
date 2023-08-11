@@ -14,9 +14,14 @@ use App\Helpers\PosSearchFilter\Items;
 use App\Models\BuildFile\MscDebitCard;
 use App\Models\BuildFile\MscCreditCard;
 use App\Models\BuildFile\MscRefundType;
-use App\Models\BuildFile\Itemcategories;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Helpers\PosSearchFilter\SeriesNo;
+use App\Helpers\PosSearchFilter\Terminal;
 use App\Models\BuildFile\MscPaymentMethod;
+use App\Models\POS\ItemCategoriesMappings;
+use App\Models\POS\ItemInventoryGroupMappings;
+use App\Models\BuildFile\SystemCentralSequences;
 
 class PosTransactionController extends Controller
 {
@@ -42,8 +47,22 @@ class PosTransactionController extends Controller
 
     public function getMscbuild()
     {
-        $data['categories'] =  Itemcategories::where('isactive','1')->select('id','name')->get();
+        $category = ['5','6'];
+        $data['listofcategory'] =  ItemCategoriesMappings::where('warehouse_id', (int)Auth()->user()->warehouse_id)->whereNotIn('id',$category)->select('id','name')->get();
         $data['paymentmethod'] =  MscPaymentMethod::where('isactive','1')->select('id','payment_description')->get();
+       
+        $terminal = (new Terminal())->terminal_details();
+        $or_sequenceno = (new SeriesNo())->get_sequence('PSI', $terminal->terminal_code);
+        $series_setting = SystemSequence::where('code', 'PSI')->select('isSystem', 'isPos')->first();
+
+        $seriesno = 0;
+        if($series_setting->isSystem == 1 && $series_setting->isPos == 0) {
+            $seriesno = $or_sequenceno->recent_generated;
+        } elseif($series_setting->isSystem == 0 && $series_setting->isPos == 1) {
+            $seriesno = $or_sequenceno->manual_recent_generated;
+        }
+      
+        $data['seriesno'] = $seriesno;
         $data['cardtype'] =  MscCardType::where('isactive','1')->select('id','description')->get();
         $data['walkindetails'] =  Customers::where('isactive','1')->where('id','4')->first();
         $data['refundtype'] =  MscRefundType::where('isactive','1')->get();
@@ -66,7 +85,7 @@ class PosTransactionController extends Controller
     
     public function openingstatus()
     {  
-        $data['openingstatus'] = OpenningAmount::whereNull('sales_batch_number')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->id)->whereDate('cashonhand_beginning_transaction',Carbon::now())->count();
+        $data['openingstatus'] = OpenningAmount::whereNull('sales_batch_number')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->whereDate('cashonhand_beginning_transaction',Carbon::now())->count();
         $data['message'] = 'success';
         return response()->json($data, 200);
     }

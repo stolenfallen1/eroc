@@ -19,36 +19,64 @@ class Orderlist
     public function searchable()
     {
         $this->model->with('customers','order_items','order_items.ItemBatch','payment','order_items.vwItem_details')->orderBy('id', 'desc');
-        $this->searchColumns();
+        $this->searchOrderStatus();
         $this->searchTerminal();
         $this->dateTransaction();
         $per_page = Request()->page ?? '1';
         return $this->model->paginate(12);
     }
 
+    public function returnordersearchable()
+    {
+        $this->model->with('customers','order_items','order_items.ItemBatch','payment','order_items.vwItem_details')->orderBy('id', 'desc');
+        $this->searchColumns();
+        $this->searchTerminal();
+        $this->dateTransaction();
+        $this->returnhaspaymentonly();
+        $per_page = Request()->page ?? '1';
+        return $this->model->paginate(12);
+    }
+    public function returnhaspaymentonly(){
+        $this->model->has('payment');
+    }
+
     public function searchColumns()
+    {
+        $digit = 10;
+        $lenght = strlen(Request()->payload['keyword']);
+        $zero = $digit - $lenght;
+        $ordernumber = str_pad(0, $zero, "0", STR_PAD_LEFT).''.(int)Request()->payload['keyword'];
+        
+        if(isset(Request()->payload['type'])){
+            $this->model->where('order_status_id',Request()->payload['type']);
+        }
+        if(Request()->payload['keyword']){
+            $this->model->where('pick_list_number', 'LIKE', '%'.$ordernumber.'%');
+        }
+    }
+    public function searchOrderStatus()
     {
         if(isset(Request()->payload['type'])){
             $this->model->where('order_status_id',Request()->payload['type']);
         }
-        $this->model->where('pick_list_number', 'LIKE', Request()->payload['keyword'].'%');
     }
-
+    
     public function dateTransaction()
     {
         if(isset(Request()->payload['datetransaction'])){
             $this->model->whereDate('order_date',Request()->payload['datetransaction']);
         }else{
-            // $this->model->whereDate('order_date',Carbon::now()->format('Y-m-d'));
+            $this->model->whereDate('order_date',Carbon::now()->format('Y-m-d'));
         }
     }
+
     public function searchTerminal(){
-        $user_terminal = (new Terminal)->TakeOrderTerminal();
+        $user_terminal = (new Terminal)->terminal_details();
        
         if(Auth::user()->role->name == 'Pharmacist Assistant'){
-            $this->model->where('terminal_id',Auth()->user()->terminal_id);
+            $this->model->where('terminal_id',$user_terminal->id);
         }else if(Auth::user()->role->name == 'Pharmacist Cashier'){ 
-            $this->model->whereIn('terminal_id',$user_terminal);
+            $this->model->where('take_order_terminal_id',Auth()->user()->terminal_id);
         }
     }
     

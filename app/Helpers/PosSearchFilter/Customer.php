@@ -2,15 +2,16 @@
 
 namespace App\Helpers\PosSearchFilter;
 
-use Illuminate\Support\Facades\Auth;
 use App\Models\POS\Customers;
+use App\Models\POS\vwCustomers;
+use Illuminate\Support\Facades\Auth;
 
 class Customer
 {
     protected $model;
     public function __construct()
     {
-        $this->model = Customers::query();
+        $this->model = vwCustomers::query();
     }
 
     public function searchable()
@@ -27,11 +28,10 @@ class Customer
                 return  $this->model->where('customer_last_name', 'LIKE','%'.Request()->keyword['keywordlastname'].'%');
             }
             if(isset(Request()->keyword['keywordfirstname'])){
-               return $this->model->where('customer_first_name', 'LIKE',Request()->keyword['keywordfirstname'].'%');
+               return $this->model->where('customer_first_name', 'LIKE','%'.Request()->keyword['keywordfirstname'].'%');
             }
-        }else{
-            return  $this->model->where('customer_last_name', 'LIKE','walkin%');
         }
+       
     }
 
     private function byCategory()

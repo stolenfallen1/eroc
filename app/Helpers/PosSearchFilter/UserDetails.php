@@ -10,7 +10,7 @@ class UserDetails
 
     public function userdetails($id=null)
     {
-       return User::where('id',$id)->select('lastname','firstname','middlename','id','warehouse_id','branch_id')->first();
+       return User::where('idnumber',$id)->select('lastname','firstname','middlename','id','warehouse_id','branch_id')->first();
     }
 
 }

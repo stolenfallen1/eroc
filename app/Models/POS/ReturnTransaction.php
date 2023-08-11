@@ -5,6 +5,7 @@ namespace App\Models\POS;
 use App\Models\POS\Orders;
 use App\Models\POS\Customers;
 use App\Models\POS\OrderItems;
+use App\Models\POS\vwCustomers;
 use App\Models\POS\vwReturnDetails;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\POS\ReturnDetailsTransaction;
@@ -14,7 +15,7 @@ class ReturnTransaction extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_pos';
-    protected $table = 'CDG_POS.dbo.refunds';
+    protected $table = 'refunds';
     protected $guarded = [];
   
     protected $with = ['orders.order_items','orders.customers','orders.payment'];
@@ -26,5 +27,4 @@ class ReturnTransaction extends Model
     public function orders(){
         return $this->belongsTo(Orders::class,'order_id', 'id');
     }
-
 }

@@ -15,7 +15,7 @@ class OrderItems extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_pos';
-    protected $table = 'CDG_POS.dbo.orderItems';
+    protected $table = 'orderItems';
     protected $guarded = [];
     protected $with = ['Warehouseitems.itemMaster'];
 

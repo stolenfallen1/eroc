@@ -10,8 +10,5 @@ class Systerminals extends Model
     use HasFactory;
     protected $connection = "sqlsrv";
     protected $table = 'systerminal';
-
-    protected $fillable = [
-        'terminal_name','terminal_ip_address','terminal_code'
-    ];
+    protected $guarded = [];
 }

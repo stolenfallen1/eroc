@@ -25,9 +25,17 @@ class ReturnList
 
     public function searchColumns()
     {
-        if(isset(Request()->type)){
-            $this->model->where('refund_status_id',Request()->type);
+        if(isset(Request()->payload['type'])){
+            $this->model->where('refund_status_id',Request()->payload['type']);
         }
-        // $this->model->where('pick_list_number', 'LIKE', Request()->payload['keyword'].'%');
+
+        if(isset(Request()->ordernumber)){
+            $digit = 10;
+            $lenght = strlen(Request()->ordernumber);
+            $zero = $digit - $lenght;
+            $ordernumber = str_pad(0, $zero, "0", STR_PAD_LEFT).''.(int)Request()->ordernumber;
+            $this->model->where('refund_transaction_number',$ordernumber);
+        }
+       
     }
 }

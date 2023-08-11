@@ -199,7 +199,7 @@
                                                                 </select>
                                                             </td>
                                                         </tr>
-                                                        <tr>
+                                                        {{-- <tr>
                                                             <th>
                                                                 <label for="departmentsection">Unit Section</label>
                                                             </th>
@@ -214,7 +214,7 @@
                                                                     @endforeach
                                                                 </select>
                                                             </td>
-                                                        </tr>
+                                                        </tr> --}}
 
 
 

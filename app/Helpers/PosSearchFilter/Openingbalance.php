@@ -15,7 +15,7 @@ class Openingbalance
 
     public function searchable()
     {
-        $this->model->with('cashonhand_details','user_details','user_shift')->orderBy('id', 'desc');
+        $this->model->with('cashonhand_details','closeby_details','openby_details','user_shift')->orderBy('id', 'desc');
         $this->searchColumns();
         $per_page = Request()->per_page;
         return $this->model->paginate($per_page);

@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\POS;
 
 use DB;
+use Carbon\Carbon;
+use App\Models\POS\Payments;
 use Illuminate\Http\Request;
 use App\Models\POS\OpenningAmount;
 use App\Http\Controllers\Controller;
+use App\Models\POS\SpReportsSummarySales;
 use App\Helpers\PosSearchFilter\Openingbalance;
-use App\Helpers\PosSearchFilter\Terminal;
-use App\Models\POS\Payments;
-use Carbon\Carbon;
 
 class OpenningAmountTransaction extends Controller
 {
@@ -22,20 +22,63 @@ class OpenningAmountTransaction extends Controller
     {
         $data['data'] = (new Openingbalance())->searchable();
         $data['message'] = 'success';
+        return response()->json($data, 200);
+    }
+
+    public function cash_registry()
+    {
+        $data['data'] = DB::connection('sqlsrv_pos')->table('vw_CashRegistry')->where('type','Opening')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->first();
+        $data['message'] = 'success';
+        return response()->json($data, 200);
+    }
+    
+
+    public function cash_registry_movement()
+    {
+        $data['registry'] = DB::connection('sqlsrv_pos')->table('vw_CashRegistry')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->get();
+        $data['registry_movement'] = DB::connection('sqlsrv_pos')->table('vw_CashRegistry_Movement')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->get();
+        $data['registry_payment_method'] = DB::connection('sqlsrv_pos')->table('vw_CashRegistry_PaymentMethod')->where('shift_id',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->first();
+        $data['message'] = 'success';
+        return response()->json($data, 200);
+    }
+
+    
+    public function Generate_Shift_Sales()
+    {
+        $result = DB::connection('sqlsrv_pos')->update("EXEC spGenerate_Shift_Sales ?, ?, ?,?,?",
+            [
+                Auth()->user()->branch_id, 
+                Auth()->user()->terminal_id, 
+                Auth()->user()->shift, 
+                Carbon::now()->format('m/d/Y'), 
+                Auth()->user()->idnumber,
+        ]);
+        return $result;
+    }
+
+
+    public function beginning_transaction()
+    {
         $from = Carbon::now()->format('Y-m-d');
-        $to = Carbon::now()->format('Y-m-d').' 23:59';
-        if(Auth()->user()->shift == '106N'){
-            $from = Carbon::now()->subDays(1)->format('Y-m-d');
-            $to = Carbon::now()->addDay(1)->format('Y-m-d H:i');
-        }
-        if(Auth()->user()->shift == '62N'){
-            $from = Carbon::now()->subDays(1)->format('Y-m-d');
-            $to = Carbon::now()->addDay(1)->format('Y-m-d H:i');
-        }
-        $data['total_cash_sales'] = Payments::where('createdBy', Auth()->user()->id)->whereBetween('payment_date',[$from,$to])->where('payment_method_id',['1'])->selectRaw('(SUM(payment_amount_due) + SUM(payment_vatable_amount)) as totalamountsales,SUM(payment_received_amount) as totalcashtendered,SUM(payment_changed_amount) as totalchangedamount')->get();
-        $data['totalsales'] = Payments::where('createdBy', Auth()->user()->id)->whereBetween('payment_date',[$from,$to])->selectRaw('(SUM(payment_amount_due) + SUM(payment_vatable_amount)) as totalamountsales,SUM(payment_received_amount) as totalcashtendered,SUM(payment_changed_amount) as totalchangedamount')->get();
-        $data['totalchecks'] = Payments::where('createdBy', Auth()->user()->id)->whereBetween('payment_date',[$from,$to])->whereIn('payment_method_id',['6'])->selectRaw('(SUM(payment_amount_due) + SUM(payment_vatable_amount)) as totalamountsales,SUM(payment_received_amount) as totalcashtendered,SUM(payment_changed_amount) as totalchangedamount')->get();
-        $data['totalcard'] = Payments::where('createdBy', Auth()->user()->id)->whereBetween('payment_date',[$from,$to])->whereIn('payment_method_id',['2','3','4','5'])->selectRaw('(SUM(payment_amount_due) + SUM(payment_vatable_amount)) as totalamountsales,SUM(payment_received_amount) as totalcashtendered,SUM(payment_changed_amount) as totalchangedamount')->get();
+        $to = Carbon::now()->format('Y-m-d').' 23:52';
+        $payments = new Payments();  
+        $opening = new OpenningAmount();
+
+        $spSummaryReport = new SpReportsSummarySales();
+
+        $spSummaryReport->Generate_Shift_Sales();
+        $data['data'] = $spSummaryReport->summaryfilterbyreportdate()->first();
+        $data['openamount'] = $opening->openamount()->first();
+        $cashonhand = $opening->cashonhand()->first();
+        $finalbalance =  $payments->nofilterbyreportdate()->get();
+        $data['cashonhand'] = $cashonhand ? $cashonhand->cashonhand_beginning_amount : 0;
+        $data['openamountid'] = $cashonhand ? $cashonhand->id : 0;
+        $data['finalbalance'] = $cashonhand ? $cashonhand->cashonhand_beginning_amount : '0' + $finalbalance[0]['totalamountsales'];
+        $data['totalsales'] = $payments->filterbyreportdate()->get();
+        $data['payment_transation'] = $payments->movementtransation()->get();
+        $data['cashonhanddetails'] =  $opening->details()->with('cashonhand_details','user_details','user_shift')->first();
+        
+        $data['message'] = 'success';
         return response()->json($data, 200);
     }
 
@@ -60,13 +103,13 @@ class OpenningAmountTransaction extends Controller
         DB::connection('sqlsrv_pos')->beginTransaction();
         try{
             $openingamount = OpenningAmount::create([
-                'cashonhand_beginning_amount'=>Request()->payload['cashonhand_beginning_amount'] ?? '0',
+                'cashonhand_beginning_amount'=>Request()->payload ?? '0',
                 'cashonhand_beginning_transaction'=>Carbon::now(),
-                'user_id'=>Auth()->user()->id,
-                'createdBy'=>Auth()->user()->id,
+                'user_id'=>Auth()->user()->idnumber,
+                'createdBy'=>Auth()->user()->idnumber,
                 'shift_code'=>Auth()->user()->shift,
                 'isposted'=>0,
-                'terminal_id'=>(new Terminal)->terminal_details()->id,
+                'terminal_id'=>Auth()->user()->terminal_id,
             ]);
             $openingamount->cashonhand_details()->create(
                 [
@@ -83,7 +126,7 @@ class OpenningAmountTransaction extends Controller
                    'denomination_dot15' =>'0',
                    'denomination_total' => 0,
                    'denomination_checks_total_amount' => '0',
-                   'createdBy' => Auth()->user()->id,
+                   'createdBy' => Auth()->user()->idnumber,
                 ]
             );
             DB::connection('sqlsrv_pos')->commit();
@@ -136,7 +179,7 @@ class OpenningAmountTransaction extends Controller
                 'cashonhand_beginning_transaction'=>Carbon::now(),
                 'isposted'=>0,
                 'shift_code'=>Auth()->user()->shift,
-                'updatedBy'=>Auth()->user()->id,
+                'updatedBy'=>Auth()->user()->idnumber,
             ]);
             $openingamount->cashonhand_details()->where('cashonhand_id',$id)->update(
                 [
@@ -153,7 +196,7 @@ class OpenningAmountTransaction extends Controller
                    'denomination_dot15' =>'0',
                    'denomination_total' => 0,
                    'denomination_checks_total_amount' => '0',
-                   'updatedBy' => Auth()->user()->id,
+                   'updatedBy' => Auth()->user()->idnumber,
                 ]
             );
             DB::connection('sqlsrv_pos')->commit();

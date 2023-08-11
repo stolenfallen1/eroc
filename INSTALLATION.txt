@@ -1,0 +1,83 @@
+nginx installation
+
+Step 1 – Installing Nginx
+  
+   sudo apt update
+   sudo apt install nginx
+
+Step 2 – Adjusting the Firewall
+   sudo ufw app list
+   sudo ufw allow 'Nginx HTTP'
+   sudo ufw allow 80
+   sudo ufw allow ssh
+   sudo ufw status
+
+Step 3 – Checking your Web Server
+  systemctl status nginx
+  http://your_server_ip
+
+Step 4 – Managing the Nginx Process
+  sudo systemctl stop nginx
+  sudo systemctl start nginx
+  sudo systemctl restart nginx
+  sudo systemctl reload nginx
+  sudo systemctl disable nginx
+  sudo systemctl enable nginx
+
+Step 5 – Setting Up Server Blocks (Recommended)
+
+  sudo mkdir -p /var/www/your_domain/html
+  sudo chown -R $USER:$USER /var/www/your_domain/html
+  sudo chmod -R 755 /var/www/your_domain
+  sudo nano /var/www/your_domain/html/index.html
+  sudo nano /etc/nginx/sites-available/your_domain
+  	server {
+        	listen 80;
+        	listen [::]:80;
+
+        	root /var/www/your_domain/html;
+        	index index.html index.htm index.nginx-debian.html;
+
+        	server_name your_domain www.your_domain;
+
+        	location / {
+                	try_files $uri $uri/ =404;
+        	}
+ 	}
+
+   #Next, let’s enable the file by creating a link from it to the sites-enabled directory, which Nginx reads from during startup:
+   sudo ln -s /etc/nginx/sites-available/your_domain /etc/nginx/sites-enabled/
+   sudo nano /etc/nginx/nginx.conf
+	http {
+    	    server_names_hash_bucket_size 64;
+	}
+
+  #Next, test to make sure that there are no syntax errors in any of your Nginx files: 
+   sudo nginx -t
+   sudo systemctl restart nginx
+
+
+Deploy Nuxt using PM2
+ #Make sure you have pm2 installed on your server. If not, simply globally install it from yarn or npm.
+ npm install pm2 -g
+
+Configure your application
+   #Create a new file ecosystem.config.js
+   	module.exports = {
+  		apps: [
+    			{
+      			name: 'NuxtAppName',
+      			exec_mode: 'cluster',
+      			instances: 'max', // Or a number of instances
+      			script: './node_modules/nuxt/bin/nuxt.js',
+      			args: 'start'
+    			}
+  		]
+	}
+Build and serve the app
+    npm run build
+    pm2 start
+    pm2 start ecosystem.config.js
+    pm2 stop ecosystem.config.js
+    pm2 restart ecosystem.config.js
+    pm2 reload ecosystem.config.js

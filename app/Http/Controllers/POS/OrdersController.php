@@ -4,202 +4,53 @@ namespace App\Http\Controllers\POS;
 
 use DB;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use App\Models\POS\Orders;
 use Illuminate\Http\Request;
 use App\Models\POS\POSSettings;
+use App\Models\POS\vwCustomers;
 use App\Http\Controllers\Controller;
-use App\Models\BuildFile\POSSetting;
-use App\Models\BuildFile\Systerminals;
-use App\Models\BuildFile\SystemSequence;
-use App\Models\BuildFile\Warehouseitems;
-use App\Models\MMIS\inventory\ItemBatch;
-use App\Helpers\PosSearchFilter\SeriesNo;
-use App\Helpers\PosSearchFilter\Terminal;
 use App\Helpers\PosSearchFilter\Orderlist;
 use App\Helpers\PosSearchFilter\UserDetails;
 
 class OrdersController extends Controller
 {
+    protected $orders_data = [];
+    protected $item_details = [];
+    protected $json_file ='';
+
+    public function __construct()
+    {
+
+    }
     public function index()
     {
         $data = (new Orderlist())->searchable();
         return response()->json(["data"=>$data,"message" => 'success' ], 200);
     }
-   
-    public function store(Request $request){
-       
-        DB::connection('sqlsrv_mmis')->beginTransaction();
-        DB::connection('sqlsrv_pos')->beginTransaction();
-        try {
-            $terminal = (new Terminal)->terminal_details();
-            $sequenceno = (new SeriesNo())->get_sequence('PPLN',$terminal->terminal_code);
-            $generatesequence = (new SeriesNo())->generate_series($sequenceno->seq_no, $sequenceno->digit);
-            if($sequenceno->isSystem == '0'){
-                $generatesequence = (new SeriesNo())->generate_series($sequenceno->manual_seq_no, $sequenceno->digit);
-            }
-            $orders = Orders::create([
-              'branch_id'=> Auth()->user()->branch_id,
-              'warehouse_id'=> Auth()->user()->warehouse_id,
-              'customer_id'=>Request()->payload['customer_payload']['id'] ?? '',
-              'pick_list_number'=> $generatesequence,
-              'order_date'=> Carbon::now(),
-              'order_total_line_item_ordered'=> count(Request()->payload['cart_items']),
-              'order_vatable_sales_amount'=> Request()->payload['cart_footer']['vatsales'],
-              'order_vatexempt_sales_amount'=> Request()->payload['cart_footer']['vatexemptsale'],
-              'order_zero_rated_sales_amount'=> Request()->payload['cart_footer']['zeroratedsale'],
-              'order_total_sales_vat_incl_amount'=> Request()->payload['cart_footer']['totalsalesvatinclude'],
-              'order_vat_amount'=> Request()->payload['cart_footer']['vatamount'],
-              'order_vat_net_amount'=> Request()->payload['cart_footer']['amountnetvat'],
-              'order_senior_citizen_amount'=> Request()->payload['cart_footer']['lessdiscount'],
-              'order_due_amount'=> Request()->payload['cart_footer']['amountdue'],
-              'order_total_payment_amount'=> Request()->payload['cart_footer']['totalamount'],
-              'pa_userid'=>Auth()->user()->id,
-              'cashier_user_id'=>0,
-              'checker_userid'=>0,
-              'terminal_id'=>$terminal->id,
-              'order_status_id'=>7,
-              'createdBy'=>Auth()->user()->id,
-            ]);
-            foreach (Request()->payload['cart_items'] as $row) {
-                $orders->order_items()->create([
-                    'order_item_id'=>$row['id'],
-                    'order_item_qty'=>$row['itemqty'],
-                    'order_item_charge_price'=>$row['itemprice'],
-                    'order_item_cash_price'=>$row['itemoldprice'],
-                    'order_item_price'=>$row['itemprice'],
-                    'order_item_vat_rate'=>$row['vatablerate'],
-                    'order_item_vat_amount'=>$row['itemisvatable'],
-                    'order_item_sepcial_discount'=>$row['Discountrate'],
-                    'order_item_discount_amount'=>$row['itemisallowdiscount'],
-                    'order_item_total_amount'=>$row['itemdiscountedamount'],
-                    'order_item_batchno'=>$row['itembatchno']['id'],
-                    'isReturned'=>'0',
-                    'createdBy'=>Auth()->user()->id,
-                ]);
-               
-            }
-            if ($sequenceno->isSystem == '0') {
-                $sequenceno->update([
-                    'manual_seq_no'=>(int)$sequenceno->manual_seq_no + 1,
-                    'manual_recent_generated'=>$generatesequence,
-                ]);
-            }else{
 
-                $sequenceno->update([
-                    'seq_no'=>(int)$sequenceno->seq_no + 1,
-                    'recent_generated'=>$generatesequence,
-                ]);
-            }
-            DB::connection('sqlsrv_pos')->commit();
-            DB::connection('sqlsrv_mmis')->commit();
-
-            $pa_userid = Auth()->user()->id;
-            $picklist = $this->picklistprintout(Request()->payload['cart_items'],Request()->payload['customer_payload'],$generatesequence,$pa_userid);
-
-            return response()->json(["message" => 'Record successfully saved','status'=>'200','picklist'=>$picklist,'picklistno'=>$generatesequence], 200);
-
-        } catch (\Exception $e) {
-            DB::connection('sqlsrv_pos')->rollback();
-            DB::connection('sqlsrv_mmis')->rollback();
-            return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-        }
-    }
-
-    public function update(Request $request, $id){
-        DB::connection('sqlsrv_pos')->beginTransaction();
-        try {
-            $orders = Orders::where('id', $id)->first();
-            $orders->where('id',$id)->update([
-              'branch_id'=> Auth()->user()->branch_id,
-              'warehouse_id'=> Auth()->user()->warehouse_id,
-              'customer_id'=>Request()->payload['customer_payload']['id'] ?? '',
-              'pick_list_number'=>Request()->payload['orderdetails']['orderpicklistno'] ?? '',
-              'order_date'=> Carbon::now(),
-              'order_total_line_item_ordered'=> count(Request()->payload['cart_items']),
-              'order_vatable_sales_amount'=> Request()->payload['cart_footer']['vatsales'],
-              'order_vatexempt_sales_amount'=> Request()->payload['cart_footer']['vatexemptsale'],
-              'order_zero_rated_sales_amount'=> Request()->payload['cart_footer']['zeroratedsale'],
-              'order_total_sales_vat_incl_amount'=> Request()->payload['cart_footer']['totalsalesvatinclude'],
-              'order_vat_amount'=> Request()->payload['cart_footer']['vatamount'],
-              'order_vat_net_amount'=> Request()->payload['cart_footer']['amountnetvat'],
-              'order_senior_citizen_amount'=> Request()->payload['cart_footer']['lessdiscount'],
-              'order_due_amount'=> Request()->payload['cart_footer']['amountdue'],
-              'order_total_payment_amount'=> Request()->payload['cart_footer']['totalamount'],
-              'pa_userid'=>Auth()->user()->id,
-              'terminal_id'=>Request()->payload['terminalid'] ?? '1',
-              'order_status_id'=>7,
-              'updatedBy'=>Auth()->user()->id,
-            ]);
-            $itemid = [];
-            foreach (Request()->payload['cart_items'] as $row) {
-                $itemid[] = $row['id'];
-                if(isset($row['order_id'])){
-                    $orders->order_items()->where('id',$row['order_id'])->update([
-                        'order_item_id'=>$row['id'],
-                        'order_item_qty'=>$row['itemqty'],
-                        'order_item_charge_price'=>$row['itemprice'],
-                        'order_item_cash_price'=>$row['itemoldprice'],
-                        'order_item_price'=>$row['itemprice'],
-                        'order_item_vat_rate'=>$row['vatablerate'],
-                        'order_item_vat_amount'=>$row['itemisvatable'],
-                        'order_item_sepcial_discount'=>$row['Discountrate'],
-                        'order_item_discount_amount'=>$row['itemisallowdiscount'],
-                        'order_item_total_amount'=>$row['itemdiscountedamount'],
-                        'order_item_batchno'=>$row['itembatchno']['id'],
-                        'isReturned'=>'0',
-                        'isDeleted'=>'0',
-                        'updatedBy'=>Auth()->user()->id,
-                    ]);
-                }else{
-                    $orders->order_items()->create([
-                        'order_item_id'=>$row['id'],
-                        'order_item_qty'=>$row['itemqty'],
-                        'order_item_charge_price'=>$row['itemprice'],
-                        'order_item_cash_price'=>$row['itemoldprice'],
-                        'order_item_price'=>$row['itemprice'],
-                        'order_item_vat_rate'=>$row['vatablerate'],
-                        'order_item_vat_amount'=>$row['itemisvatable'],
-                        'order_item_sepcial_discount'=>$row['Discountrate'],
-                        'order_item_discount_amount'=>$row['itemisallowdiscount'],
-                        'order_item_total_amount'=>$row['itemdiscountedamount'],
-                        'order_item_batchno'=>$row['itembatchno']['id'],
-                        'isReturned'=>'0',
-                        'isDeleted'=>'0',
-                        'updatedBy'=>Auth()->user()->id,
-                    ]);
-                }
-            }
-            $checkorderitems = $orders->order_items()->where('order_id',$id)->whereNotIn('order_item_id',json_decode(json_encode($itemid)))->get();
-            foreach($checkorderitems as $row){
-                $orders->order_items()->where('id',$row['id'])->delete();
-            }
-            DB::connection('sqlsrv_pos')->commit();    
-            $pa_userid = Auth()->user()->id;
-            $picklist = $this->picklistprintout(Request()->payload['cart_items'],Request()->payload['customer_payload'],Request()->payload['orderdetails']['orderpicklistno'],$pa_userid);
-            return response()->json(["message" => 'Record successfully saved','status'=>'200','picklist'=>$picklist,'picklistno'=>Request()->payload['orderdetails']['orderpicklistno']], 200);
-
-        } catch (\Exception $e) {
-            DB::connection('sqlsrv_pos')->rollback();
-            return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-        }
-    }
-
-    public function cancelorder(Request $request){
+    public function cancelorder(Request $request)
+    {
         DB::connection('sqlsrv_pos')->beginTransaction();
         try {
             $orders = Orders::where('id', $request->id)->first();
             $orders->update(['order_status_id'=>'8']);
-            DB::connection('sqlsrv_pos')->commit();    
+            DB::connection('sqlsrv_pos')->commit();
             return response()->json(["message" => 'Record successfully cancel','status'=>'200'], 200);
         } catch (\Exception $e) {
             DB::connection('sqlsrv_pos')->rollback();
             return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
         }
-    }   
+    }
 
-    public function picklistprintout($items,$customerdetails,$picklistno,$pa_userid){
-        $possetting = POSSettings::with('bir_settings')->where('isActive','1')->first();
-        $user = (new UserDetails)->userdetails($pa_userid);
+    public function picklistprintout($items, $customer_details, $picklistno, $pa_userid)
+    {
+        $user = (new UserDetails())->userdetails($pa_userid);
+
+        $possetting = POSSettings::with('bir_settings')->where('isActive', '1')->first();
+        $customerdetails = vwCustomers::where('id',$customer_details['id'])->where('isActive', '1')->first();
+
+        
         $html = '
             <div class="printout-company-details">
                 <div class="printout-company-name">'.$possetting->company_name.'</div>
@@ -209,23 +60,22 @@ class OrdersController extends Controller
                 <thead  class="header">
                     <tr>
                         <td >Customer</td>
-                        <td colspan="3">: '.ucfirst($customerdetails['customer_last_name']).', '.ucfirst($customerdetails['customer_first_name']).' '.ucfirst($customerdetails['customer_middle_name']).'
-                        </td>
-                    </tr>
-                    <tr>
-                        <td >Type</td>
-                        <td colspan="3">: '.ucfirst($customerdetails['discounttype']).'
+                        <td colspan="3">: '.ucfirst($customerdetails['name']).'
                         </td>
                     </tr>
                     <tr>
                         <td  >Order ID #</td>
                         <td  colspan="3">: '.$picklistno.'</td>
+                        <td class="print-date">Type</td>
+                        <td class="print-date-value" width="250">: '.ucfirst($customerdetails['group_name']).'</td>
+                    </tr>
+                    <tr>
+                        <td  >Date</td>
+                        <td  colspan="3">: '.Carbon::now()->format('m/d/Y H:i A').'</td>
                     </tr>
                     <tr>
                         <td>P.A</td>
-                        <td>: '.ucfirst($user->lastname).', '.ucfirst($user->firstname).' '.ucfirst($user->middlename).'</td>
-                        <td class="print-date">Date</td>
-                        <td class="print-date-value">: '.Carbon::now()->format('m/d/Y').'</td>
+                        <td colspan="3">: '.ucfirst($user->lastname).', '.ucfirst($user->firstname).' '.ucfirst($user->middlename).'</td>
                     </tr>
                 </thead>
             </table>
@@ -233,50 +83,91 @@ class OrdersController extends Controller
                 <table class="print-item-table">
                     <tbody>
                         <tr class="thead">
+                            <th colspan="1"><center>#</center></th>
                             <th colspan="3">PARTICULARS</th>
                             <th colspan="1"><center>QTY</center></th>
                         </tr>
-                        ';  
+                        ';
                         $counter = 0;
-                        foreach($items as $item){
+                        foreach($items as $item) {
+
+                            $itemname = isset($item['itemname']) ? $item['itemname'] : $item['vw_item_details']['item_name'];
+                            $itemdescription = isset($item['itemdescription']) ? $item['itemdescription'] : $item['vw_item_details']['item_Description'];
+                            $itembatchno = isset($item['itembatchno']['batch_Number'])   ? $item['itembatchno']['batch_Number'] : $item['item_batch']['batch_Number'];
+                            $expiry = isset($item['itembatchno']['item_Expiry_Date'])  ? $item['itembatchno']['item_Expiry_Date'] : $item['item_batch']['item_Expiry_Date'];
+                            $qty =isset($item['item_item_qty'])  ? $item['item_item_qty'] : $item['order_item_qty'];
                             $counter++;
                             $html .='
-                                <tr>
-                                    <td colspan="4">
-                                        <div class="mt-1 itemname">'.$item['itemname'].' '.$item['itemdescription'].'</div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2">
-                                        <div class="batchno batchexpire">Batch # : ('.$item['itembatchno']['batch_Number'].')</div>
-                                        <div class="batchexpire">Exp : '.Carbon::parse($item['itembatchno']['item_Expiry_Date'])->format('Y-m-d') .'</div>
-                                    </td>
-                                    <td colspan="2"><center>'.$item['itemqty'].'</center></td>
-                                </tr>
-                            ';
-                        }
-                        
+                                    <tr>
+                                        <td>'.$counter.'. </td>
+                                        <td colspan="4">
+                                            <div class="mt-1 ml-2 itemname">&nbsp;'. $itemname .' '. $itemdescription.'</div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td colspan="2">
+                                            <div class="batchno batchexpire">Batch # : '.$itembatchno .'</div>
+                                            <div class="batchexpire">Exp : '.Carbon::parse($expiry)->format('Y-m-d') .'</div>
+                                        </td>
+                                        <td colspan="2"><center>'.$qty.'</center></td>
+                                    </tr>
+                                ';
+                            }
+
                         $html .='
                         <tr class="thead">
-                            <th colspan="3">NO OF ITEM(S)</th>
+                            <th colspan="4">NO OF ITEM(S)</th>
                             <th colspan="1"><center>'.$counter.'</center></th>
                         </tr>
                     </tbody>
+                </table>
+                <table class="print-item-table ">
+                    <tfoot  class="tablefooter">
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">SUPPLIER :</td>
+                        </tr>  
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">'.$possetting->bir_settings->pos_supplier_company_name.'</td>
+                        </tr> 
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">'.$possetting->bir_settings->pos_supplier_address_bldg.' '.$possetting->bir_settings->pos_supplier_address_streetno.'</td>
+                        </tr>
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">'.$possetting->bir_settings->pos_supplier_tin.'</td>
+                        </tr>
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">Acc. No:'.$possetting->bir_settings->bir_accreditation_number.'</td>
+                        </tr> 
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">Date of Accreditation :'.Carbon::parse($possetting->bir_settings->bir_accreditation_date)->format('m/d/Y').'</td>
+                        </tr> 
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">Valid until :'.Carbon::parse($possetting->bir_settings->bir_accreditation_valid_until_date)->format('m/d/Y').'</td>
+                        </tr> 
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">PTU :'.$possetting->bir_settings->bir_permit_to_use_number.'</td>
+                        </tr> 
+                        <tr>
+                            <td class="textcenterfooter" colspan="2">Date Issued :'.Carbon::parse($possetting->bir_settings->bir_permit_to_use_issued_date)->format('m/d/Y').'</td>
+                        </tr> 
+                    </tfoot>
                 </table>
             </div>
         ';
         return $html;
     }
 
-    public function reprintpicklist(Request $request){
-
+    public function reprintpicklist(Request $request)
+    {
         $picklistno = Request()->payload['orderpicklistno'] ?? '';
         $pa_userid = Request()->payload['pa_userid'] ?? '';
-        $picklist = $this->picklistprintout(Request()->payload['items'],Request()->payload['customer_payload'],$picklistno,$pa_userid);
+        $picklist = $this->picklistprintout(Request()->payload['items'], Request()->payload['customer_payload'], $picklistno, $pa_userid);
         return response()->json(["message" => 'Record successfully saved','status'=>'200','picklist'=>$picklist,'picklistno'=>$picklistno], 200);
-
     }
-    public function destroy($id){
+
+    public function destroy($id)
+    {
         DB::connection('sqlsrv_pos')->beginTransaction();
         try {
             $orders = Orders::where('id', $id)->first();
@@ -285,8 +176,9 @@ class OrdersController extends Controller
 
             DB::connection('sqlsrv_pos')->rollback();
             return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-            
+
         }
-    
+
     }
+
 }

@@ -10,7 +10,7 @@ class POSSettings extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_pos';
-    protected $table = 'CDG_POS.dbo.possettings';
+    protected $table = 'possettings';
     protected $guarded = [];
 
     public function bir_settings(){

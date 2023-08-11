@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Systerminals;
 use App\Models\BuildFile\mscShiftSchedules;
-use Carbon\Carbon;
 use DB;
+use Carbon\Carbon;
 class SettingController extends Controller
 {
     /**
@@ -25,7 +25,6 @@ class SettingController extends Controller
         foreach($schedule as $row){
             $array[] = $row;
         }
-       
         $data['schedule'] = $array;
         $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);

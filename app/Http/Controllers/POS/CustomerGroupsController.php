@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\POS;
 
 use Illuminate\Http\Request;
+use App\Models\POS\CustomerGroup;
 use App\Http\Controllers\Controller;
-use App\Models\BuildFile\mscShiftSchedules;
 
-class mscShiftSchedulesController extends Controller
+class CustomerGroupsController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,7 +15,8 @@ class mscShiftSchedulesController extends Controller
      */
     public function index()
     {
-        
+        $data =  CustomerGroup::all();;
+        return response()->json(["data"=>$data,"message" => "success"], 200);
     }
 
     /**

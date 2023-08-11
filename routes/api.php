@@ -19,17 +19,19 @@ use App\Http\Controllers\MMIS\PurchaseRequestController;
 |
 */
 
+
+
 Route::post('login', [AuthController::class, 'login']);
 Route::post('pos/login', [AuthPOSController::class, 'login']);
-Route::get('get-setting', [SettingController::class, 'index']);
-
+Route::get('get-schedule', [SettingController::class, 'schedule']);
 Route::group(['middleware' => 'auth:api'], function ()  {
     Route::controller(UserController::class)->group(function () {
         Route::get('department/users', 'getDepartmentUsers');
     });
+    Route::get('get-setting', [SettingController::class, 'index']);
     Route::get('user-details', [AuthController::class, 'userDetails']);
+    Route::post('/pos/refresh', [AuthPOSController::class, 'refreshToken']);
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
-
     Route::post('logout', [AuthController::class, 'logout']);
     require_once ('pos/api.php'); 
     require_once ('buildfile/api.php');

@@ -117,4 +117,11 @@ Route::group(['middleware' => 'admin.user'], function () {
         return view('layouts.main');
     })->where('any', '.*');
 });
+// Route::group(['middleware' => 'admin.user'], function () {
+//     // require_once ('mmis/mmismainroute.php');
+//     // Route::get('user-details', [AuthController::class, 'userDetails']);
+//     // Route::get('/{any}', function () {
+//     //     return view('layouts.main');
+//     // })->where('any', '.*');
+// });
 

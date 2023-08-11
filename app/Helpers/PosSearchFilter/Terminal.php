@@ -8,20 +8,31 @@ use App\Models\BuildFile\vwTerminalTakeOrder;
 
 class Terminal
 {
-
+    public function check_terminal($terminalid){
+        if(Auth::user()->role->name == 'Pharmacist' || Auth::user()->role->name == 'admin') {
+            $count = Systerminals::where('terminal_ip_address',$terminalid)->count();
+            return $count;
+        }else if(Auth::user()->role->name == 'Pharmacist Assistant'){
+            $count =  vwTerminalTakeOrder::where('terminal_ip_address',$terminalid)->count();
+            return $count;
+        }else if(Auth::user()->role->name == 'Pharmacist Cashier'){ 
+            $count =  Systerminals::where('terminal_ip_address',$terminalid)->count();
+            return $count;
+        }
+    }
     public function terminal_details()
     {
         if(Auth::user()->role->name == 'Pharmacist' || Auth::user()->role->name == 'admin') {
-            return Systerminals::where('terminal_ip_address',Auth()->user()->user_ipaddress)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+            return Systerminals::where('terminal_ip_address',Auth()->user()->user_ipaddress)->select('terminal_code','terminal_name','id as terminal_Id','id','terminal_ip_address','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         }else if(Auth::user()->role->name == 'Pharmacist Assistant'){
-            return vwTerminalTakeOrder::where('terminal_ip_address',Auth()->user()->user_ipaddress)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+            return vwTerminalTakeOrder::where('terminal_ip_address',Auth()->user()->user_ipaddress)->select('terminal_code','terminal_Id','terminal_name','id','terminal_ip_address','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         }else if(Auth::user()->role->name == 'Pharmacist Cashier'){ 
-            return Systerminals::where('terminal_ip_address',Auth()->user()->user_ipaddress)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+            return Systerminals::where('terminal_ip_address',Auth()->user()->user_ipaddress)->select('terminal_code','id as terminal_Id','id','terminal_name','terminal_ip_address','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         }
     }
     public function TakeOrderTerminal(){
 
-        $list = vwTerminalTakeOrder::where('terminal_id',Auth()->user()->terminal_id)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->get();
+        $list = vwTerminalTakeOrder::where('terminal_id',Auth()->user()->terminal_id)->select('terminal_code','id as terminal_Id','id','terminal_name','terminal_ip_address','terminal_Machine_Identification_Number','terminal_serial_number')->get();
         $terminalid =[];
         if($list){
             foreach($list as $row){
@@ -29,6 +40,5 @@ class Terminal
             }  
             return $terminalid;
         }
-        
     }
 }

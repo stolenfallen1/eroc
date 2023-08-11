@@ -20,58 +20,46 @@ class Items
         $this->byCategory();
         $this->searchColumns();
         // $this->warehouse();
-        // $this->branch();
+        $this->branch();
         // $this->items();
         $this->model->where('isactive', '1');
-        $per_page = Request()->per_page;
-        return $this->model->paginate($per_page);
+        $this->model->orderby('item_name', 'asc');
+        return $this->model->paginate(20);
     }
 
     public function searchColumns()
     {
+        
         if (isset(Request()->payload['keyword'])) {
-            switch(Request()->payload['type']) {
-                case 1:
-                    $this->model->where('item_name', 'LIKE', Request()->payload['keyword'].'%');
-                    break;
-                case 2:
-                    $this->model->where('item_name', 'LIKE', Request()->payload['keyword'].'%');
-                    break;
-                case 3:
-                    $this->model->where('id',(int)Request()->payload['keyword']);
-                    break;
-                case 4:
-                    $this->model->where('item_Barcode', 'LIKE', Request()->payload['keyword'].'%');
-                    break;
-            }
+            $this->model->where('item_name', 'LIKE', Request()->payload['keyword'].'%');
         }
     }
 
-    private function byCategory()
+    public function byCategory()
     {
         $category_id = Request()->payload['category'] ?? '';
-        if ($category_id) {
+        if ($category_id != 0) {
             $this->model->where('item_Category_Id',  Request()->payload['category']);
         }
     }
 
-    private function warehouse()
+    public function warehouse()
     {
         $departmentid = Request()->departmentid ?? '';
         if ($departmentid) {
             $this->model->where('warehouse_Id',Request()->departmentid);
         }else{
-            $this->model->where('warehouse_Id',Auth()->user->departmentid);
+            $this->model->where('warehouse_Id',Auth()->user()->departmentid);
         }
     }
 
-    private function branch()
+    public function branch()
     {
         $branchid = Request()->branchid ?? '';
         if ($branchid) {
             $this->model->where('branch_id',Request()->branchid);
         }else{
-            $this->model->where('branch_id',Auth()->user->branch_id);
+            $this->model->where('branch_id',Auth()->user()->branch_id);
         }
     }
     private function items(){

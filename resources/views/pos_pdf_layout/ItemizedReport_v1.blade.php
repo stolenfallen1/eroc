@@ -126,7 +126,7 @@
                         <div class="text-right">Shift ID</div>
                     </div>
                     <div style="width: 58.5% !important; display:inline-block;">
-                        <div class="">: {{$shift}}</div>
+                        <div class="">: {{$shift == 0 ? 'All' : $shift}}</div>
                     </div>
                 </div>
                 <div style="width: 29.5% !important;display:inline-block;">
@@ -154,116 +154,158 @@
                    
                     @if(count($data) > 0)
                         @php 
-                            $groupedstatus = array();
+                           
+                            $groupedperShift = array();
                             // Iterate through the items using foreach
                             foreach ($data as $item) {
-                                $status = $item->statusdesc;
-                                // Check if the category exists in the groupedItems array
-                                if (isset($groupedstatus[$status])) {
+                                $shift = $item->shift_description;
+                                if (isset($groupedperShift[$shift])) {
                                     // If the category exists, add the item to the category's array
-                                    $groupedstatus[$status][] = $item;
+                                    $groupedperShift[$shift][] = $item;
                                 } else {
                                     // If the category doesn't exist, create a new array for the category and add the item
-                                    $groupedstatus[$status] = array($item);
+                                    $groupedperShift[$shift] = array($item);
                                 }
                             }    
+                        $grandtotalamount = 0;
                         @endphp
-                       @php  $grandtotal = 0 @endphp
-                       @php  $totalamount = 0 @endphp
-                       @foreach ($groupedstatus as $statusname => $invgroupitem)
-                           
-                           <tr>
-                                <td colspan="9"><?php echo $statusname;?></td>
-                           </tr>
-                           @php $invgroupdata = array(); @endphp
-                           @foreach($invgroupitem as $invgroup)
-                                <?php
-                                    $invgroupname = $invgroup->invgroup;
-                                    // Check if the category exists in the groupedItems array
-                                    if (isset($invgroupdata[$invgroupname])) {
-                                        // If the invgroupname exists, add the item to the invgroupname's array
-                                        $invgroupdata[$invgroupname][] = $invgroup;
+                      
+                       @foreach($groupedperShift as $shift => $shiftitem)
+                            <tr>
+                                <td colspan="9"><?php echo $shift;?></td>
+                            </tr>
+                            @php 
+                                $groupedstatus = array();
+                                foreach ($shiftitem as $item) {
+                                    $status = $item->statusdesc;
+                                    $shift = $item->shift_description;
+                                    // Check if the status exists in the groupedItems array
+                                    if (isset($groupedstatus[$status])) {
+                                        // If the status exists, add the item to the status's array
+                                        $groupedstatus[$status][] = $item;
                                     } else {
-                                        // If the invgroupname doesn't exist, create a new array for the invgroupname and add the item
-                                        $invgroupdata[$invgroupname] = array($invgroup);
+                                        // If the status doesn't exist, create a new array for the status and add the item
+                                        $groupedstatus[$status] = array($item);
                                     }
-                                ?>
-                           @endforeach
-
-                           @foreach($invgroupdata as $invgroupname => $categories)
+                                }    
+                           
+                            $subtotal = 0; 
+                            @endphp
+                            @foreach ($groupedstatus as $statusname => $invgroupitem)
                                 <tr>
-                                    <td style="width: 2%;"></td>
-                                    <td  style="width: 90%;" colspan="8" class="text-left">{{$invgroupname}}</td>
+                                        <td colspan="9"><?php echo $statusname;?></td>
                                 </tr>
-                                @php $categorygroupdata = array(); @endphp
-                                @foreach ($categories as $category)
-                                    <?php
-                                        $categoriesgroupname = $category->categories;
-                                        // Check if the category exists in the groupedItems array
-                                        if (isset($categorygroupdata[$categoriesgroupname])) {
-                                            // If the categoriesgroupname exists, add the item to the invgroupname's array
-                                            $categorygroupdata[$categoriesgroupname][] = $category;
-                                        } else {
-                                            // If the invgroupname doesn't exist, create a new array for the invgroupname and add the item
-                                            $categorygroupdata[$categoriesgroupname] = array($category);
-                                        }
-                                    ?>
+                                @php 
+                                 $invgroupdata = array(); 
+                               
+                                @endphp
+                                @foreach($invgroupitem as $invgroup)
+                                        <?php
+                                            $invgroupname = $invgroup->invgroup;
+                                            // Check if the category exists in the groupedItems array
+                                            if (isset($invgroupdata[$invgroupname])) {
+                                                // If the invgroupname exists, add the item to the invgroupname's array
+                                                $invgroupdata[$invgroupname][] = $invgroup;
+                                            } else {
+                                                // If the invgroupname doesn't exist, create a new array for the invgroupname and add the item
+                                                $invgroupdata[$invgroupname] = array($invgroup);
+                                            }
+                                        ?>
                                 @endforeach
-
-                                @foreach($categorygroupdata as $categoryname => $items)
-                                        
-                                    <tr>
-                                        <td style="width:1%;"></td>
-                                        <td style="width:1%;"></td>
-                                        <td  style="width: 90%;" colspan="7" class="text-left">{{$categoryname}}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:1%;"></td>
-                                        <td style="width:2%;"></td>
-                                        <td style="width:1%;"></td>
-                                        <td style="width:4%;"><u><b>Order ID</u></b></td>
-                                        <td style="width:4%;"><u><b>Item ID</u></b></td>
-                                        <td style="width:4%;"><u><b>Item Name</u></b></td>
-                                        <td style="width:4%;"><u><b>Qty</u></b></td>
-                                        <td style="width:4%;"><u><b>Price</u></b></td>
-                                        <td style="width:4%;"><u><b>Total</u></b></td>
-                                    </tr>
-                                    @foreach ($items as $item)
-                                        @php  
-                                            $totalamount += ((float)$item->price * $item->qty) 
-                                        @endphp
+                               
+                                @foreach($invgroupdata as $invgroupname => $categories)
                                         <tr>
-                                            <td style="width:1%;"></td>
-                                            <td style="width:1%;"></td>
-                                            <td style="width:1%;"></td>
-                                            <td >{{$item->orderid}}</td>
-                                            <td >{{$item->itemid}}</td>
-                                            <td style="width:20%;" >{{$item->itemname}}</td>
-                                            <td >{{(int)$item->qty}}</td>
-                                            <td style="width:2%;">{{number_format(((float)$item->price),2)}}</td>
-                                            <td style="width:2%;">{{number_format(((float)$item->price * $item->qty),2)}}</td>
+                                            <td style="width: 2%;"></td>
+                                            <td  style="width: 90%;" colspan="8" class="text-left">{{$invgroupname}}</td>
                                         </tr>
-                                    @endforeach
-                                    @php  
-                                        $grandtotal += (float) $totalamount;
-                                    @endphp
-                                    <tr>
-                                        <td  class="text-right" colspan="8"><u><b>SubTotal ==> </b></u></td>
-                                        <td class="text-left" style="width:2%;">{{number_format($totalamount,2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="9"> <br></td>
-                                    </tr>
+                                        @php $categorygroupdata = array(); @endphp
+                                        @foreach ($categories as $category)
+                                            <?php
+                                                $categoriesgroupname = $category->categories;
+                                                // Check if the category exists in the groupedItems array
+                                                if (isset($categorygroupdata[$categoriesgroupname])) {
+                                                    // If the categoriesgroupname exists, add the item to the invgroupname's array
+                                                    $categorygroupdata[$categoriesgroupname][] = $category;
+                                                } else {
+                                                    // If the invgroupname doesn't exist, create a new array for the invgroupname and add the item
+                                                    $categorygroupdata[$categoriesgroupname] = array($category);
+                                                }
+                                            ?>
+                                        @endforeach
+                                      
+                                        @foreach($categorygroupdata as $categoryname => $items)
+                                                
+                                            <tr>
+                                                <td style="width:1%;"></td>
+                                                <td style="width:1%;"></td>
+                                                <td  style="width: 90%;" colspan="7" class="text-left">{{$categoryname}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="width:1%;"></td>
+                                                <td style="width:2%;"></td>
+                                                <td style="width:1%;"></td>
+                                                <td style="width:4%;"><u><b>Order ID</u></b></td>
+                                                <td style="width:4%;"><u><b>Item ID</u></b></td>
+                                                <td style="width:4%;"><u><b>Item Name</u></b></td>
+                                                <td style="width:4%;"><u><b>Qty</u></b></td>
+                                                <td style="width:4%;"><u><b>Price</u></b></td>
+                                                <td style="width:4%;"><u><b>Total</u></b></td>
+                                            </tr>
+                                            
+                                            @php  
+                                               $totalamount = 0; 
+                                            @endphp
+                                            @foreach ($items as $item)
+                                                @php  
+                                                    $totalamount += ((float)$item->price * $item->qty) 
+                                                @endphp
+                                                <tr>
+                                                    <td style="width:1%;"></td>
+                                                    <td style="width:1%;"></td>
+                                                    <td style="width:1%;"></td>
+                                                    <td >{{$item->orderid}}</td>
+                                                    <td >{{$item->itemid}}</td>
+                                                    <td style="width:20%;" >{{$item->itemname}}</td>
+                                                    <td >{{(int)$item->qty}}</td>
+                                                    <td style="width:2%;">{{number_format(((float)$item->price),2)}}</td>
+                                                    <td style="width:2%;">{{number_format(((float)$item->price * $item->qty),2)}}</td>
+                                                </tr>
+                                            @endforeach
+                                            @php  
+                                                $subtotal += ((float)$totalamount) 
+                                            @endphp
+                                            <tr>
+                                                <td  class="text-right" colspan="8"><u><b>SubTotal ==> </b></u></td>
+                                                <td class="text-left" style="width:2%;">{{number_format($totalamount,2) }}</td>
+                                            </tr>
+                                            <tr >
+                                                <td  colspan="9"></td>
+                                            </tr>
+                                        @endforeach
+                                        <tr >
+                                            <td  colspan="9"></td>
+                                        </tr>
+                                        <tr>
+                                            <td  class="text-right" colspan="8"><u><b>Total ==> </b></u></td>
+                                            <td class="text-left" style="width:2%;">{{number_format($subtotal,2) }}</td>
+                                        </tr>
+                                        <tr >
+                                            <td  colspan="9"></td>
+                                        </tr>
+                                        
                                 @endforeach
-                           @endforeach
-
-                       @endforeach
+                                
+                            @endforeach
+                            @php  
+                                $grandtotalamount += $subtotal
+                            @endphp
+                        @endforeach
                         <tr >
                             <td  colspan="9"></td>
                         </tr>
                         <tr>
                             <td  class="text-right" colspan="8"><u><b>Grand Total ==> </b></u></td>
-                            <td class="text-left" style="width:2%;">{{number_format($grandtotal,2) }}</td>
+                            <td class="text-left" style="width:2%;">{{number_format($grandtotalamount,2) }}</td>
                         </tr>
                     @else 
                         <tr style="border-bottom:1px solid black;">

@@ -29,6 +29,10 @@ class purchaseOrderMaster extends Model
         return $this->hasMany(Delivery::class, 'po_id', 'id');
     }
 
+    public function latestdelivery(){
+        return $this->hasOne(Delivery::class, 'po_id', 'id')->orderBy('created_at', 'desc');
+    }
+
     public function purchaseRequest(){
         return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');
     }
@@ -50,15 +54,15 @@ class purchaseOrderMaster extends Model
     }
 
     public function user(){
-        return $this->belongsTo(User::class, 'po_Document_userid');
+        return $this->belongsTo(User::class, 'po_Document_userid', 'idnumber');
     }
 
     public function administrator(){
-        return $this->belongsTo(User::class, 'admin_approved_by');
+        return $this->belongsTo(User::class, 'admin_approved_by', 'idnumber');
     }
 
     public function comptroller(){
-        return $this->belongsTo(User::class, 'comptroller_approved_by');
+        return $this->belongsTo(User::class, 'comptroller_approved_by', 'idnumber');
     }
 
     public function getCodeAttribute(){

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Drugadministration extends Model
 {
     use HasFactory;
-    protected $table = 'mscDrugadministrations';
+    protected $table = 'CDG_CORE.dbo.mscDrugadministrationsRoute';
     protected $connection = "sqlsrv";
     protected $guarded = [];
 }

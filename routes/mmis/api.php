@@ -5,6 +5,7 @@ use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\DeliveryController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
+use App\Http\Controllers\MMIS\StockTransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::controller(UserController::class)->group(function () {
@@ -25,6 +26,7 @@ Route::controller(PurchaseRequestController::class)->group(function () {
 
 Route::controller(CanvasController::class)->group(function () {
   Route::get('canvas', 'index');
+  Route::get('count-for-po', 'countForPO');
   Route::post('canvas', 'store');
   Route::delete('canvas/{id}', 'destroy');
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');
@@ -53,5 +55,12 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::get('deliveries', 'index');
   Route::post('deliveries', 'store');
   Route::put('deliveries', 'update');
+  Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
+});
+
+Route::controller(StockTransferController::class)->group(function () {
+  Route::put('stock-transfer-approved/{stock_transfer}', 'receiveTransfer');
+  Route::get('stock-transfer', 'index');
+  Route::post('stock-transfer', 'store');
 });
 

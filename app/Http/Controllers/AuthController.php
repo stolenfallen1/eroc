@@ -16,9 +16,11 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
    
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
-       
-        if ($this->guard()->attempt($credentials, $request->has('remember'))) {
+        $credentials = $request->only('idnumber', 'password');
+
+
+        
+        if ($this->guard()->attempt(['idnumber' => $credentials['idnumber'], 'password' => $credentials['password']], $request->has('remember'))) {
             $user = Auth::user();
             $token = $user->createToken();
             $user->load('role.permissions', 'roles');

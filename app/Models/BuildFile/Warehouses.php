@@ -28,6 +28,10 @@ class Warehouses extends Model
         return $this->belongsTo(Warehousegroups::class, 'warehouse_Group_Id');
     }
 
+    public function itemGroups(){
+        return $this->belongsToMany(ItemGroup::class, 'invItemInventoryGroup_mappings', 'warehouse_id', 'ItemInventoryGroup_id');
+    }
+
     public function batchs(){
         return $this->hasMany(ItemBatch::class, 'warehouse_id', 'id');
     }

@@ -4,14 +4,15 @@ namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\BuildFile\Vendors;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\MMIS\procurement\CanvasMaster;
+use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Helpers\SearchFilter\Procurements\Canvases;
-use App\Models\BuildFile\Vendors;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 
 class CanvasController extends Controller
@@ -19,6 +20,26 @@ class CanvasController extends Controller
     public function index()
     {
         return (new Canvases)->searchable();
+    }
+
+    public function countForPO()
+    {
+        $model = PurchaseRequest::query();
+        $model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function($q){
+        $q->where('is_submitted', true)
+        ->whereHas('recommendedCanvas', function($q1){
+            $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
+        })->whereDoesntHave('purchaseOrderDetails');
+        });
+        if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){
+            $model->where('isPersihable', 1);
+        }else{
+            $model->where(function($q){
+                $q->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+            });
+        }
+        if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 
+        return $model->count();
     }
 
     public function store(Request $request)
@@ -53,7 +74,7 @@ class CanvasController extends Controller
                 'canvas_Document_Number' => $number,
                 'canvas_Document_Prefix' => $prefix,
                 'canvas_Document_Suffix' => $suffix,
-                'canvas_Document_CanvassBy' => Auth::user()->id,
+                'canvas_Document_CanvassBy' => Auth::user()->idnumber,
                 'canvas_Document_Transaction_Date' => Carbon::now(),
                 'requested_date' => Carbon::parse($request->requested_date),
                 'canvas_Branch_Id' => $authUser->branch_id,
@@ -144,16 +165,16 @@ class CanvasController extends Controller
         try {
             
             foreach ($request->items as $key => $item) {
-                $detail = PurchaseRequestDetails::where('id', $item['item_id'])->first();
+                $detail = PurchaseRequestDetails::with('purchaseRequest')->where('id', $item['item_id'])->first();
                 if($item['status'] == true){
                     if($authUser->role->name == 'purchaser'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level1_ApprovedBy' => $authUser->id,
+                            'canvas_Level1_ApprovedBy' => $authUser->idnumber,
                             'canvas_Level1_ApprovedDate' => Carbon::now(),
                         ]);
                     }else if($authUser->role->name == 'comptroller'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level2_ApprovedBy' => $authUser->id,
+                            'canvas_Level2_ApprovedBy' => $authUser->idnumber,
                             'canvas_Level2_ApprovedDate' => Carbon::now(),
                             'canvas_Document_Approved_Number' => generateCompleteSequence($prefix, $number, $suffix, "")
                         ]);
@@ -161,13 +182,13 @@ class CanvasController extends Controller
                 }else{
                     if($authUser->role->name == 'purchaser'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level1_CancelledBy' => $authUser->id,
+                            'canvas_Level1_CancelledBy' => $authUser->idnumber,
                             'canvas_Level1_CancelledDate' => Carbon::now(),
                             'canvas_Level1_Cancelled_Remarks' => $item['remarks'],
                         ]);
                     }else if($authUser->role->name == 'comptroller'){
                         $detail->recommendedCanvas()->update([
-                            'canvas_Level2_CancelledBy' => $authUser->id,
+                            'canvas_Level2_CancelledBy' => $authUser->idnumber,
                             'canvas_Level2_CancelledDate' => Carbon::now(),
                             'canvas_Level2_Cancelled_Remarks' => $item['remarks'],
                         ]);

@@ -40,6 +40,10 @@ class Itemmasters extends Model
         return $this->belongsTo(Itemcategories::class, 'item_Category_Id');
     }
 
+    public function subcategory(){
+        return $this->belongsTo(Itemsubcategories::class, 'item_SubCategory_Id');
+    }
+
     public function unit(){
         return $this->belongsTo(Unitofmeasurement::class, 'item_UnitOfMeasure_Id');
     }

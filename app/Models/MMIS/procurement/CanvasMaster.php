@@ -5,6 +5,7 @@ namespace App\Models\MMIS\procurement;
 use App\Models\BuildFile\Vendors;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CanvasMaster extends Model
@@ -24,6 +25,10 @@ class CanvasMaster extends Model
 
     public function attachments(){
         return $this->hasMany(CanvasAttachment::class, 'canvas_id', 'id');
+    }
+
+    public function canvaser(){
+        return $this->belongsTo(User::class, 'canvas_Document_CanvassBy', 'idnumber');
     }
 
     public function vendor()

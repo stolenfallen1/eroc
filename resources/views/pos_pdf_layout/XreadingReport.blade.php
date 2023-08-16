@@ -515,7 +515,7 @@
                     <div class="text-left">Total Sales</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($total_sales,2)}}</div>
+                    <div class="text-right">{{number_format($items[0]->closing_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">

@@ -26,17 +26,33 @@ class Orderlist
         return $this->model->paginate(12);
     }
 
+    public function sales_order_searchable()
+    {
+        $this->model->with('customers','order_items','order_items.ItemBatch','payment')->orderBy('id', 'desc');
+        $this->searchTerminal();
+        $this->haspaymentonly();
+        $this->salesorder_searchColumns();
+        $per_page = Request()->per_page ?? '1';
+        return $this->model->where('order_status_id',9)->paginate($per_page);
+    }
+    public function salesorder_searchColumns()
+    {
+        $this->model->where('pick_list_number', 'LIKE', "" . Request()->keyword . "%")->orWhereHas('payment', function($payment){
+            return $payment->where('sales_invoice_number', 'LIKE', "" . Request()->keyword . "%");
+        });
+    }
     public function returnordersearchable()
     {
         $this->model->with('customers','order_items','order_items.ItemBatch','payment','order_items.vwItem_details')->orderBy('id', 'desc');
         $this->searchColumns();
         $this->searchTerminal();
         $this->dateTransaction();
-        $this->returnhaspaymentonly();
+        $this->haspaymentonly();
         $per_page = Request()->page ?? '1';
         return $this->model->paginate(12);
     }
-    public function returnhaspaymentonly(){
+
+    public function haspaymentonly(){
         $this->model->has('payment');
     }
 

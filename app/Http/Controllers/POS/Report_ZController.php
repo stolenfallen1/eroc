@@ -165,9 +165,15 @@ class Report_ZController extends Controller
         $total_sales =0;
         $total_refunds =0;
   
+        $total_opening = 0;
+        $total_total_closing = 0;
+
+
         $sales_invoice_group = [];
         foreach ($transaction as $item) {
             if ($item->statusdesc == 'POS -  Completed Order Sales') {
+                
+
                 if ($item->method == 'Cash') {
                     $total_cash_sales += (float) $item->totalamount;
                 }
@@ -209,11 +215,21 @@ class Report_ZController extends Controller
         $startinvoice = '';
         $endinvoice = '';
 
-        
-        $total_opening = 0;
-        $total_total_closing = 0;
+        $sales_temp =  DB::connection('sqlsrv_pos')->table('reports_Shift_Summary_Sales_temp')
+        ->where('terminalid',$terminalid)
+        ->whereDate('report_date',$date)->get();
+       
+        foreach($sales_temp as $row){
+            $total_opening += (float)$row->opening_amount;
+            $total_total_closing += (float) $row->closing_amount;
+            // $total_cash_sales += (float) $row->total_cash_sales;
+            // $total_creditcard_sales += (float) $row->total_credit_card_sales;
+            // $total_debitcard_sales += (float) $row->total_debit_card_sales;
+            // $total_sales +=(float) $row->total_cash_sales +  $row->total_credit_card_sales +   $row->total_debit_card_sales;
+        }
 
         foreach ($sales_invoice_group as $key => $invoices) {
+
             if($invoices[0]->method == 'Cash'){
                 $total_cash_transaction++;
             }
@@ -223,9 +239,9 @@ class Report_ZController extends Controller
             if($invoices[0]->method == 'Debit Card'){
                 $total_debit_transaction++;
             }
+
             $total_total_transaction++;
-            $total_opening += (float) $invoices[0]->opening_amount;
-            $total_total_closing += (float) $invoices[0]->closing_amount;
+           
             $totaldiscount += (float) $invoices[0]->discount;
             $totalvatexempt += (float) $invoices[0]->vatexempt;
             $totalvat += (float) $invoices[0]->vatamount;

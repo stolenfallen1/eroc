@@ -28,7 +28,21 @@ class OrdersController extends Controller
         $data = (new Orderlist())->searchable();
         return response()->json(["data"=>$data,"message" => 'success' ], 200);
     }
-
+    public function sales_order()
+    {
+        $year = date('Y');
+        $month = date('m');
+        $data['total_sales'] = $this->total_sales($month,$year);
+        $data['sales'] = (new Orderlist())->sales_order_searchable();
+        return response()->json(["data"=>$data,"message" => 'sucess','status'=>'200'], 200);
+    }
+    public function total_sales($month,$year)
+    {
+       $data = DB::connection('sqlsrv_pos')->select('EXEC sp_Dashboard_Monthly_Total_Sales ?,?', [$month,$year]);
+        if($data){
+            return $data[0];
+        }
+    }
     public function cancelorder(Request $request)
     {
         DB::connection('sqlsrv_pos')->beginTransaction();

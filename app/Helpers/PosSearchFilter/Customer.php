@@ -24,10 +24,10 @@ class Customer
     public function searchColumns()
     {
         if (Request()->keyword) {
-            if(isset(Request()->keyword['keywordlastname'])){
-                return  $this->model->where('customer_last_name', 'LIKE','%'.Request()->keyword['keywordlastname'].'%');
+            if(isset(Request()->keyword)){
+                return  $this->model->where('customer_last_name', 'LIKE',''.Request()->keyword.'%');
             }
-            if(isset(Request()->keyword['keywordfirstname'])){
+            if(isset(Request()->keyword['keywordlastname'])){
                return $this->model->where('customer_first_name', 'LIKE','%'.Request()->keyword['keywordfirstname'].'%');
             }
         }

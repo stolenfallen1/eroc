@@ -59,8 +59,7 @@ class OpenningAmountTransaction extends Controller
 
     public function beginning_transaction()
     {
-        $from = Carbon::now()->format('Y-m-d');
-        $to = Carbon::now()->format('Y-m-d').' 23:52';
+        
         $payments = new Payments();  
         $opening = new OpenningAmount();
 
@@ -102,33 +101,71 @@ class OpenningAmountTransaction extends Controller
     {
         DB::connection('sqlsrv_pos')->beginTransaction();
         try{
-            $openingamount = OpenningAmount::create([
-                'cashonhand_beginning_amount'=>Request()->payload ?? '0',
-                'cashonhand_beginning_transaction'=>Carbon::now(),
-                'user_id'=>Auth()->user()->idnumber,
-                'createdBy'=>Auth()->user()->idnumber,
-                'shift_code'=>Auth()->user()->shift,
-                'isposted'=>0,
-                'terminal_id'=>Auth()->user()->terminal_id,
-            ]);
-            $openingamount->cashonhand_details()->create(
-                [
-                   'denomination_1000' =>'0',
-                   'denomination_500' =>'0',
-                   'denomination_200' =>'0',
-                   'denomination_100' =>'0',
-                   'denomination_50' =>'0',
-                   'denomination_20' =>'0',
-                   'denomination_10' =>'0',
-                   'denomination_5' =>'0',
-                   'denomination_1' =>'0',
-                   'denomination_dot25' =>'0',
-                   'denomination_dot15' =>'0',
-                   'denomination_total' => 0,
-                   'denomination_checks_total_amount' => '0',
-                   'createdBy' => Auth()->user()->idnumber,
-                ]
-            );
+            $date = Carbon::now()->format('Y-m-d');
+            $checkifexist =  OpenningAmount::whereDate('cashonhand_beginning_transaction',$date)->where('user_id',Auth()->user()->idnumber)->where('shift_code',Auth()->user()->shift)->where('terminal_id',Auth()->user()->terminal_id)->first();
+           
+            if(!$checkifexist){
+                $openingamount = OpenningAmount::create([
+                    'cashonhand_beginning_amount'=>Request()->payload ?? '0',
+                    'cashonhand_beginning_transaction'=>Carbon::now(),
+                    'user_id'=>Auth()->user()->idnumber,
+                    'createdBy'=>Auth()->user()->idnumber,
+                    'shift_code'=>Auth()->user()->shift,
+                    'isposted'=>0,
+                    'terminal_id'=>Auth()->user()->terminal_id,
+                ]);
+                $openingamount->cashonhand_details()->create(
+                    [
+                       'denomination_1000' =>'0',
+                       'denomination_500' =>'0',
+                       'denomination_200' =>'0',
+                       'denomination_100' =>'0',
+                       'denomination_50' =>'0',
+                       'denomination_20' =>'0',
+                       'denomination_10' =>'0',
+                       'denomination_5' =>'0',
+                       'denomination_1' =>'0',
+                       'denomination_dot25' =>'0',
+                       'denomination_dot15' =>'0',
+                       'denomination_total' => 0,
+                       'denomination_checks_total_amount' => '0',
+                       'createdBy' => Auth()->user()->idnumber,
+                    ]
+                );
+            }else{
+                $openingamount = OpenningAmount::whereDate('cashonhand_beginning_transaction',$date)->where('user_id',Auth()->user()->idnumber)->where('shift_code',Auth()->user()->shift)->where('terminal_id',Auth()->user()->terminal_id)->update([
+                    'cashonhand_beginning_amount'=>Request()->payload ?? '0',
+                    'cashonhand_beginning_transaction'=>Carbon::now(),
+                    'user_id'=>Auth()->user()->idnumber,
+                    'createdBy'=>Auth()->user()->idnumber,
+                    'shift_code'=>Auth()->user()->shift,
+                    'sales_batch_number'=>null,
+                    'sales_batch_transaction_date'=>null,
+                    'report_date'=>null,
+                    'posted_date'=>null,
+                    'isposted'=>0,
+                    'terminal_id'=>Auth()->user()->terminal_id,
+                ]);
+                // $openingamount->cashonhand_details()->where('cashonhand_id',$checkifexist->id)->update(
+                //     [
+                //        'denomination_1000' =>'0',
+                //        'denomination_500' =>'0',
+                //        'denomination_200' =>'0',
+                //        'denomination_100' =>'0',
+                //        'denomination_50' =>'0',
+                //        'denomination_20' =>'0',
+                //        'denomination_10' =>'0',
+                //        'denomination_5' =>'0',
+                //        'denomination_1' =>'0',
+                //        'denomination_dot25' =>'0',
+                //        'denomination_dot15' =>'0',
+                //        'denomination_total' => 0,
+                //        'denomination_checks_total_amount' => '0',
+                //        'createdBy' => Auth()->user()->idnumber,
+                //     ]
+                // );
+            }
+            
             DB::connection('sqlsrv_pos')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
        

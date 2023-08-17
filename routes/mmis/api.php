@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MMIS\AuditController;
 use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\DeliveryController;
@@ -56,6 +57,7 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::get('deliveries', 'index');
   Route::post('deliveries', 'store');
   Route::put('deliveries', 'update');
+  Route::get('delivery/{id}', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
 });
 
@@ -69,5 +71,11 @@ Route::controller(StockRequisitionController::class)->group(function () {
   Route::put('stock-requisition-approved/{stock_requisition}', 'receiveTransfer');
   Route::get('stock-requisitions', 'index');
   Route::post('stock-requisition', 'store');
+});
+
+Route::controller(AuditController::class)->group(function () {
+  Route::get('audits', 'index');
+  Route::post('audit', 'store');
+  // Route::post('stock-requisition', 'store');
 });
 

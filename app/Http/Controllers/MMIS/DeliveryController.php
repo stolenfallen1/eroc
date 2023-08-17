@@ -131,6 +131,8 @@ class DeliveryController extends Controller
                     'rr_Detail_Item_TotalDiscount_Amount' => $discount_amount,
                     'rr_Detail_Item_TotalNetAmount' => $total_net,
                     'rr_Detail_Item_Per_Box' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['rr_Detail_Item_Per_Box'] : NULL,
+                    'rr_Detail_Item_Vat_Rate' => $vat_rate,
+                    'rr_Detail_Item_Vat_Amount' => $vat_amount ?? 0,
                 ]);
                 
                 foreach ($detail['batches'] as $key1 => $batch) {
@@ -294,6 +296,21 @@ class DeliveryController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['error' => $e], 200);
         }
+    }
+
+    public function show($id){
+        $delivery = Delivery::with(['purchaseOrder'=>function($q){
+            $q->with(['purchaseRequest'=> function($q1){
+              $q1->with(['purchaseRequestDetails' => function($q2){
+                $q2->with('itemMaster', 'unit', 'purchaseOrderDetails.purchaseOrder');
+              }, 'warehouse', 'itemGroup', 'user', 'category']);
+            }, 'details' => function($q1){
+              $q1->with('canvas.vendor', 'item', 'unit');
+            }]);
+          }, 'items'=>function($q){
+            $q->with('item', 'unit');
+          },'audit'])->findOrfail($id);
+        return response()->json(['delivery' => $delivery]);
     }
 
     public function update(Request $request, $id)

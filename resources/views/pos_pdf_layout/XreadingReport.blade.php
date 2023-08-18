@@ -173,15 +173,6 @@
                 </div>
             </div>
         </div>
-
-
-        <div class="header-section">
-            <div class="company-details">
-                <div class="company-address">
-                    <h4>Daily Summary</h4>
-                </div>
-            </div>
-        </div>
         <br>
         <div class="header-section">
             <div class="company-details">
@@ -214,16 +205,17 @@
                 $total_refund = 0;
                 foreach($items as $item){
                    
-                    if ($item->method == 'Cash') {
-                        $total_cash_sales += (float) $item->totalamount;
-                    }
-                    if ($item->method == 'Credit Card') {
-                        $total_creditcard_sales += (float) $item->totalamount;
-                    }
-                    if ($item->method == 'Debit Card') {
-                        $total_debitcard_sales += (float) $item->totalamount;
-                    }
+                   
                     if ($item->statusdesc == 'POS -  Completed Order Sales') {
+                        if ($item->method == 'Cash') {
+                            $total_cash_sales += (float) $item->totalamount;
+                        }
+                        if ($item->method == 'Credit Card') {
+                            $total_creditcard_sales += (float) $item->totalamount;
+                        }
+                        if ($item->method == 'Debit Card') {
+                            $total_debitcard_sales += (float) $item->totalamount;
+                        }
                         $total_sales +=(float) $item->totalamount;
                         $itemname = $item->itemname;
                         $invoice = $item->invnno;
@@ -481,20 +473,12 @@
                     <div class="text-right">{{number_format($total_sales,2)}}</div>
                 </div> 
             </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Refund</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($total_refund,2)}}</div>
-                </div> 
-            </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
                 <div style="width: 38% !important; display:inline-block;">
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $total_sales) - $total_refund),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $total_sales)),2)}}</div>
                 </div> 
             </div>
         </div>
@@ -518,20 +502,13 @@
                     <div class="text-right">{{number_format($items[0]->closing_amount,2)}}</div>
                 </div> 
             </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Refund</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($total_refund,2)}}</div>
-                </div> 
-            </div>
+          
             <div style="width: 100% !important;display:inline-block;" class="total">
                 <div style="width: 38% !important; display:inline-block;">
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $items[0]->closing_amount) - $total_refund),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $items[0]->closing_amount)),2)}}</div>
                 </div> 
             </div>
         </div>

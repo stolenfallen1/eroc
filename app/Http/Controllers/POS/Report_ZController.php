@@ -26,7 +26,7 @@ class Report_ZController extends Controller
         $terminalid = Request()->payload['terminalid'];
         $shift_id = Request()->payload['shift_id'];
         $cashier_id = Request()->payload['cashier_id'];
-        $closeby = Request()->payload['closeby'];
+        $closeby = Request()->payload['closeby'] ?? '';
         $date = Carbon::parse(Request()->payload['date'])->format('Y-m-d');
         $data['terminalid'] =  $terminalid ;
         $data['shift_id'] = $shift_id;
@@ -154,7 +154,7 @@ class Report_ZController extends Controller
         $terminalid = Auth()->user()->terminal_id;
         $possetting = POSSettings::with('bir_settings')->where('isActive', '1')->first();
         $terminaldetails = Systerminals::where('id',Auth()->user()->terminal_id)->where('isActive', '1')->first();
-        
+       
         $transaction = DB::connection('sqlsrv_pos')->select('EXEC sp_ZReport_Summary ?, ?', [$terminalid,$date]);
         $shift_group = [];
        
@@ -289,6 +289,14 @@ class Report_ZController extends Controller
         // return response()->json($data,200); 
     }
 
+
+    public function generate_z_report(){
+        if(Request()->payload['report_type']) {
+          return $this->Xreading_per_shift();
+        }else{
+            return $this->Zreading_all_shift();
+        }
+    }
     public function print_out_layout($data,$name){
         $filename = Auth()->user()->user_ipaddress.'.pdf';
         $data['possetting'] = POSSettings::with('bir_settings')->where('isActive', '1')->first();

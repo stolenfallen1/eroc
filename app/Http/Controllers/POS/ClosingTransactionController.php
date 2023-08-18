@@ -148,9 +148,10 @@ class ClosingTransactionController extends Controller
                     'postedby' => Auth()->user()->idnumber,
                     'report_date' =>$report_date,
                 ]);
+                $this->Generate_Shift_Sales();
             }
            
-            $this->Generate_Shift_Sales();
+           
             DB::connection('sqlsrv_pos')->commit();
             DB::connection('sqlsrv')->commit();
             

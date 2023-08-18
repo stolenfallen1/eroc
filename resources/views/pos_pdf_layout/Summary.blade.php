@@ -10,16 +10,10 @@
             font-family: arial, sans-serif;
         }
         .header-section {
-            
             font-family: arial, sans-serif;
             display: block;
             width: 100% !important;
             margin-bottom: 2%;
-            font-size: 1.2em !important;
-
-            @if ($print_layout == '2')
-                font-size: 0.5em !important;
-            @endif
         }
 
         .company-details {
@@ -32,10 +26,6 @@
             font-family: arial, sans-serif;
             border-collapse: collapse;
             width: 100%;
-
-            @if ($print_layout == '2')
-                font-size: 0.5em !important;
-            @endif
         }
 
         .content-section {
@@ -93,7 +83,7 @@
         @page {
             margin: 15px !important;
             width: 100%;
-            font-size: 14px !important;
+            font-size: 15px !important;
         }
         .denominationtable{
             font-family: arial, sans-serif;
@@ -110,6 +100,7 @@
             text-align: left;
             padding: 2px;
         }
+        
     </style>
 </head>
 
@@ -149,7 +140,7 @@
                     <div class="text-right">Prepared By</div>
                 </div>
                 <div style="width: 58.5% !important; display:inline-block;">
-                    <div class="">: {{ $cashiername }}</div>
+                    <div class="">: {{$preparedby}}</div>
                 </div>
             </div>
             <div style="width: 29.5% !important;display:inline-block;">
@@ -206,14 +197,12 @@
         </div>
     </div>
     <div class="content-section">
-
         <table class="denominationtable">
             <thead>
                 <tr>
-                    <th width="150">Bancknote / Coin</th>
+                    <th width="150">Denomination </th>
                     <th width="150">Qty</th>
                     <th width="150">Amount</th>
-                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -234,118 +223,114 @@
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_1000,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_1000'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_1000 * $cashonhanddetails['cashonhand_details']['denomination_1000']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_500,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_500'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_500 * $cashonhanddetails['cashonhand_details']['denomination_500']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_200,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_200'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_200 * $cashonhanddetails['cashonhand_details']['denomination_200']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_100,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_100'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_100 * $cashonhanddetails['cashonhand_details']['denomination_100']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_50,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_50'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_50 * $cashonhanddetails['cashonhand_details']['denomination_50']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_20,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_20'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_20 * $cashonhanddetails['cashonhand_details']['denomination_20']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_10,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_10'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_10 * $cashonhanddetails['cashonhand_details']['denomination_10']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_5,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_5'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_5 * $cashonhanddetails['cashonhand_details']['denomination_5']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_1,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_1'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_1 * $cashonhanddetails['cashonhand_details']['denomination_1']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_025,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_dot25'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_025 * $cashonhanddetails['cashonhand_details']['denomination_dot25']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
                     <td class="text-center">&nbsp;&nbsp;&nbsp;&nbsp;{{number_format($amount_001,2)}}</td>
                     <td>{{ $cashonhanddetails ? (int)$cashonhanddetails['cashonhand_details']['denomination_dot15'] : '0'}}</td>
                     <td>{{ $cashonhanddetails ? number_format(($amount_001 * $cashonhanddetails['cashonhand_details']['denomination_dot15']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">TOTAL CASH</td>
+                    <td  class="text-left" colspan="2">TOTAL CASH</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_details']['denomination_total']),2) : '0'}}</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">TOTAL CHECKS</td>
+                    <td  class="text-left" colspan="2">TOTAL CHECKS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_details']['denomination_checks_total_amount']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">TOTAL</td>
+                    <td  class="text-left" colspan="2">TOTAL</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_collection_amount']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">TOTAL COLLECTION FOR THE DAYTAL</td>
+                    <td  class="text-left" colspan="2">TOTAL COLLECTION FOR THE DAY</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_collection_amount']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">LESS: COLLECTED CARD PAYMENTS</td>
+                    <td  class="text-left" colspan="2">LESS: COLLECTED CARD PAYMENTS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_less_collected_card_amount']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">NET COLLECTIONS FOR THE DAY</td>
+                    <td  class="text-left" colspan="2">NET COLLECTIONS FOR THE DAY</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_net_collections_for_the_day']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">ADD: UNCOLLECTED CARD PAYMENTS</td>
+                    <td  class="text-left" colspan="2">ADD: UNCOLLECTED CARD PAYMENTS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_add_uncollected_card_day']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">TOTAL TENDERED PAYMENTS</td>
+                    <td  class="text-left" colspan="2">TOTAL TENDERED PAYMENTS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_tendered_amount']),2) : '0'}}<</td>
-                    <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">TOTAL COLLECTIONS FOR THE DAY</td>
+                    <td  class="text-left" colspan="2">TOTAL COLLECTIONS FOR THE DAY</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_collection_amount']),2) : '0'}}<</td>
+                </tr>
+                <tr>
+                    <td  class="text-left" colspan="2">OVERAGE/ (SHORTAGES)</td>
+                    <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_overage_shortages']),2) : '0'}}<</td>
+                </tr>
+
+                {{-- <tr>
+                    <td  class="text-right" colspan="2"><br></td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td  class="text-right" colspan="2">OVERAGE/ (SHORTAGES)</td>
-                    <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_overage_shortages']),2) : '0'}}<</td>
+                    <td  class="text-right" colspan="2">SENIOR/PWD SALES</td>
                     <td></td>
                 </tr>
+                <tr>
+                    <td  class="text-right" colspan="2">TOTAL VATABLE SALES</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td  class="text-right" colspan="2">TOTAL SALES</td>
+                    <td></td>
+                </tr> --}}
             </tbody>
         </table>
         <br>

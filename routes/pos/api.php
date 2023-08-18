@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\POS\OrdersController;
 use App\Http\Controllers\POS\ReportsController;
@@ -36,8 +37,10 @@ Route::controller(DashboardController::class)->group(function () {
   Route::post('get-expired-items', 'expired');
 });
 
+
 Route::controller(PosTransactionController::class)->group(function () {
-    Route::post('get-all-items', 'index');
+    Route::get('get-all-items', 'index');
+    Route::get('get-all-user', 'getDepartmentUsers');
     Route::get('get-msc-build', 'getMscbuild');
     Route::get('get-card-type/{id}', 'getcard');
     Route::get('check-opening-status', 'openingstatus');
@@ -71,7 +74,7 @@ Route::controller(OrdersController::class)->group(function () {
   Route::post('clear-cart', 'clear_order');
   
   // Route::post('get-default-customer', 'get_orders');
-  Route::post('get-all-orders', 'index');
+  Route::get('get-all-orders', 'index');
   Route::get('get-sales-orders', 'sales_order');
   Route::post('store-pick-list-item', 'picklist');
   Route::get('get-pick-list-item', 'getpicklist');
@@ -115,7 +118,7 @@ Route::controller(CustomerGroupsController::class)->group(function () {
 
 Route::controller(Report_ZController::class)->group(function () {
     Route::post('get-x-report-per-shift', 'Xreading_per_shift');
-    Route::post('get-z-report-all-shift', 'Zreading_all_shift');
+    Route::post('get-z-report-all-shift', 'generate_z_report');
 });
 
 Route::controller(OpenningAmountTransaction::class)->group(function () {
@@ -185,8 +188,10 @@ Route::controller(Report_DailySalesController::class)->group(function () {
 });
 
 Route::controller(ReportsController::class)->group(function () {
+  Route::post('get-accountability-report', 'accountability_report');
   Route::post('get-bank-summary-report', 'BanknoteSummaryReport');
   Route::post('get-itemsummary-details-report', 'itemSummaryDetailReport');
   Route::post('get-cashier-name', 'getcashiername');
+  
 });
 

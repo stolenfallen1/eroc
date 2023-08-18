@@ -19,24 +19,26 @@ class Items
         $this->byCategory();
         $this->searchColumns();
         $this->branch();
+        // $this->warehouse();
         $this->model->where('isactive', '1');
         $this->model->orderby('item_name', 'asc');
-        return $this->model->paginate(20);
+        $per_page = Request()->per_page ?? '1';
+        return $this->model->paginate($per_page);
     }
 
     public function searchColumns()
     {
         
-        if (isset(Request()->payload['keyword'])) {
-            $this->model->where('item_name', 'LIKE', Request()->payload['keyword'].'%');
+        if (isset(Request()->keyword)) {
+            $this->model->where('item_name', 'LIKE',Request()->keyword.'%');
         }
     }
 
     public function byCategory()
     {
-        $category_id = Request()->payload['category'] ?? '';
+        $category_id = Request()->category ?? '';
         if ($category_id != 0) {
-            $this->model->where('item_Category_Id',  Request()->payload['category']);
+            $this->model->where('item_Category_Id',  Request()->category);
         }
     }
 

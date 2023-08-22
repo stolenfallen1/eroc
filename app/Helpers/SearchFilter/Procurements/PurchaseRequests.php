@@ -168,6 +168,14 @@ class PurchaseRequests
   }
 
   private function forDepartmentHead(){
+    $this->model->with(['purchaseRequestDetails'=>function ($q){
+      $q->with('itemMaster')
+      ->where(function($q){
+        $q->where(function($q1){
+          $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null);
+        });
+      });
+    }]);
     if($this->authUser->role->name == 'administrator'){
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);
     }else{

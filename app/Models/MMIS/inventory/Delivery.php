@@ -20,7 +20,7 @@ class Delivery extends Model
 
     protected $guarded = [];
 
-    protected $appends = ['po_number', 'code'];
+    protected $appends = ['po_number', 'code', 'audit_code'];
 
     public function audit(){
         return $this->hasOne(Audit::class, 'delivery_id');
@@ -68,5 +68,9 @@ class Delivery extends Model
 
     public function getCodeAttribute(){
         return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-");
+    }
+
+    public function getAuditCodeAttribute(){
+        return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-"). ' - ' . generateCompleteSequence($this->po_Document_Prefix, $this->po_Document_Number, $this->po_Document_Suffix, "-");
     }
 }

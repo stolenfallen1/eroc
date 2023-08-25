@@ -42,4 +42,5 @@ abstract class Mssql extends Platform
             'disabled' => true,
         ], 'json');
     }
+    
 }

@@ -173,7 +173,7 @@
                 <td class="item-td" >{{ $detail['itemMaster']['id'] }}</td>
                 <td class="item-td" >{{ $detail['itemMaster']['item_name'] }}</td>
                 <td class="item-td" >{{ (int)$detail['item_Branch_Level1_Approved_Qty'] }}</td>
-                <td class="item-td" >{{ $detail['unit']?$detail['unit']['name']?'...' }}</td>
+                <td class="item-td" >{{ $detail['unit']['name']??$detail['unit2']['name'] }}</td>
                 <td class="item-td" ></td>
                 <td class="item-td" ></td>
               </tr>

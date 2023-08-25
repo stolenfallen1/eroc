@@ -52,7 +52,7 @@ Route::get('/print-purchase-order/{id}', function ($id){
 
 Route::get('/print-purchase-request/{id}', function ($id){
     $purchase_request = PurchaseRequest::with(['warehouse', 'administrator', 'category', 'itemGroup', 'branch', 'user', 'purchaseRequestDetails' => function($q){
-        $q->with('itemMaster', 'unit');
+        $q->with('itemMaster', 'unit', 'unit2');
     }])->findOrfail($id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));

@@ -250,7 +250,7 @@ class ItemandServicesController extends Controller
                 'isModelNo_Required' => $request->isModelNo_Required,
                 'isReOrder' => '0',
                 'created_at' => Carbon::now(),
-                'DateCreated' => Carbon::now(),
+                // 'DateCreated' => Carbon::now(),
                 'CreatedBy'=>Auth()->user()->id,
             ]);
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only

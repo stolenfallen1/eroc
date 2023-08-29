@@ -38,7 +38,7 @@ class StockTransferController extends Controller
                 'receiver_warehouse' => $request->warehouse_id,
                 'transfer_by' => $authUser->idnumber, 
                 'delivery_id' => $request->delivery_id, 
-                'pr_id' => $delivery->purchaseOrder->pr_request_id,
+                'pr_id' => $delivery->purchaseOrder->pr_Request_id,
                 'po_id' => $delivery->purchaseOrder->id, 
                 'status' => 1002,
                 'document_number' => $number, 

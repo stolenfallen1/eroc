@@ -73,7 +73,9 @@ class PurchaseRequestController extends Controller
                                 $q1->where('is_submitted', true);
                             });
                         })->orWhereDoesntHave('canvases');
-                    })->where('pr_Branch_Level1_ApprovedBy', '!=', NULL);
+                    })->where(function($q2){
+                        $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
+                    });
                 }
             }])->findOrFail($id);
     }

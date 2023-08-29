@@ -22,6 +22,7 @@ class StockRequisitionController extends Controller
         try {
             $authUser = Auth::user();
             $sequence = SystemSequence::where(['isActive' => true, 'branch_id' => $authUser->branch_id])->where('seq_description', 'like', '%Stock requisitions%')->first();
+            if(!$sequence) return response()->json(['error' => 'No system sequence set.. Please contact I.T department']);
             $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
             $prefix = $sequence->seq_prefix;
             $suffix = $sequence->seq_suffix;

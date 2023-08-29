@@ -20,7 +20,7 @@ class StockRequisitions
   public function searchable()
   {
 
-    $this->model->with('requestedBy', 'requesterWarehouse', 'requesterBranch', 'senderWarehouse', 'senderBranch', 'transferBy', 'category', 'receivedBy');
+    $this->model->with('requestedBy', 'requesterWarehouse', 'requesterBranch', 'senderWarehouse', 'senderBranch', 'transferBy', 'category', 'receivedBy', 'items.item.wareHouseItem');
 
     // $this->byTab();
     $this->byWarehouse();

@@ -20,6 +20,7 @@ class PurchaseRequests
   public function searchable(){
     $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestAttachments', 'user', 'itemGroup');
     $this->byBranch();
+    $this->byDepartment();
     $this->byTab();
     $this->byItemGroup();
     $this->byCategory();
@@ -38,6 +39,15 @@ class PurchaseRequests
       $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
     {
       $this->model->where('branch_Id', $this->authUser->branch_id);
+    }
+    if(Request()->branch){
+      $this->model->where('branch_Id', Request()->branch);
+    }
+  }
+
+  private function byDepartment(){
+    if(Request()->department){
+      $this->model->where('warehouse_Id', Request()->department);
     }
   }
 

@@ -116,8 +116,22 @@ class PurchaseOrders
       }
     }
     if($this->authUser->role->name == 'corporate admin'){
-      $this->model->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)
-        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+      $this->model->where(function($q1){
+        $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
+        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
+        ->whereHas('purchaseRequest', function($q2){
+          $q2->where('invgroup_id', 2);
+        });
+      })->orWhere(function($q1){
+        $q1->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)
+        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
+        ->whereHas('purchaseRequest', function($q2){
+          $q2->where('invgroup_id', '!=', 2);
+        });
+      });
+
+      // $this->model->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)
+      //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
     }
     else if($this->authUser->role->name == 'president'){
       $this->model->where('corp_admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_total_net_amount', '>', 99999);

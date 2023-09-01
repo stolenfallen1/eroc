@@ -15,6 +15,7 @@ class Warehouses extends Model
 
     protected $connection = "sqlsrv";
     protected $table = "warehouses";
+    protected $guarded = [];
 
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'warehouse_Id', 'id');

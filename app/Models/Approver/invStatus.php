@@ -11,6 +11,7 @@ class InvStatus extends Model
 {
     protected $table = 'CDG_CORE.dbo.mscStatus';
     protected $connection = "sqlsrv";
+    protected $guarded = [];
 
     public function purchaseRequests(){
         return $this->hasMany(PurchaseRequest::class, 'pr_Status_Id', 'id');

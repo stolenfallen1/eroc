@@ -18,16 +18,16 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
     {
         $credentials = $request->only('idnumber', 'password');
 
-
-        
         if ($this->guard()->attempt(['idnumber' => $credentials['idnumber'], 'password' => $credentials['password']], $request->has('remember'))) {
             $user = Auth::user();
-            $token = $user->createToken();
-            $user->load('role.permissions', 'roles');
-            return response()->json(['user' => $user, 'access_token' => $token], 200);
+            if($user->isactive == 1){
+                $token = $user->createToken();
+                $user->load('role.permissions', 'roles');
+                return response()->json(['user' => $user, 'access_token' => $token], 200);
+            }
             // return $this->sendLoginResponse($request);
         }
-        return response()->json(["message" => 'Warning: Enter valid email and password before proceeding!'], 200);
+        return response()->json(["message" => 'Warning: Enter valid idnumber and password before proceeding!'], 401);
     }
     
     public function checkTerminal(){

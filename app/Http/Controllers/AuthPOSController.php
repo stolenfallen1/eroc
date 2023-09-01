@@ -53,19 +53,9 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
              200);
             // return $this->sendLoginResponse($request);
         }
-        return response()->json(["message" => 'Warning: Enter valid email and password before proceeding!'], 200);
+        return response()->json(["message" => 'Warning: Enter valid idnumber and password before proceeding!'], 200);
     }
-    // public function refresh(Request $request)
-    // {
-    //     $user = $request->user();
-    //     $user->tokens()->delete();
-    //     $token = $user->createToken();
-    //     return response()->json([
-    //         'access_token' => $token,
-    //         'token_type' => 'Bearer',
-    //         'expires_in' => config('sanctum.expiration')
-    //     ]);
-    // }
+
     public function refreshToken(Request $request)
     {
         $accessToken = auth()->user()->token();

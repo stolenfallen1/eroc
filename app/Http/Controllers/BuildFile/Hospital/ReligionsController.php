@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Http\Controllers\BuildFile\Hospital;
+
+use App\Http\Controllers\Controller;
+use App\Models\BuildFile\Hospital\Religions;
+use Illuminate\Http\Request;
+
+class ReligionsController extends Controller
+{
+    public function index()
+    {
+        try {
+            $data = Religions::query();
+            if(Request()->keyword) {
+                $data->where('religion', 'LIKE', '%'.Request()->keyword.'%');
+            }
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+    public function store(Request $request)
+    {
+        try {
+            $check_if_exist = Religions::select('religion')
+                        ->where('religion', $request->payload['religion'])
+                        ->first();
+            if(!$check_if_exist) {
+                $data['data'] = Religions::create([
+                    'religion' => $request->payload['religion'],
+                    'isactive' => $request->payload['isactive'],
+                ]);
+                $data['msg'] = 'Success';
+                return Response()->json($data, 200);
+            }
+            $data['msg'] = 'Already Exists!';
+            return Response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $data['data'] = Religions::where('id', $id)->update([
+                            'religion' => $request->payload['religion'],
+                            'isactive' => $request->payload['isactive'],
+                         ]);
+
+            $data['msg'] = 'Success';
+            return Response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+    public function destroy($id)
+    {
+        try {
+            $data['data'] = Religions::where('id', $id)->delete();
+            $data['msg'] = 'Success';
+            return Response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+}

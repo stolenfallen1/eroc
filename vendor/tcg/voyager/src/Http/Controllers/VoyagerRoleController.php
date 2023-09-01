@@ -36,6 +36,7 @@ class VoyagerRoleController extends VoyagerBaseController
     // POST BRE(A)D
     public function store(Request $request)
     {
+       
         $slug = $this->getSlug($request);
 
         $dataType = Voyager::model('DataType')->where('slug', '=', $slug)->first();

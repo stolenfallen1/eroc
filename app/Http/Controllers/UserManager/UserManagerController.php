@@ -34,7 +34,7 @@ class UserManagerController extends \TCG\Voyager\Http\Controllers\Controller
     //      Browse our Data Type (B)READ
     //
     //****************************************
-
+    
     public function index(Request $request)
     {
         // echo print_r(json_encode(menu('admin', '_json')));

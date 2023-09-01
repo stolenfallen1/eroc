@@ -11,4 +11,5 @@ class Therapeuticclass extends Model
     
     protected $connection = "sqlsrv";
     protected $table = 'mscTherapeuticclass';
+    protected $guarded = [];
 }

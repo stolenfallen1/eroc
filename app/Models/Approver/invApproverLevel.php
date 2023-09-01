@@ -8,5 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class InvApproverLevel extends Model
 {
     use HasFactory;
+    protected $connection = 'sqlsrv';
     protected $table = 'invApproverLevel';
+    protected $guarded = [];
 }

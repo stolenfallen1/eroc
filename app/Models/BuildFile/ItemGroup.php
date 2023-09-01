@@ -12,6 +12,7 @@ class ItemGroup extends Model
 
     protected $connection = "sqlsrv";
     protected $table = "CDG_CORE.dbo.invItemInventoryGroup";
+    protected $guarded = [];
 
     public function categories(){
         return $this->hasMany(Itemcategories::class, 'invgroup_id', 'id');

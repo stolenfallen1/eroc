@@ -3,6 +3,7 @@
 namespace App\Models\BuildFile;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Itemcategories;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -13,6 +14,7 @@ class Itemsubcategories extends Model
     protected $connection = "sqlsrv";
     protected $table = "CDG_CORE.dbo.invItemSubCategories";
     protected $with = ['children'];
+    protected $guarded = [];
 
     public function purchaseRequest(){
         return $this->hasMany(PurchaseRequest::class, 'item_SubCategory_Id', 'id');
@@ -25,4 +27,12 @@ class Itemsubcategories extends Model
     public function children(){
         return $this->hasMany(Itemsubcategories::class, 'parent_id', 'id');
     }
+
+    public function categories(){
+        return $this->belongsTo(Itemcategories::class, 'category_id', 'id');
+    }
+     public function update_node(){
+        return $this->node_level = $this->id;
+    }
+
 }

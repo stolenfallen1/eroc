@@ -5,13 +5,17 @@ namespace App\Models;
 use PDO;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Approver\InvApprover;
+use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Warehouses;
-use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Notifications\Notifiable;
-use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Models\BuildFile\Systemuseraccess;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use TCG\Voyager\Models\Role;
 
 class User extends \TCG\Voyager\Models\User
 {
@@ -24,12 +28,26 @@ class User extends \TCG\Voyager\Models\User
      *
      * @var array<int, string>
      */
-    protected $fillable = [
+   
+    // protected $guarded = [];
+     protected $fillable = [
         'name',
         'email',
         'password',
         'warehouse_id',
         'branch_id',
+        'role_id',
+        'firstname',
+        'lastname',
+        'middlename',
+        'birthdate',
+        'mobileno',
+        'idnumber',
+        'passcode',
+        'createdby',
+        'updatedby',
+        'isonline',
+        'isactive'
     ];
 
     /**
@@ -51,7 +69,7 @@ class User extends \TCG\Voyager\Models\User
         'email_verified_at' => 'datetime',
     ];
 
-    protected $with = ['warehouse','approvaldetail'];
+    protected $with = ['warehouse','approvaldetail','branch'];
 
     public function warehouse()
     {
@@ -73,16 +91,35 @@ class User extends \TCG\Voyager\Models\User
         return $this->hasMany(purchaseOrderMaster::class, 'po_Document_userid', 'idnumber');
     }
 
+
+    public function systemUserAccess()
+    {
+        return $this->hasMany(Systemuseraccess::class, 'user_id', 'id');
+    }
+
+     public function branch()
+    {
+        return $this->belongsTo(Branchs::class, 'branch_id', 'id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'id');
+    }
     public function createToken()
     {
         $token = sha1(time());
         $this->api_token = $token;
+        $this->datelogin = Carbon::now();
+        $this->isonline = 1;
         $this->save();
         return $token;
     }
     public function revokeToken()
     {
         $this->api_token = null;
+        $this->isonline = null;
+        $this->datelogout = Carbon::now();
         $this->save();
     }
 }

@@ -2,9 +2,11 @@
 
 namespace TCG\Voyager\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use TCG\Voyager\Facades\Voyager;
+use TCG\Voyager\Models\DataType;
 use App\Models\Database\Database;
+use Illuminate\Database\Eloquent\Model;
+
 class Permission extends Model
 {
     protected $connection = 'sqlsrv';
@@ -13,7 +15,14 @@ class Permission extends Model
     {
         return $this->belongsToMany(Voyager::modelClass('Role'));
     }
-
+    public function database_driver()
+    {
+        return $this->belongsTo(Database::class,'driver','driver');
+    }
+    public function tablename()
+    {
+        return $this->belongsTo(DataType::class,'table_name','name');
+    }
     
     public static function generateFor($table_name,$table_driver=null)
     {
@@ -26,7 +35,8 @@ class Permission extends Model
         self::firstOrCreate(['key' => 'post_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver]);
         self::firstOrCreate(['key' => 'approved_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver]);
     }
-    
+     
+   
     public static function removeFrom($table_name)
     {
         self::where(['table_name' => $table_name])->delete();

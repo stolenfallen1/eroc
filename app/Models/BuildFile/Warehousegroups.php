@@ -11,6 +11,7 @@ class Warehousegroups extends Model
 
     protected $connection = "sqlsrv";
     protected $table = "warehousegroups";
+    protected $guarded = [];
 
     public function warehouses(){
         return $this->hasMany(Warehouses::class, 'warehouse_Group_Id', 'id');

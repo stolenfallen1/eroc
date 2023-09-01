@@ -93,7 +93,8 @@ class Orderlist
         if(Auth::user()->role->name == 'Pharmacist Assistant'){
             $this->model->where('terminal_id',$user_terminal->id);
         }else if(Auth::user()->role->name == 'Pharmacist Cashier'){ 
-            $this->model->where('take_order_terminal_id',Auth()->user()->terminal_id);
+            $this->model->where('terminal_id',Auth()->user()->terminal_id);
+            // $this->model->where('take_order_terminal_id',Auth()->user()->terminal_id);
         }
     }
     

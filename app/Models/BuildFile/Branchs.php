@@ -12,6 +12,7 @@ class Branchs extends Model
     use HasFactory;
     protected $connection = "sqlsrv";
     protected $table = 'branch';
+    protected $guarded = [];
 
     public function warehouses(){
         return $this->hasMany(Branches::class, 'warehouse_Branch_Id', 'id');

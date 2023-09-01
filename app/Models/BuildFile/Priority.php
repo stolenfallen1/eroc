@@ -13,6 +13,8 @@ class Priority extends Model
 
     protected $connection = "sqlsrv";
     protected $table = "mscPriority";
+    protected $guarded = [];
+
 
     public function purchaseRequests(){
         return $this->hasMany(PurchaseRequest::class, 'pr_Priority_Id', 'id');

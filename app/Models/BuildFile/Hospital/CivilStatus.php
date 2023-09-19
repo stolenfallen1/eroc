@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CivilStatus extends Model
 {
     use HasFactory;
-    protected $table = 'mscCivilStatuses';
+    protected $table = 'mscCivilStatus_mapping';
     protected $connection = "sqlsrv";
     protected $guarded = [];
 }

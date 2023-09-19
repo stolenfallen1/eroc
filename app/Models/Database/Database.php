@@ -12,6 +12,7 @@ class Database extends Model
     protected $connection = 'sqlsrv';
     protected $table = 'databases';
 
+    protected $guarded = [];
     public function permissions()
     {
         return $this->hasMany(Permission::class,'driver','driver');

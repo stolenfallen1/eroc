@@ -9,6 +9,7 @@ use App\Models\BuildFile\FMS\AccountType;
 
 class AccountTypeController extends Controller
 {
+ 
     public function index()
     {
         $data = AccountType::query();

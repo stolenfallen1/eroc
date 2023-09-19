@@ -8,6 +8,15 @@ use App\Models\BuildFile\PriceScheme;
 
 class mscPriceController extends Controller
 {
+     public function list()
+    {
+        try {
+            $data = PriceScheme::get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
     public function index()
     {
         try {

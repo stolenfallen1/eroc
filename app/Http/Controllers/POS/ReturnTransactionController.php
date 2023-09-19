@@ -23,7 +23,9 @@ use App\Helpers\PosSearchFilter\Terminal;
 use App\Models\POS\vwPaymentReceiptItems;
 use App\Helpers\PosSearchFilter\Orderlist;
 use App\Helpers\PosSearchFilter\ReturnList;
+use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\POS\ReturnDetailsTransaction;
+use App\Models\MMIS\inventory\InventoryTransaction;
 
 class ReturnTransactionController extends Controller
 {
@@ -214,6 +216,10 @@ class ReturnTransactionController extends Controller
                         'isReturned'=>'1',
                         'createdBy'=>Auth()->user()->idnumber,
                     ]);
+
+                    
+                 
+
                 }
                 if(Request()->return_order_details['refund_amount'] > 0){
                     $order_vatable_sales_amount = 0;
@@ -372,7 +378,11 @@ class ReturnTransactionController extends Controller
         }
         
     }
+
     public function submitexcesspayment(Request $request){
+
+
+       
         DB::connection('sqlsrv_pos')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
@@ -391,14 +401,27 @@ class ReturnTransactionController extends Controller
                 }
     
                 $payment->update([
-                    'sales_invoice_number'=>$generat_or_series,
-                    'payment_transaction_number'=>$generate_trans_series,
-                    'payment_received_amount'=>(float)Request()->return_payment_details['cashtendered']  ?? '0',
-                    'payment_changed_amount'=>(float)Request()->return_payment_details['changed'] ?? '0',
-                    'createdBy'=>Auth()->user()->idnumber,
-                    'user_id'=>Auth()->user()->idnumber,
-                    'shift_id'=>Auth()->user()->shift,
+                    'sales_invoice_number' => $generat_or_series,
+                    'payment_transaction_number' => $generate_trans_series,
+                    'payment_received_amount' => (float)Request()->return_payment['amounttendered']  ?? '0',
+                    'payment_changed_amount' => (float)Request()->return_payment['change'] ?? '0',
+                    'payment_method_id' => (float)Request()->return_payment['paymenttype'] ?? '0',
+                    'createdBy' => Auth()->user()->idnumber,
+                    'user_id' => Auth()->user()->idnumber,
+                    'shift_id' => Auth()->user()->shift,
                 ]);
+
+                // $payment->update([
+                //     'sales_invoice_number'=>$generat_or_series,
+                //     'payment_transaction_number'=>$generate_trans_series,
+                //     'payment_received_amount'=>(float)Request()->return_payment_details['cashtendered']  ?? '0',
+                //     'payment_changed_amount'=>(float)Request()->return_payment_details['changed'] ?? '0',
+                //     'createdBy'=>Auth()->user()->idnumber,
+                //     'user_id'=>Auth()->user()->idnumber,
+                //     'shift_id'=>Auth()->user()->shift,
+                // ]);
+                $transaction = FmsTransactionCode::where('transaction_code', 'RMS')->where('isActive', 1)->first();
+
                 $return_items = ReturnDetailsTransaction::where('refund_id',Request()->return_payment_details['refund_id'])->get();
                 foreach($return_items as $row){
                     // return order 
@@ -414,6 +437,25 @@ class ReturnTransactionController extends Controller
                             'item_Qty_Used'=>  (int)$return_batch->item_Qty_Used - (int)$row['returned_order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
+
+                        
+                        InventoryTransaction::create([
+                            'branch_Id' => $return_warehouseitem->branch_id,
+                            'warehouse_Group_Id' => 2,
+                            'warehouse_Id' => $return_warehouseitem->warehouse_Id,
+                            'transaction_Item_Id' =>  $row['returned_order_item_id'],
+                            'transaction_Date' => Carbon::now(),
+                            'transaction_ORNumber' => $generat_or_series,
+                            'trasanction_Reference_Number' => $generate_trans_series,
+                            'transaction_Item_UnitofMeasurement_Id' => $return_batch->item_UnitofMeasurement_Id,
+                            'transaction_Qty' => $row['returned_order_item_qty'],
+                            'transaction_Item_OnHand' => $return_warehouseitem->item_OnHand + $row['returned_order_item_qty'],
+                            'transaction_Item_ListCost' => $row['returned_order_item_total_amount'],
+                            'transaction_UserID' =>  Auth()->user()->idnumber,
+                            'createdBy' => Auth()->user()->idnumber,
+                            'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        ]);
+
                     }
                     DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id',(int)$row['returned_order_item_id'])->update([
                         'item_OnHand'=> (int)$return_warehouseitem->item_OnHand + (int)$row['returned_order_item_qty']
@@ -433,6 +475,25 @@ class ReturnTransactionController extends Controller
                             'item_Qty_Used'=>  (int)$order_batch->item_Qty_Used + (int)$row['order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
+
+                        
+                        InventoryTransaction::create([
+                           'branch_Id' => $order_warehouseitem->branch_id,
+                           'warehouse_Group_Id' => 2,
+                           'warehouse_Id' => $order_warehouseitem->warehouse_Id,
+                           'transaction_Item_Id' =>  $row['order_item_id'],
+                           'transaction_Date' => Carbon::now(),
+                           'transaction_ORNumber' => $generat_or_series,
+                           'trasanction_Reference_Number' => $generate_trans_series,
+                           'transaction_Item_UnitofMeasurement_Id' => $return_batch->item_UnitofMeasurement_Id,
+                           'transaction_Qty' => $row['order_item_qty'],
+                           'transaction_Item_OnHand' => $order_warehouseitem->item_OnHand - $row['order_item_qty'],
+                           'transaction_Item_ListCost' => $row['order_item_total_amount'],
+                           'transaction_UserID' =>  Auth()->user()->idnumber,
+                           'createdBy' => Auth()->user()->idnumber,
+                           'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                       ]);
+
                     }
                     DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id',(int)$row['order_item_id'])->update([
                         'item_OnHand'=> (int)$order_warehouseitem->item_OnHand - (int)$row['order_item_qty']

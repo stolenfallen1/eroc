@@ -36,14 +36,18 @@ class Report_ItemizedController extends Controller
             $data['userid'] = $cashierid;
             $data['printdate'] = Carbon::now()->format('m/d/Y');
             $data['printtime'] = Carbon::now()->format('h:i A');
-           
-            $datatable = DB::connection('sqlsrv_pos')->select('EXEC spItemizedSalesReport ?, ?, ?, ?', [$terminalid, $cashierid, $shift, $date]);
+            if($shift == 0){
+                $datatable = DB::connection('sqlsrv_pos')->select('EXEC spItemizedSalesReport_per_user  ?, ?, ?', [$terminalid, $cashierid, $date]);
+            }else{
+                $datatable = DB::connection('sqlsrv_pos')->select('EXEC spItemizedSalesReport ?, ?, ?, ?', [$terminalid, $cashierid, $shift, $date]);
+            }
             $data['data'] = [];
-            $data['transdate'] =  Carbon::now()->format('M d, Y');
+           
             if($datatable){
                 $data['data'] = $datatable;
-                $data['transdate'] =Carbon::parse($datatable[0]->transdate)->format('M d, Y') ?? Carbon::parse($datatable[0]->transdate)->format('M d, Y');
+                // $data['transdate'] =Carbon::parse($datatable[0]->transdate)->format('M d, Y') ?? Carbon::parse($datatable[0]->transdate)->format('M d, Y');
             }
+            $data['transdate'] =  Carbon::parse($date)->format('M d, Y');
             return $this->print_out_layout($data,$papersize,'ItemizedReport_v1');
             return response()->json($data,200);
         }

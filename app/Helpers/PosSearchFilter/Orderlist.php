@@ -21,43 +21,60 @@ class Orderlist
         $this->model->with('customers','order_items','order_items.ItemBatch','payment','order_items.vwItem_details')->orderBy('id', 'desc');
         $this->searchOrderStatus();
         $this->searchTerminal();
+        $this->searchColumns();
         $this->dateTransaction();
-        $per_page = Request()->page ?? '1';
-        return $this->model->paginate(12);
+        $per_page = Request()->per_page ?? '1';
+        return $this->model->paginate($per_page);
     }
 
+    public function sales_order_searchable()
+    {
+        $this->model->with('customers','order_items','order_items.ItemBatch','payment')->orderBy('id', 'desc');
+        $this->searchTerminal();
+        $this->haspaymentonly();
+        $this->salesorder_searchColumns();
+        $per_page = Request()->per_page ?? '1';
+        return $this->model->where('order_status_id',9)->paginate($per_page);
+    }
+    public function salesorder_searchColumns()
+    {
+        $this->model->where('pick_list_number', 'LIKE', "" . Request()->keyword . "%")->orWhereHas('payment', function($payment){
+            return $payment->where('sales_invoice_number', 'LIKE', "" . Request()->keyword . "%");
+        });
+    }
     public function returnordersearchable()
     {
         $this->model->with('customers','order_items','order_items.ItemBatch','payment','order_items.vwItem_details')->orderBy('id', 'desc');
         $this->searchColumns();
         $this->searchTerminal();
         $this->dateTransaction();
-        $this->returnhaspaymentonly();
+        $this->haspaymentonly();
         $per_page = Request()->page ?? '1';
         return $this->model->paginate(12);
     }
-    public function returnhaspaymentonly(){
+
+    public function haspaymentonly(){
         $this->model->has('payment');
     }
 
     public function searchColumns()
     {
         $digit = 10;
-        $lenght = strlen(Request()->payload['keyword']);
+        $lenght = strlen(Request()->keyword);
         $zero = $digit - $lenght;
-        $ordernumber = str_pad(0, $zero, "0", STR_PAD_LEFT).''.(int)Request()->payload['keyword'];
+        $ordernumber = str_pad(0, $zero, "0", STR_PAD_LEFT).''.(int)Request()->keyword;
         
-        if(isset(Request()->payload['type'])){
-            $this->model->where('order_status_id',Request()->payload['type']);
+        if(Request()->type){
+            $this->model->where('order_status_id',Request()->type);
         }
-        if(Request()->payload['keyword']){
+        if(Request()->keyword){
             $this->model->where('pick_list_number', 'LIKE', '%'.$ordernumber.'%');
         }
     }
     public function searchOrderStatus()
     {
-        if(isset(Request()->payload['type'])){
-            $this->model->where('order_status_id',Request()->payload['type']);
+        if(Request()->type){
+            $this->model->where('order_status_id',Request()->type);
         }
     }
     
@@ -76,7 +93,8 @@ class Orderlist
         if(Auth::user()->role->name == 'Pharmacist Assistant'){
             $this->model->where('terminal_id',$user_terminal->id);
         }else if(Auth::user()->role->name == 'Pharmacist Cashier'){ 
-            $this->model->where('take_order_terminal_id',Auth()->user()->terminal_id);
+            $this->model->where('terminal_id',Auth()->user()->terminal_id);
+            // $this->model->where('take_order_terminal_id',Auth()->user()->terminal_id);
         }
     }
     

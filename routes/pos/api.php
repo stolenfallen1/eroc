@@ -1,42 +1,51 @@
 <?php
 
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\POS\OrdersController;
 use App\Http\Controllers\POS\ReportsController;
 use App\Http\Controllers\POS\PaymentTransaction;
+use App\Http\Controllers\POS\Report_ZController;
 use App\Http\Controllers\POS\CustomersController;
+use App\Http\Controllers\POS\DashboardController;
 use App\Http\Controllers\POS\BIRSettingsController;
+use App\Http\Controllers\POS\ExpiredItemsController;
 use App\Http\Controllers\POS\CustomerOrderController;
 use App\Http\Controllers\POS\CustomerGroupsController;
 use App\Http\Controllers\POS\PosTransactionController;
+use App\Http\Controllers\POS\Report_SummaryController;
 use App\Http\Controllers\POS\SeriesSettingsController;
 use App\Http\Controllers\POS\CompanySettingsController;
-use App\Http\Controllers\POS\Report_ItemizedController;
 use App\Http\Controllers\POS\OpenningAmountTransaction;
-use App\Http\Controllers\POS\TerminalSettingsController;
-use App\Http\Controllers\POS\ReturnTransactionController;
-use App\Http\Controllers\POS\Report_SalesBatchController;
-use App\Http\Controllers\POS\Report_SummaryController;
-use App\Http\Controllers\POS\Report_DailySalesController;
+use App\Http\Controllers\POS\Report_ItemizedController;
 
+use App\Http\Controllers\POS\TerminalSettingsController;
+use App\Http\Controllers\POS\Report_DailySalesController;
+use App\Http\Controllers\POS\Report_SalesBatchController;
+use App\Http\Controllers\POS\ReturnTransactionController;
 use App\Http\Controllers\POS\TakeOrderTerminalController;
 use App\Http\Controllers\POS\ClosingTransactionController;
-use App\Http\Controllers\POS\DashboardController;
-use App\Http\Controllers\POS\Report_ZController;
 
 // get all items 
 
+
+Route::controller(ExpiredItemsController::class)->group(function () {
+  Route::get('get-expired-items', 'index');
+});
 Route::controller(DashboardController::class)->group(function () {
   Route::post('generate-dashboard', 'index');
+  Route::post('get-expired-items', 'expired');
 });
+
+
 Route::controller(PosTransactionController::class)->group(function () {
-    Route::post('get-all-items', 'index');
+    Route::get('get-all-items', 'index');
+    Route::get('get-all-user', 'getDepartmentUsers');
     Route::get('get-msc-build', 'getMscbuild');
     Route::get('get-card-type/{id}', 'getcard');
     Route::get('check-opening-status', 'openingstatus');
     Route::post('get-item-batchno', 'getbatchno');
     Route::post('get-refund-type', 'getrefundtype');
-    
 });
 
 Route::controller(PaymentTransaction::class)->group(function () {
@@ -46,7 +55,6 @@ Route::controller(PaymentTransaction::class)->group(function () {
   Route::put('update-orders/{id}', 'update');
   Route::post('reprint-receipt', 'reprintreceipt');
   Route::post('print-refund-receipt','printRefund');
-  
 });
 
 Route::controller(CustomerOrderController::class)->group(function () {
@@ -65,9 +73,9 @@ Route::controller(OrdersController::class)->group(function () {
   Route::post('remove-item', 'remove_item');
   Route::post('clear-cart', 'clear_order');
   
-
   // Route::post('get-default-customer', 'get_orders');
-  Route::post('get-all-orders', 'index');
+  Route::get('get-all-orders', 'index');
+  Route::get('get-sales-orders', 'sales_order');
   Route::post('store-pick-list-item', 'picklist');
   Route::get('get-pick-list-item', 'getpicklist');
 
@@ -110,7 +118,7 @@ Route::controller(CustomerGroupsController::class)->group(function () {
 
 Route::controller(Report_ZController::class)->group(function () {
     Route::post('get-x-report-per-shift', 'Xreading_per_shift');
-    Route::post('get-z-report-all-shift', 'Zreading_all_shift');
+    Route::post('get-z-report-all-shift', 'generate_z_report');
 });
 
 Route::controller(OpenningAmountTransaction::class)->group(function () {
@@ -180,8 +188,10 @@ Route::controller(Report_DailySalesController::class)->group(function () {
 });
 
 Route::controller(ReportsController::class)->group(function () {
+  Route::post('get-accountability-report', 'accountability_report');
   Route::post('get-bank-summary-report', 'BanknoteSummaryReport');
   Route::post('get-itemsummary-details-report', 'itemSummaryDetailReport');
   Route::post('get-cashier-name', 'getcashiername');
+  
 });
 

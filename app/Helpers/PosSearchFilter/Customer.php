@@ -18,18 +18,27 @@ class Customer
     {
         $this->searchColumns();
         $this->model->where('isActive', '1')->orderBy('id', 'desc');
-        return $this->model->paginate(5);
+        $per_page = Request()->per_page ?? '1';
+        return $this->model->paginate($per_page);
     }
 
     public function searchColumns()
     {
-        if (Request()->keyword) {
-            if(isset(Request()->keyword['keywordlastname'])){
-                return  $this->model->where('customer_last_name', 'LIKE','%'.Request()->keyword['keywordlastname'].'%');
+        $customer_name = Request()->keyword ?? '';
+        $names = explode(',', $customer_name); // Split the keyword into firstname and lastname 
+        $lastname = $names[0];
+        $firstname = $names[1]  ?? '';
+
+        if ($customer_name) {
+            if($lastname){
+                $this->model->where('customer_last_name', 'LIKE',''.$lastname.'%');
             }
-            if(isset(Request()->keyword['keywordfirstname'])){
-               return $this->model->where('customer_first_name', 'LIKE','%'.Request()->keyword['keywordfirstname'].'%');
+            if($firstname){
+                $this->model->where('customer_first_name', 'LIKE',''.$firstname.'%');
             }
+            // if(isset(Request()->keyword['keywordlastname'])){
+            //    return $this->model->where('customer_first_name', 'LIKE','%'.Request()->keyword['keywordfirstname'].'%');
+            // }
         }
        
     }

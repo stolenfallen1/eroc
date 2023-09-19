@@ -48,15 +48,21 @@ class ClosingTransactionController extends Controller
             $terminal = (new Terminal)->terminal_details();
             $sales_batch = (new SeriesNo())->get_sequence('SBN',$terminal->terminal_code);
             $sales_sequenceno = (new SeriesNo())->generate_series($sales_batch->seq_no, $sales_batch->digit);
-          
-           
+            $shift = DB::connection('sqlsrv')->table('mscShiftSchedules')->where('shifts_code',Auth()->user()->shift)->first();
+            $report_date = Carbon::now()->format('Y-m-d');
+            if(Auth()->user()->shift == '106N'){
+                $report_date = Carbon::now()->subDay()->format('Y-m-d');
+            }
+
             if($type == 'posting'){
                 $id = Request()->payload['registryid'] ?? '';
-                $closingtransaction = OpenningAmount::where('id',$id)->whereDate('cashonhand_beginning_transaction','=',Carbon::now()->format('Y-m-d'))->whereNull('sales_batch_number')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->first();
+                $closingtransaction = OpenningAmount::where('id',$id)->first();
                 $cashonhand['isposted'] = '1';
                 $cashonhand['sales_batch_number'] = $sales_sequenceno;
                 $cashonhand['sales_batch_transaction_date'] = Carbon::now();
                 $cashonhand['postedby'] = Auth()->user()->idnumber;
+                $cashonhand['report_date'] = $report_date;
+                $cashonhand['updatedBy'] =Auth()->user()->idnumber;
                 $cashonhand['posted_date'] = Carbon::now();
             }else{
                 $closingtransaction = OpenningAmount::whereDate('cashonhand_beginning_transaction','=',Carbon::now()->format('Y-m-d'))->whereNull('sales_batch_number')->where('shift_code',Auth()->user()->shift)->where('user_id',Auth()->user()->idnumber)->first();
@@ -79,8 +85,7 @@ class ClosingTransactionController extends Controller
           
             $cashonhand['terminal_id'] =(new Terminal)->terminal_details()->id;
             $cashonhand['cashonhand_closing_transaction'] = Carbon::now();
-            $cashonhand['report_date'] =Carbon::now()->format('Y-m-d');
-            $cashonhand['updatedBy'] =Auth()->user()->idnumber;
+        
             $closingtransaction->update($cashonhand);
             $closingdetails = [];
             $totalamount = 0;
@@ -131,7 +136,7 @@ class ClosingTransactionController extends Controller
                     'recent_generated'=>$sales_sequenceno,
                 ]);
 
-                $shift = DB::connection('sqlsrv')->table('mscShiftSchedules')->where('shifts_code',Auth()->user()->shift)->first();
+                
                 $from = Carbon::now()->format('Y-m-d').' '.$shift->beginning_military_hour.':00:00';
                 $to = Carbon::now()->format('Y-m-d').' '.$shift->end_military_hour.':59:59';
 
@@ -141,11 +146,12 @@ class ClosingTransactionController extends Controller
                     'sales_batch_transaction_date' => Carbon::now(),
                     'sales_batch_transaction_date' => Carbon::now(),
                     'postedby' => Auth()->user()->idnumber,
-                    'report_date' => Carbon::now()->format('Y-m-d'),
+                    'report_date' =>$report_date,
                 ]);
+                $this->Generate_Shift_Sales();
             }
            
-            $this->Generate_Shift_Sales();
+           
             DB::connection('sqlsrv_pos')->commit();
             DB::connection('sqlsrv')->commit();
             

@@ -279,7 +279,7 @@
                     <div class="text-left">Cash</div>
                 </div>
                 <div style="width: 40% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_discount,2)}}</div>
+                    <div class="text-right">{{number_format($summary_refund,2)}}</div>
                 </div>
             </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
@@ -287,7 +287,7 @@
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_discount,2)}}</div>
+                    <div class="text-right">{{number_format($summary_refund,2)}}</div>
                 </div>
             </div>
         </div>
@@ -298,7 +298,7 @@
         <div class="dflex" style="width: 100% !important;">
             <div style="width: 100% !important;display:inline-block;">
                 <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Opening Cash</div>
+                    <div class="text-left">Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
                     <div class="text-right">{{number_format($summary_total_opening,2)}}</div>
@@ -328,7 +328,7 @@
         <div class="dflex" style="width: 100% !important;">
             <div style="width: 100% !important;display:inline-block;">
                 <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Opening Cash</div>
+                    <div class="text-left">Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
                     <div class="text-right">{{number_format($summary_total_opening,2)}}</div>
@@ -347,7 +347,7 @@
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format(($summary_sales + $summary_total_closing),2)}}</div>
+                    <div class="text-right"> {{number_format(($summary_total_opening + $summary_total_closing),2)}}</div>
                 </div> 
             </div>
         </div>
@@ -360,7 +360,7 @@
                     <div class="text-left">Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format(($summary_sales + $summary_total_opening) - ($summary_total_closing + $summary_sales) ,2)}}</div>
+                    <div class="text-right">{{number_format(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) ,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
@@ -369,16 +369,16 @@
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
                     <div class="text-right">
-                        @if(($summary_sales + $summary_total_opening) - ($summary_total_closing + $summary_sales) < 0)
+                        @if(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) < 0)
                             <span>Over ==></span>
                         @endif 
-                        @if(($summary_sales + $summary_total_opening) - ($summary_total_closing + $summary_sales) > 0)
+                        @if(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) > 0)
                             <span>Short ==></span>
                         @endif
-                        @if(($summary_sales + $summary_total_opening) - ($summary_total_closing + $summary_sales) == 0)
+                        @if(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) == 0)
                             
                         @endif
-                        {{number_format(($summary_sales + $summary_total_opening) - ($summary_total_closing + $summary_sales) ,2)}}
+                        {{number_format(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) ,2)}}
                     </div>
                 </div> 
             </div>
@@ -429,8 +429,13 @@
                 </div>
             </div>
         </div>
+        @php 
+            $count =0;
+        @endphp
         @foreach ($data as $shift => $items)
+        
             @php 
+                $count++;
                 $total_sales =0;
                 $sales_invoice_group = [];
                 $return_invoice_group = [];
@@ -453,16 +458,17 @@
                 $total_refund = 0;
                 foreach($items as $item){
                    
-                    if ($item->method == 'Cash') {
-                        $total_cash_sales += (float) $item->totalamount;
-                    }
-                    if ($item->method == 'Credit Card') {
-                        $total_creditcard_sales += (float) $item->totalamount;
-                    }
-                    if ($item->method == 'Debit Card') {
-                        $total_debitcard_sales += (float) $item->totalamount;
-                    }
+                   
                     if ($item->statusdesc == 'POS -  Completed Order Sales') {
+                        if ($item->method == 'Cash') {
+                            $total_cash_sales += (float) $item->totalamount;
+                        }
+                        if ($item->method == 'Credit Card') {
+                            $total_creditcard_sales += (float) $item->totalamount;
+                        }
+                        if ($item->method == 'Debit Card') {
+                            $total_debitcard_sales += (float) $item->totalamount;
+                        }
                         $total_sales +=(float) $item->totalamount;
                         $itemname = $item->itemname;
                         $invoice = $item->invnno;
@@ -513,6 +519,8 @@
                 $count_credit_transaction = 0;
                 $count_debit_transaction = 0;
                 $count_total_transaction = 0;
+                $sales_count = 0;
+
                 foreach ($sales_invoice_group as $key => $invoices) {
                     if($invoices[0]->method == 'Cash'){
                         $count_cash_transaction++;
@@ -565,7 +573,7 @@
                     <div class="text-left">Cashier</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{$items[0]->cashier_name}}</div>
+                    <div class="text-right"> {{$items[$count]->cashier_name}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -573,7 +581,7 @@
                     <div class="text-left">Opening Cash</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[0]->opening_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[$count]->opening_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -581,7 +589,7 @@
                     <div class="text-left">Closing Cash</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format($items[0]->closing_amount,2)}}</div>
+                    <div class="text-right"> {{number_format($items[$count]->closing_amount,2)}}</div>
                 </div> 
             </div>
         </div>
@@ -709,7 +717,7 @@
                     <div class="text-left">Opening Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[0]->opening_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[$count]->opening_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -720,20 +728,13 @@
                     <div class="text-right">{{number_format($total_sales,2)}}</div>
                 </div> 
             </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Refund</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($total_refund,2)}}</div>
-                </div> 
-            </div>
+           
             <div style="width: 100% !important;display:inline-block;" class="total">
                 <div style="width: 38% !important; display:inline-block;">
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $total_sales) - $total_refund),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[$count]->opening_amount + $total_sales)),2)}}</div>
                 </div> 
             </div>
         </div>
@@ -746,7 +747,7 @@
                     <div class="text-left">Opening Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[0]->opening_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[$count]->opening_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -754,15 +755,7 @@
                     <div class="text-left">Total Sales</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($total_sales,2)}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Refund</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($total_refund,2)}}</div>
+                    <div class="text-right">{{number_format($items[$count]->closing_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
@@ -770,7 +763,7 @@
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $items[0]->closing_amount) - $total_refund),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[$count]->opening_amount + $items[$count]->closing_amount)),2)}}</div>
                 </div> 
             </div>
         </div>
@@ -783,7 +776,7 @@
                     <div class="text-left">Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format(($total_sales - $items[0]->closing_amount),2)}}</div>
+                    <div class="text-right">{{number_format(($total_sales - $items[$count]->closing_amount),2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
@@ -792,16 +785,16 @@
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
                     <div class="text-right">
-                        @if((($total_sales + $items[0]->opening_amount) - ( $items[0]->closing_amount +  $items[0]->opening_amount)) < 0)
+                        @if((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)) < 0)
                             <span>Over ==></span>
                         @endif 
-                        @if((($total_sales + $items[0]->opening_amount) - ( $items[0]->closing_amount +  $items[0]->opening_amount)) > 0)
+                        @if((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)) > 0)
                             <span>Short ==></span>
                         @endif
-                        @if((($total_sales + $items[0]->opening_amount) - ( $items[0]->closing_amount +  $items[0]->opening_amount)) == 0)
+                        @if((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)) == 0)
                             
                         @endif
-                        {{number_format((($total_sales + $items[0]->opening_amount) - ( $items[0]->closing_amount +  $items[0]->opening_amount)),2)}}
+                        {{number_format((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)),2)}}
                     </div>
                 </div> 
             </div>

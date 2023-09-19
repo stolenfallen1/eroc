@@ -4,6 +4,7 @@ namespace App\Http\Controllers\POS;
 
 use DB;
 use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\POS\Customers;
 use App\Models\POS\OpenningAmount;
@@ -98,5 +99,10 @@ class PosTransactionController extends Controller
         }
         $data['message'] = 'success';
         return response()->json($data, 200);
+    }
+
+    public function getDepartmentUsers()
+    {
+      return response()->json(['users' => User::whereNotNull('terminal_id')->where('role_id',13)->where('warehouse_id', Auth()->user()->warehouse_id)->select('name','idnumber','terminal_id','shift','warehouse_id')->get()]);
     }
 }

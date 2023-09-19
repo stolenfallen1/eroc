@@ -8,7 +8,6 @@ use App\Models\POS\Customers;
 use App\Models\POS\vwCustomers;
 use App\Models\POS\CustomerGroup;
 use App\Http\Controllers\Controller;
-use App\Models\POS\vwCustomerOrders;
 use App\Models\POS\CustomerGroupMapping;
 use App\Helpers\PosSearchFilter\Customer;
 
@@ -31,7 +30,7 @@ class CustomersController extends Controller
     {
         $default = vwCustomers::where('group_id', 1)->where('isDefault',1)->first();
         $data['defaultcustomer'] = $default;
-        $data['defaultorder'] = vwCustomerOrders::where('customer_id',$default['id'])->whereDate('order_date',date('Y-m-d'))->get();
+        // $data['defaultorder'] = vwCustomerOrders::where('customer_id',$default['id'])->whereDate('order_date',date('Y-m-d'))->get();
         return response()->json($data, 200);
     }
     
@@ -110,48 +109,4 @@ class CustomersController extends Controller
 
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\POS\Customers  $customers
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Customers $customers)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\POS\Customers  $customers
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Customers $customers)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\POS\Customers  $customers
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Customers $customers)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\POS\Customers  $customers
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Customers $customers)
-    {
-        //
-    }
 }

@@ -16,30 +16,29 @@ class Items
 
     public function searchable()
     {
-        // $this->model->with('itemMaster', 'unit', 'itemMaster.brand');
         $this->byCategory();
         $this->searchColumns();
-        // $this->warehouse();
         $this->branch();
-        // $this->items();
+        // $this->warehouse();
         $this->model->where('isactive', '1');
         $this->model->orderby('item_name', 'asc');
-        return $this->model->paginate(20);
+        $per_page = Request()->per_page ?? '1';
+        return $this->model->paginate($per_page);
     }
 
     public function searchColumns()
     {
         
-        if (isset(Request()->payload['keyword'])) {
-            $this->model->where('item_name', 'LIKE', Request()->payload['keyword'].'%');
+        if (isset(Request()->keyword)) {
+            $this->model->where('item_name', 'LIKE',Request()->keyword.'%');
         }
     }
 
     public function byCategory()
     {
-        $category_id = Request()->payload['category'] ?? '';
+        $category_id = Request()->category ?? '';
         if ($category_id != 0) {
-            $this->model->where('item_Category_Id',  Request()->payload['category']);
+            $this->model->where('item_Category_Id',  Request()->category);
         }
     }
 
@@ -62,17 +61,4 @@ class Items
             $this->model->where('branch_id',Auth()->user()->branch_id);
         }
     }
-    private function items(){
-        $items =  Request()->payload['items'] ?? '';
-        if($items){
-            $itemid = [];
-            foreach($items as $item){
-                $itemid[] = $item['id'];
-            }
-            if ($items) {
-                $this->model->whereNotIn('item_Id',json_decode(json_encode($itemid)));
-            }
-        }
-    }
-    
 }

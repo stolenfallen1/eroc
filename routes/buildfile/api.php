@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BuildFile\ItemController;
 use App\Http\Controllers\BuildFile\UnitController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\BuildFile\GenericNameController;
 use App\Http\Controllers\BuildFile\mscCurrencyController;
 use App\Http\Controllers\BuildFile\SubCategoryController;
 use App\Http\Controllers\BuildFile\vendor\TypeController;
+use App\Http\Controllers\BuildFile\Hospital\SexController;
 use App\Http\Controllers\BuildFile\MscWarehouseController;
 use App\Http\Controllers\BuildFile\vendor\LevelController;
 use App\Http\Controllers\BuildFile\vendor\TermsController;
@@ -27,50 +29,58 @@ use App\Http\Controllers\BuildFile\SystemSettingController;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\address\RegionController;
 use App\Http\Controllers\BuildFile\ClassificationController;
+use App\Http\Controllers\BuildFile\FMS\CostCenterController;
+use App\Http\Controllers\BuildFile\Hospital\BanksController;
 use App\Http\Controllers\BuildFile\InventoryGroupController;
 use App\Http\Controllers\BuildFile\address\CountryController;
 use App\Http\Controllers\BuildFile\address\ZipcodeController;
+use App\Http\Controllers\BuildFile\FMS\AccountTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DoctorController;
+use App\Http\Controllers\BuildFile\Hospital\StatusController;
+use App\Http\Controllers\BuildFile\Hospital\SuffixController;
 use App\Http\Controllers\BuildFile\MscManufacturerController;
 use App\Http\Controllers\BuildFile\address\BarangayController;
 use App\Http\Controllers\BuildFile\address\ProvinceController;
-use App\Http\Controllers\BuildFile\TherapeuticClassController;
-use App\Http\Controllers\BuildFile\MscWarehouseGroupController;
-use App\Http\Controllers\BuildFile\DrugAdministrationController;
-use App\Http\Controllers\BuildFile\address\MunicipalityController;
 use App\Http\Controllers\BuildFile\FMS\AccountClassController;
 use App\Http\Controllers\BuildFile\FMS\AccountGroupController;
-use App\Http\Controllers\BuildFile\FMS\AccountTypeController;
-use App\Http\Controllers\BuildFile\FMS\CostCenterController;
 use App\Http\Controllers\BuildFile\FMS\MedicareTypeController;
 use App\Http\Controllers\BuildFile\FMS\RevenueClassController;
-use App\Http\Controllers\BuildFile\FMS\TransactionClassificationController;
-use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
-use App\Http\Controllers\BuildFile\Hospital\AdmissionSourceController;
-use App\Http\Controllers\BuildFile\Hospital\AdmissionTypeController;
-use App\Http\Controllers\BuildFile\Hospital\AgeBracketController;
-use App\Http\Controllers\BuildFile\Hospital\BankAccountsController;
-use App\Http\Controllers\BuildFile\Hospital\BanksController;
+use App\Http\Controllers\BuildFile\Hospital\CompanyController;
+use App\Http\Controllers\BuildFile\Hospital\IDTypesController;
+use App\Http\Controllers\BuildFile\TherapeuticClassController;
+use App\Http\Controllers\BuildFile\Hospital\CaseTypeController;
+use App\Http\Controllers\BuildFile\MscWarehouseGroupController;
+use App\Http\Controllers\BuildFile\DrugAdministrationController;
 use App\Http\Controllers\BuildFile\Hospital\BedStatusController;
 use App\Http\Controllers\BuildFile\Hospital\BloodTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DeathTypeController;
+use App\Http\Controllers\BuildFile\Hospital\ReligionsController;
+use App\Http\Controllers\BuildFile\Hospital\AgeBracketController;
+use App\Http\Controllers\BuildFile\Hospital\DebitCardsController;
+use App\Http\Controllers\BuildFile\Hospital\RefundTypeController;
+use App\Http\Controllers\BuildFile\address\MunicipalityController;
+use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
 use App\Http\Controllers\BuildFile\Hospital\CivilStatusController;
 use App\Http\Controllers\BuildFile\Hospital\CreditCardsController;
-use App\Http\Controllers\BuildFile\Hospital\DeathTypeController;
-use App\Http\Controllers\BuildFile\Hospital\DebitCardsController;
-use App\Http\Controllers\BuildFile\Hospital\DoctorCategoriesController;
+use App\Http\Controllers\BuildFile\Hospital\BankAccountsController;
 use App\Http\Controllers\BuildFile\Hospital\HospitalPlanController;
-use App\Http\Controllers\BuildFile\Hospital\IDTypesController;
-use App\Http\Controllers\BuildFile\Hospital\NationalitiesController;
-use App\Http\Controllers\BuildFile\Hospital\PatientRelationsController;
-use App\Http\Controllers\BuildFile\Hospital\PaymentMethodController;
-use App\Http\Controllers\BuildFile\Hospital\RefundTypeController;
-use App\Http\Controllers\BuildFile\Hospital\ReligionsController;
 use App\Http\Controllers\BuildFile\Hospital\ServicesTypeController;
-use App\Http\Controllers\BuildFile\Hospital\SexController;
+use App\Http\Controllers\BuildFile\Hospital\AdmissionTypeController;
+use App\Http\Controllers\BuildFile\Hospital\NationalitiesController;
+use App\Http\Controllers\BuildFile\Hospital\PaymentMethodController;
+use App\Http\Controllers\BuildFile\Hospital\Setting\ModuleController;
+use App\Http\Controllers\BuildFile\Hospital\Setting\SystemController;
 use App\Http\Controllers\BuildFile\Hospital\ShiftSchedulesController;
-use App\Http\Controllers\BuildFile\Hospital\StatusController;
-use App\Http\Controllers\BuildFile\Hospital\SuffixController;
+use App\Http\Controllers\BuildFile\Hospital\AdmissionSourceController;
 use App\Http\Controllers\BuildFile\Hospital\TransactionTypeController;
-use App\Http\Controllers\RoleController;
+use App\Http\Controllers\BuildFile\Hospital\DoctorCategoriesController;
+use App\Http\Controllers\BuildFile\Hospital\PatientRelationsController;
+use App\Http\Controllers\BuildFile\Hospital\Setting\SubModuleController;
+use App\Http\Controllers\BuildFile\Hospital\Setting\SubSystemController;
+use App\Http\Controllers\BuildFile\FMS\TransactionClassificationController;
+use App\Http\Controllers\Database\DriverController;
+use App\Http\Controllers\GlobalSettingsController;
+use App\Http\Controllers\SystemReportsController;
 
 Route::controller(CategoryController::class)->group(function () {
     Route::get('categories', 'getAllCategory');
@@ -176,6 +186,10 @@ Route::controller(BranchController::class)->group(function () {
 
 Route::controller(DepartmentController::class)->group(function () {
     Route::get('departments', 'index');
+    Route::post('get-department-access', 'UserDeptAccess');
+    Route::post('add-department-access', 'add_department_access');
+    Route::post('remove-department-access', 'remove_department_access');
+   
 });
 
 
@@ -253,7 +267,6 @@ Route::controller(ApproverLevelController::class)->group(function () {
     Route::post('create-approver-level', 'store');
     Route::put('update-approver-level/{id}', 'update');
     Route::delete('delete-approver-level/{id}', 'destroy');
-
 });
 
 
@@ -270,11 +283,21 @@ Route::controller(mscCurrencyController::class)->group(function () {
 
 Route::controller(mscPriceGroupController::class)->group(function () {
     Route::get('get-price-groups', 'index');
+    Route::get('list-price-groups', 'list');
     Route::post('create-price-groups', 'store');
     Route::put('update-price-groups/{id}', 'update');
     Route::delete('delete-price-groups/{id}', 'destroy');
 
 });
+
+// Route::controller(mscPriceGroupController::class)->group(function () {
+//     Route::get('get-price-groups', 'index');
+//     Route::get('list-price-groups', 'list');
+//     Route::post('create-price-groups', 'store');
+//     Route::put('update-price-groups/{id}', 'update');
+//     Route::delete('delete-price-groups/{id}', 'destroy');
+
+// });
 
 
 Route::controller(mscPriceController::class)->group(function () {
@@ -282,12 +305,21 @@ Route::controller(mscPriceController::class)->group(function () {
     Route::post('create-price-schemes', 'store');
     Route::put('update-price-schemes/{id}', 'update');
     Route::delete('delete-price-schemes/{id}', 'destroy');
-
+    Route::get('list-price-schemes', 'list');
 });
 
 
+Route::controller(DoctorController::class)->group(function () {
+    Route::get('get-doctors', 'list');
+});
+
+Route::controller(CompanyController::class)->group(function () {
+    Route::get('get-companies', 'list');
+});
+
 Route::controller(CountryController::class)->group(function () {
     Route::get('get-countries', 'index');
+    Route::get('get-country-list', 'list');
     Route::post('create-countries', 'store');
     Route::put('update-countries/{id}', 'update');
     Route::delete('delete-countries/{id}', 'destroy');
@@ -320,10 +352,14 @@ Route::controller(MunicipalityController::class)->group(function () {
 
 Route::controller(BarangayController::class)->group(function () {
     Route::get('get-barangay', 'index');
+    Route::get('get-barangays', 'list');
     Route::post('create-barangay', 'store');
     Route::put('update-barangay/{id}', 'update');
 });
 
+Route::controller(ZipcodeController::class)->group(function () {
+    Route::get('zip-code-list', 'list');
+});
 Route::resource('zip-codes', ZipcodeController::class);
 Route::resource('supplier-level', LevelController::class);
 Route::resource('supplier-terms', TermsController::class);
@@ -351,23 +387,82 @@ Route::resource('roles', RoleController::class);
 
 
 // ======================== hospital build ==========================
+
+Route::controller(SystemController::class)->group(function () {
+    Route::get('systems-list', 'list');
+});
+
+Route::resource('systems', SystemController::class);
+Route::resource('sub-systems', SubSystemController::class);
+
+Route::controller(ModuleController::class)->group(function () {
+    Route::get('module-list', 'list');
+    Route::get('get-system-modules', 'systemModule');
+    Route::get('systems-drivers', 'systemsdriver');
+});
+Route::resource('system-modules', ModuleController::class);
+
+Route::resource('system-sub-modules', SubModuleController::class);
+
+
+Route::controller(AdmissionSourceController::class)->group(function () {
+    Route::get('get-admission-source', 'list');
+});
 Route::resource('admission-source', AdmissionSourceController::class);
+Route::controller(AdmissionTypeController::class)->group(function () {
+    Route::get('get-admission-type', 'list');
+});
 Route::resource('admission-type', AdmissionTypeController::class);
 Route::resource('age-bracket', AgeBracketController::class);
 Route::resource('bed-status', BedStatusController::class);
 Route::resource('blood-types', BloodTypeController::class);
 Route::resource('death-type', DeathTypeController::class);
+
+Route::controller(CaseTypeController::class)->group(function () {
+    Route::get('get-case-type', 'list');
+});
+
+Route::controller(TransactionTypeController::class)->group(function () {
+    Route::get('get-transaction-type', 'list');
+});
 Route::resource('transaction-type', TransactionTypeController::class);
+
+Route::controller(HospitalPlanController::class)->group(function () {
+    Route::get('get-hospital-plan', 'list');
+});
 Route::resource('hospital-plan', HospitalPlanController::class);
 Route::resource('id-types', IDTypesController::class);
+
+Route::controller(ReligionsController::class)->group(function () {
+    Route::get('get-religions', 'list');
+});
 Route::resource('religions', ReligionsController::class);
+
+Route::controller(NationalitiesController::class)->group(function () {
+    Route::get('get-nationalities', 'list');
+});
 Route::resource('nationalities', NationalitiesController::class);
+
+Route::controller(SexController::class)->group(function () {
+    Route::get('get-sex', 'list');
+});
 Route::resource('sex', SexController::class);
+
+Route::controller(CivilStatusController::class)->group(function () {
+    Route::get('get-civil-status', 'list');
+});
+
 Route::resource('civil-status', CivilStatusController::class);
 Route::resource('statuses', StatusController::class);
 Route::resource('patient-relations', PatientRelationsController::class);
 Route::resource('doctor-categories', DoctorCategoriesController::class);
 Route::resource('services-type', ServicesTypeController::class);
+
+
+Route::controller(SuffixController::class)->group(function () {
+    Route::get('get-suffix', 'list');
+    Route::get('get-titles', 'titles');
+});
 Route::resource('suffix', SuffixController::class);
 Route::resource('payment-methods', PaymentMethodController::class);
 Route::resource('refund-type', RefundTypeController::class);
@@ -394,7 +489,24 @@ Route::resource('cost-centers', CostCenterController::class);
 Route::controller(MedicareTypeController::class)->group(function () {
     Route::get('get-medicare', 'list');
 });
+
 Route::resource('medicare-types', MedicareTypeController::class);
 Route::resource('revenue-classes', RevenueClassController::class);
 Route::resource('transaction-classifications', TransactionClassificationController::class);
 Route::resource('transaction-codes', TransactionCodesController::class);
+
+Route::resource('database-drivers', DriverController::class);
+
+
+Route::controller(GlobalSettingsController::class)->group(function () {
+    Route::get('get-other-settings', 'list');
+    Route::post('get-other-user-access', 'getuseraccess');
+    Route::post('add-globalsetting-access', 'add_user_access');
+    Route::post('remove-globalsetting-access', 'remove_user_access');
+});
+
+
+Route::controller(SystemReportsController::class)->group(function () {
+    Route::get('reports', 'list');
+});
+Route::resource('system-reports', SystemReportsController::class);

@@ -2,12 +2,24 @@
 
 namespace App\Http\Controllers\BuildFile\Hospital;
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Hospital\Suffix;
-use Illuminate\Http\Request;
+use App\Models\BuildFile\Hospital\Titles;
 
 class SuffixController extends Controller
 {
+    
+     public function list()
+    {
+        $data = Suffix::get();
+        return response()->json($data, 200);
+    }
+      public function titles()
+    {
+        $data = Titles::get();
+        return response()->json($data, 200);
+    }
     public function index()
     {
         try {

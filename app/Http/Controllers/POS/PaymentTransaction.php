@@ -20,6 +20,8 @@ use App\Models\MMIS\inventory\ItemBatch;
 use App\Helpers\PosSearchFilter\SeriesNo;
 use App\Helpers\PosSearchFilter\Terminal;
 use App\Models\POS\vwPaymentReceiptItems;
+use App\Models\BuildFile\FmsTransactionCode;
+use App\Models\MMIS\inventory\InventoryTransaction;
 
 class PaymentTransaction extends Controller
 {
@@ -111,9 +113,10 @@ class PaymentTransaction extends Controller
                 'order_status_id'=>'9'
             ]);
             
+            $transaction = FmsTransactionCode::where('transaction_code', 'PY')->where('isActive', 1)->first();
             foreach ($orderdetails as $row) {
                 // $batch = ItemBatch::where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
-                $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['order_item_id'])->first();
+                $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('warehouse_Id',$row['warehouse_Id'])->where('item_Id', (int)$row['order_item_id'])->first();
                 $batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                 if($batch) {
                     $isConsumed = '0';
@@ -125,6 +128,24 @@ class PaymentTransaction extends Controller
                         'item_Qty_Used'=>  (int)$batch->item_Qty_Used + (int)$row['order_item_qty'],
                         'isConsumed'=>  $isConsumed 
                     ]);
+                                        
+                    InventoryTransaction::create([
+                        'branch_Id' => $warehouseitem->branch_id,
+                        'warehouse_Group_Id' => $row['item_InventoryGroup_Id'],
+                        'warehouse_Id' => $warehouseitem->warehouse_Id,
+                        'transaction_Item_Id' =>  $row['order_item_id'],
+                        'transaction_Date' => Carbon::now(),
+                        'trasanction_Reference_Number' =>$generate_trans_series,
+                        'transaction_ORNumber' => $generat_or_series,
+                        'transaction_Item_UnitofMeasurement_Id' => $batch->item_UnitofMeasurement_Id,
+                        'transaction_Qty' => $row['order_item_qty'],
+                        'transaction_Item_OnHand' => $warehouseitem->item_OnHand - $row['order_item_qty'],
+                        'transaction_Item_ListCost' => $row['order_item_total_amount'],
+                        'transaction_UserID' =>  Auth()->user()->idnumber,
+                        'createdBy' => Auth()->user()->idnumber,
+                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    ]);
+
                 }
                 DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id',(int)$row['order_item_id'])->update([
                     'item_OnHand'=> (int)$warehouseitem->item_OnHand - (int)$row['order_item_qty']
@@ -148,6 +169,10 @@ class PaymentTransaction extends Controller
                 'seq_no'=>$trans_seriesno,
                 'recent_generated'=>$generate_trans_series,
             ]);
+
+
+            
+
             $transaction['ornumber'] = $generat_or_series;
             $transaction['transid'] = $payment->id;
             $transaction['transno'] = $payment->payment_transaction_number;
@@ -376,6 +401,13 @@ class PaymentTransaction extends Controller
                         
                             foreach($receiptitems as $item) {
                                 $counter++;
+                                
+                                if($customertype != 'Regular') {
+                                   $price = $item['itemchargeprice'];
+                                }else{
+                                    $price = $item['itemprice'];
+                                }
+
                                 $totalamountdue += ($item['itemprice'] * $item['itemqty']);
                                     if((float)$addvat == 0){
                                     
@@ -389,16 +421,15 @@ class PaymentTransaction extends Controller
                                             ('.$item['order_item_batchno'].')
                                         </td>
                                         <td>'.(int)$item['itemqty'].'</td>
-                                        <td>'.number_format($item['itemprice'],2).'</td>
-                                        <td class="totalamount">'.(number_format($item['itemprice'] * $item['itemqty'],2)).'</td>
+                                        <td>'.number_format($price,2).'</td>
+                                        <td class="totalamount">'.(number_format($price * $item['itemqty'],2)).'</td>
                                     </tr>
                                 ';
-                                    
                             }
                             if($customertype !='Regular'){
                                 $totaldiscount = $receiptdetails->payment_vatable_amount + $receiptdetails->payment_discount_amount;
                             }
-                        
+                            
                             $html .='
                     </tbody>
                 </table>
@@ -602,9 +633,9 @@ class PaymentTransaction extends Controller
                                 </td>
                                 <td style="width:10%; text-align:center;" ></td>
                                 <td style="width:10%; text-align:center;"  >'.(int)$item['itemqty'].'</td>
-                                <td style="width:10%; text-align:center;"  >'.number_format($item['itemprice'],2).'</td>
+                                <td style="width:10%; text-align:center;"  >'.number_format($item['itemchargeprice'],2).'</td>
                                 <td style="width:10%; text-align:center;"  >'.number_format(($item['order_item_sepcial_discount'] * $item['itemqty']),2).'</td>
-                                <td style="width:15%; text-align:center;"  >'.number_format(($item['itemprice'] * $item['itemqty']) ,2).'</td>
+                                <td style="width:15%; text-align:center;"  >'.number_format(($item['itemchargeprice'] * $item['itemqty']) ,2).'</td>
                                 <td style="width:15%; text-align:center;"   >'.number_format($item['order_item_total_amount'] ,2).'</td>
                             </tr>
                         ';

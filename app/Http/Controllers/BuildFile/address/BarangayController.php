@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 
 class BarangayController extends Controller
 {
+    public function list(){
+        return response()->json(['data' => Barangay::where('region_code', Request()->region_code)->where('province_code', Request()->province_code)->where('municipality_code', Request()->municipality_code)->get()], 200);
+    }
    public function index()
     {
         $data = Barangay::query();

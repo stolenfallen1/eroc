@@ -5,6 +5,15 @@ use Illuminate\Support\Facades\Auth;
 
 class GetIP
 {
+
+     public function getHostname(){
+        $ipAddress = $this->value();
+        // Use the gethostbyaddr() function to get the hostname
+        $hostname = gethostbyaddr($ipAddress);
+        return $hostname;
+    }
+
+
     public function value(){
         foreach (array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key){
             if (array_key_exists($key, $_SERVER) === true){

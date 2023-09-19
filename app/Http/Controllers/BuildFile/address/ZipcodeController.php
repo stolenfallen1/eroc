@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 
 class ZipcodeController extends Controller
 {
+     public function list(){
+        return response()->json(['data' => Zipcode::where('region_code', Request()->region_code)->where('province_code', Request()->province_code)->where('municipality_code', Request()->municipality_code)->get()], 200);
+    }
     public function index()
     {
         $data = Zipcode::query();

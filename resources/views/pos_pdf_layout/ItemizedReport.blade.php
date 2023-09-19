@@ -110,8 +110,8 @@
                     <tr>
                         <th>Category</th>
                         <th>Item Name / Description </th>
-                        <th  class="text-center">Qty</th>
-                        <th  >Price</th>
+                        <th class="text-center">Qty</th>
+                        <th >Price</th>
                         <th>Total Amount</th>
                     </tr>
                 </thead>

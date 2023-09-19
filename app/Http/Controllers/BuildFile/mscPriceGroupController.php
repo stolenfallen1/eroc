@@ -8,6 +8,16 @@ use App\Models\BuildFile\PriceGroup;
 
 class mscPriceGroupController extends Controller
 {
+      public function list()
+    {
+        try {
+            $data = PriceGroup::get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+
     public function index()
     {
         try {

@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\MMIS\AuditController;
+use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\DeliveryController;
+use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
@@ -71,11 +73,26 @@ Route::controller(StockRequisitionController::class)->group(function () {
   Route::put('stock-requisition-approved/{stock_requisition}', 'receiveTransfer');
   Route::get('stock-requisitions', 'index');
   Route::post('stock-requisition', 'store');
+  Route::put('stock-approve/{stock_requisition}', 'approve');
+  Route::get('stock-requisition/{stock_requisition}', 'show');
+  Route::put('stock-requisition/{stock_requisition}', 'update');
+  Route::delete('stock-requisition/{id}', 'destroy');
 });
 
 Route::controller(AuditController::class)->group(function () {
   Route::get('audits', 'index');
   Route::post('audit', 'store');
+  // Route::post('stock-requisition', 'store');
+});
+
+Route::controller(ExportDataController::class)->group(function () {
+  Route::post('export-data', 'exportData');
+  // Route::post('stock-requisition', 'store');
+});
+
+Route::controller(AuditTrailController::class)->group(function () {
+  Route::get('audit-trails', 'index');
+  Route::post('audit-trail/import-top-consume', 'store');
   // Route::post('stock-requisition', 'store');
 });
 

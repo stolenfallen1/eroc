@@ -2,14 +2,17 @@
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
+use App\Models\MMIS\inventory\Delivery;
 use App\Http\Controllers\AuthController;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Models\MMIS\inventory\StockTransfer;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
+use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
-use App\Models\MMIS\inventory\Delivery;
-use App\Models\MMIS\inventory\StockTransfer;
+use App\Models\BuildFile\Warehouses;
+use App\Models\OldMMIS\Branch;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,11 +32,11 @@ Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 });
 
-Route::get('/print-purchase-order/{id}', function ($id){
-    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function($q){
+Route::get('/print-purchase-order/{id}', function ($id) {
+    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
         $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
     }])->findOrfail($id);
-    $qrCode = QrCode::size(200)->generate(config('app.url').'/print-purchase-order/'.$id);
+    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
     $qrData = base64_encode($qrCode);
@@ -47,11 +50,11 @@ Route::get('/print-purchase-order/{id}', function ($id){
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
 
-    return $pdf->stream('Purchase order-'.$id.'.pdf');
+    return $pdf->stream('Purchase order-' . $id . '.pdf');
 });
 
-Route::get('/print-purchase-request/{id}', function ($id){
-    $purchase_request = PurchaseRequest::with(['warehouse', 'administrator', 'category', 'itemGroup', 'branch', 'user', 'purchaseRequestDetails' => function($q){
+Route::get('/print-purchase-request/{id}', function ($id) {
+    $purchase_request = PurchaseRequest::with(['warehouse', 'administrator', 'category', 'itemGroup', 'branch', 'user', 'purchaseRequestDetails' => function ($q) {
         $q->with('itemMaster', 'unit', 'unit2');
     }])->findOrfail($id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
@@ -65,12 +68,12 @@ Route::get('/print-purchase-request/{id}', function ($id){
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_request', ['pdf_data' => $pdf_data]);
 
-    return $pdf->stream('Purchase order-'.$id.'.pdf');
+    return $pdf->stream('Purchase order-' . $id . '.pdf');
 });
 
-Route::get('/print-stock-transfer/{id}', function ($id){
+Route::get('/print-stock-transfer/{id}', function ($id) {
     $stock_transfer = StockTransfer::with('delivery.branch', 'purchaseRequest', 'purchaseOrder', 'warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy')->findOrfail($id);
-    $qrCode = QrCode::size(200)->generate(config('app.url').'/print-stock-transfer/'.$id);
+    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-stock-transfer/' . $id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
     $qrData = base64_encode($qrCode);
@@ -85,14 +88,14 @@ Route::get('/print-stock-transfer/{id}', function ($id){
     ];
     $pdf = PDF::loadView('pdf_layout.stock_transfer', ['pdf_data' => $pdf_data]);
 
-    return $pdf->stream('stock_transfer-'.$id.'.pdf');
+    return $pdf->stream('stock_transfer-' . $id . '.pdf');
 });
 
-Route::get('/print-delivery/{id}', function ($id){
-    $delivery = Delivery::with(['branch', 'vendor', 'receiver', 'purchaseOrder.purchaseRequest', 'items'=>function($q){
+Route::get('/print-delivery/{id}', function ($id) {
+    $delivery = Delivery::with(['branch', 'vendor', 'receiver', 'purchaseOrder.purchaseRequest', 'items' => function ($q) {
         $q->with('item', 'unit');
     }])->findOrfail($id);
-    $qrCode = QrCode::size(200)->generate(config('app.url').'/print-delivery/'.$id);
+    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
     $qrData = base64_encode($qrCode);
@@ -107,11 +110,28 @@ Route::get('/print-delivery/{id}', function ($id){
     ];
     $pdf = PDF::loadView('pdf_layout.delivery', ['pdf_data' => $pdf_data]);
 
-    return $pdf->stream('delivery-'.$id.'.pdf');
+    return $pdf->stream('delivery-' . $id . '.pdf');
+});
+
+Route::get('test-pdf', function () {
+    $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest', 'purchaseRequestDetail.recommendedCanvas.vendor')
+        ->whereHas('purchaseOrder', function ($q1) {
+            $q1->where('po_Document_branch_id', 1)->where('po_Document_warehouse_id', 47)->whereDoesntHave('delivery');
+        })->get();
+    $branch = Branch::find(1);
+    $warehouse = Warehouses::find(1);
+    $pdf_data = [
+        'items' => $po_items,
+        'branch_name' => $branch->companyname,
+        'warehouse_name' => $warehouse->warehouse_description,
+    ];
+    $pdf = PDF::loadView('reports.undeliveredPO', ['pdf_data' => $pdf_data]);
+
+    return $pdf->stream('Purchase order-' . '.pdf');
 });
 
 Route::group(['middleware' => 'admin.user'], function () {
-    require_once ('mmis/mmismainroute.php');
+    require_once('mmis/mmismainroute.php');
     Route::get('user-details', [AuthController::class, 'userDetails']);
     // Route::get('/{any}', function () {
     //     return view('layouts.main');
@@ -124,4 +144,3 @@ Route::group(['middleware' => 'admin.user'], function () {
 //     //     return view('layouts.main');
 //     // })->where('any', '.*');
 // });
-

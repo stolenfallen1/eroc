@@ -122,7 +122,7 @@ class PurchaseRequests
     if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' 
       || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
 
-      $this->model->where('warehouse_Id', $this->authUser->warehouse_id)
+      $this->model->whereIn('warehouse_Id', $this->authUser->departments)
       ->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
 
       $this->model->with('purchaseRequestDetails.itemMaster');
@@ -189,7 +189,7 @@ class PurchaseRequests
     if($this->authUser->role->name == 'administrator'){
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);
     }else{
-      $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('warehouse_Id', $this->authUser->warehouse_id);
+      $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->whereIn('warehouse_Id', $this->authUser->departments);
     }
   }
 

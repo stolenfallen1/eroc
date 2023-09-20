@@ -71,7 +71,9 @@ class User extends \TCG\Voyager\Models\User
         'email_verified_at' => 'datetime',
     ];
 
-    protected $with = ['warehouse','approvaldetail','branch'];
+    protected $with = ['warehouse','approvaldetail','branch', 'user_department_access'];
+
+    protected $appends = ['departments'];
 
     public function warehouse()
     {
@@ -113,6 +115,10 @@ class User extends \TCG\Voyager\Models\User
     public function user_department_access()
     {
         return $this->hasMany(UserDeptAccess::class, 'user_id', 'idnumber');
+    }
+
+    public function getDepartmentsAttribute(){
+        return $this->user_department_access()->pluck('warehouse_id');
     }
 
     public function createToken()

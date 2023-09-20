@@ -17,7 +17,11 @@ class ItemController extends Controller
 
     public function getItemGroup(){
         $warehouse_id = Request()->wh_id ?? Auth::user()->warehouse_id;
-        $item_groups = Warehouses::with('itemGroups')->findOrfail($warehouse_id);
-        return response()->json(['item_groups' => $item_groups->itemGroups], 200);
+        $warehouse = Warehouses::with('itemGroups')->findOrfail($warehouse_id);
+        $item_groups = $warehouse->itemGroups;
+        if(Auth::user()->role->name == 'administrator'){
+            $item_groups = ItemGroup::get();
+        }
+        return response()->json(['item_groups' => $item_groups], 200);
     }
 }

@@ -28,6 +28,7 @@ class PurchaseRequests
     $this->byPriority();
     $this->byRequestedDate();
     $this->byRequiredDate();
+    $this->byYear();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -78,13 +79,19 @@ class PurchaseRequests
 
   private function byRequestedDate(){
     if(Request()->requested_date){
-      $this->model->whereDate('pr_Transaction_Date', Carbon::parse(Request()->requested_date));
+      $this->model->whereDate('pr_Transaction_Date', '>=', Carbon::parse(Request()->requested_date));
     }
   }
 
   private function byRequiredDate(){
     if(Request()->required_date){
-      $this->model->whereDate('pr_Transaction_Date_Required', Carbon::parse(Request()->required_date));
+      $this->model->whereDate('pr_Transaction_Date_Required', '<=', Carbon::parse(Request()->required_date));
+    }
+  }
+
+  private function byYear(){
+    if(!Request()->required_date || !Request()->requested_date){
+      $this->model->whereYear('created_at', Carbon::now()->year);
     }
   }
 

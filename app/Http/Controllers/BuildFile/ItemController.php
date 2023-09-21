@@ -19,7 +19,7 @@ class ItemController extends Controller
         $warehouse_id = Request()->wh_id ?? Auth::user()->warehouse_id;
         $warehouse = Warehouses::with('itemGroups')->findOrfail($warehouse_id);
         $item_groups = $warehouse->itemGroups;
-        if(Auth::user()->role->name == 'administrator'){
+        if(Auth::user()->role->name != 'department head' && Auth::user()->role->name != 'staff'){
             $item_groups = ItemGroup::get();
         }
         return response()->json(['item_groups' => $item_groups], 200);

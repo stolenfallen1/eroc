@@ -78,13 +78,13 @@ class PurchaseRequests
 
   private function byRequestedDate(){
     if(Request()->requested_date){
-      $this->model->whereDate('pr_Transaction_Date', Carbon::parse(Request()->requested_date));
+      $this->model->whereDate('pr_Transaction_Date', '>=', Carbon::parse(Request()->requested_date));
     }
   }
 
   private function byRequiredDate(){
     if(Request()->required_date){
-      $this->model->whereDate('pr_Transaction_Date_Required', Carbon::parse(Request()->required_date));
+      $this->model->whereDate('pr_Transaction_Date_Required', '<=', Carbon::parse(Request()->required_date));
     }
   }
 
@@ -180,7 +180,7 @@ class PurchaseRequests
   private function forDepartmentHead(){
     $this->model->with(['purchaseRequestDetails'=>function ($q){
       $q->with('itemMaster')
-      ->where(function($q){
+      ->whereYear('created_at', Carbon::now()->year())->where(function($q){
         $q->where(function($q1){
           $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null);
         });

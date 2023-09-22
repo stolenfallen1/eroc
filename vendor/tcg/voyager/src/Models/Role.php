@@ -11,7 +11,6 @@ class Role extends Model
 {
     use HasFactory;
 
-    protected $connection = 'sqlsrv';
     protected $guarded = [];
 
     public function users()
@@ -27,7 +26,7 @@ class Role extends Model
     {
         return $this->belongsToMany(Voyager::modelClass('Permission'));
     }
-    
+
     protected static function newFactory()
     {
         return RoleFactory::new();

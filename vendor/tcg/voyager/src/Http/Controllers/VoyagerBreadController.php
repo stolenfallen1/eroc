@@ -2,18 +2,17 @@
 
 namespace TCG\Voyager\Http\Controllers;
 
-use ReflectionClass;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use TCG\Voyager\Facades\Voyager;
-use App\Models\Database\Database;
 use Illuminate\Support\Facades\DB;
-use TCG\Voyager\Events\BreadAdded;
+use Illuminate\Support\Str;
+use ReflectionClass;
+use TCG\Voyager\Database\Schema\SchemaManager;
+use TCG\Voyager\Database\Schema\Table;
 use TCG\Voyager\Database\Types\Type;
+use TCG\Voyager\Events\BreadAdded;
 use TCG\Voyager\Events\BreadDeleted;
 use TCG\Voyager\Events\BreadUpdated;
-use TCG\Voyager\Database\Schema\Table;
-use TCG\Voyager\Database\Schema\SchemaManager;
+use TCG\Voyager\Facades\Voyager;
 
 class VoyagerBreadController extends Controller
 {
@@ -22,40 +21,21 @@ class VoyagerBreadController extends Controller
         $this->authorize('browse_bread');
 
         $dataTypes = Voyager::model('DataType')->select('id', 'name', 'slug')->get()->keyBy('name')->toArray();
-        $databaseconnection = Database::all();
-        $list = [];
-        $count =0;
-        foreach ($databaseconnection as $row) {
-            $count++;
-            $tables = array_map(function ($table) use ($dataTypes,$row) {
-                $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
 
-                $table = [
-                    'prefix'     => DB::getTablePrefix(),
-                    'name'       => $table,
-                    'slug'       => $dataTypes[$table]['slug'] ?? null,
-                    'dataTypeId' => $dataTypes[$table]['id'] ?? null,
-                    'driver' => $row->driver
-                ];
+        $tables = array_map(function ($table) use ($dataTypes) {
+            $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
 
-                return $table;
-            }, SchemaManager::manager($row->driver)->listTableNames());
-            $list[] = $tables;
-        }
-        $array  = [];
-        for ($i=0; $i < $count; $i++) {
-            foreach ($list[$i] as $row) {
-                $array[] = array(
-                            'prefix'     =>$row['prefix'],
-                            'name'       => $row['name'],
-                            'slug'       => $row['slug'] ?? null,
-                            'dataTypeId' => $row['dataTypeId'] ?? null,
-                            'driver' => $row['driver'] ?? null,
+            $table = [
+                'prefix'     => DB::getTablePrefix(),
+                'name'       => $table,
+                'slug'       => $dataTypes[$table]['slug'] ?? null,
+                'dataTypeId' => $dataTypes[$table]['id'] ?? null,
+            ];
 
-                   );
-            }
-        }
-        return Voyager::view('voyager::tools.bread.index')->with(compact('dataTypes', 'array'));
+            return (object) $table;
+        }, SchemaManager::listTableNames());
+
+        return Voyager::view('voyager::tools.bread.index')->with(compact('dataTypes', 'tables'));
     }
 
     /**
@@ -73,32 +53,14 @@ class VoyagerBreadController extends Controller
         $dataType = Voyager::model('DataType')->whereName($table)->first();
 
         $data = $this->prepopulateBreadInfo($table);
-
         $data['fieldOptions'] = SchemaManager::describeTable(
             (isset($dataType) && strlen($dataType->model_name) != 0)
             ? DB::getTablePrefix().app($dataType->model_name)->getTable()
-            : DB::getTablePrefix().$table,'sqlsrv_mmis'
+            : DB::getTablePrefix().$table
         );
 
         return Voyager::view('voyager::tools.bread.edit-add', $data);
     }
-
-    public function getdriver(Request $request, $table, $driver)
-    {
-        $this->authorize('browse_bread');
-      
-        $dataType = Voyager::model('DataType')->whereName($table)->first();
-
-        $data = $this->prepopulateBreadInfo($table);
-
-        $data['fieldOptions'] = SchemaManager::describeTable(
-            (isset($dataType) && strlen($dataType->model_name) != 0)
-            ? DB::getTablePrefix().app($dataType->model_name)->getTable()
-            : DB::getTablePrefix().$table, $driver
-        );
-        return Voyager::view('voyager::tools.bread.edit-add', $data);
-    }
-    
 
     private function prepopulateBreadInfo($table)
     {
@@ -132,16 +94,15 @@ class VoyagerBreadController extends Controller
         $this->authorize('browse_bread');
 
         try {
-            
             $dataType = Voyager::model('DataType');
-
-            $res = $dataType->updateDataType($request->all(), true,$request->driver);
-
-            $data = $res ? $this->alertSuccess(__('voyager::bread.success_created_bread')) : $this->alertError(__('voyager::bread.error_creating_bread'));
+            $res = $dataType->updateDataType($request->all(), true);
+            $data = $res
+                ? $this->alertSuccess(__('voyager::bread.success_created_bread'))
+                : $this->alertError(__('voyager::bread.error_creating_bread'));
             if ($res) {
                 event(new BreadAdded($dataType, $data));
             }
-           
+
             return redirect()->route('voyager.bread.index')->with($data);
         } catch (Exception $e) {
             return redirect()->route('voyager.bread.index')->with($this->alertException($e, 'Saving Failed'));
@@ -162,19 +123,10 @@ class VoyagerBreadController extends Controller
         $dataType = Voyager::model('DataType')->whereName($table)->first();
 
         $fieldOptions = SchemaManager::describeTable(
-            ((strlen($dataType->model_name) != 0)
+            (strlen($dataType->model_name) != 0)
             ? DB::getTablePrefix().app($dataType->model_name)->getTable()
-            : DB::getTablePrefix().$dataType->name),
-            $dataType->driver
+            : DB::getTablePrefix().$dataType->name
         );
-
-        $isModelTranslatable = is_bread_translatable($dataType);
-        $tables = SchemaManager::listTableNames();
-        $dataTypeRelationships = Voyager::model('DataRow')->where('data_type_id', '=', $dataType->id)->where('type', '=', 'relationship')->get();
-        $scopes = [];
-        if ($dataType->model_name != '') {
-            $scopes = $this->getModelScopes($dataType->model_name);
-        }
 
         $isModelTranslatable = is_bread_translatable($dataType);
         $tables = SchemaManager::listTableNames();
@@ -198,7 +150,7 @@ class VoyagerBreadController extends Controller
     public function update(Request $request, $id)
     {
         $this->authorize('browse_bread');
-      
+
         /* @var \TCG\Voyager\Models\DataType $dataType */
         try {
             $dataType = Voyager::model('DataType')->find($id);
@@ -208,7 +160,7 @@ class VoyagerBreadController extends Controller
                 ? $dataType->prepareTranslations($request)
                 : [];
 
-            $res = $dataType->updateDataType($request->all(), true,$request->driver);
+            $res = $dataType->updateDataType($request->all(), true);
             $data = $res
                 ? $this->alertSuccess(__('voyager::bread.success_update_bread', ['datatype' => $dataType->name]))
                 : $this->alertError(__('voyager::bread.error_updating_bread'));

@@ -39,7 +39,6 @@ class VoyagerMenuController extends Controller
 
     public function add_item(Request $request)
     {
-      
         $menu = Voyager::model('Menu');
 
         $this->authorize('add', $menu);
@@ -79,7 +78,7 @@ class VoyagerMenuController extends Controller
         $data = $this->prepareParameters(
             $request->except(['id'])
         );
-      
+
         $menuItem = Voyager::model('MenuItem')->findOrFail($id);
 
         $this->authorize('edit', $menuItem->menu);
@@ -103,8 +102,8 @@ class VoyagerMenuController extends Controller
 
     public function order_item(Request $request)
     {
-        
         $menuItemOrder = json_decode($request->input('order'));
+
         $this->orderMenu($menuItemOrder, null);
     }
 

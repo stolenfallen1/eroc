@@ -15,7 +15,6 @@
                 data-icon_class="{{ $item->icon_class }}"
                 data-color="{{ $item->color }}"
                 data-route="{{ $item->route }}"
-                data-vueroute="{{ $item->vueroute }}"
                 data-parameters="{{ json_encode($item->parameters) }}"
             >
                 <i class="voyager-edit"></i> {{ __('voyager::generic.edit') }}
@@ -29,9 +28,7 @@
                     '_field_trans'        => json_encode($item->getTranslationsOf('title'))
                 ])
             @endif
-            <div>
-                <span>{{ $item->title }}</span> <small class="url">{{ $item->link() }}</small> @if($item->vueroute != '') / <small class="url"> {{ $item->vueroute }}</small> @endif
-            </div>
+            <span>{{ $item->title }}</span> <small class="url">{{ $item->link() }}</small>
         </div>
         @if(!$item->children->isEmpty())
             @include('voyager::menu.admin', ['items' => $item->children])

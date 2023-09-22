@@ -87,12 +87,6 @@
                             <label for="url">{{ __('voyager::menu_builder.url') }}</label>
                             <input type="text" class="form-control" id="m_url" name="url" placeholder="{{ __('voyager::generic.url') }}"><br>
                         </div>
-
-                        <div  id="m_vueroute_type" >
-                            <label for="vueroute">Vue Route</label>
-                            <input type="text" class="form-control" id="m_vueroute" name="vueroute" placeholder="Vue Router"><br>
-                        </div>
-
                         <div id="m_route_type">
                             <label for="route">{{ __('voyager::menu_builder.item_route') }}</label>
                             <input type="text" class="form-control" id="m_route" name="route" placeholder="{{ __('voyager::generic.route') }}"><br>
@@ -171,8 +165,6 @@
                 $m_title_i18n  = $('#title_i18n'),
                 $m_url_type    = $('#m_url_type'),
                 $m_url         = $('#m_url'),
-                $m_vueroute_type   = $('#m_vueroute_type'),
-                $m_vueroute    = $('#m_vueroute'),
                 $m_link_type   = $('#m_link_type'),
                 $m_route_type  = $('#m_route_type'),
                 $m_route       = $('#m_route'),
@@ -215,8 +207,6 @@
                     $m_target.val('_self').change();
                     $m_link_type.val('url').change();
                     $m_url.val('');
-                    $m_vueroute.val('');
-                    $m_vueroute_type.val('');
                     $m_icon_class.val('');
 
                 } else {
@@ -230,8 +220,6 @@
 
                     $m_title.val(_src.data('title'));
                     $m_url.val(_src.data('url'));
-                    $m_vueroute.val(_src.data('vueroute'));
-                    $m_vueroute_type.val(_src.data('vueroute'));
                     $m_route.val(_src.data('route'));
                     $m_parameters.val(JSON.stringify(_src.data('parameters')));
                     $m_icon_class.val(_src.data('icon_class'));

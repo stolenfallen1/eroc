@@ -27,12 +27,14 @@ require('./voyager_tinymce');
 window.voyagerTinyMCE = require('./voyager_tinymce_config');
 require('./voyager_ace_editor');
 window.helpers = require('./helpers.js');
+
 Vue.component('admin-menu', require('./components/admin_menu.vue').default);
 
 var admin_menu = new Vue({
     el: '#adminmenu',
 });
-$(document).ready(function() {
+
+$(document).ready(function () {
     var appContainer = $(".app-container"),
         fadedOverlay = $('.fadetoblack'),
         hamburger = $('.hamburger');
@@ -41,7 +43,7 @@ $(document).ready(function() {
 
     $('#voyager-loader').fadeOut();
 
-    $(".hamburger, .navbar-expand-toggle").on('click', function() {
+    $(".hamburger, .navbar-expand-toggle").on('click', function () {
         appContainer.toggleClass("expanded");
         $(this).toggleClass('is-active');
         if ($(this).hasClass('is-active')) {
@@ -51,18 +53,18 @@ $(document).ready(function() {
         }
     });
 
-    $('select.select2').select2({ width: '100%' });
+    $('select.select2').select2({width: '100%'});
     $('select.select2-ajax').each(function() {
         $(this).select2({
             width: '100%',
             tags: $(this).hasClass('taggable'),
             createTag: function(params) {
                 var term = $.trim(params.term);
-
+    
                 if (term === '') {
                     return null;
                 }
-
+    
                 return {
                     id: term,
                     text: term,
@@ -71,7 +73,7 @@ $(document).ready(function() {
             },
             ajax: {
                 url: $(this).data('get-items-route'),
-                data: function(params) {
+                data: function (params) {
                     var query = {
                         search: params.term,
                         type: $(this).data('get-items-field'),
@@ -84,19 +86,19 @@ $(document).ready(function() {
             }
         });
 
-        $(this).on('select2:select', function(e) {
+        $(this).on('select2:select',function(e){
             var data = e.params.data;
             if (data.id == '') {
                 // "None" was selected. Clear all selected options
                 $(this).val([]).trigger('change');
             } else {
-                $(e.currentTarget).find("option[value='" + data.id + "']").attr('selected', 'selected');
+                $(e.currentTarget).find("option[value='" + data.id + "']").attr('selected','selected');
             }
         });
 
-        $(this).on('select2:unselect', function(e) {
+        $(this).on('select2:unselect',function(e){
             var data = e.params.data;
-            $(e.currentTarget).find("option[value='" + data.id + "']").attr('selected', false);
+            $(e.currentTarget).find("option[value='" + data.id + "']").attr('selected',false);
         });
 
         $(this).on('select2:selecting', function(e) {
@@ -108,11 +110,11 @@ $(document).ready(function() {
             var label = $el.data('label');
             var errorMessage = $el.data('error-message');
             var newTag = e.params.args.data.newTag;
-
+    
             if (!newTag) return;
-
+    
             $el.select2('close');
-
+    
             $.post(route, {
                 [label]: e.params.args.data.text,
                 _tagging: true,
@@ -122,7 +124,7 @@ $(document).ready(function() {
             }).fail(function(error) {
                 toastr.error(errorMessage);
             });
-
+    
             return false;
         });
     });
@@ -133,7 +135,7 @@ $(document).ready(function() {
         "dom": '<"top"fl<"clear">>rt<"bottom"ip<"clear">>'
     });
 
-    $(".side-menu .nav .dropdown").on('show.bs.collapse', function() {
+    $(".side-menu .nav .dropdown").on('show.bs.collapse', function () {
         return $(".side-menu .nav .dropdown .collapse").collapse('hide');
     });
 
@@ -149,14 +151,14 @@ $(document).ready(function() {
         e.preventDefault();
     });
 
-    $(document).on('click', '.panel-heading a.panel-action[data-toggle="panel-collapse"]', function(e) {
+    $(document).on('click', '.panel-heading a.panel-action[data-toggle="panel-collapse"]', function (e) {
         e.preventDefault();
         var $this = $(this);
 
         // Toggle Collapse
-        if (!$this.hasClass('panel-collapsed ')) {
+        if (!$this.hasClass('panel-collapsed')) {
             $this.parents('.panel').find('.panel-body').slideUp();
-            $this.addClass('panel-collapsed ');
+            $this.addClass('panel-collapsed');
             $this.removeClass('voyager-angle-up').addClass('voyager-angle-down');
         } else {
             $this.parents('.panel').find('.panel-body').slideDown();
@@ -166,7 +168,7 @@ $(document).ready(function() {
     });
 
     //Toggle fullscreen
-    $(document).on('click', '.panel-heading a.panel-action[data-toggle="panel-fullscreen"]', function(e) {
+    $(document).on('click', '.panel-heading a.panel-action[data-toggle="panel-fullscreen"]', function (e) {
         e.preventDefault();
         var $this = $(this);
         if (!$this.hasClass('voyager-resize-full')) {
@@ -180,7 +182,7 @@ $(document).ready(function() {
     $('.datepicker').datetimepicker();
 
     // Save shortcut
-    $(document).keydown(function(e) {
+    $(document).keydown(function (e) {
         if ((e.metaKey || e.ctrlKey) && e.keyCode == 83) { /*ctrl+s or command+s*/
             $(".btn.save").click();
             e.preventDefault();
@@ -190,7 +192,7 @@ $(document).ready(function() {
 
     /********** MARKDOWN EDITOR **********/
 
-    $('textarea.easymde').each(function() {
+    $('textarea.easymde').each(function () {
         var easymde = new EasyMDE({
             element: this
         });

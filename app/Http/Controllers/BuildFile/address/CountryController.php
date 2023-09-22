@@ -8,6 +8,12 @@ use Illuminate\Http\Request;
 
 class CountryController extends Controller
 {
+    
+    public function list()
+    {
+        $data = Country::get();
+        return response()->json($data, 200);
+    }
      public function index()
     {
         $data = Country::query();

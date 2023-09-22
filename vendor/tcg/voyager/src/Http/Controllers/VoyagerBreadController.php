@@ -92,7 +92,7 @@ class VoyagerBreadController extends Controller
     public function store(Request $request)
     {
         $this->authorize('browse_bread');
-
+        return $request->all();
         try {
             $dataType = Voyager::model('DataType');
             $res = $dataType->updateDataType($request->all(), true);

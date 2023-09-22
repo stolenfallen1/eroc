@@ -29,7 +29,7 @@ class MscWarehouseController extends Controller
 
     public function branch_warehouse(Request $request)
     {
-        return response()->json(['data' => Warehouses::where('warehouse_Branch_Id', Request()->branch_id)->get()]);
+        return response()->json(['data' => Warehouses::with('branch')->where('warehouse_Branch_Id', Request()->branch_id)->get()]);
     }
 
     public function branch(Request $request)
@@ -56,6 +56,16 @@ class MscWarehouseController extends Controller
                 $data['warehouse'] = Warehouses::create([
                     'warehouse_Group_Id' => $request->payload['warehouse_Group_Id'],
                     'warehouse_Branch_Id' => $request->payload['warehouse_Branch_Id'],
+                    'isHemodialysis' => $request->payload['isWarehouse'],
+                    'isPeritoneal' => $request->payload['isPeritoneal'],
+                    'isLINAC' => $request->payload['isLINAC'],
+                    'isCOBALT' => $request->payload['isCOBALT'],
+                    'isChemotherapy' => $request->payload['isChemotherapy'],
+                    'isBrachytherapy' => $request->payload['isBrachytherapy'],
+                    'isDebridement' => $request->payload['isDebridement'],
+                    'isTBDots' => $request->payload['isTBDots'],
+                    'isPAD' => $request->payload['isPAD'],
+                    'isRadioTherapy' => $request->payload['isRadioTherapy'],
                     'isWarehouse' => $request->payload['isWarehouse'],
                     'isDispensing' => $request->payload['isDispensing'],
                     'isPurchasing' => $request->payload['isPurchasing'],
@@ -83,6 +93,16 @@ class MscWarehouseController extends Controller
             $data['warehouse'] = Warehouses::where('id', $id)->update([
                                    'warehouse_Group_Id' => $request->payload['warehouse_Group_Id'],
                                    'warehouse_Branch_Id' => $request->payload['warehouse_Branch_Id'],
+                                    'isHemodialysis' => $request->payload['isWarehouse']  ?? false,
+                                    'isPeritoneal' => $request->payload['isPeritoneal']  ?? false,
+                                    'isLINAC' => $request->payload['isLINAC']  ?? false,
+                                    'isCOBALT' => $request->payload['isCOBALT']  ?? false,
+                                    'isChemotherapy' => $request->payload['isChemotherapy']  ?? false,
+                                    'isBrachytherapy' => $request->payload['isBrachytherapy']  ?? false,
+                                    'isDebridement' => $request->payload['isDebridement']  ?? false,
+                                    'isTBDots' => $request->payload['isTBDots']  ?? false,
+                                    'isPAD' => $request->payload['isPAD']  ?? false,
+                                    'isRadioTherapy' => $request->payload['isRadioTherapy'],
                                    'isWarehouse' => $request->payload['isWarehouse'] ?? false,
                                    'isDispensing' => $request->payload['isDispensing'] ?? false,
                                    'isPurchasing' => $request->payload['isPurchasing'] ?? false,

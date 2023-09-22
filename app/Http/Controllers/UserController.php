@@ -18,7 +18,7 @@ class UserController extends Controller
     public function index()
     {
         $data = User::query();
-        $data->with("role");
+        $data->with("role","user_department_access");
         if(Request()->keyword) {
             $data->where('lastname', 'LIKE', '%'.Request()->keyword.'%')->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%')->orWhere('idnumber', 'LIKE', '%'.Request()->keyword.'%');
         }

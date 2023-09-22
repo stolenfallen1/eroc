@@ -107,7 +107,7 @@ return [
         'sqlsrv_pos' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_POS', '10.4.15.201'),
+            'host' => env('DB_HOST_POS', '10.4.15.251'),
             'port' => env('DB_PORT_POS', '1433'),
             'database' => env('DB_DATABASE_POS', 'forge'),
             'username' => env('DB_USERNAME', 'forge'),

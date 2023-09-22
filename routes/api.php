@@ -36,6 +36,8 @@ Route::group(['middleware' => 'auth:api'], function () {
     });
     Route::get('get-setting', [SettingController::class, 'index']);
     Route::get('user-details', [AuthController::class, 'userDetails']);
+    Route::post('refresh', [AuthController::class, 'refreshToken']);
+
     Route::post('/pos/refresh', [AuthPOSController::class, 'refreshToken']);
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);

@@ -2,23 +2,19 @@
 
 namespace TCG\Voyager\Models;
 
-use TCG\Voyager\Facades\Voyager;
-use TCG\Voyager\Models\DataType;
-use App\Models\Database\Database;
 use Illuminate\Database\Eloquent\Model;
+use TCG\Voyager\Facades\Voyager;
 
 class Permission extends Model
 {
-    protected $connection = 'sqlsrv';
     protected $guarded = [];
+
     public function roles()
     {
         return $this->belongsToMany(Voyager::modelClass('Role'));
     }
-    public function database_driver()
-    {
-        return $this->belongsTo(Database::class, 'driver', 'driver');
-    }
+
+
     public function tablename()
     {
         return $this->belongsTo(DataType::class, 'table_name', 'name');
@@ -28,7 +24,7 @@ class Permission extends Model
     {
 
         $actions = ['browse_', 'read_', 'edit_', 'add_', 'delete_', 'print_', 'post_', 'approved_'];
-        $permissions = self::where(['module_id' => $module_id,'sub_module_id' => $sub_module_id])->get();
+        $permissions = self::where(['module_id' => $module_id, 'sub_module_id' => $sub_module_id])->get();
 
         foreach ($actions as $key => $action) {
             $cleanedTableName = str_replace(' ', '', $table_name);

@@ -6,6 +6,7 @@ use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
 use App\Models\BuildFile\Warehouses;
+use App\Models\MMIS\Audit;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +20,11 @@ class Delivery extends Model
 
     protected $guarded = [];
 
-    protected $appends = ['po_number', 'code'];
+    protected $appends = ['po_number', 'code', 'audit_code'];
+
+    public function audit(){
+        return $this->hasOne(Audit::class, 'delivery_id');
+    }
 
     public function branch(){
         return $this->belongsTo(Branchs::class, 'rr_Document_Branch_Id');
@@ -63,5 +68,9 @@ class Delivery extends Model
 
     public function getCodeAttribute(){
         return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-");
+    }
+
+    public function getAuditCodeAttribute(){
+        return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-"). ' - ' . generateCompleteSequence($this->po_Document_Prefix, $this->po_Document_Number, $this->po_Document_Suffix, "-");
     }
 }

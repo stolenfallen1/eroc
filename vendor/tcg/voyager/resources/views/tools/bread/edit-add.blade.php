@@ -64,16 +64,13 @@
                       method="POST" role="form">
                 @if(isset($dataType->id))
                     <input type="hidden" value="{{ $dataType->id }}" name="id">
-                    <input type="hidden" value="{{ $dataType->driver}}" name="driver">
                     {{ method_field("PUT") }}
-                @else
-                <input type="hidden" value="{{ Request()->segment(5)}}" name="driver">
                 @endif
                     <!-- CSRF TOKEN -->
                     {{ csrf_field() }}
 
-                   
                     <div class="panel panel-primary panel-bordered">
+
                         <div class="panel-heading">
                             <h3 class="panel-title panel-icon"><i class="voyager-bread"></i> {{ ucfirst($table) }} {{ __('voyager::bread.bread_info') }}</h3>
                             <div class="panel-actions">
@@ -82,7 +79,6 @@
                         </div>
 
                         <div class="panel-body">
-                            
                             <div class="row clearfix">
                                 <div class="col-md-6 form-group">
                                     <label for="name">{{ __('voyager::database.table_name') }}</label>
@@ -146,7 +142,7 @@
                                         data-placement="right"
                                         title="{{ __('voyager::bread.model_name_ph') }}"></span>
                                     <input type="text" class="form-control" name="model_name" placeholder="{{ __('voyager::bread.model_class') }}"
-                                           value="{{ $dataType->model_name ?? 'App\\Models\\' }}">
+                                           value="{{ $dataType->model_name ?? $model_name }}">
                                 </div>
                                 <div class="col-md-6 form-group">
                                     <label for="controller">{{ __('voyager::bread.controller_name') }}</label>

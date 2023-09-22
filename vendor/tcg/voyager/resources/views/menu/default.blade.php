@@ -44,7 +44,7 @@
     <li class="{{ $isActive }}">
         <a href="{{ url($item->link()) }}" target="{{ $item->target }}" style="{{ $styles }}">
             {!! $icon !!}
-            <span>{{ $item->title }} </span>
+            <span>{{ $item->title }}</span>
         </a>
         @if(!$originalItem->children->isEmpty())
             @include('voyager::menu.default', ['items' => $originalItem->children, 'options' => $options])

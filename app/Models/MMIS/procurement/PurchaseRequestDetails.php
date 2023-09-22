@@ -43,6 +43,9 @@ class PurchaseRequestDetails extends Model
     public function unit(){
         return $this->belongsTo(Unitofmeasurement::class, 'item_Request_Department_Approved_UnitofMeasurement_Id');
     }
+    public function unit2(){
+        return $this->belongsTo(Unitofmeasurement::class, 'item_Request_UnitofMeasurement_Id');
+    }
 
     public function getFullPathAttribute()
     {

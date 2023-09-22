@@ -32,7 +32,7 @@
         {{ item.warehouse.warehouse_description }}
       </template>
       <template v-slot:daterequested="{ item }">
-        {{ _dateFormat(item.daterequested) }}
+        {{ _dateFormat(item.pr_Transaction_Date) +"peste" }}
       </template>
       <template v-slot:item_Category_Id="{ item }">
         {{ item.category ? item.category.name : "..." }}

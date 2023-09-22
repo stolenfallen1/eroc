@@ -28,6 +28,11 @@ class Itemmasters extends Model
         return $this->hasOne(Warehouseitems::class, 'item_Id', 'id')->where('warehouse_Id', Request()->warehouse_idd);
     }
 
+    public function authWarehouseItem(){
+        return $this->hasOne(Warehouseitems::class, 'item_Id', 'id')
+            ->where('warehouse_Id', Auth::user()->warehouse_id)->where('branch_id', Auth::user()->branch_id);
+    }
+
     public function purchaseRequest(){
         return $this->hasMany(PurchaseOrderDetails::class, 'item_Id', 'id');
     }

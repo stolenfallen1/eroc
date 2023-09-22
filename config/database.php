@@ -103,7 +103,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-       
+
         'sqlsrv_pos' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -116,82 +116,19 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-        
-        'sqlsrv_patient_data' => [
+        'sqlsrv_schedules' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_PATIENT_DATA', '10.4.15.251'),
-            'port' => env('DB_PORT_PATIENT_DATA', '1433'),
-            'database' => env('DB_DATABASE_PATIENT_DATA', ''),
-            'username' => env('DB_USERNAME_PATIENT_DATA', ''),
-            'password' => env('DB_PASSWORD_PATIENT_DATA', ''),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ],
-
-        'sqlsrv_medsys_patient_data' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_MEDYS_PATIENT_DATA', '10.4.15.253'),
-            'port' => env('DB_PORT_MEDYS_PATIENT_DATA', '1433'),
-            'database' => env('DB_DATABASE_MEDYS_PATIENT_DATA', ''),
-            'username' => env('DB_USERNAME_MEDYS_PATIENT_DATA', ''),
-            'password' => env('DB_PASSWORD_MEDYS_PATIENT_DATA', ''),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ],
-         'sqlsrv_medsys_hemodialysis' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_MEDYS_HEMODIALYSIS', '10.4.15.253'),
-            'port' => env('DB_PORT_MEDYS_HEMODIALYSIS', '1433'),
-            'database' => env('DB_DATABASE_MEDYS_HEMODIALYSIS', ''),
-            'username' => env('DB_USERNAME_MEDYS_HEMODIALYSIS', ''),
-            'password' => env('DB_PASSWORD_MEDYS_HEMODIALYSIS', ''),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ],
-         'sqlsrv_medsys_nurse_station' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_MEDYS_NURSE_STATION', '10.4.15.253'),
-            'port' => env('DB_PORT_MEDYS_NURSE_STATION', '1433'),
-            'database' => env('DB_DATABASE_MEDYS_NURSE_STATION', ''),
-            'username' => env('DB_USERNAME_MEDYS_NURSE_STATION', ''),
-            'password' => env('DB_PASSWORD_MEDYS_NURSE_STATION', ''),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ],
-        'sqlsrv_medsys_patientdatacdg' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_MEDYS_CDG_DB', '10.4.15.253'),
-            'port' => env('DB_PORT_MEDYS_CDG_DB', '1433'),
-            'database' => env('DB_DATABASE_MEDYS_CDG_DB', ''),
-            'username' => env('DB_USERNAME_MEDYS_CDG_DB', ''),
-            'password' => env('DB_PASSWORD_MEDYS_CDG_DB', ''),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-        ],
-        
-        'sqlsrv_sampletest' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST_SAMPLEtest', 'localhost'),
-            'port' => env('DB_PORT_SAMPLEtest', '1433'),
-            'database' => env('DB_DATABASE_SAMPLEtest', 'forge'),
+            'host' => env('DB_HOST_SCHEDULES', 'localhost'),
+            'port' => env('DB_PORT_SCHEDULES', '1433'),
+            'database' => env('DB_DATABASE_SCHEDULES', 'forge'),
             'username' => env('DB_USERNAME', 'forge'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-        
+
     ],
 
     /*
@@ -224,7 +161,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [

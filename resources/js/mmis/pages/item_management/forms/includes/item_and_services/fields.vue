@@ -398,7 +398,7 @@
           <v-radio-group column>
             <v-checkbox
               hide-details
-              v-model="payload.isPersihable"
+              v-model="payload.isPerishable"
               label="is Perishable"
               value="1"
             ></v-checkbox>

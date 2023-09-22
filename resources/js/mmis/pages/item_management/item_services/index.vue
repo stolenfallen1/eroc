@@ -29,7 +29,7 @@
         }}
       </template>
       <template v-slot:daterequested="{ item }">
-        {{ _dateFormat(item.daterequested) }}
+        {{ _dateFormat(item.pr_Transaction_Date) }}
       </template>
       <template v-slot:item_InventoryGroup_Id="{ item }">
         {{ item.item_InventoryGroup_Id ? item.item_group.name : "..." }}

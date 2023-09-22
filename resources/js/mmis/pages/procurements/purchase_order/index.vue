@@ -19,7 +19,7 @@
         <DataFilter :filter="setting.filter" />
       </template>
       <template v-slot:daterequested="{ item }">
-        {{ _dateFormat(item.daterequested) }}
+        {{ _dateFormat(item.pr_Transaction_Date) }}
       </template>
       <template v-slot:category="{ item }">
         {{ item.category.categoryname }}

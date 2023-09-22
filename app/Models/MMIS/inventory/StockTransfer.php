@@ -14,8 +14,8 @@ class StockTransfer extends Model
 {
     use HasFactory;
 
-    protected $table = 'CDG_MMIS.dbo.stockTransfer';
-
+    protected $connection = 'sqlsrv_mmis';
+    protected $table = 'CDG_MMIS.dbo.stock_transfers';
     protected $guarded = [];
 
     public function delivery()

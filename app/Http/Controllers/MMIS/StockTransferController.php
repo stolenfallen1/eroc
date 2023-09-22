@@ -28,7 +28,7 @@ class StockTransferController extends Controller
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
             $authUser = Auth::user();
-            $sequence = SystemSequence::where(['isActive' => true, 'code' => 'ST1'])->first();
+            $sequence = SystemSequence::where(['isActive' => true, 'branch_id' => $authUser->branch_id])->where('seq_description', 'like', '%Stock transfer%')->first();
             $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
             $prefix = $sequence->seq_prefix;
             $suffix = $sequence->seq_suffix;
@@ -38,7 +38,7 @@ class StockTransferController extends Controller
                 'receiver_warehouse' => $request->warehouse_id,
                 'transfer_by' => $authUser->idnumber, 
                 'delivery_id' => $request->delivery_id, 
-                'pr_id' => $delivery->purchaseOrder->pr_request_id,
+                'pr_id' => $delivery->purchaseOrder->pr_Request_id,
                 'po_id' => $delivery->purchaseOrder->id, 
                 'status' => 1002,
                 'document_number' => $number, 
@@ -89,7 +89,6 @@ class StockTransferController extends Controller
                         'item_OnHand' => (float)$receiver_warehouse->item_OnHand + (float)$batch['item_Qty']
                     ]);
 
-
                     InventoryTransaction::create([
                         'branch_Id' => $delivery->rr_Document_Branch_Id,
                         'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
@@ -100,12 +99,12 @@ class StockTransferController extends Controller
                         'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
                         'transaction_Qty' => $batch['item_Qty'],
                         'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand - $batch['item_Qty'],
-                        'transaction_Item_ListCost' => $delivery->rr_Detail_Item_ListCost,
+                        'transaction_Item_ListCost' => $item->rr_Detail_Item_ListCost,
                         'transaction_UserID' =>  Auth::user()->idnumber,
                         'createdBy' =>  Auth::user()->idnumber,
                         'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                     ]);
-
+                    // return "test";
                     $sequence->update([
                         'seq_no' => (int) $sequence->seq_no + 1,
                         'recent_generated' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ""),
@@ -123,7 +122,7 @@ class StockTransferController extends Controller
                         'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
                         'transaction_Qty' => $batch['item_Qty'],
                         'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand + $batch['item_Qty'],
-                        'transaction_Item_ListCost' => $delivery->rr_Detail_Item_ListCost,
+                        'transaction_Item_ListCost' => $item->rr_Detail_Item_ListCost,
                         'transaction_UserID' =>  Auth::user()->idnumber,
                         'createdBy' =>  Auth::user()->idnumber,
                         'transaction_Acctg_TransType' =>  $transaction1->transaction_code ?? '',

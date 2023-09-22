@@ -2,19 +2,17 @@
 
 namespace TCG\Voyager\Models;
 
-use Cache;
-use Illuminate\Support\Str;
-use TCG\Voyager\Facades\Voyager;
-use TCG\Voyager\Events\MenuDisplay;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use TCG\Voyager\Events\MenuDisplay;
+use TCG\Voyager\Facades\Voyager;
 
 /**
  * @todo: Refactor this class by using something like MenuBuilder Helper.
  */
 class Menu extends Model
 {
-    protected $connection = 'sqlsrv';
     protected $table = 'menus';
 
     protected $guarded = [];
@@ -39,7 +37,8 @@ class Menu extends Model
 
     public function parent_items()
     {
-        return $this->hasMany(Voyager::modelClass('MenuItem'))->whereNull('parent_id');
+        return $this->hasMany(Voyager::modelClass('MenuItem'))
+            ->whereNull('parent_id');
     }
 
     /**
@@ -53,10 +52,8 @@ class Menu extends Model
      */
     public static function display($menuName, $type = null, array $options = [])
     {
-
-
         // GET THE MENU - sort collection in blade
-        $menu = Cache::remember('voyager_menu_'.$menuName, \Carbon\Carbon::now()->addDays(30), function () use ($menuName) {
+        $menu = \Cache::remember('voyager_menu_'.$menuName, \Carbon\Carbon::now()->addDays(30), function () use ($menuName) {
             return static::where('name', '=', $menuName)
             ->with(['parent_items.children' => function ($q) {
                 $q->orderBy('order');
@@ -98,7 +95,6 @@ class Menu extends Model
             return $items;
         }
 
-        
         return new \Illuminate\Support\HtmlString(
             \Illuminate\Support\Facades\View::make($type, ['items' => $items, 'options' => $options])->render()
         );
@@ -120,7 +116,6 @@ class Menu extends Model
             // Translate title
             $item->title = $item->getTranslatedAttribute('title');
             // Resolve URL/Route
-            $item->vueroute = $item->vueroute;
             $item->href = $item->link(true);
 
             if ($item->href == url()->current() && $item->href != '') {
@@ -137,7 +132,7 @@ class Menu extends Model
                 // Exclude dashboard
                 $item->active = false;
             }
-          
+
             if ($item->children->count() > 0) {
                 $item->setRelation('children', static::processItems($item->children));
 

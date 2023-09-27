@@ -19,7 +19,7 @@ class Role extends Model
         $userModel = Voyager::modelClass('User');
 
         return $this->belongsToMany($userModel, 'user_roles')
-                    ->select(app($userModel)->getTable().'.*')
+                    ->select(app($userModel)->getTable() . '.*')
                     ->union($this->hasMany($userModel))->getQuery();
     }
 
@@ -27,7 +27,7 @@ class Role extends Model
     {
         return $this->belongsToMany(Voyager::modelClass('Permission'));
     }
-    
+
     protected static function newFactory()
     {
         return RoleFactory::new();

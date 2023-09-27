@@ -99,6 +99,8 @@ class MedsysPatient
         $birthdate = Request()->birthdate != 'null' ? Request()->birthdate : '';
         $sex = Request()->sex != 'null' ? Request()->sex : '';
         $lastname = Request()->Lastname != 'null' ? Request()->Lastname : '';
+        $Hospnum = Request()->hospnum != 'null' ? Request()->hospnum : '';
+
 
         if($firstname) {
             $this->model_medys_patient_master->where('FirstName', 'LIKE', ''.$firstname.'%');
@@ -115,6 +117,9 @@ class MedsysPatient
             } else {
                 $this->model_medys_patient_master->where('LastName', 'LIKE', ''.$lastname.'%');
             }
+        }
+        if($Hospnum) {
+            $this->model_medys_patient_master->where('Hospnum', $Hospnum);
         }
 
     }

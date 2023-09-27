@@ -11,10 +11,12 @@ class Permission extends Model
 {
     protected $connection = 'sqlsrv';
     protected $guarded = [];
+    
     public function roles()
     {
         return $this->belongsToMany(Voyager::modelClass('Role'));
     }
+
     public function database_driver()
     {
         return $this->belongsTo(Database::class, 'driver', 'driver');

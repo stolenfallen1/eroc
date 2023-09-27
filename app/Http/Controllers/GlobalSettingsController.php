@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use App\Models\GlobalSettings;
+use App\Models\UserGlobalAccess;
 use App\Models\BuildFile\GlobalSetting;
 use App\Models\BuildFile\Hospital\Setting\System;
-use App\Models\UserGlobalAccess;
-use Illuminate\Http\Request;
 
 class GlobalSettingsController extends Controller
 {
@@ -14,11 +15,28 @@ class GlobalSettingsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+     public function index()
+    {
+        try {
+            $data = GlobalSettings::query();
+            if(Request()->keyword) {
+                $data->where('description', 'LIKE', '%'.Request()->keyword.'%');
+            }
+            $data->where('Systems_id', Request()->system_id);
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
     public function list()
     {
         $data = System::with('globalSettings')->get();
         return response()->json($data,200);
     }
+
     public function getuseraccess(Request $request)
     {
        $data = UserGlobalAccess::where('user_id', $request->idnumber)->get();
@@ -40,49 +58,34 @@ class GlobalSettingsController extends Controller
         return response()->json(['msg'=>'deleted'],200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+  
     public function store(Request $request)
     {
-        //
-    }
+        
+        try {
+            $check_if_exist = GlobalSettings::select('description')
+                        ->where('description', $request->payload['description'])->where('Systems_id', $request->payload['Systems_id'])
+                        ->first();
+            if(!$check_if_exist) {
+                $data['data'] = GlobalSettings::create([
+                    'setting_code' => $request->payload['setting_code'],
+                    'description' => $request->payload['description'],
+                    'Systems_id' => $request->payload['Systems_id'],
+                    'value' => $request->payload['value'] == 1 ? 'True' : 'False',
+                ]);
+                $data['msg'] = 'Success';
+                return Response()->json($data, 200);
+            }
+            $data['msg'] = 'Already Exists!';
+            return Response()->json($data, 200);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
 
+    }
+  
     /**
      * Update the specified resource in storage.
      *
@@ -92,7 +95,21 @@ class GlobalSettingsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        
+        try {
+            $data['data'] = GlobalSettings::where('id', $id)->update([
+                        'setting_code' => $request->payload['setting_code'],
+                        'description' => $request->payload['description'],
+                        'Systems_id' => $request->payload['Systems_id'],
+                        'value' => $request->payload['value'] == 'True' ? 'True' : 'False',
+                    ]);
+
+            $data['msg'] = 'Success';
+            return Response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+
     }
 
     /**
@@ -103,6 +120,12 @@ class GlobalSettingsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            $data['data'] = GlobalSettings::where('id', $id)->delete();
+            $data['msg'] = 'Success';
+            return Response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
     }
 }

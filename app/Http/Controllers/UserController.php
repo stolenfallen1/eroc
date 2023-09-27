@@ -98,6 +98,7 @@ class UserController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+    
     public function destroy($id)
     {
         try {

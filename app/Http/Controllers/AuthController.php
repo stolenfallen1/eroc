@@ -70,33 +70,13 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
     }
     public function userDetails()
     {
-        // get user details
-
-        // get all user module
-        $modulelist = Voyager::model('MenuItem')->whereNull('parent_id')->where('menu_id', '1')->orderBy('order', 'asc')->get();
-        $modulelist->filter(function ($item) {
-            // check if action
-            return !$item->children->isEmpty() || Auth::user()->can('browse', $item);
-
-        })->filter(function ($item) {
-            // Filter out empty menu-items
-            if ($item->url == '' && $item->route == '' && $item->children->count() == 0) {
-                return false;
-            }
-            return true;
-        });
-
-        if(!$this->checkTerminal()) {
-            return response()->json(["message" => 'Your not allowed to access'], 403);
-        }
-
+      
         $user = Auth::user();
         $user->sysTerminal = $this->checkTerminal();
         $user->check_is_allow_medsys_status = (new SysGlobalSetting())->check_is_allow_medsys_status();
         $user->serverIP =  config('app.pos_server_ip');
         // $data['module'] = $modulelist;
         $data['module'] = [];
-
         $data['details'] = $user;
         // $data['submodule'] = $this->systemsubcomponents();
         $data['submodule'] = [];

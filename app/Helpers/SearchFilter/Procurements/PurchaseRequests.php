@@ -29,6 +29,7 @@ class PurchaseRequests
     $this->byRequestedDate();
     $this->byRequiredDate();
     $this->byYear();
+    $this->byUser();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -92,6 +93,12 @@ class PurchaseRequests
   private function byYear(){
     if(!Request()->required_date || !Request()->requested_date){
       $this->model->whereYear('created_at', Carbon::now()->year);
+    }
+  }
+
+  private function byUser(){
+    if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+      $this->model->where('branch_Id', $this->authUser->branch_id)->whereIn('warehouse_Id', $this->authUser->departments);
     }
   }
 

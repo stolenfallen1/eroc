@@ -30,6 +30,7 @@ class Items
     $this->byWarehouse();
     $this->forLocation();
     $this->forStockRequisition();
+    $this->forConsignment();
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -76,6 +77,14 @@ class Items
       //   $q->where('item_OnHand', '>', 0);
       // });
       // $this->model->with('wareHouseItem');
+    }
+  }
+
+  private function forConsignment(){
+    if(Request()->consignment){
+      $this->model->whereHas('wareHouseItems', function($q1){
+        $q1->where('isConsignment', 1)->where('warehouse_Id', Auth::user()->warehouse_id)->where('branch_id', Auth::user()->branch_id);
+      });
     }
   }
 

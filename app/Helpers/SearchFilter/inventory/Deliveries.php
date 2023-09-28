@@ -63,7 +63,7 @@ class Deliveries
         });
       }
     }else{
-      $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id);
+      $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
     }
   }
 

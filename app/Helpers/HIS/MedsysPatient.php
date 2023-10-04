@@ -155,13 +155,10 @@ class MedsysPatient
                 $this->model_medys_patient_master->where('LastName', 'LIKE', '' . $lastname . '%');
             }
         }
-<<<<<<< HEAD
         if($Hospnum) {
             $this->model_medys_patient_master->where('Hospnum', $Hospnum);
         }
 
-=======
->>>>>>> d719800338e44af611e07cb7a1b9ad235d81ab03
     }
 
     public function medsys_check_patient()

@@ -10,7 +10,6 @@ class Page extends Model
 {
     use Translatable;
 
-    protected $connection = 'sqlsrv';
     protected $translatable = ['title', 'slug', 'body'];
 
     /**

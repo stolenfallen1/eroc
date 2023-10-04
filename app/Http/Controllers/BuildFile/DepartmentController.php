@@ -14,13 +14,21 @@ class DepartmentController extends Controller
         // return response()->json(['departments' => Warehouses::get() ]);
     }
 
-     public function add_department_access(Request $request){
+    public function departmentlist(){
+        $data = Warehouses::query();
+        $data->orderBy('id', 'desc');
+        $page  = Request()->per_page ?? '1';
+        return response()->json($data->paginate($page), 200);
+
+    }
+    public function add_department_access(Request $request){
         $data = UserDeptAccess::create([
             'user_id'=>$request->idnumber ?? '',
             'warehouse_id'=>$request->department_id ?? '',
         ]);
         return response()->json($data,200);
     }
+
     public function UserDeptAccess(Request $request){
         $data = UserDeptAccess::where('user_id', $request->idnumber)->get();
         return response()->json($data, 200);

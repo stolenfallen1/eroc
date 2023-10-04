@@ -9,7 +9,6 @@ class DataRow extends Model
 {
     use Translatable;
 
-    protected $connection = 'sqlsrv';
     protected $table = 'data_rows';
 
     protected $guarded = [];

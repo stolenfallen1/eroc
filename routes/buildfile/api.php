@@ -226,7 +226,7 @@ Route::controller(MscWarehouseController::class)->group(function () {
     Route::get('get-warehouse', 'list');
     Route::get('get-branch-warehouse', 'branch_warehouse');
     Route::get('get-branch', 'branch');
-    Route::get('get-warehouse-group', 'warehousegroup');
+    Route::get('get-warehouse-list', 'warehousegroup');
 
     Route::post('create-warehouse', 'store');
     Route::put('update-warehouse/{id}', 'update');
@@ -504,9 +504,13 @@ Route::controller(GlobalSettingsController::class)->group(function () {
     Route::post('add-globalsetting-access', 'add_user_access');
     Route::post('remove-globalsetting-access', 'remove_user_access');
 });
+Route::resource('global-settings', GlobalSettingsController::class);
 
 
 Route::controller(SystemReportsController::class)->group(function () {
     Route::get('reports', 'list');
+    Route::post('get-assigned-report', 'assigned_report');
+    Route::post('add-report-access', 'add_report_access');
+    Route::post('remove-report-access', 'remove_report_access');
 });
 Route::resource('system-reports', SystemReportsController::class);

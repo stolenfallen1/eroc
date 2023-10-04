@@ -17,8 +17,6 @@ use TCG\Voyager\Facades\Voyager;
 |
 */
 
-
-
 Route::group(['as' => 'voyager.'], function () {
     event(new Routing());
 
@@ -57,8 +55,6 @@ Route::group(['as' => 'voyager.'], function () {
             // do nothing, might just be because table not yet migrated.
         }
 
-
-       
         // Menu Routes
         Route::group([
             'as'     => 'menus.',
@@ -113,7 +109,6 @@ Route::group(['as' => 'voyager.'], function () {
         ], function () use ($namespacePrefix) {
             Route::get('/', ['uses' => $namespacePrefix.'VoyagerBreadController@index',              'as' => 'index']);
             Route::get('{table}/create', ['uses' => $namespacePrefix.'VoyagerBreadController@create',     'as' => 'create']);
-            Route::get('{table}/create/{driver}', ['uses' => $namespacePrefix.'VoyagerBreadController@getdriver',     'as' => 'getdriver']);
             Route::post('/', ['uses' => $namespacePrefix.'VoyagerBreadController@store',   'as' => 'store']);
             Route::get('{table}/edit', ['uses' => $namespacePrefix.'VoyagerBreadController@edit', 'as' => 'edit']);
             Route::put('{id}', ['uses' => $namespacePrefix.'VoyagerBreadController@update',  'as' => 'update']);
@@ -123,7 +118,6 @@ Route::group(['as' => 'voyager.'], function () {
         });
 
         // Database Routes
-        // Route::get('database/{id}', $namespacePrefix.'VoyagerDatabaseController@index');
         Route::resource('database', $namespacePrefix.'VoyagerDatabaseController');
 
         // Compass Routes

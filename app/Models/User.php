@@ -126,6 +126,7 @@ class User extends \TCG\Voyager\Models\User
         $token = sha1(time());
         $this->api_token = $token;
         $this->datelogin = Carbon::now();
+        $this->datelogout = null;
         $this->isonline = 1;
         $this->host_name = (new GetIP())->getHostname();
         $this->save();
@@ -135,7 +136,7 @@ class User extends \TCG\Voyager\Models\User
     public function revokeToken()
     {
         $this->api_token = null;
-        $this->isonline = null;
+        $this->isonline = 0;
         $this->datelogout = Carbon::now();
         $this->save();
     }

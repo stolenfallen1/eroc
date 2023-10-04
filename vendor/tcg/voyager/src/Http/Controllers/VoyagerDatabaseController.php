@@ -2,12 +2,10 @@
 
 namespace TCG\Voyager\Http\Controllers;
 
-use Doctrine\DBAL\Schema\Schema;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema as FacadesSchema;
 use Illuminate\Support\Str;
 use TCG\Voyager\Database\DatabaseUpdater;
 use TCG\Voyager\Database\Schema\Column;
@@ -19,7 +17,6 @@ use TCG\Voyager\Events\TableAdded;
 use TCG\Voyager\Events\TableDeleted;
 use TCG\Voyager\Events\TableUpdated;
 use TCG\Voyager\Facades\Voyager;
-use App\Models\Database\Database;
 
 class VoyagerDatabaseController extends Controller
 {
@@ -29,49 +26,20 @@ class VoyagerDatabaseController extends Controller
 
         $dataTypes = Voyager::model('DataType')->select('id', 'name', 'slug')->get()->keyBy('name')->toArray();
 
-        // retrive all database connection in table
-        $databaseconnection = Database::all();
-        $list = [];
-        $count =0;
-        foreach ($databaseconnection as $row) {
-            $count++;
-            $tables = array_map(
-                function ($table) use ($dataTypes, $row) {
-                    $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
-                    $table = [
-                        'prefix'     => DB::getTablePrefix(),
-                        'name'       => $table,
-                        'slug'       => $dataTypes[$table]['slug'] ?? null,
-                        'dataTypeId' => $dataTypes[$table]['id'] ?? null,
-                        'driver' => $row->driver
-                    ];
-                    return $table;
-                },
-                SchemaManager::manager($row->driver)->listTableNames()
-            );
-            $list[] = $tables;
-        }
+        $tables = array_map(function ($table) use ($dataTypes) {
+            $table = Str::replaceFirst(DB::getTablePrefix(), '', $table);
 
+            $table = [
+                'prefix'     => DB::getTablePrefix(),
+                'name'       => $table,
+                'slug'       => $dataTypes[$table]['slug'] ?? null,
+                'dataTypeId' => $dataTypes[$table]['id'] ?? null,
+            ];
 
-        $merged_array = array();
+            return (object) $table;
+        }, SchemaManager::listTableNames());
 
-
-        // merge all database connection
-        $array  = [];
-        for ($i=0; $i < $count; $i++) {
-            foreach ($list[$i] as $key=> $row) {
-                $array[] = 
-                        array(
-                            'prefix'     =>$row['prefix'],
-                            'name'       => $row['name'],
-                            'slug'       => $row['slug'] ?? null,
-                            'dataTypeId' => $row['dataTypeId'] ?? null,
-                            'driver' => $row['driver'] ?? null,
-
-                    );
-            }
-        }
-        return Voyager::view('voyager::tools.database.index')->with(compact('dataTypes', 'array'));
+        return Voyager::view('voyager::tools.database.index')->with(compact('dataTypes', 'tables'));
     }
 
     /**
@@ -95,37 +63,27 @@ class VoyagerDatabaseController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-
-
     public function store(Request $request)
     {
         $this->authorize('browse_database');
 
-        $databaseconnection = $request->databasename ?? '';
-        $foldername = $request->foldername ?? '';
         try {
-            $conn = 'database.connections.sqlsrv';
+            $conn = 'database.connections.'.config('database.default');
             Type::registerCustomPlatformTypes();
+
             $table = $request->table;
             if (!is_array($request->table)) {
                 $table = json_decode($request->table, true);
             }
             $table['options']['collate'] = config($conn.'.collation', 'utf8mb4_unicode_ci');
             $table['options']['charset'] = config($conn.'.charset', 'utf8mb4');
-
             $table = Table::make($table);
-            // Use the schema builder to create a new table in the database
-            if (Request()->databasename =='core') {
-                SchemaManager::manager()->createTable($table);
-            } else {
-                SchemaManager::manager($databaseconnection)->createTable($table);
-            }
+            SchemaManager::createTable($table);
 
             if (isset($request->create_model) && $request->create_model == 'on') {
-                $modelNamespace = config('voyager.models.namespace', app()->getNamespace().'Models\\');
+                $modelNamespace = config('voyager.models.namespace', app()->getNamespace());
                 $params = [
-                    // 'name' => $modelNamespace.Str::studly(Str::singular($foldername.'\\'.ucfirst($table->name))),
-                    'name' => $modelNamespace.$foldername.'\\'.ucfirst($table->name),
+                    'name' => $modelNamespace.Str::studly(Str::singular($table->name)),
                 ];
 
                 // if (in_array('deleted_at', $request->input('field.*'))) {
@@ -135,6 +93,7 @@ class VoyagerDatabaseController extends Controller
                 if (isset($request->create_migration) && $request->create_migration == 'on') {
                     $params['--migration'] = true;
                 }
+
                 Artisan::call('voyager:make:model', $params);
             } elseif (isset($request->create_migration) && $request->create_migration == 'on') {
                 Artisan::call('make:migration', [
@@ -163,18 +122,14 @@ class VoyagerDatabaseController extends Controller
     public function edit($table)
     {
         $this->authorize('browse_database');
-        $dbconnection = DB::table('data_types')->where('slug',strtolower($table))->first();
-        $dbdriver = 'sqlsrv';
-        if(!empty($dbconnection)){
-            $dbdriver = $dbconnection->driver;
-        }
-        if (!SchemaManager::tableExists($table,$dbdriver)) {
+
+        if (!SchemaManager::tableExists($table)) {
             return redirect()
                 ->route('voyager.database.index')
                 ->with($this->alertError(__('voyager::database.edit_table_not_exist')));
         }
 
-        $db = $this->prepareDbManager('update', $table,$dbdriver);
+        $db = $this->prepareDbManager('update', $table);
 
         return Voyager::view('voyager::tools.database.edit-add', compact('db'));
     }
@@ -193,11 +148,7 @@ class VoyagerDatabaseController extends Controller
         $table = json_decode($request->table, true);
 
         try {
-            if ($request->databasename !='core') {
-                DatabaseUpdater::update($table, $request->databasename);
-            } else {
-                DatabaseUpdater::update($table, 'sqlsrv');
-            }
+            DatabaseUpdater::update($table);
             // TODO: synch BREAD with Table
             // $this->cleanOldAndCreateNew($request->original_name, $request->name);
             event(new TableUpdated($table));
@@ -210,7 +161,7 @@ class VoyagerDatabaseController extends Controller
                ->with($this->alertSuccess(__('voyager::database.success_create_table', ['table' => $table['name']])));
     }
 
-    protected function prepareDbManager($action, $table = '',$dbconnection=null)
+    protected function prepareDbManager($action, $table = '')
     {
         $db = new \stdClass();
 
@@ -218,7 +169,7 @@ class VoyagerDatabaseController extends Controller
         $db->types = Type::getPlatformTypes();
 
         if ($action == 'update') {
-            $db->table = SchemaManager::listTableDetails($table,$dbconnection);
+            $db->table = SchemaManager::listTableDetails($table);
             $db->formAction = route('voyager.database.update', $table);
         } else {
             $db->table = new Table('New Table');
@@ -317,14 +268,8 @@ class VoyagerDatabaseController extends Controller
     {
         $this->authorize('browse_database');
 
-
         try {
-            if ((Request()->databasename !='core' || Request()->databasename !='sqlsrv')) {
-                SchemaManager::manager(Request()->databasename)->dropTable($table);
-            } else {
-                SchemaManager::dropTable($table);
-            }
-
+            SchemaManager::dropTable($table);
             event(new TableDeleted($table));
 
             return redirect()

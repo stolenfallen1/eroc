@@ -16,10 +16,8 @@
         @include('voyager::alerts')
         <div class="row">
             <div class="col-md-12">
-                <label>Search Table</label>
-                <input id="myInput" type="text" placeholder="Search.." class="form-control">
-                <br>
-                <table class="table table-striped database-tables" id="myTable">
+
+                <table class="table table-striped database-tables">
                     <thead>
                         <tr>
                             <th>{{ __('voyager::database.table_name') }}</th>
@@ -27,40 +25,35 @@
                         </tr>
                     </thead>
 
-                @foreach($array as $table)
-                    <?php
-                     
-                        $column['driver'] = $table['driver'];
-                        DB::table('data_types')->where('name',$table['name'])->update($column);
-                        ?>
-                   
-                    @continue(in_array($table['name'], config('voyager.database.tables.hidden', [])))
+                @foreach($tables as $table)
+                    @continue(in_array($table->name, config('voyager.database.tables.hidden', [])))
                     <tr>
                         <td>
                             <p class="name">
-                                <a href="{{ route('voyager.database.show', $table['prefix'].$table['name']) }}"
-                                   data-name="{{ $table['prefix'].$table['name'] }}" class="desctable">
-                                   {{ $table['name'] }}
+                                <a href="{{ route('voyager.database.show', $table->prefix.$table->name) }}"
+                                   data-name="{{ $table->prefix.$table->name }}" class="desctable">
+                                   {{ $table->name }}
                                 </a>
                             </p>
                         </td>
+
                         <td>
                             <div class="bread_actions">
-                            @if($table['dataTypeId'])
-                                <a href="{{ route('voyager.' . $table['slug'] . '.index') }}"
+                            @if($table->dataTypeId)
+                                <a href="{{ route('voyager.' . $table->slug . '.index') }}"
                                    class="btn-sm btn-warning browse_bread">
                                     <i class="voyager-plus"></i> {{ __('voyager::database.browse_bread') }}
                                 </a>
-                                <a href="{{ route('voyager.bread.edit', $table['name']) }}"
+                                <a href="{{ route('voyager.bread.edit', $table->name) }}"
                                    class="btn-sm btn-default edit">
                                    {{ __('voyager::bread.edit_bread') }}
                                 </a>
-                                <a data-id="{{ $table['dataTypeId'] }}" data-name="{{ $table['name'] }}"  data-driver="{{ $table['driver'] }}"
+                                <a data-id="{{ $table->dataTypeId }}" data-name="{{ $table->name }}"
                                      class="btn-sm btn-danger delete">
                                      {{ __('voyager::bread.delete_bread') }}
                                 </a>
                             @else
-                                <a href="{{ route('voyager.bread.create', $table['name']) }}/{{$table['driver']}}"
+                                <a href="{{ route('voyager.bread.create', $table->name) }}"
                                    class="btn-sm btn-default">
                                     <i class="voyager-plus"></i> {{ __('voyager::bread.add_bread') }}
                                 </a>
@@ -69,16 +62,16 @@
                         </td>
 
                         <td class="actions">
-                            <a class="btn btn-danger btn-sm pull-right delete_table @if($table['dataTypeId']) remove-bread-warning @endif"
-                               data-table="{{ $table['prefix'].$table['name'] }}"  data-driver="{{ $table['driver'] }}">
+                            <a class="btn btn-danger btn-sm pull-right delete_table @if($table->dataTypeId) remove-bread-warning @endif"
+                               data-table="{{ $table->prefix.$table->name }}">
                                <i class="voyager-trash"></i> {{ __('voyager::generic.delete') }}
                             </a>
-                            <a href="{{ route('voyager.database.edit', $table['prefix'].$table['name']) }}"
+                            <a href="{{ route('voyager.database.edit', $table->prefix.$table->name) }}"
                                class="btn btn-sm btn-primary pull-right" style="display:inline; margin-right:10px;">
                                <i class="voyager-edit"></i> {{ __('voyager::generic.edit') }}
                             </a>
-                            <a href="{{ route('voyager.database.show', $table['prefix'].$table['name']) }}"
-                               data-name="{{ $table['name'] }}"
+                            <a href="{{ route('voyager.database.show', $table->prefix.$table->name) }}"
+                               data-name="{{ $table->name }}"
                                class="btn btn-sm btn-warning pull-right desctable" style="display:inline; margin-right:10px;">
                                <i class="voyager-eye"></i> {{ __('voyager::generic.view') }}
                             </a>
@@ -123,7 +116,6 @@
                     <form action="#" id="delete_table_form" method="POST">
                         {{ method_field('DELETE') }}
                         <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="databasename" id="drivername">
                         <input type="submit" class="btn btn-danger pull-right" value="{{ __('voyager::database.delete_table_confirm') }}">
                         <button type="button" class="btn btn-outline pull-right" style="margin-right:10px;"
                                 data-dismiss="modal">{{ __('voyager::generic.cancel') }}
@@ -225,8 +217,6 @@
                 } else {
                     $('#delete_table_name').text(table);
 
-                    driver = $(this).data('driver');
-                    $("#drivername").val(driver);
                     $('#delete_table_form')[0].action = '{{ route('voyager.database.destroy', ['database' => '__database']) }}'.replace('__database', table)
                     $('#delete_modal').modal('show');
                 }
@@ -237,18 +227,10 @@
             $('table .bread_actions').on('click', '.delete', function (e) {
                 id = $(this).data('id');
                 name = $(this).data('name');
+
                 $('#delete_bread_name').text(name);
                 $('#delete_bread_form')[0].action = '{{ route('voyager.bread.delete', '__id') }}'.replace('__id', id);
                 $('#delete_bread_modal').modal('show');
-            });
-        });
-        
-        $(document).ready(function() {
-            $("#myInput").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTable tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
             });
         });
     </script>

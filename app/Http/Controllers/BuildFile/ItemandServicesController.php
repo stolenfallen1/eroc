@@ -248,6 +248,7 @@ class ItemandServicesController extends Controller
                 'isExpiryDate_Required' => $request->isExpiryDate_Required,
                 'isLotNo_Required' => $request->isLotNo_Required,
                 'isModelNo_Required' => $request->isModelNo_Required,
+                'isConsignment' => $request->isConsignment,
                 'isReOrder' => '0',
                 'created_at' => Carbon::now(),
                 // 'DateCreated' => Carbon::now(),

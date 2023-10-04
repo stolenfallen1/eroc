@@ -27,13 +27,15 @@ class Deliveries
         });
       });
     }else{
-      $this->model->whereHas('purchaseOrder', function($q){
-        $q->whereHas('purchaseRequest', function($q1){
-          $q1->where(function($q2){
-            $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
+      if(Request()->tab != 3){
+        $this->model->whereHas('purchaseOrder', function($q){
+          $q->whereHas('purchaseRequest', function($q1){
+            $q1->where(function($q2){
+              $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
+            });
           });
         });
-      });
+      }
     }
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
@@ -91,9 +93,11 @@ class Deliveries
   public function byTab()
   {
     if(Request()->tab == 1){
-      $this->model->where('rr_Status', 5);
+      $this->model->where('rr_Status', 5)->whereNull('isConsignment');
     }else if( Request()->tab == 2){
-      $this->model->where('rr_Status', 11);
+      $this->model->where('rr_Status', 11)->whereNull('isConsignment');
+    }else if( Request()->tab == 4){
+      $this->model->where('isConsignment', 1);
     }
   }
 

@@ -58,6 +58,7 @@ Route::controller(BatchController::class)->group(function () {
 Route::controller(DeliveryController::class)->group(function () {
   Route::get('deliveries', 'index');
   Route::post('deliveries', 'store');
+  Route::post('consignments', 'storeConsignment');
   Route::put('deliveries', 'update');
   Route::get('delivery/{id}', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');

@@ -11,7 +11,7 @@ class Permission extends Model
 {
     protected $connection = 'sqlsrv';
     protected $guarded = [];
-    
+
     public function roles()
     {
         return $this->belongsToMany(Voyager::modelClass('Role'));
@@ -60,7 +60,6 @@ class Permission extends Model
         // self::firstOrCreate(['key' => 'post_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
         // self::firstOrCreate(['key' => 'approved_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
     }
-
 
     public static function removeFrom($table_name)
     {

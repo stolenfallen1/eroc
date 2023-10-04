@@ -52,7 +52,6 @@ class MedsysPatient
 
     public function medsys_patient_searchColumns()
     {
-
         if(isset(Request()->discharged)) {
             $this->model_medys_outpatient->whereNull('DcrDate');
         }

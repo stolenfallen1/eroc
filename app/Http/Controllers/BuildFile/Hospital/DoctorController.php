@@ -12,8 +12,21 @@ class DoctorController extends Controller
         
         try {
             $data = Doctor::query();
-            if(Request()->keyword) {
-                $data->where('lastname', 'LIKE', '%' . Request()->keyword . '%')->orWhere('firstname', 'LIKE', '%' . Request()->keyword . '%')->orWhere('doctor_code', 'LIKE', '%' . Request()->keyword . '%');
+           
+            if(!is_numeric(Request()->keyword)) {
+                
+                $patientname = Request()->keyword ?? '';
+                $names = explode(',', $patientname); // Split the keyword into firstname and lastname
+                $last_name = $names[0];
+                $first_name = $names[1]  ?? '';
+                if($last_name != '' && $first_name != '') {
+                    $data->where('lastname', $last_name);
+                    $data->where('firstname', 'LIKE', '' . ltrim($first_name) . '%');
+                } else {
+                    $data->where('lastname', 'LIKE', '' . Request()->lastname . '%');
+                }
+            }else{
+                $data->where('doctor_code', 'LIKE', '%' . Request()->keyword . '%');
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';

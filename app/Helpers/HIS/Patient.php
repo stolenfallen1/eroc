@@ -34,14 +34,24 @@ class Patient
 
     public function patient_registry_searchColumns()
     {
+
         if(Request()->lastname) {
             $this->model_patient_registry->whereHas('patient_details', function ($query) {
-                return $query->where('lastname', 'LIKE', ''.Request()->lastname.'%');
+                $patientname = Request()->lastname ?? '';
+                $names = explode(',', $patientname); // Split the keyword into firstname and lastname
+                $last_name = $names[0];
+                $first_name = $names[1]  ?? '';
+                if($last_name != '' && $first_name != '') {
+                    $query->where('lastname', $last_name);
+                    $query->where('firstname', 'LIKE', '' . ltrim($first_name) . '%');
+                } else {
+                    $query->where('lastname', 'LIKE', '' . Request()->lastname . '%');
+                }
             });
         }
         if(Request()->hospitalno) {
             $this->model_patient_registry->whereHas('patient_details', function ($query) {
-                return $query->where('id', 'LIKE', ''.Request()->hospitalno.'%');
+                return $query->where('patient_id', 'LIKE', ''.Request()->hospitalno.'%');
             });
         }
         if(Request()->admissionno) {
@@ -77,7 +87,7 @@ class Patient
     public function patient_master_searchColumns()
     {
         if(Request()->Firstname) {
-            $this->model_patient_master->where('firstname', Request()->Firstname);
+            $this->model_patient_master->where('firstname', 'LIKE', '' . Request()->Firstname . '%');
         }
 
         if(Request()->birthdate) {

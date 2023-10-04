@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\ReportController;
+use App\Http\Controllers\BuildFile\DepartmentController;
 use App\Http\Controllers\HIS\PatientRegistrationController;
 use App\Http\Controllers\BuildFile\Hospital\DoctorController;
 
@@ -17,6 +18,10 @@ Route::controller(DoctorController::class)->group(function () {
     Route::get('his/doctors-list', 'index');
 });
 
+
+Route::controller(DepartmentController::class)->group(function () {
+    Route::get('his/departments-list', 'departmentlist');
+});
 
 Route::controller(ReportController::class)->group(function () {
     Route::get('all-montly-report', 'AllMontlyReport');

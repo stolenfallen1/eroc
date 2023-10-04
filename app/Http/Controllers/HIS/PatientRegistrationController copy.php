@@ -96,6 +96,9 @@ class PatientRegistrationController extends Controller
 
     public function store(Request $request)
     {
+
+        return $request->all();
+
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
@@ -121,10 +124,8 @@ class PatientRegistrationController extends Controller
             $mscAccount_type = $request->patient_registry['registry_info']['mscAccount_type'] ?? '';
             $patient_type = $request->patient_registry['registry_info']['patient_type'] ?? '';
 
-            $guarantor_code = isset($request->patient_registry['guarantor_details']['guarantor']['guarantor_code']) ? $request->patient_registry['guarantor_details']['guarantor']['guarantor_code'] : '';
-            $guarantor_name = isset($request->patient_registry['guarantor_details']['guarantor']['guarantor_name']) ? $request->patient_registry['guarantor_details']['guarantor']['guarantor_name'] : '';
-            $attending_doctor = isset($request->patient_registry['attending_doctor']['doctor_code']) ?$request->patient_registry['attending_doctor']['doctor_code'] : $request->patient_registry['attending_doctor'];
-            $doctor_name = isset($request->patient_registry['attending_doctor']['doctor_name']) ?$request->patient_registry['attending_doctor']['doctor_name'] : $request->patient_registry['attending_doctor_name'];
+            $guarantor_code = $request->patient_registry['guarantor_details']['guarantor']['guarantor_code'] ?? '';
+            $guarantor_name = $request->patient_registry['guarantor_details']['guarantor']['guarantor_name'] ?? '';
 
             $isprivate = 0;
             $isHemodialysis = 0;
@@ -156,6 +157,7 @@ class PatientRegistrationController extends Controller
 
                 $checkpatientMaster = PatientMaster::select('previous_patient_id')->where('previous_patient_id', $previous_patient_id)->exists();
                 $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'OPDId')->first();
+
                 if (!$patient_id) {
                     $generated_medsys_patient_id_no = $check_medsys_series_no->HospNum;
                 } else {
@@ -164,19 +166,17 @@ class PatientRegistrationController extends Controller
                 $generated_medsys_hospital_opd_no = $check_medsys_series_no->OPDId.'B';
             } else {
                 $checkpatientMaster = PatientMaster::select('patient_id')->where('patient_id', $patient_id)->exists();
-                if($checkpatientMaster){
-                    $generated_medsys_patient_id_no = $patient_id;
-                }else{
-                    $generated_medsys_patient_id_no = $generated_pid_no;
-                }
+                $generated_medsys_patient_id_no = $generated_pid_no;
                 $generated_medsys_hospital_opd_no = $generated_opd_no;
             }
 
             if ($mscAccount_type != '1') {
-                $account = $guarantor_code;
+                $account = isset($request->patient_registry['guarantor']) ? $request->patient_registry['guarantor']['guarantor_code'] : $request->patient_registry['guarantor_code'];
             } else {
                 $account = $generated_medsys_patient_id_no;
             }
+
+
 
             $patientMasterData = [
                 'title_id' => $request->patient_master['title'] ?? '',
@@ -198,42 +198,42 @@ class PatientRegistrationController extends Controller
                 'telephone_number' => $request->patient_master['telephone_number'] ?? '',
                 'PWD_ID_Number' => $request->patient_master['PWD_ID_Number'] ?? '',
                 'bldgstreet' => $request->patient_master['bldgstreet'] ?? '',
-                'region_id' => $request->patient_master['address']['region_id'] ?? '',
-                'province_id' => $request->patient_master['address']['province_id'] ?? '',
-                'municipality_id' => $request->patient_master['address']['municipality_id'] ?? '',
-                'barangay_id' => $request->patient_master['address']['barangay_id'] ?? '',
-                'zipcode_id' => $request->patient_master['address']['zipcode_id'] ?? '',
+                'region_id' => $request->patient_master['region_id'] ?? '',
+                'province_id' => $request->patient_master['province_id'] ?? '',
+                'municipality_id' => $request->patient_master['municipality_id'] ?? '',
+                'barangay_id' => $request->patient_master['barangay_id'] ?? '',
+                'zipcode_id' => $request->patient_master['zipcode_id'] ?? '',
                 'email_address' => $request->patient_master['email_address'] ?? '',
                 'createdBy' => Auth()->user()->idnumber,
             ];
 
             $patientRegistryData = [
                 'mscBranches_id' => Auth()->user()->branch_id,
-                'attending_doctor' => $attending_doctor,
-                'attending_docotr_fullname' => $doctor_name,
+                'attending_doctor' => isset($request->patient_registry['attending_doctor']['doctor_code']) ? $request->patient_registry['attending_doctor']['doctor_code'] : $request->patient_registry['attending_doctor'],
+                'attending_docotr_fullname' => isset($request->patient_registry['attending_doctor']['doctor_name']) ? $request->patient_registry['attending_doctor']['doctor_name'] : $request->patient_registry['attending_docotr_fullname'],
                 'isHemodialysis' => $isHemodialysis,
                 'isTBDots' => $isTBDots,
                 'isPAD' => '',
                 'isRadioTherapy' => $isRadioTherapy,
                 'isChemotherapy' => $isChemotherapy,
                 'registry_hostname' => (new GetIP())->getHostname(),
-                'mscPatient_category' => $request->patient_registry['registry_info']['mscPatient_category'] ?? '',
-                'register_source' => $request->patient_registry['registry_info']['register_source'] ?? '',
-                'mscPrice_Schemes' => $request->patient_registry['registry_info']['mscPrice_Schemes'] ?? '',
-                'mscPrice_Groups' => $request->patient_registry['registry_info']['mscPrice_Groups'] ?? '',
-                'mscAccount_trans_types' => $request->patient_registry['registry_info']['mscAccount_trans_types'] ?? '',
-                'register_type' => $request->patient_registry['registry_info']['register_type'] ?? '',
-                'mscAccount_type' => $request->patient_registry['registry_info']['mscAccount_type'] ?? '',
+                'mscPatient_category' => $request->patient_registry['mscPatient_category'] ?? '',
+                'register_source' => $request->patient_registry['register_source'] ?? '',
+                'mscPrice_Schemes' => $request->patient_registry['mscPrice_Schemes'] ?? '',
+                'mscPrice_Groups' => $request->patient_registry['mscPrice_Groups'] ?? '',
+                'mscAccount_trans_types' => $request->patient_registry['mscAccount_trans_types'] ?? '',
+                'register_type' => $request->patient_registry['register_type'] ?? '',
+                'mscAccount_type' => $request->patient_registry['mscAccount_type'] ?? '',
                 'guarantor_id' => $account,
-                'guarantor_name' => $guarantor_name,
-                'guarantor_approval_code' => $guarantor_code,
-                'guarantor_approval_no' => isset($request->patient_registry['guarantor_details']['guarantor_approval_no']) ? $request->patient_registry['guarantor_details']['guarantor_approval_no'] : '',
-                'guarantor_approval_date' => isset($request->patient_registry['guarantor_details']['guarantor_approval_date']) ? $request->patient_registry['guarantor_details']['guarantor_approval_date'] : null,
-                'guarantor_validity_date' => isset($request->patient_registry['guarantor_details']['guarantor_validity_date']) ? $request->patient_registry['guarantor_details']['guarantor_validity_date'] : null,
-                'guarantor_credit_Limit' => (float) (isset($request->patient_registry['guarantor_details']['guarantor_credit_Limit']) ? $request->patient_registry['guarantor_details']['guarantor_credit_Limit'] : 0),
-                'guarantor_approval_remarks' => isset($request->patient_registry['guarantor_details']['guarantor_approval_remarks']) ? $request->patient_registry['guarantor_details']['guarantor_approval_remarks'] : '',
-                'registry_remarks' => isset($request->patient_registry['guarantor_details']['registry_remarks']) ? $request->patient_registry['guarantor_details']['registry_remarks'] : '',
-                'isWithCreditLimit' => isset($request->patient_registry['guarantor_details']['isWithCreditLimit']) ? $request->patient_registry['guarantor_details']['isWithCreditLimit'] : '',
+                'guarantor_name' => isset($request->patient_registry['guarantor']) ? $request->patient_registry['guarantor']['guarantor_name'] : '',
+                'guarantor_approval_code' => $request->patient_registry['guarantor_approval_code'] ?? '',
+                'guarantor_approval_no' => $request->patient_registry['guarantor_approval_no'] ?? '',
+                'guarantor_approval_date' => $request->patient_registry['guarantor_approval_date'] ?? null,
+                'guarantor_validity_date' => $request->patient_registry['guarantor_validity_date'] ?? null,
+                'guarantor_credit_Limit' => (float) ($request->patient_registry['guarantor_credit_Limit'] ?? 0),
+                'guarantor_approval_remarks' => $request->patient_registry['guarantor_approval_remarks'] ?? '',
+                'registry_remarks' => $request->patient_registry['registry_remarks'] ?? '',
+                'isWithCreditLimit' => $request->patient_registry['isWithCreditLimit'] ?? '',
                 'registry_date' => Carbon::now(),
                 'CreatedBy' => Auth()->user()->idnumber,
                 'registry_userid' => Auth()->user()->idnumber,
@@ -278,7 +278,7 @@ class PatientRegistrationController extends Controller
                     'recent_generated' => $generated_medsys_opd_no,
                 ]);
             }
-            $this->medsys_patient_registration($generated_medsys_patient_id_no);
+            // $this->medsys_patient_registration($generated_medsys_patient_id_no);
 
             DB::connection('sqlsrv_patient_data')->commit();
             DB::connection('sqlsrv')->commit();
@@ -320,17 +320,8 @@ class PatientRegistrationController extends Controller
             } else {
                 $patientMaster = PatientMaster::findOrFail($request->patient_master['id']);
             }
-                        
-            $mscAccount_type = $request->patient_registry['registry_info']['mscAccount_type'] ?? '';
-            $patient_type = $request->patient_registry['registry_info']['patient_type'] ?? '';
-            
-         
-            $guarantor_code = isset($request->patient_registry['guarantor_details']['guarantor']['guarantor_code']) ? $request->patient_registry['guarantor_details']['guarantor']['guarantor_code'] : $request->patient_registry['guarantor_details']['guarantor']['guarantor_code'];
-            $guarantor_name = isset($request->patient_registry['guarantor_details']['guarantor']['guarantor_name']) ? $request->patient_registry['guarantor_details']['guarantor']['guarantor_name'] : $request->patient_registry['guarantor_details']['guarantor']['guarantor_name'];
-            $attending_doctor = isset($request->patient_registry['attending_doctor']['doctor_code']) ? $request->patient_registry['attending_doctor']['doctor_code'] : $request->patient_registry['attending_doctor'];
-            $doctor_name = isset($request->patient_registry['attending_doctor']['doctor_name']) ? $request->patient_registry['attending_doctor']['doctor_name'] : $request->patient_registry['attending_doctor_name'];
 
-
+            $patient_type = $request->patient_registry['patient_type'] ?? '';
             $isprivate = 0;
             $isHemodialysis = 0;
             $isChemotherapy = 0;
@@ -387,49 +378,50 @@ class PatientRegistrationController extends Controller
 
             $account = '';
             $guarator = '';
-            $guarantor_approval_date = null;
-            $guarantor_validity_date = null;
-            if ($mscAccount_type != 1) {
-                $account = $guarantor_code;
-                $guarator = $guarantor_name;
+            $guarantor_approval_date = '';
+            $guarantor_validity_date = '';
+
+            if ($request->patient_registry['mscAccount_type'] != 1) {
+                $account = isset($request->patient_registry['guarantor']['guarantor_code']) ? $request->patient_registry['guarantor']['guarantor_code'] : ($request->patient_registry['guarantor_id'] ?? '');
+                $guarator = isset($request->patient_registry['guarantor']['guarantor_name']) ? $request->patient_registry['guarantor']['guarantor_name'] : $request->patient_registry['guarantor_name'];
             } else {
                 $account = $request->patient_master['patient_id'];
                 $guarator = '';
             }
 
-            if (isset($request->patient_registry['guarantor_details']['guarantor_approval_date'])) {
-                $guarantor_approval_date = $request->patient_registry['guarantor_details']['guarantor_approval_date'];
-                $guarantor_validity_date = $request->patient_registry['guarantor_details']['guarantor_validity_date'];
+            if (isset($request->patient_registry['guarantor_approval_date'])) {
+                $guarantor_approval_date = $request->patient_registry['guarantor_approval_date'];
+                $guarantor_validity_date = $request->patient_registry['guarantor_validity_date'];
             }
 
             $patientMaster->patient_registry()->where('id', $id)->update([
                 'medsys_idnum' => $request->patient_registry['register_id_no'] ?? '',
                 'mscBranches_id' => Auth()->user()->branch_id,
-                'attending_doctor' =>  $attending_doctor,
-                'attending_docotr_fullname' => $doctor_name,
-                'isHemodialysis' => $isHemodialysis,
+                'attending_doctor' => isset($request->patient_registry['attending_doctor']['doctor_code']) ? $request->patient_registry['attending_doctor']['doctor_code'] : $request->patient_registry['attending_doctor'],
+                'attending_docotr_fullname' => isset($request->patient_registry['attending_doctor']['doctor_name']) ? $request->patient_registry['attending_doctor']['doctor_name'] : $request->patient_registry['attending_docotr_fullname'],
+                 'isHemodialysis' => $isHemodialysis,
                 'isTBDots' => $isTBDots,
                 'isPAD' => '',
                 'isRadioTherapy' => $isRadioTherapy,
                 'isChemotherapy' => $isChemotherapy,
                 'registry_hostname' => (new GetIP())->getHostname(),
-                'mscPatient_category' => $request->patient_registry['registry_info']['mscPatient_category'] ?? '',
-                'register_source' => $request->patient_registry['registry_info']['register_source'] ?? '',
-                'mscPrice_Schemes' => $request->patient_registry['registry_info']['mscPrice_Schemes'] ?? '',
-                'mscPrice_Groups' => $request->patient_registry['registry_info']['mscPrice_Groups'] ?? '',
-                'mscAccount_trans_types' => $request->patient_registry['registry_info']['mscAccount_trans_types'] ?? '',
-                'register_type' => $request->patient_registry['registry_info']['register_type'] ?? '',
-                'mscAccount_type' => $mscAccount_type ?? '',
+                'mscPatient_category' => $request->patient_registry['mscPatient_category'] ?? '',
+                'register_source' => $request->patient_registry['register_source'] ?? '',
+                'mscPrice_Schemes' => $request->patient_registry['mscPrice_Schemes'] ?? '',
+                'mscPrice_Groups' => $request->patient_registry['mscPrice_Groups'] ?? '',
+                'mscAccount_trans_types' => $request->patient_registry['mscAccount_trans_types'] ?? '',
+                'register_type' => $request->patient_registry['register_type'] ?? '',
+                'mscAccount_type' => $request->patient_registry['mscAccount_type'] ?? '',
                 'guarantor_id' => $account,
                 'guarantor_name' => $guarator,
-                'guarantor_approval_code' => $request->patient_registry['guarantor_details']['guarantor_approval_code'] ?? '',
-                'guarantor_approval_no' => $request->patient_registry['guarantor_details']['guarantor_approval_no'] ?? '',
+                'guarantor_approval_code' => $request->patient_registry['guarantor_approval_code'] ?? '',
+                'guarantor_approval_no' => $request->patient_registry['guarantor_approval_no'] ?? '',
                 'guarantor_approval_date' => $guarantor_approval_date != 'Invalid date' ? $guarantor_approval_date : null,
                 'guarantor_validity_date' => $guarantor_validity_date != 'Invalid date' ? $guarantor_validity_date : null,
-                'guarantor_credit_Limit' => (float)$request->patient_registry['guarantor_details']['guarantor_credit_Limit'] ?? 0,
-                'guarantor_approval_remarks' => $request->patient_registry['guarantor_details']['guarantor_approval_remarks'] ?? '',
+                'guarantor_credit_Limit' => (float)(isset($request->patient_registry['guarantor_credit_Limit']) ? $request->patient_registry['guarantor_credit_Limit'] : 0),
+                'guarantor_approval_remarks' => $request->patient_registry['guarantor_approval_remarks'] ?? '',
                 'registry_remarks' => $request->patient_registry['registry_remarks'] ?? '',
-                'isWithCreditLimit' => $request->patient_registry['guarantor_details']['isWithCreditLimit'] ?? '',
+                'isWithCreditLimit' => $request->patient_registry['isWithCreditLimit'] ?? '',
                 'registry_status' => $request->patient_registry['registry_status'] == true ? 'R' : '',
                 'isRevoked' => $request->patient_registry['registry_status'] ?? 0,
                 'revoked_remarks' => $request->patient_registry['registry_status'] == true ? $request->patient_registry['revoked_remarks'] : '',
@@ -562,7 +554,7 @@ class PatientRegistrationController extends Controller
             );
 
             // Create or update MedsysHemoPatient (if applicable)
-            // if(Auth()->user()->warehouse->isHemodialysis == 1) {
+            if(Auth()->user()->warehouse->isHemodialysis == 1) {
 
                 if ($patientRegistryDetails->isHemodialysis == 1) {
 
@@ -607,7 +599,7 @@ class PatientRegistrationController extends Controller
                     );
 
                 }
-            // }
+            }
 
             // Create or update MedsysPatientAllergies
             MedsysPatientAllergies::updateOrCreate(

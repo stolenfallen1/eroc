@@ -7,8 +7,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthPOSController;
 use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
-use App\Http\Controllers\ORSchedulesController as ControllersORSchedulesController;
 use App\Http\Controllers\Schedules\ORSchedulesController;
+use App\Http\Controllers\Schedules\ORSchedulePatientController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,11 +25,24 @@ use App\Http\Controllers\Schedules\ORSchedulesController;
 /*require_once('/schedules/api.php');*/
 
 Route::get('/schedules', [ORSchedulesController::class, 'index']);
+Route::get('/getdoctor', [ORSchedulesController::class, 'getdoctor']);
+Route::get('/getORCategory', [ORSchedulesController::class, 'getORCategory']);
+Route::get('/searchPatientData', [ORSchedulePatientController::class, 'searchPatientData']);
+Route::get('/getORRooms', [ORSchedulesController::class, 'getORRooms']);
+Route::get('/getORRoomTimeSlot', [ORSchedulesController::class, 'getORRoomTimeSlot']);
+Route::get('/getORCirculatingNurses', [ORSchedulesController::class, 'getORCirculatingNurses']);
+Route::get('/getORCaseTypes', [ORSchedulesController::class, 'getORCaseTypes']);
+Route::get('/checkRoomAvailability', [ORSchedulesController::class, 'checkRoomAvailability']);
+
+Route::post('/submitschedule', [ORSchedulesController::class, 'store']);
+
+
 
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('pos/login', [AuthPOSController::class, 'login']);
 Route::get('get-schedule', [SettingController::class, 'schedule']);
+
 Route::group(['middleware' => 'auth:api'], function () {
     Route::controller(UserController::class)->group(function () {
         Route::get('department/users', 'getDepartmentUsers');

@@ -34,7 +34,7 @@ class purchaseOrderMaster extends Model
     }
 
     public function purchaseRequest(){
-        return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');
+        return $this->belongsTo(PurchaseRequest::class, 'pr_Request_id');
     }
 
     public function vendor(){

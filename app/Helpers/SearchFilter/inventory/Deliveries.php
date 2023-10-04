@@ -23,14 +23,14 @@ class Deliveries
     if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
       $this->model->whereHas('purchaseOrder', function($q){
         $q->whereHas('purchaseRequest', function($q1){
-          $q1->where('isPersihable', 1);
+          $q1->where('isPerishable', 1);
         });
       });
     }else{
       $this->model->whereHas('purchaseOrder', function($q){
         $q->whereHas('purchaseRequest', function($q1){
           $q1->where(function($q2){
-            $q2->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+            $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
           });
         });
       });
@@ -41,7 +41,30 @@ class Deliveries
   }
 
   public function byWarehouse(){
-    $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id);
+    if($this->authUser->role->name == 'audit'){
+      $this->model->with(['purchaseOrder'=>function($q){
+        $q->with(['purchaseRequest'=> function($q1){
+          $q1->with(['purchaseRequestDetails' => function($q2){
+            $q2->with('itemMaster', 'unit', 'unit2', 'purchaseOrderDetails.purchaseOrder');
+          }, 'warehouse', 'itemGroup', 'user', 'category']);
+        }, 'details' => function($q1){
+          $q1->with('canvas.vendor', 'item', 'unit');
+        }]);
+      }, 'items'=>function($q){
+        $q->with('item', 'unit');
+      }]);
+      if(Request()->isauditted){
+        $this->model->with('audit')->where(function($q){
+          $q->where('isaudit', 1);
+        });
+      }else{
+        $this->model->where(function($q){
+          $q->where('isaudit', 0)->orWhere('isaudit', NULL);
+        });
+      }
+    }else{
+      $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id);
+    }
   }
 
   public function searcColumns(){

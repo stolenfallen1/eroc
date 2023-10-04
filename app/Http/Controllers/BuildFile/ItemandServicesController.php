@@ -77,7 +77,7 @@ class ItemandServicesController extends Controller
                 'isLotNo_Required'=> (int)$request->isLotNo_Required ?? '',
                 'isExpiryDate_Required'=> (int)$request->isExpiryDate_Required ?? '',
                 'isForProduction'=> (int) $request->isForProduction ?? '',
-                'isPersihable'=>(int) $request->isPersihable ?? '',
+                'isPerishable'=>(int) $request->isPerishable ?? '',
                 'isVatable'=> (int)$request->isVatable ?? '',
                 'isVatExempt'=> (int)$request->isVatExempt ?? '',
                 'isAllowDiscount'=>(int) $request->isAllowDiscount ?? '',
@@ -179,7 +179,7 @@ class ItemandServicesController extends Controller
             'isLotNo_Required'=> (int)$request->isLotNo_Required ?? '',
             'isExpiryDate_Required'=> (int)$request->isExpiryDate_Required ?? '',
             'isForProduction'=> (int) $request->isForProduction ?? '',
-            'isPersihable'=>(int) $request->isPersihable ?? '',
+            'isPerishable'=>(int) $request->isPerishable ?? '',
             'isVatable'=> (int)$request->isVatable ?? '',
             'isVatExempt'=> (int)$request->isVatExempt ?? '',
             'isAllowDiscount'=>(int) $request->isAllowDiscount ?? '',
@@ -250,7 +250,7 @@ class ItemandServicesController extends Controller
                 'isModelNo_Required' => $request->isModelNo_Required,
                 'isReOrder' => '0',
                 'created_at' => Carbon::now(),
-                'DateCreated' => Carbon::now(),
+                // 'DateCreated' => Carbon::now(),
                 'CreatedBy'=>Auth()->user()->id,
             ]);
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
@@ -352,7 +352,7 @@ class ItemandServicesController extends Controller
                 'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
                 'transaction_UserID' =>  Auth::user()->id,
                 'createdBy' =>  Auth::user()->id,
-                'transaction_count_by' =>  $request->count_by ?? Auth::user()->id,
+                'transaction_count_by' =>  $request->count_by ?? Auth::user()->idnumber,
                 'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
             ]);
 
@@ -364,9 +364,10 @@ class ItemandServicesController extends Controller
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
             return response()->json(["message" => "success"], 200);
-        } catch (\Exception $th) {
-           DB::connection('sqlsrv')->rollback();
-           DB::connection('sqlsrv_mmis')->rollBack();
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv')->rollback();
+            DB::connection('sqlsrv_mmis')->rollBack();
+            return response()->json(["error" => $e], 200);
         }
     }
 }

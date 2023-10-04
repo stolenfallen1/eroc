@@ -14,19 +14,17 @@ class CreateStockRequisitionsTable extends Migration
     public function up()
     {
         Schema::create('stock_requisitions', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('transfer_by_id');
-            $table->unsignedBigInteger('receiver_id')->nullable();
+            $table->id()->autoIncrement();
+            $table->string('request_by_id');
+            $table->string('receiver_id')->nullable();
+            $table->unsignedBigInteger('requester_warehouse_id');
+            $table->unsignedBigInteger('requester_branch_id');
             $table->unsignedBigInteger('sender_warehouse_id');
-            $table->unsignedBigInteger('receiver_warehouse_id');
-            // $table->unsignedBigInteger('warehouse_item_id');
-            // $table->unsignedBigInteger('item_id');
-            // $table->double('quantity');
-            // $table->unsignedBigInteger('department_head_approved_by')->nullable();
-            // $table->dateTime('department_head_approved_date')->nullable();
-            // $table->unsignedBigInteger('department_head_declined_by')->nullable();
-            // $table->dateTime('department_head_declined_date')->nullable();
-            // $table->longText('department_head_declined_remarks')->nullable();
+            $table->unsignedBigInteger('sender_branch_id');
+            $table->string('transfer_by_id')->nullable();
+            $table->unsignedBigInteger('item_group_id')->nullable();
+            $table->unsignedBigInteger('category_id')->nullable();
+            $table->longText('remarks')->nullable();
             $table->timestamps();
         });
     }

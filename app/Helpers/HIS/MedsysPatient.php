@@ -32,49 +32,87 @@ class MedsysPatient
         return $this->model_medys_outpatient->paginate($per_page);
     }
 
-    public function orderby_adm_date()
+    public function medsys_inpatient_searchable()
     {
-       
-        // $this->model_medys_outpatient->orderBy('AdmDate', 'desc');
+        $this->inpatient_current_register();
+        $this->medsys_inpatient_searchColumns();
+        $this->model_medys_inpatient->with('patient_details');
+        $per_page = Request()->per_page ?? '';
+        return $this->model_medys_inpatient->paginate($per_page);
     }
 
-    public function filter_by_department()
-    {
-        // if($this->department->isHemodialysis == 1) {
-        // $this->model_medys_outpatient->where('IsHemodialysis', 1);
-        // }
-    }
 
+
+
+    // CURRENT REGISTERED OUTPATIENT
     public function currenty_register()
     {
-        $this->model_medys_outpatient->whereDate('AdmDate', ''.Carbon::now()->format('Y-m-d').'');
+        $this->model_medys_outpatient->whereDate('AdmDate', '' . Carbon::now()->format('Y-m-d') . '');
     }
+
+    // CURRENT REGISTERED OUTPATIENT
+    public function inpatient_current_register()
+    {
+        $this->model_medys_inpatient->whereDate('AdmDate', '' . Carbon::now()->format('Y-m-d') . '');
+    }
+
+    public function medsys_inpatient_searchColumns()
+    {
+        if (isset(Request()->discharged)) {
+            $this->model_medys_inpatient->whereNull('DcrDate');
+        }
+
+        if (isset(Request()->admissionno)) {
+            $this->model_medys_inpatient->where('IDNum', '' . Request()->admissionno . '');
+        }
+
+        if (isset(Request()->hospitalno)) {
+            $this->model_medys_inpatient->where('HospNum', '' . Request()->hospitalno . '');
+        }
+        if (isset(Request()->lastname)) {
+            $this->model_medys_inpatient->whereHas('patient_details', function ($query) {
+
+                $patientname = Request()->lastname ?? '';
+                $names = explode(',', $patientname); // Split the keyword into firstname and lastname
+                $last_name = $names[0];
+                $first_name = $names[1]  ?? '';
+                if ($last_name != '' && $first_name != '') {
+                    $query->where('LastName', $last_name);
+                    $query->where('FirstName', 'LIKE', '' . ltrim($first_name) . '%');
+                } else {
+                    $query->where('LastName', 'LIKE', '' . Request()->lastname . '%');
+                }
+            });
+        }
+    }
+
 
     public function medsys_patient_searchColumns()
     {
-        if(isset(Request()->discharged)) {
+
+        if (isset(Request()->discharged)) {
             $this->model_medys_outpatient->whereNull('DcrDate');
         }
 
-        if(isset(Request()->admissionno)) {
-            $this->model_medys_outpatient->where('IDNum', ''.Request()->admissionno.'');
+        if (isset(Request()->admissionno)) {
+            $this->model_medys_outpatient->where('IDNum', '' . Request()->admissionno . '');
         }
 
-        if(isset(Request()->hospitalno)) {
-            $this->model_medys_outpatient->where('HospNum', ''.Request()->hospitalno.'');
+        if (isset(Request()->hospitalno)) {
+            $this->model_medys_outpatient->where('HospNum', '' . Request()->hospitalno . '');
         }
-        if(isset(Request()->lastname)) {
+        if (isset(Request()->lastname)) {
             $this->model_medys_outpatient->whereHas('patient_details', function ($query) {
 
                 $patientname = Request()->lastname ?? '';
                 $names = explode(',', $patientname); // Split the keyword into firstname and lastname
                 $last_name = $names[0];
                 $first_name = $names[1]  ?? '';
-                if($last_name != '' && $first_name != '') {
+                if ($last_name != '' && $first_name != '') {
                     $query->where('LastName', $last_name);
-                    $query->where('FirstName', 'LIKE', ''.ltrim($first_name).'%');
+                    $query->where('FirstName', 'LIKE', '' . ltrim($first_name) . '%');
                 } else {
-                    $query->where('LastName', 'LIKE', ''.Request()->lastname.'%');
+                    $query->where('LastName', 'LIKE', '' . Request()->lastname . '%');
                 }
             });
         }
@@ -101,26 +139,29 @@ class MedsysPatient
         $Hospnum = Request()->hospnum != 'null' ? Request()->hospnum : '';
 
 
-        if($firstname) {
-            $this->model_medys_patient_master->where('FirstName', 'LIKE', ''.$firstname.'%');
+        if ($firstname) {
+            $this->model_medys_patient_master->where('FirstName', 'LIKE', '' . $firstname . '%');
         }
-        if($birthdate) {
+        if ($birthdate) {
             $this->model_medys_patient_master->where('BirthDate', $birthdate);
         }
-        if($sex) {
+        if ($sex) {
             $this->model_medys_patient_master->where('Sex', $sex);
         }
-        if($lastname) {
+        if ($lastname) {
             if (is_numeric($lastname)) {
                 $this->model_medys_patient_master->where('HospNum', $lastname);
             } else {
-                $this->model_medys_patient_master->where('LastName', 'LIKE', ''.$lastname.'%');
+                $this->model_medys_patient_master->where('LastName', 'LIKE', '' . $lastname . '%');
             }
         }
+<<<<<<< HEAD
         if($Hospnum) {
             $this->model_medys_patient_master->where('Hospnum', $Hospnum);
         }
 
+=======
+>>>>>>> d719800338e44af611e07cb7a1b9ad235d81ab03
     }
 
     public function medsys_check_patient()
@@ -132,7 +173,7 @@ class MedsysPatient
 
     public function medsys_registry_searchColumns()
     {
-        if(isset(Request()->hospnum)) {
+        if (isset(Request()->hospnum)) {
             $this->model_medys_outpatient->where('Hospnum', Request()->hospnum);
         }
     }
@@ -155,4 +196,16 @@ class MedsysPatient
         return $this->model_medys_inpatient->first();
     }
 
+    public function orderby_adm_date()
+    {
+
+        // $this->model_medys_outpatient->orderBy('AdmDate', 'desc');
+    }
+
+    public function filter_by_department()
+    {
+        // if($this->department->isHemodialysis == 1) {
+        // $this->model_medys_outpatient->where('IsHemodialysis', 1);
+        // }
+    }
 }

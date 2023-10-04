@@ -34,7 +34,7 @@ class PurchaseOrderController extends Controller
         return purchaseOrderMaster::with(['latestdelivery.items' => function($q){
             $q->where('rr_Detail_Item_Qty_BackOrder', '!=', 0);
         }, 'details'=>function($q){
-            $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            $q->with('item.authWarehouseItem', 'unit', 'purchaseRequestDetail.recommendedCanvas');
         }, 'purchaseRequest' => function($q){
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])
@@ -65,10 +65,10 @@ class PurchaseOrderController extends Controller
         })
         ->whereHas('purchaseRequest', function($q){
             if(Auth::user()->role->name == 'dietary' || Auth::user()->role->name == 'dietary head'){
-                $q->where('isPersihable', 1);
+                $q->where('isPerishable', 1);
             }else{
                 $q->where(function($q1){
-                    $q1->where('isPersihable', 0)->orWhere('isPersihable', NULL);
+                    $q1->where('isPerishable', 0)->orWhere('isPerishable', NULL);
                 });
             }
         })

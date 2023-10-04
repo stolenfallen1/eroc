@@ -5,6 +5,7 @@ namespace App\Helpers\SearchFilter;
 use App\Models\BuildFile\Itemcategories;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
+use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\Warehouses;
 
 class Items
@@ -28,6 +29,7 @@ class Items
     $this->withWareHouseItem();
     $this->byWarehouse();
     $this->forLocation();
+    $this->forStockRequisition();
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -63,6 +65,16 @@ class Items
   private function withWareHouseItem(){
     if(Request()->wareHouseItem){
       $this->model->with('wareHouseItem');
+    }
+  }
+
+  private function forStockRequisition(){
+    if(Request()->for_sr){
+      $ids = Warehouseitems::where('branch_id', Auth::user()->branch_id)->where('warehouse_Id', Auth::user()->warehouse_id)->get()->pluck('item_Id');
+      $this->model->whereIn('id', $ids)->whereHas('wareHouseItem', function($q){
+        $q->where('item_OnHand', '>', 0);
+      });
+      // $this->model->with('wareHouseItem');
     }
   }
 

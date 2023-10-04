@@ -73,7 +73,9 @@ class PurchaseRequestController extends Controller
                                 $q1->where('is_submitted', true);
                             });
                         })->orWhereDoesntHave('canvases');
-                    })->where('pr_Branch_Level1_ApprovedBy', '!=', NULL);
+                    })->where(function($q2){
+                        $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
+                    });
                 }
             }])->findOrFail($id);
     }
@@ -112,7 +114,7 @@ class PurchaseRequestController extends Controller
                 'pr_Document_Prefix' => $prefix ?? "",
                 'pr_Document_Suffix' => $suffex ?? "",
                 'pr_Status_Id' => $status ?? null,
-                'isPersihable' => $request->isPersihable ?? 0,
+                'isPerishable' => $request->isPerishable ?? 0,
             ]);
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
                 foreach ($request->attachments as $key => $attachment) {
@@ -272,8 +274,12 @@ class PurchaseRequestController extends Controller
                 $prd->update([
                     'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
                     'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
-                    'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                    'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                    
+                    'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                    'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                    'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                    'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                    
                 ]);
             } else{
                 $prd->update([

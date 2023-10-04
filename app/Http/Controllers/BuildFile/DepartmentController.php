@@ -10,8 +10,8 @@ use Illuminate\Http\Request;
 class DepartmentController extends Controller
 {
     public function index(){
-        // return response()->json(['departments' => Warehouses::where('warehouse_Branch_Id', Request()->branch_id)->get() ]);
-        return response()->json(['departments' => Warehouses::get() ]);
+        return response()->json(['departments' => Warehouses::where('warehouse_Branch_Id', Request()->branch_id)->get() ]);
+        // return response()->json(['departments' => Warehouses::get() ]);
     }
 
     public function departmentlist(){

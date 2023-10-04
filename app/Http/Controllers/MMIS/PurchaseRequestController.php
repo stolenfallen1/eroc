@@ -267,7 +267,8 @@ class PurchaseRequestController extends Controller
     }
 
     private function approveByConsultant($request){
-        foreach ($request->items as $key => $item ) {
+        $items = isset($request->items) ? $request->items: $request->purchase_request_details;
+        foreach ($items as $key => $item ) {
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             // return Auth::user()->role->name;
             if(isset($item['isapproved']) && $item['isapproved'] == true){
@@ -306,7 +307,8 @@ class PurchaseRequestController extends Controller
     }
 
     private function approveByDepartmentHead($request){
-        foreach ($request->items as $key => $item ) {
+        $items = isset($request->items) ? $request->items: $request->purchase_request_details;
+        foreach ($items as $key => $item ) {
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             // return Auth::user()->role->name;
             if(isset($item['isapproved']) && $item['isapproved'] == true){
@@ -340,7 +342,8 @@ class PurchaseRequestController extends Controller
     }
 
     private function approveByAdministrator($request){
-        foreach ($request->items as $key => $item ) {
+        $items = isset($request->items) ? $request->items: $request->purchase_request_details;
+        foreach ($items as $key => $item ) {
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             if(isset($item['isapproved']) && $item['isapproved'] == true){
                 $prd->update([

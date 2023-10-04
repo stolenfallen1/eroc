@@ -24,6 +24,7 @@ class PurchaseOrders
     $this->byStartDate();
     $this->byEndDate();
     $this->byTab();
+    $this->byUser();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -86,6 +87,12 @@ class PurchaseOrders
     }
     else if (Request()->tab == 5){
       $this->forPresident();
+    }
+  }
+
+  private function byUser(){
+    if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+      $this->model->where('po_Document_branch_id', $this->authUser->branch_id)->whereIn('po_Document_warehouse_id', $this->authUser->departments);
     }
   }
 

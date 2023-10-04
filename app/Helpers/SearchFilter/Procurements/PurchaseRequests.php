@@ -28,6 +28,8 @@ class PurchaseRequests
     $this->byPriority();
     $this->byRequestedDate();
     $this->byRequiredDate();
+    $this->byYear();
+    $this->byUser();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -78,13 +80,25 @@ class PurchaseRequests
 
   private function byRequestedDate(){
     if(Request()->requested_date){
-      $this->model->whereDate('pr_Transaction_Date', Carbon::parse(Request()->requested_date));
+      $this->model->whereDate('pr_Transaction_Date', '>=', Carbon::parse(Request()->requested_date));
     }
   }
 
   private function byRequiredDate(){
     if(Request()->required_date){
-      $this->model->whereDate('pr_Transaction_Date_Required', Carbon::parse(Request()->required_date));
+      $this->model->whereDate('pr_Transaction_Date_Required', '<=', Carbon::parse(Request()->required_date));
+    }
+  }
+
+  private function byYear(){
+    if(!Request()->required_date || !Request()->requested_date){
+      $this->model->whereYear('created_at', Carbon::now()->year);
+    }
+  }
+
+  private function byUser(){
+    if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+      $this->model->where('branch_Id', $this->authUser->branch_id)->whereIn('warehouse_Id', $this->authUser->departments);
     }
   }
 
@@ -122,7 +136,7 @@ class PurchaseRequests
     if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' 
       || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
 
-      $this->model->where('warehouse_Id', $this->authUser->warehouse_id)
+      $this->model->whereIn('warehouse_Id', $this->authUser->departments)
       ->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
 
       $this->model->with('purchaseRequestDetails.itemMaster');
@@ -189,7 +203,7 @@ class PurchaseRequests
     if($this->authUser->role->name == 'administrator'){
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);
     }else{
-      $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('warehouse_Id', $this->authUser->warehouse_id);
+      $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->whereIn('warehouse_Id', $this->authUser->departments);
     }
   }
 

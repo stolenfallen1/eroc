@@ -5,16 +5,17 @@ namespace App\Models\Schedules;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ORScheduleSurgeonModel extends Model
+class ORScrubNursesModel extends Model
 {
     use HasFactory;
 
     protected $connection = 'sqlsrv_schedules';
-    protected $table = 'CDG_SCHEDULES.dbo.OperatingRoomSchedule_Surgeons';
+    protected $table = 'CDG_SCHEDULES.dbo.OperatingRoomNurses';
     protected $guarded = [];
-    protected $appends = ['surgeon_name'];
+    // protected $fillable = ['lastname', 'firstname', 'middlename', 'id','operating_room_scheduled_id'];
+    protected $appends = ['scrubnurses'];
 
-    public function getSurgeonNameAttribute()
+    public function getScrubNursesAttribute()
     {
         return $this->lastname . ', ' . $this->firstname . ' ' . $this->middlename;
     }

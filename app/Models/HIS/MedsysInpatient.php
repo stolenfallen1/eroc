@@ -4,6 +4,7 @@ namespace App\Models\HIS;
 
 use App\Models\HIS\MedsysPatientMaster;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Hospital\mscHospitalRooms;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class MedsysInpatient extends Model
@@ -12,9 +13,15 @@ class MedsysInpatient extends Model
     protected $connection = 'sqlsrv_medsys_patient_data';
     protected $table = 'tbpatient';
     protected $guarded = [];
+    protected $with = ['station_details'];
 
     public function patient_details()
     {
         return $this->belongsTo(MedsysPatientMaster::class, 'HospNum', 'HospNum');
     }
+    public function station_details()
+    {
+        return $this->belongsTo(mscHospitalRooms::class, 'RoomID', 'room_id');
+    }
+    
 }

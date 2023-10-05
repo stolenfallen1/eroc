@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Schedules\ORResidentModel;
 use App\Http\Controllers\HIS\ReportController;
 use App\Http\Controllers\BuildFile\DepartmentController;
 use App\Http\Controllers\HIS\PatientRegistrationController;

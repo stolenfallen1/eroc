@@ -13,7 +13,6 @@ class ORRoomTimeSlotModel extends Model
     protected $table = 'CDG_CORE.dbo.mscOperatingRoomTimeSlot';
     protected $guarded = [];
 
-
     public function scheduleAnesthesia()
     {
         return $this->hasMany(ORScheduleAnesthesiaModel::class, 'schedule_id', 'id');

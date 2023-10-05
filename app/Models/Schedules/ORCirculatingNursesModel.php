@@ -11,7 +11,7 @@ class ORCirculatingNursesModel extends Model
 
     protected $connection = 'sqlsrv_schedules';
     protected $table = 'CDG_SCHEDULES.dbo.OperatingRoomNurses';
-    protected $fillable = ['lastname', 'firstname', 'middlename', 'id'];
+    protected $fillable = ['lastname', 'firstname', 'middlename', 'id','operating_room_scheduled_id'];
     protected $appends = ['circulatingnurses'];
 
 

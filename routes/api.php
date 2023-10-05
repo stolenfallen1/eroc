@@ -24,17 +24,7 @@ use App\Http\Controllers\Schedules\ORSchedulePatientController;
 
 /*require_once('/schedules/api.php');*/
 
-Route::get('/schedules', [ORSchedulesController::class, 'index']);
-Route::get('/getdoctor', [ORSchedulesController::class, 'getdoctor']);
-Route::get('/getORCategory', [ORSchedulesController::class, 'getORCategory']);
-Route::get('/searchPatientData', [ORSchedulePatientController::class, 'searchPatientData']);
-Route::get('/getORRooms', [ORSchedulesController::class, 'getORRooms']);
-Route::get('/getORRoomTimeSlot', [ORSchedulesController::class, 'getORRoomTimeSlot']);
-Route::get('/getORCirculatingNurses', [ORSchedulesController::class, 'getORCirculatingNurses']);
-Route::get('/getORCaseTypes', [ORSchedulesController::class, 'getORCaseTypes']);
-Route::get('/checkRoomAvailability', [ORSchedulesController::class, 'checkRoomAvailability']);
 
-Route::post('/submitschedule', [ORSchedulesController::class, 'store']);
 
 
 
@@ -59,4 +49,6 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('approver/api.php');
     require_once('mmis/api.php');
     require_once('itemandservices/api.php');
+    require_once('his/v1/api.php');
+    require_once('schedules/api.php');
 });

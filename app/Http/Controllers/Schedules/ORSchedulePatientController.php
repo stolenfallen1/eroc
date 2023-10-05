@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Helpers\HIS\MedsysPatient;
 use App\Http\Controllers\Controller;
 use App\Helpers\HIS\SysGlobalSetting;
+use App\Helpers\HIS\PatientScheduling;
 use App\Models\BuildFile\Hospital\Doctor;
 use App\Models\Schedules\ORSchedulesModel;
 use App\Models\BuildFile\Hospital\Schedules;
@@ -42,6 +43,18 @@ class ORSchedulePatientController extends Controller
         }
     }
 
+    public function index()
+    {
+        
+        try {
+         
+            $data = (new PatientScheduling())->medsys_inpatient_searchable();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+
+    }
 
     /**
      * Show the form for creating a new resource.

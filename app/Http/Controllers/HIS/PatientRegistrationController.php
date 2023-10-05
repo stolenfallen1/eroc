@@ -44,7 +44,6 @@ class PatientRegistrationController extends Controller
         $this->department = Auth()->user();
     }
 
-
     public function index()
     {
         try {

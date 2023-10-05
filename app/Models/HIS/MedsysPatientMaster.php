@@ -39,11 +39,16 @@ class MedsysPatientMaster extends Model
         return $this->belongsTo(MedsysPatientMasterDetails::class,'HospNum', 'HospNum');
     }
     public function patient_Inpatient(){
-        return $this->belongsTo(MedsysInpatient::class,'HospNum', 'HospNum')->whereNull('DcrDate')->select('IdNum','HospNum','AdmDate','DcrDate');
+        return $this->belongsTo(MedsysInpatient::class,'HospNum', 'HospNum')->whereNull('DcrDate')->select('IdNum','HospNum','AdmDate','DcrDate','RoomID');
     }
 
     public function patient_allergies(){
         return $this->belongsTo(MedsysPatientAllergies::class,'HospNum', 'HospNum');
+    }
+
+
+    public function civilstatus(){
+        return $this->belongsTo(MedsysOutpatient::class,'HospNum', 'HospNum')->whereNull('DcrDate');
     }
 
 }

@@ -74,8 +74,8 @@ class BatchController extends Controller
                     'transaction_Qty' => $request->item_Qty,
                     'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $request->item_Qty,
                     'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
-                    'transaction_UserID' =>  Auth::user()->id,
-                    'createdBy' =>  Auth::user()->id,
+                    'transaction_UserID' =>  Auth::user()->idnumber,
+                    'createdBy' =>  Auth::user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                 ]);
                 $sequence->update([
@@ -150,8 +150,8 @@ class BatchController extends Controller
                     'transaction_Qty' => $request->item_Qty,
                     'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $request->item_Qty,
                     'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
-                    'transaction_UserID' =>  Auth::user()->id,
-                    'createdBy' =>  Auth::user()->id,
+                    'transaction_UserID' =>  Auth::user()->idnumber,
+                    'createdBy' =>  Auth::user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                 ]);
                 $sequence->update([

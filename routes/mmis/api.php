@@ -71,9 +71,11 @@ Route::controller(StockTransferController::class)->group(function () {
 });
 
 Route::controller(StockRequisitionController::class)->group(function () {
-  Route::put('stock-requisition-approved/{stock_requisition}', 'receiveTransfer');
+  // Route::put('stock-requisition-approved/{stock_requisition}', 'receiveTransfer');
   Route::get('stock-requisitions', 'index');
   Route::post('stock-requisition', 'store');
+  Route::put('stock-release/{stock_requisition}', 'releaseStock');
+  Route::put('stock-receive/{stock_requisition}', 'receiveTransfer');
   Route::put('stock-approve/{stock_requisition}', 'approve');
   Route::get('stock-requisition/{stock_requisition}', 'show');
   Route::put('stock-requisition/{stock_requisition}', 'update');

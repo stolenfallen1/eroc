@@ -15,6 +15,8 @@ use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\StockRequisitionItem;
 use App\Helpers\SearchFilter\inventory\StockRequisitions;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\inventory\ItemModel;
+use Illuminate\Bus\Batch;
 
 class StockRequisitionController extends Controller
 {
@@ -23,7 +25,8 @@ class StockRequisitionController extends Controller
     }
 
     public function show(StockRequisition $stock_requisition){
-        return response()->json(['sr' => $stock_requisition->load('requestedBy', 'requesterWarehouse', 'requesterBranch', 'senderWarehouse', 'senderBranch', 'transferBy', 'category', 'receivedBy', 'items.item.wareHouseItem')]);
+        return response()->json(['sr' => $stock_requisition->load('requestedBy', 'requesterWarehouse', 'requesterBranch', 'senderWarehouse', 
+            'senderBranch', 'transferBy', 'category', 'receivedBy', 'items.item.wareHouseItem', 'items.batches.batch')]);
     }
 
     public function store(Request $request){
@@ -37,7 +40,7 @@ class StockRequisitionController extends Controller
             $prefix = $sequence->seq_prefix;
             $suffix = $sequence->seq_suffix;
             $is_inter_branch = 0;
-            if($request->sender_branch_id != $authUser->warehouse_id){
+            if($request->sender_branch_id != $authUser->branch_id){
                 $is_inter_branch = 1;
             }
 
@@ -135,85 +138,142 @@ class StockRequisitionController extends Controller
         }
     }
 
-    public function releaseStock(StockRequisition $stock_requisition){
-        $stock_requisition->update([
-            'transfer_by_id' => Auth::user()->idnumber
-        ]);
+    public function releaseStock(Request $request, StockRequisition $stock_requisition){
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            foreach ($request->items as $item) {
+                $sr_item = StockRequisitionItem::with('batches')->findOrfail($item['id']);
+                foreach ($item['batches'] as $batch) {
+                    $sr_item->batches()->create([
+                        'batch_id' => $batch['batch']['id'],
+                        'qty' => $batch['item_Qty'],
+                        'sender_warehouse_id' => $stock_requisition['sender_warehouse_id'],
+                        'receiver_warehouse_id' => $stock_requisition['requester_warehouse_id'],
+                    ]);
+                }
+                $sr_item->update([
+                    'quantity' => $item['quantity']
+                ]);
+            }
+            $stock_requisition->update([
+                'transfer_by_id' => Auth::user()->idnumber
+            ]);
+
+            DB::connection('sqlsrv_mmis')->commit();
+            return response()->json(['message' => 'success'], 200);
+        } catch (\Throwable $e) {
+            DB::connection('sqlsrv_mmis')->rollback();
+            return response()->json(["error" => $e], 200);
+        }
+
     }
 
-    public function receiveTransfer(StockRequisition $stock_requisition)
+    public function receiveTransfer(Request $request, StockRequisition $stock_requisition)
     {
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-            $stock_requisition->load();
+            $authUser = Auth::user();
+            $stock_requisition->load('items');
             $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Stock Requisition%')->where('isActive', 1)->first();
             $transaction1 = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Received Requisition%')->where('isActive', 1)->first();
+            if(!$transaction || !$transaction1) return response()->json(['error' => 'Transaction code no found'], 200);
             $sequence = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+            if(!$sequence) return response()->json(['error' => 'Sequence no found'], 200);
             // $delivery = Delivery::with('items.batchs')->where('id', $stock_transfer->delivery_id)->first();
-            foreach ($stock_requisition->items as $item) {
-                if($stock_requisition->item_group_id == 2)
-                $batchs = ItemBatch::whereIn('id', $item->batch_ids)->gets();
-                foreach ($batchs as $key => $batch) {
-                    $is_complete = false;
-                    if($item->quantity <= $batch['item_Qty']){
-                        $batch->item_Qty = $batch['item_Qty'] - $batch->item_Qty;
-                        $is_complete = true;
+            foreach($request->items as $item) {
+                $sr_item = StockRequisitionItem::where('id', $item['id'])->first();
+                $batch=null;
+                foreach ($item['batches'] as $batch) {
+                    if($item['item']['ware_house_item']['isLotNo_Required']=="1"){
+                        $batchS = ItemBatch::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
+                        ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id'], 
+                        'batch_Number' => $batch['batch']['batch_Number']])->first();
+
+                        $batchS->update([
+                            'item_Qty' => $batch->item_Qty - $batch->qty
+                        ]);
+
+                        $batchR = ItemBatch::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
+                        ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $stock_requisition->requester_warehouse_id, 
+                        'branch_id' => $stock_requisition->requester_branch_id, 'batch_Number' => $batch['batch']['batch_Number']])->first();
+
+                        if($batchR){
+                            $batchR->update([
+                                'item_Qty' => $batch->item_Qty + $batch->qty
+                            ]);
+                        }else {
+                            ItemBatch::create([
+                                'batch_Number' => $batch['batch']['batch_Number'],
+                                'batch_Transaction_Date' => Carbon::now(),
+                                'branch_id' => $stock_requisition->requester_branch_id,
+                                'warehouse_id' => $stock_requisition->requester_warehouse_id,
+                                'item_Qty' => $batch['qty'],
+                                'item_Id' => $batch['batch']['item_Id'],
+                                'item_Expiry_Date' => Carbon::parse($batch['batch']['item_Expiry_Date']),
+                                'isConsumed' => 0,
+                            ]);
+                        }
+                    }else{
+                        $model = ItemModel::where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id']])->first();
                     }
-                    if(!$is_complete) continue;
-                    $sender_warehouse = Warehouseitems::where([
-                        'warehouse_Id' => $stock_requisition->sender_warehouse_id,
-                        'branch_id' => $stock_requisition->sender_branch_id,
-                        'item_Id' => $batch['item_Id'],
-                    ])->first();
-                        
-                    $sender_warehouse->update([
-                        'item_OnHand' => (float)$sender_warehouse->item_OnHand - (float)$batch['item_Qty']
-                    ]);
-    
-                    $receiver_warehouse = Warehouseitems::where([
-                        'warehouse_Id' => $stock_requisition->receiver_warehouse,
-                        'item_Id' => $batch['item_Id'],
-                    ])->first();
-    
-                    $receiver_warehouse->update([
-                        'item_OnHand' => (float)$receiver_warehouse->item_OnHand + (float)$batch['item_Qty']
-                    ]);
+                    
+                }
+
+                $receiver_warehouse = Warehouseitems::where([
+                    'branch_id' => $stock_requisition['requester_branch_id'],
+                    'warehouse_Id' => $stock_requisition['requester_warehouse_id'],
+                    'item_Id' => $item['item_id'],
+                ])->first();
+
+                $sender_warehouse = Warehouseitems::where([
+                    'warehouse_Id' => $stock_requisition->sender_warehouse_id,
+                    'branch_id' => $stock_requisition->sender_branch_id,
+                    'item_Id' => $item['item_id'],
+                ])->first();
+
+                $receiver_warehouse->update([
+                    'item_OnHand' => (float)$receiver_warehouse->item_OnHand + (float)$item['received_qty']
+                ]);
+
+                InventoryTransaction::create([
+                    'branch_Id' => $stock_requisition['requester_branch_id'],
+                    // 'warehouse_Group_Id' => $stock_requisition->rr_Document_Warehouse_Group_Id,
+                    'warehouse_Id' => $stock_requisition['requester_warehouse_id'],
+                    'transaction_Item_Id' =>  $item['item_id'],
+                    'transaction_Date' => Carbon::now(),
+                    'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
+                    'transaction_Item_UnitofMeasurement_Id' => $item['unit_id'],
+                    'transaction_Qty' => $item['received_qty'],
+                    'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand + $item['received_qty'],
+                    'transaction_Item_ListCost' => $sender_warehouse->item_ListCost,
+                    'transaction_UserID' =>  Auth::user()->idnumber,
+                    'createdBy' =>  Auth::user()->idnumber,
+                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                ]);
+
+                $sequence->update([
+                    'seq_no' => (int) $sequence->seq_no + 1,
+                    'recent_generated' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ""),
+                ]);
+                    
+                $sender_warehouse->update([
+                    'item_OnHand' => (float)$sender_warehouse->item_OnHand - (float)$item['received_qty']
+                ]);
+
+                $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
     
                     InventoryTransaction::create([
-                        'branch_Id' => $stock_requisition->sender_branch_id,
-                        'warehouse_Group_Id' => $stock_requisition->rr_Document_Warehouse_Group_Id,
-                        'warehouse_Id' => $stock_requisition->rr_Document_Warehouse_Id,
-                        'transaction_Item_Id' =>  $batch['item_Id'],
-                        'transaction_Date' => Carbon::now(),
-                        'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
-                        'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        'transaction_Qty' => $batch['item_Qty'],
-                        'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand - $batch['item_Qty'],
-                        'transaction_Item_ListCost' => $item->rr_Detail_Item_ListCost,
-                        'transaction_UserID' =>  Auth::user()->idnumber,
-                        'createdBy' =>  Auth::user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
-                    ]);
-                    // return "test";
-                    $sequence->update([
-                        'seq_no' => (int) $sequence->seq_no + 1,
-                        'recent_generated' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ""),
-                    ]);
-    
-                    $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-    
-                    InventoryTransaction::create([
-                        'branch_Id' =>  Auth::user()->branch_id,
-                        'warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
-                        'warehouse_Id' => Auth::user()->warehouse_id,
-                        'transaction_Item_Id' =>  $batch['item_Id'],
+                        'branch_Id' =>  $stock_requisition['sender_branch_id'],
+                        // 'warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
+                        'warehouse_Id' => $stock_requisition['sender_warehouse_id'],
+                        'transaction_Item_Id' =>  $item['item_id'],
                         'transaction_Date' => Carbon::now(),
                         'trasanction_Reference_Number' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
-                        'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        'transaction_Qty' => $batch['item_Qty'],
-                        'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand + $batch['item_Qty'],
-                        'transaction_Item_ListCost' => $item->rr_Detail_Item_ListCost,
+                        'transaction_Item_UnitofMeasurement_Id' => $item['unit_id'],
+                        'transaction_Qty' => $item['received_qty'],
+                        'transaction_Item_OnHand' => $receiver_warehouse->item_OnHand - $item['received_qty'],
+                        'transaction_Item_ListCost' =>  $sender_warehouse->item_ListCost,
                         'transaction_UserID' =>  Auth::user()->idnumber,
                         'createdBy' =>  Auth::user()->idnumber,
                         'transaction_Acctg_TransType' =>  $transaction1->transaction_code ?? '',
@@ -223,11 +283,11 @@ class StockRequisitionController extends Controller
                         'seq_no' => (int) $sequence->seq_no + 1,
                         'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
                     ]);
-                }
 
             }
-
+            
             $stock_requisition->update([
+                'received_by' => $authUser->idnumber,
                 'receiver_id' => Auth::user()->idnumber
             ]);
             DB::connection('sqlsrv')->commit();

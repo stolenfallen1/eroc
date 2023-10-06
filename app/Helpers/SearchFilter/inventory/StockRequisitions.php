@@ -65,16 +65,20 @@ class StockRequisitions
     if($this->authUser->role->name == 'department head'){
       $this->model->whereHas('items', function($q1){
         $q1->where(['department_head_declined_by' => null, 'department_head_approved_by' => null]);
-      })->where(['sender_warehouse_id' => $this->authUser->warehouse_id, 'requester_branch_id' => $this->authUser->branch_id]);
+      })->where(['sender_warehouse_id' => $this->authUser->warehouse_id, 'sender_branch_id' => $this->authUser->branch_id]);
     }elseif ($this->authUser->role->name == 'administrator') {
       $this->model->whereHas('items', function($q1){
         $q1->whereNotNull('department_head_approved_by')->where(['administrator_approved_by' => null, 'administrator_declined_by' => null]);
-      });
+      })->where('sender_branch_id', $this->authUser->branch_id);
     }elseif ($this->authUser->role->name == 'corporate admin') {
       $this->model->where('is_inter_branch', 1)
       ->whereHas('items', function($q1){
         $q1->whereNotNull('administrator_approved_by')->where(['corporate_admin_approved_by' => null, 'corporate_admin_declined_by' => null]);
       });
+    }else{
+      $this->model->whereHas('items', function($q1){
+        $q1->where(['department_head_declined_by' => null, 'department_head_approved_by' => null]);
+      })->where(['sender_warehouse_id' => $this->authUser->warehouse_id, 'requester_branch_id' => $this->authUser->branch_id]);
     }
   }
   private function forDepartmentHead(){
@@ -103,9 +107,14 @@ class StockRequisitions
 
   private function forReleasing(){
     if(Request()->tab == 5){
-      $this->model->whereHas('items', function($q1){
-        $q1->whereNotNull('corporate_admin_approved_by');
-      })->whereNull('transfer_by_id');
+      $this->model->where(function($q1){
+        $q1->where('is_inter_branch', 1)->whereHas('items', function($q2){
+          $q2->whereNotNull('corporate_admin_approved_by');
+        })->orWhere('is_inter_branch', 0);
+      })->whereNull('transfer_by_id')->where(['sender_warehouse_id' => $this->authUser->warehouse_id, 'sender_branch_id' => $this->authUser->branch_id]);
+      // $this->model->whereHas('items', function($q1){
+      //   $q1->whereNotNull('corporate_admin_approved_by');
+      // })->whereNull('transfer_by_id');
     }
   }
 
@@ -113,7 +122,8 @@ class StockRequisitions
     if(Request()->tab == 6){
       $this->model->whereHas('items', function($q1){
         $q1->whereNotNull('corporate_admin_approved_by');
-      })->whereNotNull('transfer_by_id');
+      })->whereNotNull('transfer_by_id')
+      ->where(['requester_warehouse_id' => $this->authUser->warehouse_id, 'requester_branch_id' => $this->authUser->branch_id]);
     }
   }
 

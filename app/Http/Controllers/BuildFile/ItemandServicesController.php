@@ -100,7 +100,7 @@ class ItemandServicesController extends Controller
                     'created_at' => Carbon::now(),
                     'DateCreated' => Carbon::now(),
                     'isActive' =>'1',
-                    'CreatedBy'=>Auth()->user()->id,
+                    'CreatedBy'=>Auth()->user()->idnumber,
                 ]);
                 $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                 $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Beginning Inventory%')->where('isActive', 1)->first();
@@ -116,8 +116,8 @@ class ItemandServicesController extends Controller
                     'transaction_Qty' => $warehourse_item->item_OnHand,
                     'transaction_Item_OnHand' => $warehourse_item->item_OnHand,
                     'transaction_Item_ListCost' => $warehourse_item->item_ListCost,
-                    'transaction_UserID' =>  Auth::user()->id,
-                    'createdBy' =>  Auth::user()->id,
+                    'transaction_UserID' =>  Auth::user()->idnumber,
+                    'createdBy' =>  Auth::user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                 ]);
                 $sequence->update([
@@ -189,7 +189,7 @@ class ItemandServicesController extends Controller
             'item_StatPercent'=> (int)$request->item_StatPercent ?? '',
             'isIncludeInStatement'=> (int)$request->isIncludeInStatement ?? '',
             'DateModified' => Carbon::now(),
-            'ModifiedBy'=>Auth()->user()->id,
+            'ModifiedBy'=>Auth()->user()->idnumber,
             'isActive'=> (int) '1'
         ]);
         // $items->wareHouseItems()->where('item_Id',$items->id)->update([
@@ -252,7 +252,7 @@ class ItemandServicesController extends Controller
                 'isReOrder' => '0',
                 'created_at' => Carbon::now(),
                 // 'DateCreated' => Carbon::now(),
-                'CreatedBy'=>Auth()->user()->id,
+                'CreatedBy'=>Auth()->user()->idnumber,
             ]);
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
             $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Beginning Inventory%')->where('isActive', 1)->first();
@@ -268,8 +268,8 @@ class ItemandServicesController extends Controller
                 'transaction_Qty' => $warehourse_item->item_OnHand,
                 'transaction_Item_OnHand' => $warehourse_item->item_OnHand,
                 'transaction_Item_ListCost' => $warehourse_item->item_ListCost,
-                'transaction_UserID' =>  Auth::user()->id,
-                'createdBy' =>  Auth::user()->id,
+                'transaction_UserID' =>  Auth::user()->idnumber,
+                'createdBy' =>  Auth::user()->idnumber,
                 'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
             ]);
             $sequence->update([
@@ -305,7 +305,7 @@ class ItemandServicesController extends Controller
             'isExpiryDate_Required' => $request->isExpiryDate_Required,
             'isLotNo_Required' => $request->isLotNo_Required,
             'isModelNo_Required' => $request->isModelNo_Required,
-            'ModifiedBy'=>Auth()->user()->id,
+            'ModifiedBy'=>Auth()->user()->idnumber,
         ]);
         return response()->json(["message" => "success"], 200);
     }
@@ -334,7 +334,7 @@ class ItemandServicesController extends Controller
                 'item_Last_Inventory_Count' => $warehouse_item->item_OnHand,
                 'item_Manual_Count' => $request->item_OnHand,
                 'ModifiedDate' => Carbon::now(),
-                'ModifiedBy' => Auth::user()->id,
+                'ModifiedBy' => Auth::user()->idnumber,
             ]);
 
             InventoryTransaction::create([
@@ -351,8 +351,8 @@ class ItemandServicesController extends Controller
                 'transaction_Qty' => $request->item_OnHand,
                 'transaction_Item_OnHand' => $onhand,
                 'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
-                'transaction_UserID' =>  Auth::user()->id,
-                'createdBy' =>  Auth::user()->id,
+                'transaction_UserID' =>  Auth::user()->idnumber,
+                'createdBy' =>  Auth::user()->idnumber,
                 'transaction_count_by' =>  $request->count_by ?? Auth::user()->idnumber,
                 'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
             ]);

@@ -43,4 +43,8 @@ class StockRequisitionItem extends Model
     public function administratorDeclinedBy(){
         return $this->belongsTo(User::class, 'administrator_declined_by', 'idnumber');
     }
+
+    public function batches(){
+        return $this->hasMany(StockRequisitionItemBatch::class, 'stock_requisition_item_id');
+    }
 }

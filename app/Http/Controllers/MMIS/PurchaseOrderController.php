@@ -81,7 +81,7 @@ class PurchaseOrderController extends Controller
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
             $authUser = Auth::user();
-            $uom = Unitofmeasurement::where('name', 'like', '%Days')->first();
+            $uom = Unitofmeasurement::where('name', 'like', '%Day%')->first();
             foreach ($request->purchase_orders as $purchase_order) {
                 $sequence = SystemSequence::where(['isActive' => true, 'code' => 'PO1'])->first();
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);

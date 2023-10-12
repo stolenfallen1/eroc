@@ -112,9 +112,9 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
         $user->sysTerminal = $this->checkTerminal();
         $user->pos_setting = POSSettings::where('isActive','1')->first();
         $user->serverIP =  config('app.pos_server_ip');
-        $data['module'] = $modulelist;
+        // $data['module'] = $modulelist;
         $data['details'] = $user;
-        $data['submodule'] = $this->systemsubcomponents();
+        // $data['submodule'] = $this->systemsubcomponents();
         return response()->json(['user' => $data], 200);
     }
 

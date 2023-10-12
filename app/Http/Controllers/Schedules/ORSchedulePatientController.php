@@ -42,7 +42,17 @@ class ORSchedulePatientController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+    public function searchschedulingPatientData()
+    {
+        try {
+           $data = (new MedsysPatient())->medsys_scheduling_patient_master_searchable();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
 
+    
     public function index()
     {
         

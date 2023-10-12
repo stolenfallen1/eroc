@@ -16,7 +16,7 @@ class MedsysOutpatient extends Model
 {
     use HasFactory;  
     protected $connection = 'sqlsrv_medsys_patient_data';
-    protected $table = 'tboutpatient';
+    protected $table = 'PATIENT_DATA.dbo.tboutpatient';
     protected $primaryKey = 'HospNum';
     protected $guarded = [];
     public $timestamps = false;

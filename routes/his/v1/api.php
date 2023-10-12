@@ -9,6 +9,7 @@ use App\Http\Controllers\BuildFile\Hospital\DoctorController;
 
 Route::controller(PatientRegistrationController::class)->group(function () {
     Route::get('search-patient', 'search');
+
     Route::get('patient-details', 'check_patient_details');
     Route::post('submit-patient-form', 'store');
     Route::put('update-patient/{id}', 'update');

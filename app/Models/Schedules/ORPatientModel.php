@@ -20,4 +20,5 @@ class ORPatientModel extends Model
     {
         return $this->LastName . ', ' .$this->FirstName. ' ' .$this->MiddleName;
     }
+
 }

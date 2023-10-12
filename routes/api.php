@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthPOSController;
 use App\Http\Controllers\POS\SettingController;
+use App\Http\Controllers\Schedules\SchedulingDashboard;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\Schedules\ORSchedulesController;
 use App\Http\Controllers\Schedules\ORSchedulePatientController;
@@ -23,8 +24,6 @@ use App\Http\Controllers\Schedules\ORSchedulePatientController;
 
 
 /*require_once('/schedules/api.php');*/
-
-
 
 
 
@@ -52,3 +51,6 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('his/v1/api.php');
     require_once('schedules/api.php');
 });
+
+
+Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);

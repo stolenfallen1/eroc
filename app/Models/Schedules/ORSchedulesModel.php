@@ -2,8 +2,10 @@
 
 namespace App\Models\Schedules;
 
+use App\Models\HIS\MedsysPatientMaster;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Schedules\ORPatientModel;
+use App\Models\BuildFile\Hospital\Status;
 use App\Models\Schedules\ORScheduleNurses;
 use App\Models\Schedules\ORScheduleSurgeonModel;
 use App\Models\Schedules\ORScheduleResidentModel;
@@ -24,7 +26,7 @@ class ORSchedulesModel extends Model
 
     public function patientdetails()
     {
-       return $this->belongsTo(ORPatientModel::class, 'patient_id', 'HospNum');
+       return $this->belongsTo(MedsysPatientMaster::class, 'patient_id', 'HospNum');
     }
 
 
@@ -50,12 +52,12 @@ class ORSchedulesModel extends Model
 
     public function scheduledCirculatingNurses()
     {
-        return $this->hasOne(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id');
+        return $this->hasOne(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id')->where('specialty_id','1');
     }
     
     public function scheduledScrubNurses()
     {
-        return $this->hasMany(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id');
+        return $this->hasMany(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id')->where('specialty_id','2');
     }
     
      public function scheduledCategory()
@@ -66,5 +68,10 @@ class ORSchedulesModel extends Model
      public function station_details()
     {
         return $this->belongsTo(mscHospitalRooms::class, 'room_id', 'room_id');
+    }
+
+    public function scheduledStatus()
+    {
+        return $this->belongsTo(Status::class, 'schedule_status_id', 'id');
     }
 }

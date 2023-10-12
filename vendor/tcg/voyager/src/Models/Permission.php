@@ -2,8 +2,9 @@
 
 namespace TCG\Voyager\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use TCG\Voyager\Facades\Voyager;
+use App\Models\Database\Database;
+use Illuminate\Database\Eloquent\Model;
 
 class Permission extends Model
 {

@@ -118,8 +118,18 @@ class MedsysPatient
         }
     }
 
-
-
+    
+    public function medsys_scheduling_patient_master_searchable()
+    {
+        $this->medsys_patient_master_searchColumns();
+       
+        $query = $this->model_medys_patient_master->with('patient_Inpatient', 'patient_registry');
+        $query->whereHas('patient_registry', function ($query) {
+            $query->whereDate('AdmDate', Carbon::now()->format('Y-m-d'));
+        });
+        $per_page = '-1';
+        return $query->paginate($per_page);
+    }
 
     public function medsys_patient_master_searchable()
     {

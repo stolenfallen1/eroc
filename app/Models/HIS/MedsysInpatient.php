@@ -11,7 +11,7 @@ class MedsysInpatient extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_medsys_patient_data';
-    protected $table = 'tbpatient';
+    protected $table = 'PATIENT_DATA.dbo.tbpatient';
     protected $guarded = [];
     protected $with = ['station_details'];
 

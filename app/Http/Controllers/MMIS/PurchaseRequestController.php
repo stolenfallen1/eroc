@@ -4,19 +4,21 @@ namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\MMIS\TestModel;
+use App\Models\BuildFile\Vendors;
 use App\Models\Approver\invStatus;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Models\BuildFile\SystemSequence;
 use App\Http\Requests\Procurement\PRRequest;
+use App\Models\MMIS\procurement\CanvasMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
-use App\Models\MMIS\TestModel;
-use Illuminate\Support\Facades\DB;
 
 class PurchaseRequestController extends Controller
 {
@@ -136,8 +138,13 @@ class PurchaseRequestController extends Controller
                     'filepath' => $filepath[0] ?? null,
                     'filename' => $filepath[2] ?? null,
                     'item_Id' => $item['item_Id'],
+                    'item_ListCost' => $item['item_ListCost'] ?? 0,
+                    'discount' => $item['discount'] ?? 0,
                     'item_Request_Qty' => $item['item_Request_Qty'],
                     'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                    'lead_time' => $item['lead_time'] ?? 0,
+                    'vat_rate' => $item['vat_rate'] ?? 0,
+                    'vat_type' => $item['vat_type'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
@@ -261,49 +268,121 @@ class PurchaseRequestController extends Controller
             $this->approveByAdministrator($request);
         } 
         else if(Auth::user()->role->name == 'consultant') {
-            $this->approveByConsultant($request);
+            return $this->approveByConsultant($request);
         }
         return response()->json(["message" => "success"], 200);
     }
 
     private function approveByConsultant($request){
-        $items = isset($request->items) ? $request->items: $request->purchase_request_details;
-        foreach ($items as $key => $item ) {
-            $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
-            // return Auth::user()->role->name;
-            if(isset($item['isapproved']) && $item['isapproved'] == true){
-                $prd->update([
+        DB::connection('sqlsrv')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            $items = isset($request->items) ? $request->items: $request->purchase_request_details;
+            foreach ($items as $key => $item ) {
+                $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
+                // return Auth::user()->role->name;
+                $this->addPharmaCanvas($item);
+                if(isset($item['isapproved']) && $item['isapproved'] == true){
+                    $prd->update([
+                        'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
+                        'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
+                        
+                        'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                        'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                        'is_submitted' => 1,
+                    ]);
+                } else{
+                    $prd->update([
+                        'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
+                        'pr_Branch_Level2_CancelledDate' => Carbon::now(),
+                    ]);
+                }
+            }
+            $pr = PurchaseRequest::where('id', $request->id)->first();
+            if($request->isapproved){
+                $pr->update([
                     'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
                     'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
-                    
-                    'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                    'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                    'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                    'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                    
+                    'pr_Status_Id' => 6
                 ]);
-            } else{
-                $prd->update([
+            }else{
+                $pr->update([
                     'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
                     'pr_Branch_Level2_CancelledDate' => Carbon::now(),
+                    'pr_Branch_Level2_Cancelled_Remarks' => $request->remarks,
+                    'pr_Status_Id' => 3
                 ]);
             }
+            DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+            return response()->json(['message' => 'success'], 200);
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv')->rollBack();
+            DB::connection('sqlsrv_mmis')->rollBack();
+            return response()->json(['error' => $e], 200);
         }
-        $pr = PurchaseRequest::where('id', $request->id)->first();
-        if($request->isapproved){
-            $pr->update([
-                'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
-                'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
-                'pr_Status_Id' => 6
-            ]);
-        }else{
-            $pr->update([
-                'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
-                'pr_Branch_Level2_CancelledDate' => Carbon::now(),
-                'pr_Branch_Level2_Cancelled_Remarks' => $request->remarks,
-                'pr_Status_Id' => 3
-            ]);
+    }
+
+    private function addPharmaCanvas($item){
+        $vendor = Vendors::findOrfail($item['prepared_supplier_id']);
+        $sequence = SystemSequence::where(['isActive' => true, 'code' => 'CSN1'])->first();
+        $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
+        $prefix = $sequence->seq_prefix;
+        $suffix = $sequence->seq_suffix;
+        
+        $discount_amount = 0;
+        $vat_amount = 0;
+        $total_amount = $item['item_ListCost'] * $item['item_Request_Qty'];
+        if($item['vat_rate']){
+            if($vendor->isVATInclusive == 0){
+                $vat_amount = $total_amount * ($item['vat_rate'] / 100);
+                $total_amount += $vat_amount;
+            }else{
+                $vat_amount = $total_amount * ($item['vat_rate'] / 100);
+            }
         }
+        if($item['discount']){
+            $discount_amount = $total_amount * ($item['discount'] / 100);
+        }
+
+        CanvasMaster::create([
+            'canvas_Document_Number' => $number,
+            'canvas_Document_Prefix' => $prefix,
+            'canvas_Document_Suffix' => $suffix,
+            'canvas_Document_CanvassBy' => Request()->pr_RequestedBy,
+            'canvas_Document_Transaction_Date' => Carbon::now(),
+            'requested_date' => Carbon::now(),
+            'canvas_Branch_Id' => Request()->branch_Id,
+            'canvas_Warehouse_Group_Id' => Request()->warehouse['warehouse_Group_Id'],
+            'canvas_Warehouse_Id' =>  Request()->warehouse_Id,
+            'vendor_id' => $vendor->id,
+            'pr_request_id' => Request()->id,
+            'pr_request_details_id' => $item['id'],
+            'canvas_Item_Id' => $item['item_Id'],
+            'canvas_Item_Qty' => $item['item_Request_Qty'],
+            'canvas_Item_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+            'canvas_item_amount' => $item['item_ListCost'],
+            'canvas_item_total_amount' => $total_amount,
+            'canvas_item_discount_percent' => $item['discount'],
+            'canvas_item_discount_amount' => $discount_amount,
+            'canvas_item_net_amount' => $total_amount - $discount_amount,
+            'canvas_lead_time' => $item['lead_time'],
+            // 'canvas_remarks' => $request->canvas_remarks,
+            'currency_id' => 1,
+            'canvas_item_vat_rate' => $item['vat_rate'],
+            'canvas_item_vat_amount' => $vat_amount,
+            // 'isFreeGoods' => $request->isFreeGoods,
+            'isRecommended' => 1,
+            'canvas_Level2_ApprovedBy' => Request()->pr_RequestedBy,
+            'canvas_Level2_ApprovedDate' => Carbon::now(),
+        ]);
+
+        $sequence->update([
+            'seq_no' => (int) $sequence->seq_no + 1,
+            'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
+        ]);
     }
 
     private function approveByDepartmentHead($request){
@@ -374,5 +453,11 @@ class PurchaseRequestController extends Controller
                 'pr_Status_Id' => 3
             ]);
         }
+    }
+
+    public function voidPR($id, Request $request){
+        return PurchaseRequest::findOrfail($id)->update([
+            'isvoid' => 1, 
+        ]);
     }
 }

@@ -130,6 +130,15 @@ class PurchaseRequests
     else if (Request()->tab == 9){
       $this->forPurchaseOrder();
     }
+    else if (Request()->tab == 10){
+      $this->forVoidPr();
+    }
+  }
+
+  private function forVoidPr(){
+    $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)
+    ->where('invgroup_id', 2)->where('isvoid', 1);
+    $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
   }
 
   private function forApproval(){
@@ -208,7 +217,11 @@ class PurchaseRequests
   }
 
   private function forConsultant(){
-    $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)->where('invgroup_id', 2);
+    $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)
+      ->where('invgroup_id', 2)->where(function($q1){
+        $q1->where('isvoid', 0)->orWhereNull('isvoid');
+      });
+    $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
   }
 
   private function forAdministrator(){
@@ -219,6 +232,7 @@ class PurchaseRequests
         $q1->where('branch_Id', 1)->where('invgroup_id', '!=', 2);
       });
     })->where('pr_Branch_Level1_ApprovedBy', '!=', null);
+
   }
 
   private function forCanvas(){
@@ -319,7 +333,9 @@ class PurchaseRequests
     }else{
       $this->model->where(function($q){
         $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
-      });
+      })->where(function($q){
+        $q->where('isvoid', 0)->orWhereNull('isvoid');
+      });;
     }
   }
 

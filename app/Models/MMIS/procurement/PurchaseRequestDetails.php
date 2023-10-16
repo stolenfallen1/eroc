@@ -40,6 +40,10 @@ class PurchaseRequestDetails extends Model
         return $this->hasOne(PurchaseOrderDetails::class, 'pr_detail_id', 'id');
     }
 
+    public function preparedSupplier(){
+        return $this->belongsTo(Vendors::class, 'prepared_supplier_id', 'id');
+    }
+
     public function unit(){
         return $this->belongsTo(Unitofmeasurement::class, 'item_Request_Department_Approved_UnitofMeasurement_Id');
     }

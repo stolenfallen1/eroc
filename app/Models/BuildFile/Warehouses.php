@@ -4,6 +4,7 @@ namespace App\Models\BuildFile;
 
 use App\Models\MMIS\inventory\Delivery;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,7 +35,7 @@ class Warehouses extends Model
     }
 
     public function batchs(){
-        return $this->hasMany(ItemBatch::class, 'warehouse_id', 'id');
+        return $this->hasMany(ItemBatchModelMaster::class, 'warehouse_id', 'id');
     }
 
     public function purchaseOrders(){

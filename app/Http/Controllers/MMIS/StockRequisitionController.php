@@ -15,6 +15,7 @@ use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\StockRequisitionItem;
 use App\Helpers\SearchFilter\inventory\StockRequisitions;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Models\MMIS\inventory\ItemModel;
 use Illuminate\Bus\Batch;
 
@@ -170,6 +171,7 @@ class StockRequisitionController extends Controller
 
     public function receiveTransfer(Request $request, StockRequisition $stock_requisition)
     {
+        return 'checking';
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
@@ -182,43 +184,6 @@ class StockRequisitionController extends Controller
             if(!$sequence) return response()->json(['error' => 'Sequence no found'], 200);
             // $delivery = Delivery::with('items.batchs')->where('id', $stock_transfer->delivery_id)->first();
             foreach($request->items as $item) {
-                $sr_item = StockRequisitionItem::where('id', $item['id'])->first();
-                $batch=null;
-                foreach ($item['batches'] as $batch) {
-                    if($item['item']['ware_house_item']['isLotNo_Required']=="1"){
-                        $batchS = ItemBatch::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
-                        ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id'], 
-                        'batch_Number' => $batch['batch']['batch_Number']])->first();
-
-                        $batchS->update([
-                            'item_Qty' => $batch->item_Qty - $batch->qty
-                        ]);
-
-                        $batchR = ItemBatch::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
-                        ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $stock_requisition->requester_warehouse_id, 
-                        'branch_id' => $stock_requisition->requester_branch_id, 'batch_Number' => $batch['batch']['batch_Number']])->first();
-
-                        if($batchR){
-                            $batchR->update([
-                                'item_Qty' => $batch->item_Qty + $batch->qty
-                            ]);
-                        }else {
-                            ItemBatch::create([
-                                'batch_Number' => $batch['batch']['batch_Number'],
-                                'batch_Transaction_Date' => Carbon::now(),
-                                'branch_id' => $stock_requisition->requester_branch_id,
-                                'warehouse_id' => $stock_requisition->requester_warehouse_id,
-                                'item_Qty' => $batch['qty'],
-                                'item_Id' => $batch['batch']['item_Id'],
-                                'item_Expiry_Date' => Carbon::parse($batch['batch']['item_Expiry_Date']),
-                                'isConsumed' => 0,
-                            ]);
-                        }
-                    }else{
-                        $model = ItemModel::where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id']])->first();
-                    }
-                    
-                }
 
                 $receiver_warehouse = Warehouseitems::where([
                     'branch_id' => $stock_requisition['requester_branch_id'],
@@ -231,6 +196,79 @@ class StockRequisitionController extends Controller
                     'branch_id' => $stock_requisition->sender_branch_id,
                     'item_Id' => $item['item_id'],
                 ])->first();
+
+                $sr_item = StockRequisitionItem::where('id', $item['id'])->first();
+
+                $batch=null;
+
+                foreach ($item['batches'] as $batch) {
+
+                    $batchS = ItemBatchModelMaster::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
+                    ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id'], 
+                    'batch_Number' => $batch['batch']['batch_Number']])->first();
+
+                    $batchS->update([
+                        'item_Qty' => $batch->item_Qty - $batch->qty
+                    ]);
+
+                    $batchR = ItemBatchModelMaster::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
+                    ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $stock_requisition->requester_warehouse_id, 
+                    'branch_id' => $stock_requisition->requester_branch_id, 'batch_Number' => $batch['batch']['batch_Number']])->first();
+
+                    if($batchR){
+                        $batchR->update([
+                            'item_Qty' => $batch->item_Qty + $batch->qty
+                        ]);
+                    }else {
+                        ItemBatchModelMaster::create([
+                            'batch_Number' => $batch['batch']['batch_Number'],
+                            'model_Number' => $batch['batch']['batch_Number'],
+                            'batch_Transaction_Date' => Carbon::now(),
+                            'branch_id' => $stock_requisition->requester_branch_id,
+                            'warehouse_id' => $stock_requisition->requester_warehouse_id,
+                            'item_Qty' => $batch['qty'],
+                            'item_Id' => $batch['batch']['item_Id'],
+                            'item_Expiry_Date' => Carbon::parse($batch['batch']['item_Expiry_Date']),
+                            'isConsumed' => 0,
+                            'price' => $batch['price'],
+                            'mark_up' => $batch['mark_up'],
+                        ]);
+                    }
+
+                    // if($item['item']['ware_house_item']['isLotNo_Required']=="1"){
+                    //     $batchS = ItemBatch::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
+                    //     ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id'], 
+                    //     'batch_Number' => $batch['batch']['batch_Number']])->first();
+
+                    //     $batchS->update([
+                    //         'item_Qty' => $batch->item_Qty - $batch->qty
+                    //     ]);
+
+                    //     $batchR = ItemBatch::whereDate('item_Expiry_Date', Carbon::parse($batch['batch']['item_Expiry_Date'])->toDateString())
+                    //     ->where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $stock_requisition->requester_warehouse_id, 
+                    //     'branch_id' => $stock_requisition->requester_branch_id, 'batch_Number' => $batch['batch']['batch_Number']])->first();
+
+                    //     if($batchR){
+                    //         $batchR->update([
+                    //             'item_Qty' => $batch->item_Qty + $batch->qty
+                    //         ]);
+                    //     }else {
+                    //         ItemBatch::create([
+                    //             'batch_Number' => $batch['batch']['batch_Number'],
+                    //             'batch_Transaction_Date' => Carbon::now(),
+                    //             'branch_id' => $stock_requisition->requester_branch_id,
+                    //             'warehouse_id' => $stock_requisition->requester_warehouse_id,
+                    //             'item_Qty' => $batch['qty'],
+                    //             'item_Id' => $batch['batch']['item_Id'],
+                    //             'item_Expiry_Date' => Carbon::parse($batch['batch']['item_Expiry_Date']),
+                    //             'isConsumed' => 0,
+                    //         ]);
+                    //     }
+                    // }else{
+                    //     $model = ItemModel::where(['item_Id' => $batch['batch']['item_Id'], 'warehouse_id' => $batch['batch']['warehouse_id']])->first();
+                    // }
+                    
+                }
 
                 $receiver_warehouse->update([
                     'item_OnHand' => (float)$receiver_warehouse->item_OnHand + (float)$item['received_qty']

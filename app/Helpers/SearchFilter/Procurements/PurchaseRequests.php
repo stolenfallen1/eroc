@@ -136,9 +136,11 @@ class PurchaseRequests
   }
 
   private function forVoidPr(){
-    $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)
-    ->where('invgroup_id', 2)->where('isvoid', 1);
-    $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
+    if(Request()->tab == 10){
+      $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)
+      ->where('invgroup_id', 2)->where('isvoid', 1);
+      $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
+    }
   }
 
   private function forApproval(){
@@ -335,7 +337,7 @@ class PurchaseRequests
         $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
       })->where(function($q){
         $q->where('isvoid', 0)->orWhereNull('isvoid');
-      });;
+      });
     }
   }
 

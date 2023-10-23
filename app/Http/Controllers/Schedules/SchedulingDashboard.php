@@ -15,25 +15,21 @@ class SchedulingDashboard extends Controller
         return response()->json($data);
     }
 
-     public function getOPTHA()
+    public function getOPTHA()
     {
         $filename = 'scheduling/OPTHA-' . date('Y-m-d') . '.json';
         if (Storage::disk('public')->exists($filename)) {
             $existingData = Storage::disk('public')->get($filename);
             return json_decode($existingData, JSON_PRETTY_PRINT);
         }
-       
     }
 
      public function getOR()
     {
-        
         $filename = 'scheduling/OR-' . date('Y-m-d') . '.json';
         if (Storage::disk('public')->exists($filename)) {
-           
             $existingData = Storage::disk('public')->get($filename);
             return json_decode($existingData, JSON_PRETTY_PRINT);
-
         }
        
     }

@@ -26,6 +26,7 @@ use App\Models\OldMMIS\Branch;
 */
 
 
+
 Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthController@login',     'as' => 'login']);
 
 Route::group(['prefix' => 'admin'], function () {

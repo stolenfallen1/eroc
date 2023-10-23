@@ -209,7 +209,6 @@ Route::controller(SubCategoryController::class)->group(function () {
     Route::post('create-sub-category', 'store');
     Route::put('update-sub-category/{id}', 'update');
     Route::delete('delete-sub-category/{id}', 'destroy');
-
 });
 
 
@@ -218,7 +217,6 @@ Route::controller(ClassificationController::class)->group(function () {
     Route::post('create-sub-category-classification', 'store');
     Route::put('update-sub-category-classification/{id}', 'update');
     Route::delete('delete-sub-category-classification/{id}', 'destroy');
-
 });
 
 
@@ -296,7 +294,6 @@ Route::controller(mscPriceGroupController::class)->group(function () {
 //     Route::post('create-price-groups', 'store');
 //     Route::put('update-price-groups/{id}', 'update');
 //     Route::delete('delete-price-groups/{id}', 'destroy');
-
 // });
 
 
@@ -475,7 +472,6 @@ Route::controller(BanksController::class)->group(function () {
 Route::resource('bank-accounts', BankAccountsController::class);
 Route::resource('credit-cards', CreditCardsController::class);
 Route::resource('debit-cards', DebitCardsController::class);
-
 // ==================end hospital build=============================
 
 
@@ -505,12 +501,11 @@ Route::controller(GlobalSettingsController::class)->group(function () {
     Route::post('remove-globalsetting-access', 'remove_user_access');
 });
 Route::resource('global-settings', GlobalSettingsController::class);
-
-
 Route::controller(SystemReportsController::class)->group(function () {
     Route::get('reports', 'list');
     Route::post('get-assigned-report', 'assigned_report');
     Route::post('add-report-access', 'add_report_access');
     Route::post('remove-report-access', 'remove_report_access');
 });
+
 Route::resource('system-reports', SystemReportsController::class);

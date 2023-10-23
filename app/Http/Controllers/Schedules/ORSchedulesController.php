@@ -32,6 +32,17 @@ class ORSchedulesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    public function getORSchedules()
+    {
+        $data =  (new OperatingRoomSchedule())->vwORSchedules();
+        return response()->json($data, 200);
+    }
+    public function getORPatientDetails()
+    {
+        $data =  (new OperatingRoomSchedule())->vwORPatientDetails();
+        return response()->json($data, 200);
+    }
+
     public function ORScheduledQueue()
     {
         $data =  (new OperatingRoomSchedule())->QueueScheduled();
@@ -107,11 +118,11 @@ class ORSchedulesController extends Controller
     }
     public function getORStatus()
     {
-        
+
         $status = ['14','15','16','17','18','19','20','21','22','23','24','25','26'];
-        if(Auth()->user()->role['name'] == 'Scrub Nurse'){
+        if(Auth()->user()->role['name'] == 'Scrub Nurse') {
             $status = ['20','21','22','23','24','25','26'];
-        }else if(Auth()->user()->role['name'] == 'Reception') {
+        } elseif(Auth()->user()->role['name'] == 'Reception') {
             $status = ['14','15','16','17','18','19','20'];
         }
 
@@ -137,18 +148,6 @@ class ORSchedulesController extends Controller
         return response()->json($data, 200);
     }
 
-
-
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -225,7 +224,7 @@ class ORSchedulesController extends Controller
                     'updatedby' => Auth::user()->idnumber,
                 ]);
                 $schedules->scheduledScrubNurses()->where('operating_room_scheduled_id', $id)->where('specialty_id', 2)->delete();
-           
+
                 if(isset($request->payload['SNurse']) && count($request->payload['SNurse']) > 0) {
                     foreach($request->payload['SNurse'] as $row) {
                         $schedules->scheduledScrubNurses()->create(
@@ -328,7 +327,7 @@ class ORSchedulesController extends Controller
 
             DB::connection('sqlsrv_schedules')->commit();
             DB::connection('sqlsrv')->commit();
-            $this->convertTOjson($id);
+            $this->convertTOjson($id,null,$scheduleddate);
             return response()->json(["message" =>  'Record successfully saved','status' => '200'], 200);
 
         } catch (\Exception $e) {
@@ -340,17 +339,17 @@ class ORSchedulesController extends Controller
 
     }
 
-    public function convertTOjson($id,$status = null)
+    public function convertTOjson($id, $status = null, $scheduleddate = null)
     {
 
         $schedule_details = ORSchedulesModel::with('patientdetails', 'scheduledRoomSlot', 'scheduledCategory', 'station_details', 'scheduledStatus', 'scheduledResident', 'scheduledCirculatingNurses', 'scheduledScrubNurses')
-        ->whereDate('schedule_date', Carbon::now()->format('Y-m-d'))
+        ->whereDate('schedule_date', $scheduleddate)
         ->where('id', $id)->first();
 
         if($schedule_details['category_id'] == '4') {
-            $filename = 'scheduling/OPTHA-' . date('Y-m-d') . '.json';
+            $filename = 'scheduling/OPTHA-' .$scheduleddate. '.json';
         } else {
-            $filename = 'scheduling/OR-' . date('Y-m-d') . '.json';
+            $filename = 'scheduling/OR-' .$scheduleddate. '.json';
         }
 
         $dataArray = [];
@@ -364,30 +363,33 @@ class ORSchedulesController extends Controller
         }
 
         $found = false;
-        foreach ($dataArray as &$item) {
-            if ($item['id'] === $id) {
-                // Update the details if the data already exists
-                $item['schedule_status_id'] = $schedule_details['schedule_status_id'];
-                $item['status'] = $schedule_details['scheduledStatus']['Status_description'];
-                $item['schedule_date'] = $schedule_details['scheduledRoomSlot']['timeslot_date'];
-                $item['time'] = $schedule_details['scheduledRoomSlot']['scheduleTimeSlot']['timeslot'];
-                $item['starttime'] = (int)$schedule_details['scheduledRoomSlot']['scheduleTimeSlot']['start_time'];
-                $item['room_name'] = $schedule_details['scheduledRoomSlot']['scheduleRoom']['room_name'];
-                $item['procedure_name'] = $schedule_details['procedure_name'];
-                $item['surgeons'] = $schedule_details['scheduleSurgeons']['surgeon_name'];
-                $item['anesthesia'] = $schedule_details['scheduleAnesthesia']['anesthesia_name'];
-                $item['resident'] = $schedule_details['scheduledResident']['doctor_name'];
-                $item['schedule_status_id'] = $schedule_details['schedule_status_id'];
-                $item['new_schedule_status_id'] = $status == null ? $schedule_details['schedule_status_id'] : $status;
-                $item['status'] = $schedule_details['scheduledStatus']['Status_description'];
-                $item['category'] = $schedule_details['scheduledCategory']['category_name'];
-                $item['cirlating_nurse'] = $schedule_details['scheduledCirculatingNurses'];
-                $item['scrub_nurse'] = $schedule_details['scheduledScrubNurses'];
-                $found = true;
-                break;
-            }
-        }
+        if(count($dataArray) > 0) {
 
+            foreach ($dataArray as &$item) {
+                if ($item['id'] === $id) {
+                    // Update the details if the data already exists
+                    $item['schedule_status_id'] = $schedule_details['schedule_status_id'];
+                    $item['status'] = $schedule_details['scheduledStatus']['Status_description'];
+                    $item['schedule_date'] = $schedule_details['scheduledRoomSlot']['timeslot_date'];
+                    $item['time'] = $schedule_details['scheduledRoomSlot']['scheduleTimeSlot']['timeslot'];
+                    $item['starttime'] = (int)$schedule_details['scheduledRoomSlot']['scheduleTimeSlot']['start_time'];
+                    $item['room_name'] = $schedule_details['scheduledRoomSlot']['scheduleRoom']['room_name'];
+                    $item['procedure_name'] = $schedule_details['procedure_name'];
+                    $item['surgeons'] = $schedule_details['scheduleSurgeons']['surgeon_name'];
+                    $item['anesthesia'] = $schedule_details['scheduleAnesthesia']['anesthesia_name'];
+                    $item['resident'] = $schedule_details['scheduledResident']['doctor_name'];
+                    $item['schedule_status_id'] = $schedule_details['schedule_status_id'];
+                    $item['new_schedule_status_id'] = $status == null ? $schedule_details['schedule_status_id'] : $status;
+                    $item['status'] = $schedule_details['scheduledStatus']['Status_description'];
+                    $item['category'] = $schedule_details['scheduledCategory']['category_name'];
+                    $item['cirlating_nurse'] = $schedule_details['scheduledCirculatingNurses'];
+                    $item['scrub_nurse'] = $schedule_details['scheduledScrubNurses'];
+                    $found = true;
+                    break;
+                }
+            }
+
+        }
         if (!$found) {
             $newData = [
                 'id' => $schedule_details['id'],
@@ -425,6 +427,7 @@ class ORSchedulesController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
         try {
             $payload = Request()->payload;
+            $date = Request()->date;
 
             // Update the ORSchedulesModel record
             ORSchedulesModel::where('id', $payload['id'])->update([
@@ -457,56 +460,12 @@ class ORSchedulesController extends Controller
             }
 
             DB::connection('sqlsrv_schedules')->commit();
-            $this->convertTOjson($payload['id'], $payload['previous_status_id']);
+            $this->convertTOjson($payload['id'], $payload['previous_status_id'],$date);
             return response()->json(["message" =>  'Transfer to Waiting Room successfully saved','status' => '200'], 200);
 
         } catch (\Exception $e) {
             DB::connection('sqlsrv_schedules')->rollback();
             return response()->json(["message" => 'error','status' => $e->getMessage()], 200);
         }
-    }
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Schedules\ORSchedulesModel  $oRSchedulesModel
-     * @return \Illuminate\Http\Response
-     */
-    public function show(ORSchedulesModel $oRSchedulesModel)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Schedules\ORSchedulesModel  $oRSchedulesModel
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(ORSchedulesModel $oRSchedulesModel)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Schedules\ORSchedulesModel  $oRSchedulesModel
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, ORSchedulesModel $oRSchedulesModel)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Schedules\ORSchedulesModel  $oRSchedulesModel
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(ORSchedulesModel $oRSchedulesModel)
-    {
-        //
     }
 }

@@ -26,7 +26,7 @@ use App\Http\Controllers\Schedules\ORSchedulePatientController;
 /*require_once('/schedules/api.php');*/
 
 
-
+Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('pos/login', [AuthPOSController::class, 'login']);
@@ -53,4 +53,3 @@ Route::group(['middleware' => 'auth:api'], function () {
 });
 
 
-Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);

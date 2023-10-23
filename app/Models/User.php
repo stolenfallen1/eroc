@@ -30,7 +30,9 @@ class User extends \TCG\Voyager\Models\User
      *
      * @var array<int, string>
      */
-   
+    protected $connection = 'sqlsrv';
+    protected $table = 'CDG_CORE.dbo.users';
+    
     // protected $guarded = [];
      protected $fillable = [
         'name',

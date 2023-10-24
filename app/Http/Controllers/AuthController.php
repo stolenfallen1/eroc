@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use TCG\Voyager\Facades\Voyager;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\HIS\SysGlobalSetting;
-use App\Models\BuildFile\Systerminals;
 use App\Helpers\PosSearchFilter\Terminal;
 
 class AuthController extends \TCG\Voyager\Http\Controllers\Controller

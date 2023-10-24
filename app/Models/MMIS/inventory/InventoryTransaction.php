@@ -12,4 +12,8 @@ class InventoryTransaction extends Model
     protected $table = 'inventoryTransaction';
 
     protected $guarded = [];
+
+    public function batch(){
+        return $this->belongsTo(ItemBatchModelMaster::class, 'batch_id');
+    }
 }

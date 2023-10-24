@@ -63,6 +63,7 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::put('deliveries', 'update');
   Route::get('delivery/{id}', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
+  Route::post('consignment-pr', 'createConsignmentPr');
 });
 
 Route::controller(StockTransferController::class)->group(function () {

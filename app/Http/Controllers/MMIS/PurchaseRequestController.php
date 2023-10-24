@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\MMIS\TestModel;
 use App\Models\BuildFile\Vendors;
-use App\Models\Approver\invStatus;
+use App\Models\Approver\InvStatus;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -84,7 +84,7 @@ class PurchaseRequestController extends Controller
 
     public function store(Request $request)
     {
-        $status = invStatus::where('Status_description', 'like', '%pending%')->select('id')->first()->id;
+        $status = InvStatus::where('Status_description', 'like', '%pending%')->select('id')->first()->id;
         $user = Auth::user();
         $sequence = SystemSequence::where('seq_description', 'like', '%Purchase Requisition Series Number%')
             ->where(['isActive' => true, 'branch_id' => $user->branch_id])->first();

@@ -171,7 +171,7 @@ class StockRequisitionController extends Controller
 
     public function receiveTransfer(Request $request, StockRequisition $stock_requisition)
     {
-        return 'checking';
+        // return 'checking';
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {

@@ -538,6 +538,10 @@ class DeliveryController extends Controller
         return response()->json(['delivery' => $delivery]);
     }
 
+    public function createConsignmentPr(Request $request){
+        
+    }
+
     public function update(Request $request, $id)
     {
         # code...

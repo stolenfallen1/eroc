@@ -12,6 +12,7 @@ class InvApprover extends Model
     use HasFactory;
     protected $connection = 'sqlsrv';
     protected $table = 'invApprover';
+    
     protected $guarded = [];
 
     

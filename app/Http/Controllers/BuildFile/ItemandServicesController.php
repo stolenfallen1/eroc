@@ -9,12 +9,13 @@ use App\Helpers\SearchFilter\Items;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
-use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\SystemSequence;
-use App\Models\BuildFile\FmsTransactionCode;
-use App\Models\MMIS\inventory\InventoryTransaction;
+use App\Models\BuildFile\Warehouseitems;
 use App\Models\MMIS\inventory\ItemBatch;
 use App\Models\MMIS\inventory\ItemModel;
+use App\Models\BuildFile\FmsTransactionCode;
+use App\Models\MMIS\inventory\InventoryTransaction;
+use App\Models\MMIS\inventory\ItemBatchModelMaster;
 
 class ItemandServicesController extends Controller
 {
@@ -318,17 +319,23 @@ class ItemandServicesController extends Controller
         try {
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
             $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
-            if($warehouse_item->isModelNo_Required){
-                ItemModel::where('id', $request['model']['id'])->update([
-                    'item_Qty' => $request->item_OnHand,
-                ]);
-                $onhand = ItemModel::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
-            }else{
-                ItemBatch::where('id', $request['batch']['id'])->update([
-                    'item_Qty' => $request->item_OnHand,
-                ]);
-                $onhand = ItemBatch::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
-            }
+
+            ItemBatchModelMaster::where('id', $request['batch']['id'])->update([
+                'item_Qty' => $request->item_OnHand,
+             ]);
+                
+            $onhand = ItemBatchModelMaster::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+
+            // if($warehouse_item->isModelNo_Required){
+            //     ItemModel::where('id', $request['model']['id'])->update([
+            //         'item_Qty' => $request->item_OnHand,
+            //     ]);
+            // }else{
+            //     ItemBatch::where('id', $request['batch']['id'])->update([
+            //         'item_Qty' => $request->item_OnHand,
+            //     ]);
+            //     $onhand = ItemBatch::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            // }
             $warehouse_item->update([
                 'item_OnHand' => $onhand,
                 'item_Last_Inventory_Count' => $warehouse_item->item_OnHand,

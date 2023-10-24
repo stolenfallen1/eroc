@@ -96,7 +96,7 @@ class Deliveries
       $this->model->where('rr_Status', 5)->whereNull('isConsignment');
     }else if( Request()->tab == 2){
       $this->model->where('rr_Status', 11)->whereNull('isConsignment');
-    }else if( Request()->tab == 4){
+    }else if( Request()->tab == 3){
       $this->model->where('isConsignment', 1);
     }
   }

@@ -10,14 +10,15 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\inventory\ItemModel;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\InventoryTransaction;
-use App\Models\MMIS\inventory\ItemModel;
+use App\Models\MMIS\inventory\ItemBatchModelMaster;
 
 class BatchController extends Controller
 {
     public function getItemBatchs(){
-        $batchs = ItemBatch::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => Request()->item_id])
+        $batchs = ItemBatchModelMaster::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => Request()->item_id])
             ->where('isConsumed', '!=', 1)->get();
 
         return response()->json(["batchs" => $batchs], 200);
@@ -35,16 +36,17 @@ class BatchController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-            if(ItemBatch::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => $request->item_Id, 'batch_Number' => $request->batch_Number])->exists()){
+            if(ItemBatchModelMaster::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => $request->item_Id, 'batch_Number' => $request->batch_Number])->exists()){
                 return response()->json(["error" => 'Batch number is already exist'], 200);
             }
-            if(ItemBatch::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => $request->item_Id])->whereDate('item_Expiry_Date', Carbon::parse($request->item_Expiry_Date))->exists()){
+            if(ItemBatchModelMaster::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => $request->item_Id])->whereDate('item_Expiry_Date', Carbon::parse($request->item_Expiry_Date))->exists()){
                 return response()->json(["error" => 'Expiration date is already exist'], 200);
             }
-            $batch = ItemBatch::create([
+            $batch = ItemBatchModelMaster::create([
                 'branch_id' => Auth::user()->branch_id,
                 'warehouse_id' => Auth::user()->warehouse_id,
                 'batch_Number' => $request->batch_Number,
+                'model_Number' => $request->batch_Number,
                 'batch_Transaction_Date' => Carbon::now(),
                 'batch_Remarks' => $request->batch_Remarks,
                 'item_Id' => $request->item_Id,
@@ -52,6 +54,8 @@ class BatchController extends Controller
                 'item_UnitofMeasurement_Id' => $request->item_UnitofMeasurement_Id,
                 'item_Expiry_Date' => $request->item_Expiry_Date?Carbon::parse($request->item_Expiry_Date):NULL,
                 'isConsumed' => 0,
+                'price' => $request->price,
+                'mark_up' => $request->mark_up,
             ]);
 
             if($request->warehouse_item_id){
@@ -73,7 +77,7 @@ class BatchController extends Controller
                     'transaction_Item_UnitofMeasurement_Id' => $request->item_UnitofMeasurement_Id,
                     'transaction_Qty' => $request->item_Qty,
                     'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $request->item_Qty,
-                    'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
+                    'transaction_Item_ListCost' => $request->price,
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
@@ -96,7 +100,7 @@ class BatchController extends Controller
 
     public function checkAvailability()
     {
-        if(ItemBatch::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item])->exists()){
+        if(ItemBatchModelMaster::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item])->exists()){
             return response()->json(['message' => 'duplicate'], 200);
         }
         return response()->json(['message' => 'available'], 200);

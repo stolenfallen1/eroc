@@ -86,7 +86,7 @@ class PurchaseRequests
 
   private function byRequiredDate(){
     if(Request()->required_date){
-      $this->model->whereDate('pr_Transaction_Date_Required', '<=', Carbon::parse(Request()->required_date));
+      $this->model->whereDate('pr_Transaction_Date', '<=', Carbon::parse(Request()->required_date));
     }
   }
 

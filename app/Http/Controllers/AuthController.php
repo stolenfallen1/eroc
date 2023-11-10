@@ -68,7 +68,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
 
         return response()->json(['access_token' => $newAccessToken]);
     }
-    public function userDetails(Request $request)
+    public function userDetails()
     {
         // get user details
 
@@ -100,15 +100,8 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
         $data['details'] = $user;
         // $data['submodule'] = $this->systemsubcomponents();
         $data['submodule'] = [];
-        $accessToken = auth()->user()->token();
 
-        // Revoke the current access token
-        $accessToken->revoke();
-
-        // Generate a new access token and return it
-        $newAccessToken = $request->user()->createToken();
-
-        return response()->json(['user' => $data, 'access_token' => $newAccessToken], 200);
+        return response()->json(['user' => $data], 200);
     }
 
     public function systemsubcomponents()

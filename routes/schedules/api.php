@@ -29,3 +29,8 @@ Route::get('/getORCaseTypes', [ORSchedulesController::class, 'getORCaseTypes']);
 Route::get('/checkRoomAvailability', [ORSchedulesController::class, 'checkRoomAvailability']);
 Route::post('/submitschedule', [ORSchedulesController::class, 'store']);
 Route::post('/ProccedWaitingRoom', [ORSchedulesController::class, 'ProccedWaitingRoom']);
+Route::post('/update-seleted-timeslot', [ORSchedulesController::class, 'updateseletedtimeslot']);
+Route::get('/getORProcedures', [ORSchedulesController::class, 'getORProcedures']);
+
+Route::post('/submit-procedure', [ORSchedulesController::class, 'submitprocedure']);
+

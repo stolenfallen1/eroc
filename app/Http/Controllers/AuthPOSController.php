@@ -68,6 +68,7 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
 
         return response()->json(['access_token' => $newAccessToken]);
     }
+    
     public function checkTerminal(){
         $termninal = '';
         $hostname = gethostname();

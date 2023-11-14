@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Models;
-
 use PDO;
 use Carbon\Carbon;
 use App\Helpers\GetIP;

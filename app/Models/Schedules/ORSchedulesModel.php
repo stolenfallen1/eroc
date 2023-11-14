@@ -42,7 +42,7 @@ class ORSchedulesModel extends Model
 
     public function scheduledRoomSlot()
     {
-        return $this->hasOne(ORRoomTimSlotTransactionModel::class, 'schedule_id', 'id');
+        return $this->hasMany(ORRoomTimSlotTransactionModel::class, 'schedule_id', 'id')->whereNotIn('timeslot_id',[0])->select('schedule_id','timeslot_date','timeslot_id','room_id');
     }
 
     public function scheduledResident()

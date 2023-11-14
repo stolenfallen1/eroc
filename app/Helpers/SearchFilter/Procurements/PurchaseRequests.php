@@ -19,9 +19,9 @@ class PurchaseRequests
 
   public function searchable(){
     $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestAttachments', 'user', 'itemGroup');
+    $this->searchableColumns();
     $this->byBranch();
     $this->byDepartment();
-    $this->byTab();
     $this->byItemGroup();
     $this->byCategory();
     $this->bySubCategory();
@@ -30,9 +30,27 @@ class PurchaseRequests
     $this->byRequiredDate();
     $this->byYear();
     $this->byUser();
+    $this->byTab();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
+  }
+
+  public function searchableColumns(){
+    $searchable = ['pr_number'];
+    if (Request()->keyword) {
+      $keyword = Request()->keyword;
+      $this->model->where(function ($q) use ($keyword, $searchable) {
+          foreach ($searchable as $column) {
+              if ($column == 'pr_number')
+                  $q->whereRaw("CONCAT(pr_Document_Prefix,'',pr_Document_Number,'',pr_Document_Suffix) = ?", $keyword)
+                  ->orWhere('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+                  // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+              else
+                  $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
+          }
+      });
+    }
   }
   
   // $this->authUser->role->name == 'consultant' ||
@@ -200,6 +218,7 @@ class PurchaseRequests
       }]);
 
     }
+    $this->model->orderBy('created_at', 'asc');
   }
 
   private function forDepartmentHead(){
@@ -216,6 +235,7 @@ class PurchaseRequests
     }else{
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null)->whereIn('warehouse_Id', $this->authUser->departments);
     }
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forConsultant(){
@@ -223,7 +243,10 @@ class PurchaseRequests
       ->where('invgroup_id', 2)->where(function($q1){
         $q1->where('isvoid', 0)->orWhereNull('isvoid');
       });
+
     $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
+
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forAdministrator(){
@@ -235,6 +258,7 @@ class PurchaseRequests
       });
     })->where('pr_Branch_Level1_ApprovedBy', '!=', null);
 
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forCanvas(){
@@ -283,6 +307,8 @@ class PurchaseRequests
         $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
       });
     }
+
+    $this->model->orderBy('created_at', 'asc');
   }
   
   private function canvasForApproval(){
@@ -297,6 +323,8 @@ class PurchaseRequests
           })->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         });
     });
+
+    $this->model->orderBy('created_at', 'asc');
   }
 
   private function approveCanvas(){
@@ -306,6 +334,8 @@ class PurchaseRequests
           $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
         });
     });
+
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function purchaserApproval(){
@@ -318,6 +348,8 @@ class PurchaseRequests
             ->where('canvas_Branch_Id', '!=', 1);
           });
       });
+
+      $this->model->orderBy('created_at', 'asc');
   }
 
   private function forPurchaseOrder(){
@@ -339,8 +371,8 @@ class PurchaseRequests
         $q->where('isvoid', 0)->orWhereNull('isvoid');
       });
     }
+
+    $this->model->orderBy('created_at', 'asc');
   }
-
-
 
 }

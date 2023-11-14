@@ -17,6 +17,7 @@ class PurchaseOrders
 
   public function searchable(){
     $this->model->with('details', 'purchaseRequest', 'vendor', 'warehouse', 'status', 'user');
+    $this->searchableColumns();
     $this->byBranch();
     $this->byItemGroup();
     $this->byDepartment();
@@ -28,6 +29,27 @@ class PurchaseOrders
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
+  }
+
+  public function searchableColumns(){
+    $searchable = ['po_number', 'pr_number'];
+    if (Request()->keyword) {
+      $keyword = Request()->keyword;
+      $this->model->where(function ($q) use ($keyword, $searchable) {
+          foreach ($searchable as $column) {
+              if ($column == 'po_number')
+                  $q->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", $keyword)
+                  ->orWhere('po_Document_number', 'LIKE' , '%' . $keyword . '%');
+                  // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+              else if($column == 'pr_number'){
+                $q->orWhereHas('purchaseRequest', function($q2) use($keyword){
+                  $q2->whereRaw("CONCAT(pr_Document_Prefix,'',pr_Document_Number,'',pr_Document_Suffix) = ?", $keyword)
+                  ->orWhere('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+                });
+              }
+          }
+      });
+    }
   }
   
   private function byBranch(){

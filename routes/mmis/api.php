@@ -5,6 +5,7 @@ use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\DeliveryController;
+use App\Http\Controllers\MMIS\ExpenseController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
@@ -64,6 +65,11 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::get('delivery/{id}', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
   Route::post('consignment-pr', 'createConsignmentPr');
+});
+
+Route::controller(ExpenseController::class)->group(function () {
+  Route::get('expense-requisitions', 'index');
+  Route::post('expense-requisition', 'store');
 });
 
 Route::controller(StockTransferController::class)->group(function () {

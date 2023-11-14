@@ -86,7 +86,7 @@ class PurchaseRequests
 
   private function byRequiredDate(){
     if(Request()->required_date){
-      $this->model->whereDate('pr_Transaction_Date_Required', '<=', Carbon::parse(Request()->required_date));
+      $this->model->whereDate('pr_Transaction_Date', '<=', Carbon::parse(Request()->required_date));
     }
   }
 
@@ -136,9 +136,11 @@ class PurchaseRequests
   }
 
   private function forVoidPr(){
-    $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)
-    ->where('invgroup_id', 2)->where('isvoid', 1);
-    $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
+    if(Request()->tab == 10){
+      $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)
+      ->where('invgroup_id', 2)->where('isvoid', 1);
+      $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
+    }
   }
 
   private function forApproval(){
@@ -335,7 +337,7 @@ class PurchaseRequests
         $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
       })->where(function($q){
         $q->where('isvoid', 0)->orWhereNull('isvoid');
-      });;
+      });
     }
   }
 

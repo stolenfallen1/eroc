@@ -65,7 +65,8 @@ class StockRequisitions
     if($this->authUser->role->name == 'department head'){
       $this->model->whereHas('items', function($q1){
         $q1->where(['department_head_declined_by' => null, 'department_head_approved_by' => null]);
-      })->where(['sender_warehouse_id' => $this->authUser->warehouse_id, 'sender_branch_id' => $this->authUser->branch_id]);
+      })->where(['sender_branch_id' => $this->authUser->branch_id])
+      ->whereIn('sender_warehouse_id', $this->authUser->departments);
     }elseif ($this->authUser->role->name == 'administrator') {
       $this->model->whereHas('items', function($q1){
         $q1->whereNotNull('department_head_approved_by')->where(['administrator_approved_by' => null, 'administrator_declined_by' => null]);
@@ -120,16 +121,14 @@ class StockRequisitions
 
   private function forReceiving(){
     if(Request()->tab == 6){
-      $this->model->whereHas('items', function($q1){
-        $q1->whereNotNull('corporate_admin_approved_by');
-      })->whereNotNull('transfer_by_id')
+      $this->model->whereNotNull('transfer_by_id')->whereNull('receiver_id')
       ->where(['requester_warehouse_id' => $this->authUser->warehouse_id, 'requester_branch_id' => $this->authUser->branch_id]);
     }
   }
 
   private function forReceived(){
     if(Request()->tab == 7){
-      $this->model->whereNotNull('transfer_by_id');
+      $this->model->whereNotNull('transfer_by_id')->whereNotNull('receiver_id');
     }
   }
 }

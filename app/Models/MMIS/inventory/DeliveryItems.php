@@ -17,7 +17,7 @@ class DeliveryItems extends Model
 
     public function batchs()
     {
-        return $this->hasMany(ItemBatch::class, 'delivery_item_id', 'id');
+        return $this->hasMany(ItemBatchModelMaster::class, 'delivery_item_id', 'id');
     }
 
     public function delivery()

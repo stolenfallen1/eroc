@@ -2,7 +2,7 @@
 
 namespace App\Models\MMIS\procurement;
 
-use App\Models\Approver\invStatus;
+use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\ItemGroup;
@@ -34,7 +34,7 @@ class PurchaseRequest extends Model
     }
 
     public  function status(){
-        return $this->belongsTo(invStatus::class, 'pr_Status_Id', 'id');
+        return $this->belongsTo(InvStatus::class, 'pr_Status_Id', 'id');
     }
 
     public  function priority(){

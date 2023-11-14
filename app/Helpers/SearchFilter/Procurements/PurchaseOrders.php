@@ -67,7 +67,7 @@ class PurchaseOrders
   }
 
   private function byEndDate(){
-    if(Request()->start_date){
+    if(Request()->end_date){
       $this->model->whereDate('po_Document_transaction_date', '<=', Carbon::parse(Request()->end_date));
     }
   }

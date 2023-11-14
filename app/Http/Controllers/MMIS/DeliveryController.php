@@ -148,6 +148,8 @@ class DeliveryController extends Controller
                         'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
                         'isConsumed' => 0,
                         'delivery_item_id' => $delivery_item->id,
+                        'price' => $item_amount,
+                        'mark_up' => $batch['mark_up'] ?? 0,
                     ]);
 
                     // if($detail['item']['auth_warehouse_item']['isLotNo_Required'] == "1"){
@@ -363,35 +365,52 @@ class DeliveryController extends Controller
                         'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
                     ]);
 
-                    if($detail['isLotNo_Required'] == "1"){
-                        ItemBatch::create([
-                            'branch_id' => $delivery->rr_Document_Branch_Id,
-                            'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
-                            'batch_Number' => $batch['batch_Number'],
-                            'batch_Transaction_Date' => Carbon::now(),
-                            'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
-                            'item_Id' => $batch['item_Id'],
-                            'item_Qty' => $batch['item_Qty'],
-                            'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                            'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
-                            'isConsumed' => 0,
-                            'delivery_item_id' => $delivery_item->id,
-                        ]);
-                    }else{
-                        ItemModel::create([
-                            'branch_id' => $delivery->rr_Document_Branch_Id,
-                            'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
-                            'model_Number' => $batch['batch_Number'],
-                            'model_Transaction_Date' => Carbon::now(),
-                            'model_Remarks' => $batch['batch_Remarks'] ?? NULL,
-                            'item_Id' => $batch['item_Id'],
-                            'item_Qty' => $batch['item_Qty'],
-                            'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                            'model_SerialNumber' => $batch['batch_Number'],
-                            'isConsumed' => 0,
-                            'delivery_item_id' => $delivery_item->id,
-                        ]);
-                    }
+                    ItemBatchModelMaster::create([
+                        'branch_id' => $delivery->rr_Document_Branch_Id,
+                        'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                        'batch_Number' => $batch['batch_Number'],
+                        'batch_Transaction_Date' => Carbon::now(),
+                        'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
+                        'item_Id' => $batch['item_Id'],
+                        'item_Qty' => $batch['item_Qty'],
+                        'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                        'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
+                        'isConsumed' => 0,
+                        'delivery_item_id' => $delivery_item->id,
+                        'price' => $delivery_item->rr_Detail_Item_ListCost,
+                        'mark_up' => $batch['mark_up'] ?? 0,
+                        'isconsignment' => 1
+                    ]);
+
+                    // if($detail['isLotNo_Required'] == "1"){
+                    //     ItemBatch::create([
+                    //         'branch_id' => $delivery->rr_Document_Branch_Id,
+                    //         'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                    //         'batch_Number' => $batch['batch_Number'],
+                    //         'batch_Transaction_Date' => Carbon::now(),
+                    //         'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
+                    //         'item_Id' => $batch['item_Id'],
+                    //         'item_Qty' => $batch['item_Qty'],
+                    //         'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                    //         'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
+                    //         'isConsumed' => 0,
+                    //         'delivery_item_id' => $delivery_item->id,
+                    //     ]);
+                    // }else{
+                    //     ItemModel::create([
+                    //         'branch_id' => $delivery->rr_Document_Branch_Id,
+                    //         'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                    //         'model_Number' => $batch['batch_Number'],
+                    //         'model_Transaction_Date' => Carbon::now(),
+                    //         'model_Remarks' => $batch['batch_Remarks'] ?? NULL,
+                    //         'item_Id' => $batch['item_Id'],
+                    //         'item_Qty' => $batch['item_Qty'],
+                    //         'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                    //         'model_SerialNumber' => $batch['batch_Number'],
+                    //         'isConsumed' => 0,
+                    //         'delivery_item_id' => $delivery_item->id,
+                    //     ]);
+                    // }
                     
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                     $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
@@ -517,6 +536,10 @@ class DeliveryController extends Controller
             $q->with('item', 'unit');
           },'audit'])->findOrfail($id);
         return response()->json(['delivery' => $delivery]);
+    }
+
+    public function createConsignmentPr(Request $request){
+        
     }
 
     public function update(Request $request, $id)

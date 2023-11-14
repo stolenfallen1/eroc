@@ -63,6 +63,7 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::put('deliveries', 'update');
   Route::get('delivery/{id}', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
+  Route::post('consignment-pr', 'createConsignmentPr');
 });
 
 Route::controller(StockTransferController::class)->group(function () {
@@ -72,6 +73,8 @@ Route::controller(StockTransferController::class)->group(function () {
 });
 
 Route::controller(StockRequisitionController::class)->group(function () {
+  Route::get('stock-requisition/release-count', 'releaseCount');
+  Route::get('stock-requisition/receive-count', 'receiveCount');
   // Route::put('stock-requisition-approved/{stock_requisition}', 'receiveTransfer');
   Route::get('stock-requisitions', 'index');
   Route::post('stock-requisition', 'store');

@@ -18,7 +18,7 @@ class StockRequisitionItemBatch extends Model
     }
 
     public function batch(){
-        return $this->belongsTo(ItemBatch::class, 'batch_id', 'id');
+        return $this->belongsTo(ItemBatchModelMaster::class, 'batch_id', 'id');
     }
 
     public function sender(){

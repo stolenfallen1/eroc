@@ -13,7 +13,7 @@ class ExpenseIssuance extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv_mmis";
-    protected $table = 'CDG_MMIS.dbo.expense_requisitions';
+    protected $table = 'CDG_MMIS.dbo.expenseIssuances';
 
     protected $guarded = [];
 

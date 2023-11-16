@@ -372,7 +372,7 @@ class PurchaseRequests
       });
     }
 
-    $this->model->orderBy('created_at', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
 
 }

@@ -308,7 +308,7 @@ class PurchaseRequests
       });
     }
 
-    $this->model->orderBy('created_at', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
   
   private function canvasForApproval(){
@@ -324,7 +324,7 @@ class PurchaseRequests
         });
     });
 
-    $this->model->orderBy('created_at', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function approveCanvas(){

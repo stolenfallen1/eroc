@@ -323,7 +323,14 @@ class PurchaseRequests
           })->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         });
     });
-
+    $this->model->with(['purchaseRequestDetails'=>function($q){
+      $q->with('recommendedCanvas.vendor')
+        ->where(function($query){
+            $query->whereHas('recommendedCanvas', function($query1){
+                $query1->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+            });
+        })->where('is_submitted', true);
+    }]);
     $this->model->orderBy('created_at', 'desc');
   }
 

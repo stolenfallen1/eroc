@@ -13,6 +13,7 @@ use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
+use App\Models\MMIS\inventory\Delivery;
 
 class PurchaseOrderController extends Controller
 {
@@ -31,6 +32,10 @@ class PurchaseOrderController extends Controller
 
     public function getByNumber()
     {
+        $has_delivery = Delivery::whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", Request()->number )
+        ->where('rr_Status', 11)->exists();
+        if($has_delivery) return response()->json(['error' => 'PO already exist'], 200);
+
         return purchaseOrderMaster::with(['latestdelivery.items' => function($q){
             $q->where('rr_Detail_Item_Qty_BackOrder', '!=', 0);
         }, 'details'=>function($q){

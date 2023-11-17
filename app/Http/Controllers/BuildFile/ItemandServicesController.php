@@ -99,7 +99,7 @@ class ItemandServicesController extends Controller
                     'isReOrder' =>'0',
                     'isLotNo_Required' =>'0',
                     'created_at' => Carbon::now(),
-                    'DateCreated' => Carbon::now(),
+                    // 'DateCreated' => Carbon::now(),
                     'isActive' =>'1',
                     'CreatedBy'=>Auth()->user()->idnumber,
                 ]);

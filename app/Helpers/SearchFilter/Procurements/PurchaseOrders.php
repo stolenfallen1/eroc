@@ -143,6 +143,7 @@ class PurchaseOrders
 
         $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
       }
+      
     }
     if($this->authUser->role->name == 'corporate admin'){
       $this->model->where(function($q1){
@@ -165,22 +166,28 @@ class PurchaseOrders
     else if($this->authUser->role->name == 'president'){
       $this->model->where('corp_admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_total_net_amount', '>', 99999);
     }
+
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forComptroller(){
     $this->model->where('comptroller_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forAdministrator(){
     $this->model->where('admin_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forCorpAdmin(){
     $this->model->where('corp_admin_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forPresident(){
     $this->model->where('ysl_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
 }

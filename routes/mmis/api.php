@@ -41,6 +41,7 @@ Route::controller(CanvasController::class)->group(function () {
 });
 
 Route::controller(PurchaseOrderController::class)->group(function () {
+  Route::get('purchase-orders-counts', 'getCount');
   Route::get('purchase-orders', 'index');
   Route::get('purchase-order/{id}', 'show');
   Route::post('purchase-order', 'store');

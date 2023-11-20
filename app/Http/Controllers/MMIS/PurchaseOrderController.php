@@ -21,6 +21,15 @@ class PurchaseOrderController extends Controller
         return (new PurchaseOrders)->searchable();
     }
 
+    public function getCount(){
+        return response()->json([
+            'comptroller_count' => purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->count(),
+            'administrator_count' => purchaseOrderMaster::where('admin_approved_date', '!=', null)->count(),
+            'corp_admin_count' => purchaseOrderMaster::where('corp_admin_approved_date', '!=', null)->count(),
+            'president_count' => purchaseOrderMaster::where('ysl_approved_date', '!=', null)->count()
+        ]);
+    }
+
     public function show($id)
     {
         return purchaseOrderMaster::with(['details'=>function($q){

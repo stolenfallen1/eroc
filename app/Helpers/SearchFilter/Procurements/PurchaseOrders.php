@@ -16,7 +16,7 @@ class PurchaseOrders
   }
 
   public function searchable(){
-    $this->model->with('details', 'purchaseRequest', 'vendor', 'warehouse', 'status', 'user');
+    $this->model->with('details.canvas', 'purchaseRequest', 'vendor', 'warehouse', 'status', 'user');
     $this->searchableColumns();
     $this->byBranch();
     $this->byItemGroup();

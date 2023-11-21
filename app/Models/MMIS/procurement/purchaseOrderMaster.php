@@ -65,6 +65,10 @@ class purchaseOrderMaster extends Model
         return $this->belongsTo(User::class, 'comptroller_approved_by', 'idnumber');
     }
 
+    public function corporateAdmin(){
+        return $this->belongsTo(User::class, 'corp_admin_approved_by', 'idnumber');
+    }
+
     public function getCodeAttribute(){
         return generateCompleteSequence($this->po_Document_prefix, $this->po_Document_number, $this->po_Document_suffix, "-");
     }

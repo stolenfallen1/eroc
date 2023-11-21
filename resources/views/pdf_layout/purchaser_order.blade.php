@@ -199,6 +199,10 @@
           <tr><td class="item-td">Administrator</td></tr>
           <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['comptroller']['name']}}</td></tr>
           <tr><td class="item-td">Purchasing Comptroller</td></tr>
+          @if ($pdf_data['purchase_order']['corporateAdmin'])
+            <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['corporateAdmin']['name']}}</td></tr>
+            <tr><td class="item-td">Corporate admin</td></tr>
+          @endif
         </tbody>
       </table>
       <table class="signatory-section2">

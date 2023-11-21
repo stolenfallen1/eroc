@@ -87,7 +87,7 @@ Route::controller(CategoryController::class)->group(function () {
     Route::get('sub-categories', 'getAllSubCategories');
     Route::get('classifications', 'getAllClassifications');
     Route::get('supplier-categories', 'getAllSupplierCategories');
-    Route::get('supplier-terms', 'getAllSupplierTerms');
+    Route::get('supplier-terms-all', 'getAllSupplierTerms');
 
 
     Route::post('get-category-list', 'mscAllcategory');

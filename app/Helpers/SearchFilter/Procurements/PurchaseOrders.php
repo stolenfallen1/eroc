@@ -124,7 +124,11 @@ class PurchaseOrders
         $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
       }
       else if($this->authUser->role->name == 'administrator'){
-        $this->model->where('comptroller_approved_date', '!=', null)->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
+        $this->model->whereNotNull('comptroller_approved_date')
+        ->where(function($q){
+          $q->whereNull('corp_admin_approved_date')->orWhereNull('corp_admin_cancelled_date');
+        })
+        ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
       }
     }else{
       if($this->authUser->role->name == 'comptroller'){
@@ -153,7 +157,7 @@ class PurchaseOrders
           $q2->where('invgroup_id', 2);
         });
       })->orWhere(function($q1){
-        $q1->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)
+        $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
         ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
         ->whereHas('purchaseRequest', function($q2){
           $q2->where('invgroup_id', '!=', 2);
@@ -164,7 +168,21 @@ class PurchaseOrders
       //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
     }
     else if($this->authUser->role->name == 'president'){
-      $this->model->where('corp_admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_total_net_amount', '>', 99999);
+      if(Request()->branch == 1){
+
+        $this->model->where(function($q){
+          $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
+        })
+        ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])
+        ->where('po_Document_total_net_amount', '>', 99999);
+
+      }else{
+
+        $this->model->where('corp_admin_approved_date', '!=', null)
+        ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])
+        ->where('po_Document_total_net_amount', '>', 99999);
+
+      }
     }
 
     $this->model->orderBy('created_at', 'desc');

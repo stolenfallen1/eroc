@@ -39,8 +39,8 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
-    return 'test';
     $qrData = base64_encode($qrCode);
+    return 'test5';
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
     $pdf_data = [

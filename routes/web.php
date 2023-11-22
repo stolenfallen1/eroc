@@ -33,7 +33,7 @@ Route::group(['prefix' => 'admin'], function () {
 });
 
 Route::get('/print-purchase-order/{id}', function ($id) {
-    return $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
+    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
         $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
     }])->findOrfail($id);
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);

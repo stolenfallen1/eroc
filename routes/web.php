@@ -34,7 +34,7 @@ Route::group(['prefix' => 'admin'], function () {
 
 Route::get('/print-purchase-order/{id}', function ($id) {
     $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
-        $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+        $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas.canvaser');
     }])->findOrfail($id);
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
@@ -42,11 +42,19 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $qrData = base64_encode($qrCode);
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+    $total_amount = 0;
+
+    foreach ($purchase_order['details'] as $key => $detail) {
+        $total_amount += $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'];
+    }
+
     $pdf_data = [
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'purchase_order' => $purchase_order,
-        'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d')
+        'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d'),
+        'canvaser' =>  $purchase_order['details'][0]['purchaseRequestDetail']['recommendedCanvas']['canvaser']['name'],
+        'total_amount' => $total_amount
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
 

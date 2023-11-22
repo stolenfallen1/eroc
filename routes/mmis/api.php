@@ -1,21 +1,23 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MMIS\UserController;
 use App\Http\Controllers\MMIS\AuditController;
-use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
-use App\Http\Controllers\MMIS\DeliveryController;
 use App\Http\Controllers\MMIS\ExpenseController;
+use App\Http\Controllers\MMIS\DeliveryController;
+use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
+use App\Http\Controllers\MMIS\StockTransferController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
-use App\Http\Controllers\MMIS\StockTransferController;
-use Illuminate\Support\Facades\Route;
 
 Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
   Route::post('verify-passcode', 'getpermission');
+  Route::post('update-password', 'updatePassword');
 });
 
 Route::controller(PurchaseRequestController::class)->group(function () {

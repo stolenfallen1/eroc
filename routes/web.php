@@ -41,7 +41,6 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
     $qrData = base64_encode($qrCode);
-    return 'test5';
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
     $pdf_data = [
@@ -51,6 +50,7 @@ Route::get('/print-purchase-order/{id}', function ($id) {
         'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d')
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
+    return 'test5';
 
     return $pdf->stream('Purchase order-' . $id . '.pdf');
 });

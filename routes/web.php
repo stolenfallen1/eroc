@@ -37,8 +37,8 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
         $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
     }])->findOrfail($id);
-    return 'test';
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
+    return 'test';
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
     $qrData = base64_encode($qrCode);

@@ -76,6 +76,11 @@
           .item-td{
             text-align: center;
           }
+          .item-td-total{
+            text-align: right;
+            padding-right: 25px; 
+            font-weight: 800;
+          }
 
           .spacer{
             margin-top: 1px;
@@ -180,9 +185,13 @@
                 <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] }}</td>
                 <td class="item-td" >{{ $detail['item']['unit']['name'] }}</td>
                 <td class="item-td" >{{ $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'], 4) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'], 2) }}</td>
               </tr>
           @endforeach
+              <tr>
+                <td colspan="5" class="item-td-total" >Total amount</td>
+                <td class="item-td" >{{ number_format($pdf_data['total_amount'], 2) }}</td>
+              </tr>
         </tbody>
       </table>
       <p class="csstransforms">THIS DOCUMENT IS NOT VALID <br/> FOR CLAIM OF INPUT TAXES</p>
@@ -205,12 +214,16 @@
             <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['corporateAdmin']['name']}}</td></tr>
             <tr><td class="item-td">Corporate admin</td></tr>
           @endif
+          @if ($pdf_data['purchase_order']['president'] != null)
+            <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['president']['name']}}</td></tr>
+            <tr><td class="item-td">President</td></tr>
+          @endif
         </tbody>
       </table>
       <table class="signatory-section2">
         <tbody>
           <tr><td>ORDERED BY :</td></tr>
-          <tr><td style="padding-top:10px; text-transform: uppercase;" class="item-td underline">{{$pdf_data['purchase_order']['purchaseRequest']['user']['name']}}</td></tr>
+          <tr><td style="padding-top:10px; text-transform: uppercase;" class="item-td underline">{{$pdf_data['canvaser']}}</td></tr>
           <tr><td> ( ) Central Supply </td></tr>
           <tr><td> ( ) Pharmacy </td></tr>
           <tr><td> ( ) Others Engineering Department </td></tr>

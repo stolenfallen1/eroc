@@ -34,7 +34,7 @@ Route::group(['prefix' => 'admin'], function () {
 });
 
 Route::get('/print-purchase-order/{id}', function ($id) {
-    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
+    return $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
         $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
     }])->findOrfail($id);
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
@@ -50,7 +50,6 @@ Route::get('/print-purchase-order/{id}', function ($id) {
         'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d')
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
-    return 'test5';
 
     return $pdf->stream('Purchase order-' . $id . '.pdf');
 });

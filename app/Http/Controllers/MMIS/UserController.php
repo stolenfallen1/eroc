@@ -31,7 +31,7 @@ class UserController extends Controller
         if(!Hash::check($request->old_password, $user->password)){
             return response()->json(['error' => 'incorrect password'], 200);
         }
-        if($request->passcode) $user->passcode = $request->passcode;
+        if($request->newpasscode) $user->passcode = $request->newpasscode;
         $user->password = bcrypt($request->password);
         $user->save();
 

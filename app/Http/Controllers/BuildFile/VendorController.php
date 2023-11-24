@@ -19,8 +19,10 @@ class VendorController extends Controller
     }
 
     public function update(Request $request, Vendors $vendor){
+
         $input = $request->except(['vendor_Name', 'vendor_CreditLimit']);
         $vendor->update($input);
+        
     }
 
     public function destroy(Vendors $vendor){

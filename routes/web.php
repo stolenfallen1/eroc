@@ -58,7 +58,7 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
 
-    return $pdf->stream('PO-' . $purchase_order['po_Document_number'] . '.pdf');
+    return $pdf->stream('PO-' . $purchase_order['vendor']['vendor_Name'] . '-' . Carbon::now()->format('m-d-Y') . '-' . $purchase_order['po_Document_number'] . '.pdf');
 });
 
 Route::get('/print-purchase-request/{id}', function ($id) {

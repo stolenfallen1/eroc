@@ -45,7 +45,6 @@ class RemoveVat extends Command
         $po_number = $this->ask('What it the pr number');
 
         $data = purchaseOrderMaster::with('details.canvas')->where('po_Document_number', 'like', '%'. $po_number)->first();
-        dd($data);
         $o_total = 0;
         $o_net_total = 0;
         $o_discount_amount = 0;

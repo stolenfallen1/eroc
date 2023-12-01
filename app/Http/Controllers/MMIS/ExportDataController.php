@@ -52,7 +52,7 @@ class ExportDataController extends Controller
         $warehouse = Warehouses::find($request->department);
         $pdf_data = [
             'items' => $po_items,
-            'branch_name' => $branch->companyname,
+            'branch_name' => $branch->name,
             'warehouse_name' => $warehouse->warehouse_description ?? 'ALL Department',
         ];
         $pdf = PDF::loadView('reports.undeliveredPO', ['pdf_data' => $pdf_data]);
@@ -88,7 +88,7 @@ class ExportDataController extends Controller
         $warehouse = Warehouses::find($request->department);
         $pdf_data = [
             'items' => $pr_items,
-            'branch_name' => $branch->companyname,
+            'branch_name' => $branch->name,
             'warehouse_name' => $warehouse->warehouse_description,
         ];
         $pdf = PDF::loadView('reports.unprocessedPR', ['pdf_data' => $pdf_data]);

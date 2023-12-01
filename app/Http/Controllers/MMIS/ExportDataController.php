@@ -60,7 +60,7 @@ class ExportDataController extends Controller
         if(!file_exists($path)){
             mkdir($path);
         }
-        $filename = 'undelivered_po'. $branch->id . $warehouse->id . '.pdf';
+        $filename = 'undelivered_po'. $branch->id . '.pdf';
         if(file_exists($path . $filename)){
             File::delete($path . $filename);
         }

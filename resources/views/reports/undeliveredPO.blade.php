@@ -180,12 +180,12 @@
         <tbody>
           @foreach ($pdf_data['items'] as $detail)
               <tr>
-                <td class="item-td" >{{ $detail['purchaseOrder']['code'] }}</td>
-                <td class="item-td" >{{ date_format(date_create($detail['purchaseOrder']['purchaseRequest']['pr_Transaction_Date']), "Y/m/d H:i:s") }}</td>
-                <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
-                <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] }}</td>
-                <td class="item-td" >{{ $detail['po_Detail_item_listcost'] }}</td>
-                <td class="item-td" >{{ $detail['purchaseRequestDetail']['recommendedCanvas']['vendor']['vendor_Name'] }}</td>
+                <td class="item-td" >{{ $detail['purchaseOrder']?$detail['purchaseOrder']['code'] : '...' }}</td>
+                <td class="item-td" >{{ date_format(date_create($detail['purchaseOrder']?$detail['purchaseOrder']['purchaseRequest']?$detail['purchaseOrder']['purchaseRequest']['pr_Transaction_Date']:'...':'...'), "Y/m/d H:i:s") }}</td>
+                <td class="item-td" >{{ $detail['item']?$detail['item']['item_name'] : '...' }}</td>
+                <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] ?? '...' }}</td>
+                <td class="item-td" >{{ $detail['po_Detail_item_listcost'] ?? '...' }}</td>
+                <td class="item-td" >{{ $detail['purchaseRequestDetail']?$detail['purchaseRequestDetail']['recommendedCanvas']?$detail['purchaseRequestDetail']['recommendedCanvas']['vendor']?$detail['purchaseRequestDetail']['recommendedCanvas']['vendor']['vendor_Name']:'...':'....':'...' }}</td>
               </tr>
           @endforeach
           {{-- <tr>

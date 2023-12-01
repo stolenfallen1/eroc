@@ -37,7 +37,10 @@ class ExportDataController extends Controller
     private function unprocessedPO($request){
         $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest.branch', 'purchaseRequestDetail.recommendedCanvas.vendor')
         ->whereHas('purchaseOrder', function($q1) use($request){
-            $q1->where('po_Document_branch_id', $request->branch_id)->where('po_Document_warehouse_id', $request->department)->whereDoesntHave('delivery');
+            if($request->department){
+                $q1->where('po_Document_warehouse_id', $request->department);
+            }
+            $q1->where('po_Document_branch_id', $request->branch_id)->whereDoesntHave('delivery');
         })->get();
 
         if(sizeof($po_items) < 1){

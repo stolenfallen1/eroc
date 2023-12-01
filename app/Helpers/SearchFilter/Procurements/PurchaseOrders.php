@@ -129,6 +129,8 @@ class PurchaseOrders
           $q->whereNull('corp_admin_approved_date')->orWhereNull('corp_admin_cancelled_date');
         })
         ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
+      }else{
+        // $this->model->where()
       }
     }else{
       if($this->authUser->role->name == 'comptroller'){

@@ -1,6 +1,9 @@
 <?php
 
 use Carbon\Carbon;
+use App\Models\OldMMIS\Branch;
+use App\Models\BuildFile\Warehouses;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Models\MMIS\inventory\Delivery;
 use App\Http\Controllers\AuthController;
@@ -11,8 +14,6 @@ use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
-use App\Models\BuildFile\Warehouses;
-use App\Models\OldMMIS\Branch;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +58,21 @@ Route::get('/print-purchase-order/{id}', function ($id) {
         'total_amount' => $total_amount
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
+    $viewers = explode(',' , $purchase_order->viewers);
+    $is_viewer = false;
+    if(sizeof($viewers)){
+        foreach ($viewers as $viewer) {
+            if($viewer == Request()->id){
+                $is_viewer = true;
+            }
+        }
+    }
+    if($is_viewer == false){
+        array_push($viewers, Request()->id);
+        $purchase_order->update([
+            'viewers' => implode(',', $viewers)
+        ]);
+    }
 
     return $pdf->stream('PO-' . $purchase_order['vendor']['vendor_Name'] . '-' . Carbon::now()->format('m-d-Y') . '-' . $purchase_order['po_Document_number'] . '.pdf');
 });

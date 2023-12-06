@@ -30,7 +30,7 @@ class CanvasController extends Controller
         })->whereHas('purchaseRequestDetails', function($q){
         $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function($q1){
-            $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
+            $q1->where('canvas_Level2_ApprovedBy', '!=', null);
         })->whereDoesntHave('purchaseOrderDetails');
         });
         if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){

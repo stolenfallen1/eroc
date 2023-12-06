@@ -374,7 +374,9 @@ class PurchaseRequests
     })->whereHas('purchaseRequestDetails', function($q){
       $q->where('is_submitted', true)
       ->whereHas('recommendedCanvas', function($q1){
-        $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
+        $q1->where(function($q2){
+          $q2->where('canvas_Level2_ApprovedBy', '!=', null);
+        });
       })->whereDoesntHave('purchaseOrderDetails');
     });
     if($this->authUser->branch_id != 1) $this->model->where('branch_id', $this->authUser->branch_id);

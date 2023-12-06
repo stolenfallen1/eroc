@@ -65,7 +65,9 @@ class PurchaseOrderController extends Controller
                     $query->where('invgroup_id', '!=', 2);
                 })->where(function($q2){
                     $q2->where(function($q3){
-                        $q3->where('po_Document_total_net_amount', '<', 100000)->where('corp_admin_approved_by', '!=', NULL);
+                        $q3->where('po_Document_total_net_amount', '<', 100000)->where(function($q4){
+                            $q4->where('corp_admin_approved_by', '!=', NULL)->orWhere('admin_approved_by', '!=', NULL);
+                        });
                     })->orWhere(function($q3){
                         $q3->where('po_Document_total_net_amount', '>', 99999)->where('ysl_approved_by', '!=', NULL);
                     });

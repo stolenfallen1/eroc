@@ -378,4 +378,16 @@ class ItemandServicesController extends Controller
             return response()->json(["error" => $e], 200);
         }
     }
+
+    public function updateListCost(Request $request) {
+        Warehouseitems::where('id', $request->warehouse_item_id)->update([
+            'item_ListCost' => $request->item_ListCost,
+            'item_Markup_In' => $request->item_Markup_In,
+            'item_Markup_Out' => $request->item_Markup_Out,
+            'item_Selling_Price_In' => $request->item_Selling_Price_In,
+            'item_Selling_Price_Out' => $request->item_Selling_Price_Out
+        ]);
+
+        return response()->json(["message" => "success"], 200);
+    }
 }

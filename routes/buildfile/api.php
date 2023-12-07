@@ -186,6 +186,7 @@ Route::controller(BranchController::class)->group(function () {
 
 Route::controller(DepartmentController::class)->group(function () {
     Route::get('departments', 'index');
+    Route::get('department-sections', 'getSections');
     Route::post('get-department-access', 'UserDeptAccess');
     Route::post('add-department-access', 'add_department_access');
     Route::post('remove-department-access', 'remove_department_access');

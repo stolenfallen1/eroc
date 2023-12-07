@@ -3,6 +3,7 @@
 namespace App\Models\MMIS\procurement;
 
 use App\Models\BuildFile\Itemmasters;
+use App\Models\BuildFile\WarehouseSection;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,10 @@ class ExpenseIssuance extends Model
 
     public function batch(){
         return $this->belongsTo(ItemBatchModelMaster::class, 'batch_id', 'id');
+    }
+
+    public function section(){
+        return $this->belongsTo(WarehouseSection::class, 'section_id', 'id');
     }
 
 }

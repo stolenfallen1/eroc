@@ -3,12 +3,13 @@
 namespace App\Models\BuildFile;
 
 use App\Models\MMIS\inventory\Delivery;
+use Illuminate\Database\Eloquent\Model;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\BuildFile\WarehouseSection;
+use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
-use App\Models\MMIS\procurement\PurchaseRequest;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class Warehouses extends Model
 {
@@ -45,6 +46,11 @@ class Warehouses extends Model
     public function deliveries()
     {
         return $this->hasMany(Delivery::class, 'rr_Document_Warehouse_Id', 'id');
+    }
+
+    public function sections()
+    {
+        return $this->hasMany(WarehouseSection::class, 'warehouse_id', 'id');
     }
 
 

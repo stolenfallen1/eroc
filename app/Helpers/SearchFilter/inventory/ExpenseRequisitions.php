@@ -19,7 +19,7 @@ class ExpenseRequisitions
   public function searchable()
   {
 
-    $this->model->with('user', 'item', 'batch');
+    $this->model->with('section','user', 'item', 'batch');
 
     $this->byWarehouse();
 

@@ -28,6 +28,7 @@ class ExpenseController extends Controller
             $expense = ExpenseIssuance::create([
                 'warehouse_id' => $auth_user->warehouse_id,
                 'branch_id' => $auth_user->branch_id,
+                'section_id' => $request->section_id,
                 'item_id' => $request->item_id,
                 'created_by' => $auth_user->idnumber,
                 'reason' => $request->reason,

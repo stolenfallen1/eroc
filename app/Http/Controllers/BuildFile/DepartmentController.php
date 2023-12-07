@@ -4,13 +4,15 @@ namespace App\Http\Controllers\BuildFile;
 
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Warehouses;
+use App\Models\BuildFile\WarehouseSection;
 use App\Models\UserDeptAccess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
     public function index(){
-        return response()->json(['departments' => Warehouses::where('warehouse_Branch_Id', Request()->branch_id)->where('isWarehouse', 1)->get() ]);
+        return response()->json(['departments' => Warehouses::with('sections')->where('warehouse_Branch_Id', Request()->branch_id)->where('isWarehouse', 1)->get() ]);
         // return response()->json(['departments' => Warehouses::get() ]);
     }
 
@@ -29,5 +31,10 @@ class DepartmentController extends Controller
     public function remove_department_access(Request $request){
         UserDeptAccess::where('user_id',$request->idnumber)->where('warehouse_id',$request->department_id)->delete();
         return response()->json(['msg'=>'deleted'],200);
+    }
+
+    public function getSections(){
+        $sections = WarehouseSection::where('warehouse_id', Auth::user()->warehouse_id)->get();
+        return response()->json(['sections'=> $sections] ,200);
     }
 }

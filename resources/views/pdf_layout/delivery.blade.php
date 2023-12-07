@@ -172,7 +172,7 @@
                 <td class="item-td" >{{ $pdf_data['delivery']['rr_Document_Invoice_No'] }}</td>
                 <td class="item-td" >{{ $detail['item']['id'] }}</td>
                 <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
-                <td class="item-td" >{{ (int)$detail['rr_Detail_Item_Qty_Received'] }}</td>
+                <td class="item-td" >{{ (float)$detail['rr_Detail_Item_Qty_Received'] }}</td>
                 <td class="item-td" >{{ $detail['unit']['name'] }}</td>
                 <td class="item-td" >{{ $detail['rr_Detail_Item_ListCost'] }}</td>
                 <td class="item-td" >{{ number_format($detail['rr_Detail_Item_TotalNetAmount'], 4) }}</td>

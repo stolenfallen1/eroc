@@ -45,9 +45,10 @@ class Deliveries
   public function byWarehouse(){
     if($this->authUser->role->name == 'audit'){
       $this->model->with(['purchaseOrder'=>function($q){
-        $q->with(['purchaseRequest'=> function($q1){
+        $q->with(['comptroller', 'administrator', 'corporateAdmin', 'president','purchaseRequest'=> function($q1){
           $q1->with(['purchaseRequestDetails' => function($q2){
-            $q2->with('itemMaster', 'unit', 'unit2', 'purchaseOrderDetails.purchaseOrder');
+            $q2->with('itemMaster', 'unit', 'unit2', 'purchaseOrderDetails.purchaseOrder', 'depApprovedBy', 
+            'depCancelledBy', 'adminApprovedBy', 'adminCancelledBy', 'conCancelledBy', 'conApprovedBy');
           }, 'warehouse', 'itemGroup', 'user', 'category']);
         }, 'details' => function($q1){
           $q1->with('canvas.vendor', 'item', 'unit');

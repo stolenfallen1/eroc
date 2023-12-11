@@ -5,6 +5,7 @@ namespace App\Models\MMIS\procurement;
 use App\Models\BuildFile\Itemmasters;
 use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\BuildFile\Vendors;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -56,5 +57,29 @@ class PurchaseRequestDetails extends Model
         if ($this->filepath) {
             return config('app.url') . $this->filepath;
         }
+    }
+
+    public function depApprovedBy(){
+        return $this->belongsTo(User::class, 'pr_DepartmentHead_ApprovedBy', 'idnumber');
+    }
+
+    public function depCancelledBy(){
+        return $this->belongsTo(User::class, 'pr_DepartmentHead_CancelledBy', 'idnumber');
+    }
+
+    public function adminApprovedBy(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy', 'idnumber');
+    }
+
+    public function adminCancelledBy(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level1_CancelledBy', 'idnumber');
+    }
+
+    public function conApprovedBy(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level2_ApprovedBy', 'idnumber');
+    }
+
+    public function conCancelledBy(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level2_CancelledBy', 'idnumber');
     }
 }

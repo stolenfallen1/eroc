@@ -85,7 +85,7 @@ class PurchaseRequest extends Model
 
     public function purchaseOrder()
     {
-        return $this->hasMany(purchaseOrderMaster::class, 'pr_request_id', 'id');
+        return $this->hasMany(purchaseOrderMaster::class, 'pr_Request_id', 'id');
     }
 
     public function branch()

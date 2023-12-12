@@ -76,6 +76,8 @@ class DeliveryController extends Controller
                 'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
             ]);
 
+            // $batch_seq = null;
+
             foreach ($request['details'] as $key => $detail) {
                 $total_net = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_net_amount'];
                 $total_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_total_amount'];
@@ -121,6 +123,26 @@ class DeliveryController extends Controller
                     'rr_Detail_Item_Vat_Amount' => $vat_amount ?? 0,
                 ]);
                 
+
+                // if($detail['item']['isLotNo_Required'] != "1" && $detail['rr_Detail_Item_Qty_Received'] > 0 ){
+                //     $batch_seq = SystemSequence::where('seq_description', 'like','%Receiving Batch NUmber%')->where('branch_id', Auth::user()->branch_id)->first();
+                    
+                //     $batch_number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
+                //     $batch_suffix = $batch_seq->seq_suffix;
+                //     $batch_prefix = $batch_seq->seq_prefix;
+                //     $generated_seq = generateCompleteSequence($batch_prefix, $batch_number, $batch_suffix, "");
+                    
+                //     $detail['batches'] = [];
+                //     $detail['batches'][0]['item_Id'] = $detail['item']['id'];
+                //     $detail['batches'][0]['batch_Number'] = $generated_seq;
+                //     $detail['batches'][0]['batch_Remarks'] = 'auto generated';
+                //     $detail['batches'][0]['item_Qty'] = $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : $detail['rr_Detail_Item_Qty_Received'];
+                //     $detail['batches'][0]['item_UnitofMeasurement_Id'] = 2;
+                //     $detail['batches'][0]['item_Expiry_Date'] = Carbon::now();
+                //     $detail['batches'][0]['mark_up'] = 0;
+
+                // }
+
                 if(isset($detail['batches'])){
 
                     foreach ($detail['batches'] as $key1 => $batch) {
@@ -268,6 +290,13 @@ class DeliveryController extends Controller
                     }
                 }
             }
+            // if($batch_seq != null){
+            //     $batch_seq->update([
+            //         'seq_no' => (int) $batch_seq->seq_no + 1,
+            //         'recent_generated' => generateCompleteSequence($batch_seq->seq_prefix, $batch_seq->seq_no, $batch_seq->seq_suffix, ''),
+            //     ]);
+            // }
+
             if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
                 $delivery->update([
                     'rr_Document_TotalDiscountAmount' => $overall_discount_amount,
@@ -529,8 +558,9 @@ class DeliveryController extends Controller
     public function show($id){
         $delivery = Delivery::with(['purchaseOrder'=>function($q){
             $q->with(['purchaseRequest'=> function($q1){
-              $q1->with(['purchaseRequestDetails' => function($q2){
-                $q2->with('itemMaster', 'unit', 'purchaseOrderDetails.purchaseOrder');
+              $q1->with(['comptroller', 'administrator', 'corporateAdmin', 'president', 'purchaseRequestDetails' => function($q2){
+                $q2->with('itemMaster', 'unit', 'purchaseOrderDetails.purchaseOrder',
+                'depApprovedBy', 'adminApprovedBy', 'conApprovedBy');
               }, 'warehouse', 'itemGroup', 'user', 'category']);
             }, 'details' => function($q1){
               $q1->with('canvas.vendor', 'item', 'unit');

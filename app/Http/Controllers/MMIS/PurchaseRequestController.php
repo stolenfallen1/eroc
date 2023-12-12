@@ -79,6 +79,9 @@ class PurchaseRequestController extends Controller
                         $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
                     });
                 }
+            }, 'purchaseOrder' => function($q){
+                $q->with('user', 'comptroller', 'administrator', 'corporateAdmin', 'president', 
+                'details.item', 'details.unit', 'details.purchaseRequestDetail.recommendedCanvas.vendor');
             }])->findOrFail($id);
     }
 

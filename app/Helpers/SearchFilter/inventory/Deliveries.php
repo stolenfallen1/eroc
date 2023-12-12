@@ -77,9 +77,11 @@ class Deliveries
       $this->model->where(function ($q) use ($keyword, $searchable) {
         foreach ($searchable as $column) {
           if($column == 'rr_number'){
-            $q->orWhereRaw("CONCAT(rr_Document_Prefix,'',rr_Document_Number,'',rr_Document_Suffix) = ?", $keyword );
+            $q->orWhereRaw("CONCAT(rr_Document_Prefix,'',rr_Document_Number,'',rr_Document_Suffix) = ?", $keyword )
+            ->orWhere('rr_Document_Number', 'LIKE' , '%' . $keyword . '%');
           }else if($column == 'po_number'){
-            $q->orWhereRaw("CONCAT(po_Document_Prefix,'',po_Document_Number,'',po_Document_Suffix) = ?", $keyword );
+            $q->orWhereRaw("CONCAT(po_Document_Prefix,'',po_Document_Number,'',po_Document_Suffix) = ?", $keyword )
+            ->orWhere('po_Document_number', 'LIKE' , '%' . $keyword . '%');
           }
           
           else{

@@ -98,6 +98,7 @@ Route::controller(StockRequisitionController::class)->group(function () {
 Route::controller(AuditController::class)->group(function () {
   Route::get('audits', 'index');
   Route::post('audit', 'store');
+  Route::put('audit/{audit}', 'update');
   // Route::post('stock-requisition', 'store');
 });
 

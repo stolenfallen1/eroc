@@ -174,14 +174,14 @@
                 <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
                 <td class="item-td" >{{ (float)$detail['rr_Detail_Item_Qty_Received'] }}</td>
                 <td class="item-td" >{{ $detail['unit']['name'] }}</td>
-                <td class="item-td" >{{ $detail['rr_Detail_Item_ListCost'] }}</td>
-                <td class="item-td" >{{ number_format($detail['rr_Detail_Item_TotalNetAmount'], 4) }}</td>
+                <td class="item-td" >{{ number_format($detail['rr_Detail_Item_ListCost'], ) }}</td>
+                <td class="item-td" >{{ number_format($detail['rr_Detail_Item_TotalNetAmount'], 2) }}</td>
               </tr>
           @endforeach
           <tr>
             <td colspan="5"></td>
             <td class="item-td">Total Amount</td>
-            <td class="item-td">{{number_format($pdf_data['delivery']['rr_Document_TotalNetAmount'], 4)}}</td>
+            <td class="item-td">{{number_format($pdf_data['delivery']['rr_Document_TotalNetAmount'], 2)}}</td>
           </tr>
         </tbody>
       </table>

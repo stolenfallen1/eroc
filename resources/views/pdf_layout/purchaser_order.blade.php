@@ -184,7 +184,7 @@
                 <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
                 <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] }}</td>
                 <td class="item-td" >{{ $detail['item']['unit']['name'] }}</td>
-                <td class="item-td" >{{ $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'], 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'], 2) }}</td>
               </tr>
           @endforeach

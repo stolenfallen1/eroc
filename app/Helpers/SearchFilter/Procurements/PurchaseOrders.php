@@ -130,7 +130,9 @@ class PurchaseOrders
         })
         ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
       }else{
-        // $this->model->where()
+        $this->model->whereNull('comptroller_approved_by')->where(function($q){
+          $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
+        });
       }
     }else{
       if($this->authUser->role->name == 'comptroller'){
@@ -146,7 +148,6 @@ class PurchaseOrders
         // $this->model->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => null, 'comptroller_cancelled_date' => null]);
       }
       else if($this->authUser->role->name == 'administrator'){
-
         $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
       }
       

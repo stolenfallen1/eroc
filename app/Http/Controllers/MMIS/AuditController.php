@@ -39,6 +39,13 @@ class AuditController extends Controller
         }
     }
 
+    public function update(Request $request, Audit $audit){
+        $audit->update([
+            'remarks' => $request->remarks
+        ]);
+        return response()->json(["message" => 'success'], 200);
+    }
+
     public function destroy($id){
 
     }

@@ -130,9 +130,12 @@ class PurchaseOrders
         })
         ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
       }else{
-        $this->model->whereNull('comptroller_approved_by')->where(function($q){
-          $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
-        });
+        if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' && 
+          $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president'){
+          $this->model->whereNull('comptroller_approved_by')->where(function($q){
+            $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
+          });
+        }
       }
     }else{
       if($this->authUser->role->name == 'comptroller'){

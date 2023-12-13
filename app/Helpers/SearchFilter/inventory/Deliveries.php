@@ -2,6 +2,7 @@
 
 namespace App\Helpers\SearchFilter\inventory;
 
+use App\Models\MMIS\Audit;
 use App\Models\MMIS\inventory\Delivery;
 use Carbon\Carbon;
 
@@ -60,6 +61,7 @@ class Deliveries
         $this->model->with('audit')->where(function($q){
           $q->where('isaudit', 1);
         });
+        $this->model->join('audits', 'audits.delivery_id', '=', 'RRMaster.id')->select('audits.*', 'RRMaster.*')->orderBy('audits.created_at', 'DESC');
       }else{
         $this->model->where(function($q){
           $q->where('isaudit', 0)->orWhere('isaudit', NULL);

@@ -9,14 +9,14 @@ use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\OldMmis\PurchaseOrder;
 use Illuminate\Console\Command;
 
-class RemoveVat extends Command
+class ChangePrice extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'remove:canvas-vat';
+    protected $signature = 'change:price';
 
     /**
      * The console command description.
@@ -42,40 +42,46 @@ class RemoveVat extends Command
      */
     public function handle()
     {
-        $po_number = $this->ask('What it the PO number');
+        $po_number = $this->ask('What is the PO number');
+        $item_id = $this->ask('What is the Item id');
+        $new_price = $this->ask('What is the new price');
 
         $data = purchaseOrderMaster::with('details.canvas')->where('po_Document_number', 'like', '%'. $po_number)->first();
         $o_total = 0;
         $o_net_total = 0;
         $o_discount_amount = 0;
         foreach ($data->details as $detail) {
-            $canvas = CanvasMaster::where('id', $detail['canvas_id'])->first();
-            $total = $canvas['canvas_item_amount'] * $canvas['canvas_Item_Qty'];
-            $o_total += $total;
-            $discount_amount = 0;
-
-            if(floatval($canvas['canvas_item_discount_percent']) > 0){
-                $discount_amount = $total * ($canvas['canvas_item_discount_percent'] / 100);
-                $o_discount_amount += $discount_amount;
+            if($detail['po_Detail_item_id'] == $item_id){
+                $canvas = CanvasMaster::where('id', $detail['canvas_id'])->first();
+                $total = $new_price * $canvas['canvas_Item_Qty'];
+                $o_total += $total;
+                $discount_amount = 0;
+    
+                if(floatval($canvas['canvas_item_discount_percent']) > 0){
+                    $discount_amount = $total * ($canvas['canvas_item_discount_percent'] / 100);
+                    $o_discount_amount += $discount_amount;
+                }
+                
+                $net_total = $total - $discount_amount;
+                $o_net_total += $net_total;
+                PurchaseOrderDetails::where('id', $detail['id'])->update([
+                    'po_Detail_item_listcost' => $new_price,
+                    'po_Detail_vat_percent' => 0,
+                    'po_Detail_vat_amount' => 0,
+                    'po_Detail_net_amount' => $net_total,
+                    'po_Detail_item_discount_amount' => $discount_amount,
+                    'po_Detail_item_listcost' => $net_total,
+                ]);
+    
+                $canvas->update([
+                    'canvas_item_amount' => $new_price,
+                    'canvas_item_vat_rate' => 0,
+                    'canvas_item_vat_amount' => 0,
+                    'canvas_item_total_amount' => $total,
+                    'canvas_item_discount_amount' => $discount_amount,
+                    'canvas_item_net_amount' => $net_total,
+                ]);
             }
-            
-            $net_total = $total - $discount_amount;
-            $o_net_total += $net_total;
-            PurchaseOrderDetails::where('id', $detail['id'])->update([
-                'po_Detail_vat_percent' => 0,
-                'po_Detail_vat_amount' => 0,
-                'po_Detail_net_amount' => $net_total,
-                'po_Detail_item_discount_amount' => $discount_amount,
-                'po_Detail_item_listcost' => $net_total,
-            ]);
-
-            $canvas->update([
-                'canvas_item_vat_rate' => 0,
-                'canvas_item_vat_amount' => 0,
-                'canvas_item_total_amount' => $total,
-                'canvas_item_discount_amount' => $discount_amount,
-                'canvas_item_net_amount' => $net_total,
-            ]);
         }
         $data->update([
             'po_Document_vat_percent' => 0,

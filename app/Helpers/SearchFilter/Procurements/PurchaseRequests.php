@@ -263,7 +263,13 @@ class PurchaseRequests
 
   private function forCanvas(){
 
-    $this->model->where(function($q1){
+    $this->model->with(['purchaseRequestDetails' => function($q){
+      $q->where(function($q2){
+        $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
+      })->where(function($q2){
+        $q2->where('is_submitted', false)->orWhereNull('is_submitted');
+      });
+    }])->where(function($q1){
       $q1->where(function($q2){
         $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->where('invgroup_id', '!=', 2)->whereHas('purchaseRequestDetails', function ($q3){
           $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');

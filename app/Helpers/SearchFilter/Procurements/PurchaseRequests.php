@@ -151,6 +151,9 @@ class PurchaseRequests
     else if (Request()->tab == 10){
       $this->forVoidPr();
     }
+    else if (Request()->tab == 11){
+      $this->forDeclinedPr();
+    }
   }
 
   private function forVoidPr(){
@@ -166,7 +169,9 @@ class PurchaseRequests
       || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
 
       $this->model->whereIn('warehouse_Id', $this->authUser->departments)
-      ->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
+      ->whereHas('purchaseRequestDetails', function($q1){
+        $q1->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
+      });
 
       $this->model->with('purchaseRequestDetails.itemMaster');
 
@@ -178,7 +183,9 @@ class PurchaseRequests
         })->orWhere(function($q1){
           $q1->where('branch_Id', 1)->where('invgroup_id', '!=', 2);
         });
-      })->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
+      })->whereHas('purchaseRequestDetails', function($q1){
+        $q1->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null]);
+      })
       ->where('pr_DepartmentHead_ApprovedBy', '!=', null);
 
       // $this->model
@@ -397,6 +404,41 @@ class PurchaseRequests
     }
 
     $this->model->orderBy('created_at', 'desc');
+  }
+
+  public function forDeclinedPr(){
+    if($this->authUser->role->name == 'administrator'){
+      $this->model->with(['purchaseRequestDetails' => function($q1){
+        $q1->with('itemMaster')->whereNotNull('pr_Branch_Level1_CancelledBy');
+      }])->whereHas('purchaseRequestDetails', function($q){
+        $q->where('pr_Branch_Level1_CancelledBy', $this->authUser->idnumber);
+      });
+    }
+    else if ($this->authUser->role->name == 'department head'){
+      $this->model->with(['purchaseRequestDetails' => function($q1){
+        $q1->with('itemMaster')->whereNotNull('pr_DepartmentHead_CancelledBy');
+      }])->whereHas('purchaseRequestDetails', function($q){
+        $q->where('pr_DepartmentHead_CancelledBy', $this->authUser->idnumber);
+      });
+    }
+    else if ($this->authUser->role->name == 'consultant'){
+      $this->model->with(['purchaseRequestDetails' => function($q1){
+        $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy');
+      }])->whereHas('purchaseRequestDetails', function($q){
+        $q->where('pr_Branch_Level2_CancelledBy', $this->authUser->idnumber);
+      });
+    }else{
+      if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+        $this->model->with(['purchaseRequestDetails' => function($q1){
+          $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy')
+          ->orWhereNotNull('pr_DepartmentHead_CancelledBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy');
+        }])->whereHas('purchaseRequestDetails', function($q){
+          $q->whereNotNull('pr_Branch_Level2_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy')
+          ->orWhereNotNull('pr_Branch_Level1_CancelledBy');
+        });
+
+      }
+    }
   }
 
 }

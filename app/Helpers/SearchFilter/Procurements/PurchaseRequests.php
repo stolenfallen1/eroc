@@ -432,18 +432,40 @@ class PurchaseRequests
         $this->model->with(['purchaseRequestDetails' => function($q1){
           $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy')
           ->orWhereNotNull('pr_DepartmentHead_CancelledBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy');
-        }])->whereHas('purchaseRequestDetails', function($q){
-          $q->whereNotNull('pr_Branch_Level2_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy')
-          ->orWhereNotNull('pr_Branch_Level1_CancelledBy');
+        }])
+        ->where(function($q1){
+          $q1->where('invgroup_id', '!=', 2)->where(function($q2){
+            $q2->whereHas('purchaseRequestDetails', function($q){
+              $q->whereNotNull('pr_Branch_Level1_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy');
+            });
+          });
+        })->orWhere(function($q1){
+          $q1->where('invgroup_id', 2)->where(function($q2){
+            $q2->whereHas('purchaseRequestDetails', function($q){
+              $q->whereNotNull('pr_Branch_Level2_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy');
+            });
+          });
+          
         })->where('warehouse_Id', $this->authUser->warehouse_id);
         
       }else{
         $this->model->with(['purchaseRequestDetails' => function($q1){
           $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy')
           ->orWhereNotNull('pr_DepartmentHead_CancelledBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy');
-        }])->whereHas('purchaseRequestDetails', function($q){
-          $q->whereNotNull('pr_Branch_Level2_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy')
-          ->orWhereNotNull('pr_Branch_Level1_CancelledBy');
+        }])
+        ->where(function($q1){
+          $q1->where('invgroup_id', '!=', 2)->where(function($q2){
+            $q2->whereHas('purchaseRequestDetails', function($q){
+              $q->whereNotNull('pr_Branch_Level1_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy');
+            });
+          });
+        })->orWhere(function($q1){
+          $q1->where('invgroup_id', 2)->where(function($q2){
+            $q2->whereHas('purchaseRequestDetails', function($q){
+              $q->whereNotNull('pr_Branch_Level2_CancelledBy')->orWhereNotNull('pr_DepartmentHead_CancelledBy');
+            });
+          });
+          
         });
       }
     }

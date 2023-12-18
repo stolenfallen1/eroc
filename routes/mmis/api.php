@@ -22,6 +22,7 @@ Route::controller(UserController::class)->group(function () {
 
 Route::controller(PurchaseRequestController::class)->group(function () {
   Route::get('purchase-request', [PurchaseRequestController::class, 'index']);
+  Route::put('restore-purchase-request/{id}', [PurchaseRequestController::class, 'restorePR']);
   Route::get('purchase-request/{id}', [PurchaseRequestController::class, 'show']);
   Route::put('purchase-request/void/{id}', [PurchaseRequestController::class, 'voidPR']);
   Route::post('purchase-request', [PurchaseRequestController::class, 'store']);

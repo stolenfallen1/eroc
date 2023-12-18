@@ -33,7 +33,11 @@ class PurchaseOrderController extends Controller
     public function show($id)
     {
         return purchaseOrderMaster::with(['details'=>function($q){
-            $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            if(Request()->tab == 6){
+                $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            }else{
+                $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            }
         }, 'purchaseRequest' => function($q){
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])->findOrfail($id);

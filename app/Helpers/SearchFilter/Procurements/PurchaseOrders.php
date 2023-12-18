@@ -110,6 +110,9 @@ class PurchaseOrders
     else if (Request()->tab == 5){
       $this->forPresident();
     }
+    else if (Request()->tab == 6){
+      $this->forDeclined();
+    }
   }
 
   private function byUser(){
@@ -211,6 +214,41 @@ class PurchaseOrders
 
   private function forPresident(){
     $this->model->where('ysl_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
+  }
+
+  private function forDeclined(){
+    if($this->authUser->role->name == 'president'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('ysl_cancelled_by');
+      });
+    }
+    else if($this->authUser->role->name == 'corporate admin'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('corp_admin_cancelled_by');
+      });
+    }
+    else if($this->authUser->role->name == 'administrator'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('admin_cancelled_by');
+      });
+    }
+    else if($this->authUser->role->name == 'comptroller'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('comptroller_cancelled_by');
+      });
+    }else{
+      $this->model->whereHas('details', function($q){
+        if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+          $q->where('po_Document_warehouse_id', $this->authUser->warehouse_id)->whereNotNull('comptroller_cancelled_by')->orWhereNotNull('admin_cancelled_by')
+          ->orWhereNotNull('corp_admin_cancelled_by')->orWhereNotNull('ysl_cancelled_by');
+        }else{
+
+          $q->whereNotNull('comptroller_cancelled_by')->orWhereNotNull('admin_cancelled_by')
+          ->orWhereNotNull('corp_admin_cancelled_by')->orWhereNotNull('ysl_cancelled_by');
+        }
+      });
+    }
     $this->model->orderBy('created_at', 'desc');
   }
 

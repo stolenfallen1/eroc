@@ -19,6 +19,7 @@ use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
+use Exception;
 
 class PurchaseRequestController extends Controller
 {
@@ -26,6 +27,23 @@ class PurchaseRequestController extends Controller
     {
         // return TestModel::get();
         return (new PurchaseRequests)->searchable();
+    }
+
+    public function restorePR(Request $request, PurchaseRequest $purchase_request){
+
+        // DB::connection('sqlsrv')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            
+            // DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+        } catch (Exception $e) {
+            // DB::connection('sqlsrv')->rollBack();
+            DB::connection('sqlsrv_mmis')->rollBack();
+        }
+        $purchase_request->update([
+
+        ]);
     }
 
     public function show($id)

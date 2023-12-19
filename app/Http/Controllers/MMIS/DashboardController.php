@@ -12,14 +12,14 @@ class DashboardController extends Controller
     public function getPurchaseRequestCount(){
         $approved_count = PurchaseRequest::whereHas('purchaseRequestDetails', function($q1){
             $q1->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         $declined_count = PurchaseRequest::whereHas('purchaseRequestDetails', function($q1){
             $q1->whereNotNull('pr_Branch_Level1_CancelledBy')->orWhereNotNull('pr_Branch_Level2_CancelledBy')
             ->orWhereNotNull('pr_DepartmentHead_CancelledBy');
         })->whereDoesntHave('purchaseRequestDetails', function($q1){
             $q1->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         $pending_count = PurchaseRequest::whereDoesntHave('purchaseRequestDetails', function($q1){
             $q1->where(function($q2){
@@ -28,7 +28,7 @@ class DashboardController extends Controller
                 $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy')
                 ->orWhereNotNull('pr_Branch_Level2_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_CancelledBy');
             });
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         return [ $approved_count, $pending_count, $declined_count ];
     }
@@ -38,13 +38,13 @@ class DashboardController extends Controller
             $q1->whereHas('recommendedCanvas', function($q2){
                 $q2->whereNotNull('canvas_Level2_ApprovedBy');
             });
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         $declined_count = PurchaseRequest::whereHas('purchaseRequestDetails', function($q1){
             $q1->whereHas('recommendedCanvas', function($q2){
                 $q2->whereNotNull('canvas_Level2_CancelledBy');
             });
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         $pending_count = PurchaseRequest::whereHas('purchaseRequestDetails', function($q1){
             $q1->where(function($q2){
@@ -54,7 +54,7 @@ class DashboardController extends Controller
             })->orWhereHas('recommendedCanvas', function($q2){
                 $q2->whereNull('canvas_Level2_ApprovedBy')->whereNull('canvas_Level2_CancelledBy');
             });
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         return [ $approved_count, $pending_count, $declined_count ];
     }
@@ -70,7 +70,7 @@ class DashboardController extends Controller
                     $q3->whereNotNull('corp_admin_approved_by')->orWhereNotNull('admin_approved_by');
                 });
             });
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         $declined_count = purchaseOrderMaster::where(function($q1){
             $q1->where('po_Document_total_net_amount', '>', 99999)->whereNotNull('ysl_cancelled_by');
@@ -80,7 +80,7 @@ class DashboardController extends Controller
             });
         })->orWhere(function($q1){
             $q1->whereNotNull('comptroller_cancelled_by');
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         $pending_count = purchaseOrderMaster::where(function($q1){
             $q1->where('po_Document_total_net_amount', '>', 99999)->whereNull('ysl_cancelled_by')
@@ -92,7 +92,7 @@ class DashboardController extends Controller
             });
         })->orWhere(function($q1){
             $q1->whereNull('comptroller_cancelled_by')->whereNull('comptroller_approved_by');
-        })->count();
+        })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         return [ $approved_count, $pending_count, $declined_count ];
     }

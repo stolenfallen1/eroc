@@ -8,6 +8,7 @@ use App\Http\Controllers\MMIS\CanvasController;
 use App\Http\Controllers\MMIS\ExpenseController;
 use App\Http\Controllers\MMIS\DeliveryController;
 use App\Http\Controllers\MMIS\AuditTrailController;
+use App\Http\Controllers\MMIS\DashboardController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\StockTransferController;
@@ -18,6 +19,12 @@ Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
   Route::post('verify-passcode', 'getpermission');
   Route::post('update-password', 'updatePassword');
+});
+
+Route::controller(DashboardController::class)->group(function () {
+  Route::get('purchase-request-count', 'getPurchaseRequestCount');
+  Route::get('canvass-count', 'getCanvasCount');
+  Route::get('purchase-order-count', 'getPurchaseOrderCount');
 });
 
 Route::controller(PurchaseRequestController::class)->group(function () {

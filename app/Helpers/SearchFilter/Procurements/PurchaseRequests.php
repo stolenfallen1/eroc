@@ -184,7 +184,8 @@ class PurchaseRequests
           $q1->where('branch_Id', 1)->where('invgroup_id', '!=', 2);
         });
       })->whereHas('purchaseRequestDetails', function($q1){
-        $q1->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null]);
+        $q1->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
+        ->whereNotNull('pr_DepartmentHead_ApprovedBy');
       })
       ->where('pr_DepartmentHead_ApprovedBy', '!=', null);
 

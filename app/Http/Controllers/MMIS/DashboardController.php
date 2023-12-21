@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\MMIS;
 
 use App\Http\Controllers\Controller;
+use App\Models\MMIS\inventory\Delivery;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -95,6 +97,43 @@ class DashboardController extends Controller
         })->whereMonth('updated_at', Request()->month)->whereYear('updated_at', Request()->year)->count();
 
         return [ $approved_count, $pending_count, $declined_count ];
+    }
+
+    public function getDepartmentCost(){
+        $deliveries = Delivery::with('warehouse')->whereYear('created_at', Request()->year)
+        ->get()->groupBy(function($delivery){
+            // return Carbon::parse($delivery->created_at)->month;
+            return $delivery['warehouse']['warehouse_description'];
+        });
+
+
+        
+        // $deliveries = $deliveries->groupBy(function($delivery){
+        //     return $delivery->groupBy('');
+        // });
+
+        $data = [];
+        $index = 0;
+        foreach ($deliveries as $key => $departments) {
+            
+            $data[$index]['name'] = $key;
+            for ($i = 1 ; $i < 13 ; $i++) {
+                $net = 0;
+                foreach ($departments as $key2 => $delivery) {
+                    if($i ==  Carbon::parse($delivery->created_at)->month){
+                        $net += $delivery['rr_Document_TotalNetAmount'];
+                    }
+                    // $data[$index]['data'][$key2] = $delivery->groupBy(function($item){
+                    //     return Carbon::parse($item->created_at)->month;
+                    // });
+                }
+                $data[$index]['data'][$i-1] = $net;
+
+            }
+            $index++;
+        }
+
+        return $data;
     }
     
 }

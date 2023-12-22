@@ -556,18 +556,21 @@ class DeliveryController extends Controller
     }
 
     public function show($id){
-        $delivery = Delivery::with(['purchaseOrder'=>function($q){
-            $q->with(['comptroller', 'administrator', 'corporateAdmin', 'president', 'purchaseRequest'=> function($q1){
-              $q1->with(['purchaseRequestDetails' => function($q2){
-                $q2->with('itemMaster', 'unit', 'purchaseOrderDetails.purchaseOrder',
-                'depApprovedBy', 'adminApprovedBy', 'conApprovedBy');
-              }, 'warehouse', 'itemGroup', 'user', 'category']);
-            }, 'details' => function($q1){
-              $q1->with('canvas.vendor', 'item', 'unit');
+        $delivery = Delivery::with(['warehouse', 'audit', 'items', 'receiver', 'purchaseOrder' => function($q1){
+            $q1->with(['deliveryItems' => function($q2){
+              $q2->with('delivery.audit', 'item', 'unit')->whereHas('delivery', function($q3){
+                // $q3->whereHas('audit');
+              });
+            },'purchaseRequest' => function($q5){
+              $q5->with('itemGroup', 'user', 'category');
+            }, 'comptroller', 'administrator', 'corporateAdmin', 'president', 'details' => function($q2){
+              $q2->with(['purchaseRequestDetail' => function($q3){
+                $q3->with(['purchaseRequest' => function($q4){
+                  $q4->with('warehouse', 'itemGroup', 'user', 'category');
+                }, 'itemMaster', 'unit', 'unit2', 'depApprovedBy', 'adminApprovedBy', 'conApprovedBy', 'recommendedCanvas']);
+              }, 'canvas.vendor']);
             }]);
-          }, 'items'=>function($q){
-            $q->with('item', 'unit');
-          },'audit'])->findOrfail($id);
+          }])->findOrfail($id);
         return response()->json(['delivery' => $delivery]);
     }
 

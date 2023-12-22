@@ -16,8 +16,17 @@ class CompanySettingsController extends Controller
      */
     public function index()
     {
-       $data['settings'] = POSSetting::all();
-       return response()->json($data,200);
+        try {
+            $data = POSSetting::query();
+            if(Request()->keyword) {
+                $data->where('company_name', 'LIKE', '%' . Request()->keyword . '%');
+            }
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
     }
 
     /**
@@ -119,10 +128,7 @@ class CompanySettingsController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-            
         }
-
-       
     }
 
     /**
@@ -133,6 +139,9 @@ class CompanySettingsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $details = POSSetting::find($id);
+        $details->delete();
+       return response()->json(["message" =>  'Record successfully deleted','status' => '200'], 200);
+
     }
 }

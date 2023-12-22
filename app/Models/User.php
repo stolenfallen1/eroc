@@ -7,11 +7,13 @@ use TCG\Voyager\Models\Role;
 use App\Models\UserDeptAccess;
 use App\Models\BuildFile\Branchs;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\POS\OpenningAmount;
 use App\Models\Approver\InvApprover;
 use App\Models\BuildFile\Warehouses;
 use Illuminate\Notifications\Notifiable;
 use App\Models\BuildFile\Systemuseraccess;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\BuildFile\SystemCentralSequences;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +32,6 @@ class User extends \TCG\Voyager\Models\User
      */
     protected $connection = 'sqlsrv';
     protected $table = 'CDG_CORE.dbo.users';
-    
     // protected $guarded = [];
      protected $fillable = [
         'name',
@@ -71,7 +72,7 @@ class User extends \TCG\Voyager\Models\User
         'email_verified_at' => 'datetime',
     ];
 
-    protected $with = ['warehouse','approvaldetail','branch', 'user_department_access'];
+    protected $with = ['warehouse','approvaldetail','branch', 'user_department_access','OpeningAmount'];
 
     protected $appends = ['departments'];
 
@@ -120,7 +121,10 @@ class User extends \TCG\Voyager\Models\User
     public function getDepartmentsAttribute(){
         return $this->user_department_access()->pluck('warehouse_id');
     }
-
+    public function OpeningAmount(){
+       return $this->belongsTo(OpenningAmount::class, 'user_id', 'idnumber')->whereDate('cashonhand_beginning_transaction',Carbon::now()->format('Y-m-d'));
+    }
+   
     public function createToken()
     {
         $token = sha1(time());

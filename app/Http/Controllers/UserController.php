@@ -18,9 +18,9 @@ class UserController extends Controller
     public function index()
     {
         $data = User::query();
-        $data->with("role","user_department_access");
+        $data->with("role", "user_department_access");
         if(Request()->keyword) {
-            $data->where('lastname', 'LIKE', '%'.Request()->keyword.'%')->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%')->orWhere('idnumber', 'LIKE', '%'.Request()->keyword.'%');
+            $data->where('lastname', 'LIKE', '%' . Request()->keyword . '%')->orWhere('firstname', 'LIKE', '%' . Request()->keyword . '%')->orWhere('idnumber', 'LIKE', '%' . Request()->keyword . '%');
         }
         $data->orderBy('id', 'desc');
         $page  = Request()->per_page ?? '1';
@@ -40,15 +40,15 @@ class UserController extends Controller
             if(!$check_if_exist) {
                 $middlename = isset($request->payload['middlename']) ? $request->payload['middlename'] : '';
                 $data['data'] = User::create([
-                      'warehouse_id' => (int)$request->payload['warehouse_id'],
-                    'branch_id' => (int)$request->payload['branch_id'],
-                    'role_id' => (int)$request->payload['role_id'],
+                    'warehouse_id' => (int)$request->payload['warehouse_id'] ?? '',
+                    'branch_id' => (int)$request->payload['branch_id'] ?? '',
+                    'role_id' => (int)$request->payload['role_id'] ?? '',
                     'firstname' => strtoupper($request->payload['firstname']),
                     'lastname' => strtoupper($request->payload['lastname']),
                     'middlename' => strtoupper($request->payload['middlename'] ?? ''),
                     'birthdate' => $request->payload['birthdate']  ?? '',
                     'email' => strtoupper($request->payload['email'] ?? ''),
-                    'name' => strtoupper($request->payload['lastname']).', '.strtoupper($request->payload['firstname']).' '.strtoupper($request->payload['middlename']),
+                    'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
                     'mobileno' => $request->payload['mobileno'] ?? '',
                     'idnumber' => $request->payload['idnumber'] ?? '',
                     'passcode' => $request->payload['passcode'] ?? '',
@@ -68,7 +68,38 @@ class UserController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-
+    public function createdoctor(Request $request)
+    {
+        DB::connection('sqlsrv')->beginTransaction();
+        try {
+            $check_if_exist = User::select('lastname', 'firstname', 'idnumber')
+               ->where('lastname', $request['lastname'])
+               ->where('firstname', $request['firstname'])
+               ->where('idnumber', $request['idnumber'])
+               ->exists();
+            if(!$check_if_exist) {
+                User::create([
+                    'firstname' => strtoupper($request['firstname']),
+                    'lastname' => strtoupper($request['lastname']),
+                    'middlename' => strtoupper($request['middlename'] ?? ''),
+                    'birthdate' => $request['birthdate']  ?? '',
+                    'email' => strtoupper($request['email'] ?? ''),
+                    'name' => strtoupper($request['lastname']) . ', ' . strtoupper($request['firstname']) . ' ' . strtoupper($request['middlename']),
+                    'mobileno' => $request['mobileno'] ?? '',
+                    'idnumber' => $request['idnumber'] ?? '',
+                    'passcode' => $request['idnumber'] ?? '',
+                    'isactive' => 0,
+                    'password' => bcrypt($request['password']),
+                ]);
+                $data['msg'] = 'Success';
+                DB::connection('sqlsrv')->commit();
+                return response()->json($data, 200);
+            }
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv')->rollback();
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
     public function update(Request $request, $id)
     {
         try {
@@ -82,7 +113,7 @@ class UserController extends Controller
                     'middlename' => strtoupper($request->payload['middlename'] ?? ''),
                     'birthdate' => $request->payload['birthdate']  ?? '',
                     'email' => strtoupper($request->payload['email'] ?? ''),
-                    'name' => strtoupper($request->payload['lastname']).', '.strtoupper($request->payload['firstname']).' '.strtoupper($request->payload['middlename']),
+                    'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
                     'mobileno' => $request->payload['mobileno'] ?? '',
                     'idnumber' => $request->payload['idnumber'] ?? '',
                     'passcode' => $request->payload['passcode'] ?? '',
@@ -98,7 +129,7 @@ class UserController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-    
+
     public function destroy($id)
     {
         try {

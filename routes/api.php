@@ -27,7 +27,7 @@ Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboa
 Route::post('login', [AuthController::class, 'login']);
 Route::post('pos/login', [AuthPOSController::class, 'login']);
 Route::get('get-schedule', [SettingController::class, 'schedule']);
-
+Route::post('create-account', [UserController::class, 'createdoctor']);
 Route::group(['middleware' => 'auth:api'], function () {
     Route::controller(UserController::class)->group(function () {
         Route::get('department/users', 'getDepartmentUsers');
@@ -35,7 +35,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('get-setting', [SettingController::class, 'index']);
     Route::get('user-details', [AuthController::class, 'userDetails']);
     Route::post('refresh', [AuthController::class, 'refreshToken']);
-    Route::post('/pos/refresh', [AuthPOSController::class, 'refreshToken']);
+    Route::post('pos/refresh', [AuthPOSController::class, 'refreshToken']);
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);
     require_once('pos/api.php');

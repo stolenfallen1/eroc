@@ -4,13 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Helpers\GetIP;
+use App\Models\POS\Payments;
 use Illuminate\Http\Request;
 use App\Models\POS\POSSettings;
 use TCG\Voyager\Facades\Voyager;
 use App\Models\POS\POSBIRSettings;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\HIS\SysGlobalSetting;
 use Illuminate\Support\Facades\Storage;
+use App\Models\BuildFile\SystemSequence;
 use App\Helpers\PosSearchFilter\Terminal;
+
+
 
 class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
 {
@@ -19,15 +24,20 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
     public function login(Request $request)
     {
         $credentials = $request->only('idnumber', 'password');
-     
-
+        if($request->role != 1){
+            $checkinvoiceifexist = Payments::select('sales_invoice_number')->where('sales_invoice_number', $request->sequenceno)->exists();
+            if($checkinvoiceifexist) {
+                return response()->json(["message" => 'Sequence number already use!'], 401);
+            }
+        }
+       
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
             $ipaddress = (new GetIP)->value();
             if(!$this->checkTerminal()){
-                return response()->json(["message" => 'Your not allowed to access'], 200);
+                return response()->json(["message" => 'Your not allowed to access'], 401);
             }
             if((new Terminal)->check_terminal($ipaddress) == 0){
-                return response()->json(["message" => 'Your not allowed to access'], 200);
+                return response()->json(["message" => 'Your not allowed to access'], 401);
             }
             $shift = Auth()->user()->shift;
             if(Request()->shift != 0) {
@@ -53,7 +63,9 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
              200);
             // return $this->sendLoginResponse($request);
         }
-        return response()->json(["message" => 'Warning: Enter valid idnumber and password before proceeding!'], 200);
+       
+        return response()->json(["message" => 'Warning: Enter valid idnumber and password before proceeding!'], 401);
+
     }
 
     public function refreshToken(Request $request)
@@ -91,14 +103,12 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
 
 
     public function userDetails(){
-        // get user details
-
-        // get all user module 
-        $modulelist = Voyager::model('MenuItem')->whereNull('parent_id')->where('menu_id','1')->orderBy('order','asc')->get();
+        // get all user module
+        $modulelist = Voyager::model('MenuItem')->whereNull('parent_id')->where('menu_id', '1')->orderBy('order', 'asc')->get();
         $modulelist->filter(function ($item) {
-            // check if action 
+            // check if action
             return !$item->children->isEmpty() || Auth::user()->can('browse', $item);
-      
+
         })->filter(function ($item) {
             // Filter out empty menu-items
             if ($item->url == '' && $item->route == '' && $item->children->count() == 0) {
@@ -107,16 +117,18 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
             return true;
         });
 
+        if(!$this->checkTerminal()) {
+            return response()->json(["message" => 'Your not allowed to access'], 403);
+        }
         $user = Auth::user();
-        
-
+        $user->pos_setting = POSSettings::where('isActive', '1')->first();
         $user->sysTerminal = $this->checkTerminal();
-        $user->pos_setting = POSSettings::where('isActive','1')->first();
+        $user->check_is_allow_medsys_status = (new SysGlobalSetting())->check_is_allow_medsys_status();
         $user->serverIP =  config('app.pos_server_ip');
-        // $data['module'] = $modulelist;
         $data['details'] = $user;
-        // $data['submodule'] = $this->systemsubcomponents();
         return response()->json(['user' => $data], 200);
+
+       
     }
 
     public function systemsubcomponents(){

@@ -128,6 +128,9 @@ class TakeOrderTerminalController extends Controller
      */
     public function destroy($id)
     {
-        //
+       
+        $details = TerminalTakeOrder::find($id);
+        $details->delete();
+        return response()->json(["message" =>  'Record successfully deleted','status' => '200'], 200);
     }
 }

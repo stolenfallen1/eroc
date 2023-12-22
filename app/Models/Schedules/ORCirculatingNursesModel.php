@@ -20,4 +20,5 @@ class ORCirculatingNursesModel extends Model
     {
         return $this->lastname . ', ' . $this->firstname . ' ' . $this->middlename;
     }
+    
 }

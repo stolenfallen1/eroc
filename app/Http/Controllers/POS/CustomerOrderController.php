@@ -117,8 +117,6 @@ class CustomerOrderController extends Controller
         $items = vwCustomerOrders::where('order_id',$orderid)->where('customer_id',$customer_details['id'])->get();
         $possetting = POSSettings::with('bir_settings')->where('isActive', '1')->first();
         $customerdetails = vwCustomers::where('id',$customer_details['id'])->where('isActive', '1')->first();
-
-        
         $html = '
             <div class="printout-company-details">
                 <div class="printout-company-name">'.$possetting->company_name.'</div>

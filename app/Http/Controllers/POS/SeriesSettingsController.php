@@ -16,8 +16,21 @@ class SeriesSettingsController extends Controller
      */
     public function index()
     {
-        $data['series'] = SystemSequence::where('subsystem_id',8)->whereNotNull('terminal_code')->get();
-        return response()->json($data,200);
+         try {
+            $data = SystemSequence::query();
+            $data->where("subsystem_id",8);
+            $data->whereNotNull('terminal_code');
+            if(Request()->keyword) {
+                $data->where('terminal_code', 'LIKE', '%' . Request()->keyword . '%');
+                $data->orWhere('manual_seq_no', 'LIKE', '%' . Request()->keyword . '%');
+                $data->orWhere('manual_recent_generated', 'LIKE', '%' . Request()->keyword . '%');
+            }
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
     }
 
     /**
@@ -124,7 +137,6 @@ class SeriesSettingsController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-            
         }
     }
 
@@ -136,6 +148,8 @@ class SeriesSettingsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $details = SystemSequence::find($id);
+        $details->delete();
+        return response()->json(["message" =>  'Record successfully deleted','status' => '200'], 200);
     }
 }

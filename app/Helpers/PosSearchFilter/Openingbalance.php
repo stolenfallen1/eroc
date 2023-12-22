@@ -2,8 +2,9 @@
 
 namespace App\Helpers\PosSearchFilter;
 
-use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 use App\Models\POS\OpenningAmount;
+use Illuminate\Support\Facades\Auth;
 
 class Openingbalance
 {
@@ -15,16 +16,42 @@ class Openingbalance
 
     public function searchable()
     {
-        $this->model->with('cashonhand_details','closeby_details','openby_details','user_shift')->orderBy('id', 'desc');
+        $this->model->with('cashonhand_details', 'closeby_details', 'openby_details', 'user_shift')->orderBy('id', 'desc');
         $this->searchColumns();
+        $this->searchShift();
+        $this->byUser();
+        $this->bydate();
+        $this->bystatus();
         $per_page = Request()->per_page;
         return $this->model->paginate($per_page);
     }
-   
+
     public function searchColumns()
     {
-        if(Request()->keyword){
-            $this->model->where('cashonhand_beginning_amount','LIKE',''.Request()->keyword.'%');
+        if(Auth()->user()->role->name != 'Pharmacist Cashier') {
+            $this->model->whereDate('report_date', Request()->date);
+        }
+    }
+    public function searchShift()
+    {
+        if(Auth()->user()->role->name != 'Pharmacist Cashier') {
+          $this->model->where('shift_code', Request()->shift);
+        }
+    }
+    public function bystatus()
+    {
+        $this->model->where('isposted', Request()->status);
+    }
+    public function byUser()
+    {
+        if(Auth()->user()->role->name == 'Pharmacist Cashier') {
+            $this->model->where('user_id', Auth()->user()->idnumber);
+        }
+    }
+    public function bydate()
+    {
+        if(Auth()->user()->role->name == 'Pharmacist Cashier') {
+            $this->model->whereDate('cashonhand_beginning_transaction', Carbon::now()->format('Y-m-d'));
         }
     }
 }

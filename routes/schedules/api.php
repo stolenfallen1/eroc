@@ -5,6 +5,8 @@ use App\Http\Controllers\Schedules\ORSchedulesController;
 use App\Http\Controllers\Schedules\ORSchedulePatientController;
 
 
+Route::get('/registration', [ORSchedulesController::class, 'registration']);
+
 Route::get('/getScheduledQueue', [ORSchedulesController::class, 'ORScheduledQueue']);
 Route::get('/getOPTHAScheduledQueue', [ORSchedulesController::class, 'OROPTHAScheduledQueue']);
 Route::get('/scheduling-search-patient', [ORSchedulePatientController::class, 'searchschedulingPatientData']);
@@ -33,4 +35,6 @@ Route::post('/update-seleted-timeslot', [ORSchedulesController::class, 'updatese
 Route::get('/getORProcedures', [ORSchedulesController::class, 'getORProcedures']);
 
 Route::post('/submit-procedure', [ORSchedulesController::class, 'submitprocedure']);
+Route::post('/book-appointment', [ORSchedulesController::class, 'bookappointment']);
+
 

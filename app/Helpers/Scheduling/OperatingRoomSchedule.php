@@ -93,7 +93,7 @@ class OperatingRoomSchedule
     {
         $today = Carbon::now()->format('Y-m-d');
         $this->vwSearchPatientName();
-        $this->checkStatus();
+        // $this->checkStatus();
         $this->checkcategory();
         $this->vw_or_schedules->whereBetween('schedule_date', [$today, $today]);
         $per_page = Request()->per_page ?? '';
@@ -116,7 +116,6 @@ class OperatingRoomSchedule
             $patientname = Request()->keyword ?? '';
             $this->vw_or_schedules->where('patientname', 'LIKE', '' . $patientname . '%');
         }
-
     }
     public function checkcategory()
     {

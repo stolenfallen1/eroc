@@ -2,8 +2,9 @@
 
 namespace App\Models\POS;
 
-use Carbon\Carbon;
 use DB;
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\POS\Orders;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,10 @@ class Payments extends Model
     {
         return $this->belongsTo(Orders::class, 'order_id', 'id');
     }
-
+     public function users()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'idnumber');
+    }
     public function nofilterbyreportdate()
     {
         $shift = DB::connection('sqlsrv')->table('mscShiftSchedules')->where('shifts_code',Auth()->user()->shift)->first();
@@ -34,6 +38,7 @@ class Payments extends Model
                         '(SUM(payment_amount_due) + SUM(payment_vatable_amount)) as totalamountsales,SUM(payment_received_amount) as totalcashtendered,SUM(payment_changed_amount) as totalchangedamount'
                     );
     }
+
     public function filterbyreportdate()
     {
         $shift = DB::connection('sqlsrv')->table('mscShiftSchedules')->where('shifts_code',Auth()->user()->shift)->first();

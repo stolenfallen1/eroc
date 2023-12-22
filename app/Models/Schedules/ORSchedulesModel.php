@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Schedules\ORPatientModel;
 use App\Models\BuildFile\Hospital\Status;
 use App\Models\Schedules\ORScheduleNurses;
+use App\Models\Schedules\ORScheduleProcedures;
 use App\Models\Schedules\ORScheduleSurgeonModel;
 use App\Models\Schedules\ORScheduleResidentModel;
 use App\Models\BuildFile\Hospital\mscHospitalRooms;
@@ -20,7 +21,7 @@ class ORSchedulesModel extends Model
 
     protected $connection = 'sqlsrv_schedules';
     protected $table = 'CDG_SCHEDULES.dbo.OperatingRoomSchedules';
-    protected $with = ['scheduleSurgeons', 'scheduleAnesthesia'];
+    protected $with = ['scheduleSurgeons', 'scheduleAnesthesia', 'procedures'];
     protected $guarded = [];
 
 
@@ -29,15 +30,19 @@ class ORSchedulesModel extends Model
        return $this->belongsTo(MedsysPatientMaster::class, 'patient_id', 'HospNum');
     }
 
+    public function procedures()
+    {
+        return $this->hasMany(ORScheduleProcedures::class, 'schedule_id', 'id')->whereNull('status');
+    }
 
     public function scheduleSurgeons()
     {
-        return $this->hasOne(ORScheduleSurgeonModel::class, 'schedule_id', 'id');
+        return $this->hasMany(ORScheduleSurgeonModel::class, 'schedule_id', 'id')->whereNull('status');
     }
 
     public function scheduleAnesthesia()
     {
-        return $this->hasOne(ORScheduleAnesthesiaModel::class, 'schedule_id', 'id');
+        return $this->hasMany(ORScheduleAnesthesiaModel::class, 'schedule_id', 'id')->whereNull('status');
     }
 
     public function scheduledRoomSlot()
@@ -47,17 +52,17 @@ class ORSchedulesModel extends Model
 
     public function scheduledResident()
     {
-        return $this->hasOne(ORScheduleResidentModel::class, 'schedule_id', 'id');
+        return $this->hasMany(ORScheduleResidentModel::class, 'schedule_id', 'id')->whereNull('status');
     }
 
     public function scheduledCirculatingNurses()
     {
-        return $this->hasOne(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id')->where('specialty_id','1');
+        return $this->hasMany(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id')->where('specialty_id','1')->whereNull('status');
     }
     
     public function scheduledScrubNurses()
     {
-        return $this->hasMany(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id')->where('specialty_id','2');
+        return $this->hasMany(ORScheduleNurses::class, 'operating_room_scheduled_id', 'id')->where('specialty_id','2')->whereNull('status');
     }
     
      public function scheduledCategory()

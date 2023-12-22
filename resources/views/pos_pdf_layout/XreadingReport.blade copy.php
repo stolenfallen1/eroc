@@ -173,254 +173,6 @@
                 </div>
             </div>
         </div>
-
-
-        <div class="header-section">
-            <div class="company-details">
-                <div class="company-address">
-                    <h4>Daily Summary</h4>
-                </div>
-            </div>
-        </div>
-        
-        <div class="receipt-header text-center">
-            <strong>Tendered  </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Cash</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_cash,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Debit Card</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_debitcard,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Credit Card</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_creditcard,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Total Sales</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_sales,2)}}</div>
-                </div>
-            </div>
-        </div>
-        <div class="receipt-header text-center">
-            <strong>Taxes </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 58% !important; display:inline-block;">
-                    <div class="text-left">Vat Exempt Amount</div>
-                </div>
-                <div style="width: 40% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_vat_exempt,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Vat Amount</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_vat_sales,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Total</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_vat_sales,2)}}</div>
-                </div>
-            </div>
-        </div>
-        <div class="receipt-header text-center">
-            <strong>Discount  </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 58% !important; display:inline-block;">
-                    <div class="text-left">Senior / PWD Discount</div>
-                </div>
-                <div style="width: 40% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_discount,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Total</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_discount,2)}}</div>
-                </div>
-            </div>
-        </div>
-        <div class="receipt-header text-center">
-            <strong>Refund  </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 58% !important; display:inline-block;">
-                    <div class="text-left">Cash</div>
-                </div>
-                <div style="width: 40% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_refund,2)}}</div>
-                </div>
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Total</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_refund,2)}}</div>
-                </div>
-            </div>
-        </div>
-
-         <div class="receipt-header text-center">
-            <strong>Expected Counts </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Cash</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_opening,2)}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Sales</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_sales,2)}}</div>
-                </div> 
-            </div>
-           
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Total</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{ number_format(($summary_total_opening + $summary_sales),2)}}</div>
-                </div> 
-            </div>
-        </div>
-        <div class="receipt-header text-center">
-            <strong>Closing Counts </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Cash</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_opening,2)}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Sales</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($summary_total_closing,2)}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 38% !important; display:inline-block;">
-                    <div class="text-left">Total</div>
-                </div>
-                <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format(($summary_total_opening + $summary_total_closing),2)}}</div>
-                </div> 
-            </div>
-        </div>
-        <div class="receipt-header text-center">
-            <strong>Variance </strong>
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Cash</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) ,2)}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total</div>
-                </div>
-                <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">
-                        @if(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) < 0)
-                            <span>Over ==></span>
-                        @endif 
-                        @if(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) > 0)
-                            <span>Short ==></span>
-                        @endif
-                        @if(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) == 0)
-                            
-                        @endif
-                        {{number_format(($summary_sales + $summary_total_opening) - ($summary_total_opening + $summary_total_closing) ,2)}}
-                    </div>
-                </div> 
-            </div>
-        </div>
-        <div class="receipt-header text-center">
-            
-        </div>
-        <div class="dflex" style="width: 100% !important;">
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 80% !important; display:inline-block;">
-                    <div class="text-left">Number of Cash Transaction</div>
-                </div>
-                <div style="width: 18% !important; display:inline-block;">
-                    <div class="text-right">{{(int)$summary_cash_transaction}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 80% !important; display:inline-block;">
-                    <div class="text-left">Number of Credit Card Transaction</div>
-                </div>
-                <div style="width: 18% !important; display:inline-block;">
-                    <div class="text-right">{{(int)$summary_credit_transaction}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;">
-                <div style="width: 80% !important; display:inline-block;">
-                    <div class="text-left">Number of Debit Card Transaction</div>
-                </div>
-                <div style="width: 18% !important; display:inline-block;">
-                    <div class="text-right">{{(int)$summary_debit_transaction}}</div>
-                </div> 
-            </div>
-            <div style="width: 100% !important;display:inline-block;" class="total">
-                <div style="width: 80% !important; display:inline-block;">
-                    <div class="text-left">Total Number Transaction</div>
-                </div>
-                <div style="width: 18% !important; display:inline-block;">
-                    <div class="text-right">{{(int)$summary_sales_transaction}}</div>
-                </div> 
-            </div>
-        </div>
-        <br>
         <br>
         <div class="header-section">
             <div class="company-details">
@@ -429,13 +181,8 @@
                 </div>
             </div>
         </div>
-        @php 
-            $count =0;
-        @endphp
         @foreach ($data as $shift => $items)
-        
             @php 
-                $count++;
                 $total_sales =0;
                 $sales_invoice_group = [];
                 $return_invoice_group = [];
@@ -519,8 +266,6 @@
                 $count_credit_transaction = 0;
                 $count_debit_transaction = 0;
                 $count_total_transaction = 0;
-                $sales_count = 0;
-
                 foreach ($sales_invoice_group as $key => $invoices) {
                     if($invoices[0]->method == 'Cash'){
                         $count_cash_transaction++;
@@ -573,7 +318,7 @@
                     <div class="text-left">Cashier</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{$items[$count]->cashier_name}}</div>
+                    <div class="text-right"> {{$items[0]->cashier_name}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -581,7 +326,7 @@
                     <div class="text-left">Opening Cash</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[$count]->opening_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[0]->opening_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -589,7 +334,7 @@
                     <div class="text-left">Closing Cash</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format($items[$count]->closing_amount,2)}}</div>
+                    <div class="text-right"> {{number_format($items[0]->closing_amount,2)}}</div>
                 </div> 
             </div>
         </div>
@@ -717,7 +462,7 @@
                     <div class="text-left">Opening Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[$count]->opening_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[0]->opening_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -728,13 +473,12 @@
                     <div class="text-right">{{number_format($total_sales,2)}}</div>
                 </div> 
             </div>
-           
             <div style="width: 100% !important;display:inline-block;" class="total">
                 <div style="width: 38% !important; display:inline-block;">
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[$count]->opening_amount + $total_sales)),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $total_sales)),2)}}</div>
                 </div> 
             </div>
         </div>
@@ -747,7 +491,7 @@
                     <div class="text-left">Opening Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[$count]->opening_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[0]->opening_amount,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;">
@@ -755,15 +499,16 @@
                     <div class="text-left">Total Sales</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format($items[$count]->closing_amount,2)}}</div>
+                    <div class="text-right">{{number_format($items[0]->closing_amount,2)}}</div>
                 </div> 
             </div>
+          
             <div style="width: 100% !important;display:inline-block;" class="total">
                 <div style="width: 38% !important; display:inline-block;">
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[$count]->opening_amount + $items[$count]->closing_amount)),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $items[0]->closing_amount)),2)}}</div>
                 </div> 
             </div>
         </div>
@@ -776,7 +521,7 @@
                     <div class="text-left">Cash</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
-                    <div class="text-right">{{number_format(($total_sales - $items[$count]->closing_amount),2)}}</div>
+                    <div class="text-right">{{number_format(($total_sales - $items[0]->closing_amount),2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
@@ -785,16 +530,16 @@
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
                     <div class="text-right">
-                        @if((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)) < 0)
+                        @if(($total_sales - $items[0]->closing_amount) < 0)
                             <span>Over ==></span>
                         @endif 
-                        @if((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)) > 0)
+                        @if(($total_sales - $items[0]->closing_amount) > 0)
                             <span>Short ==></span>
                         @endif
-                        @if((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)) == 0)
+                        @if(($total_sales - $items[0]->closing_amount) == 0)
                             
                         @endif
-                        {{number_format((($total_sales + $items[$count]->opening_amount) - ( $items[$count]->closing_amount +  $items[$count]->opening_amount)),2)}}
+                        {{number_format(($total_sales - $items[0]->closing_amount),2)}}
                     </div>
                 </div> 
             </div>
@@ -837,7 +582,54 @@
             </div>
         </div>
         <br>
-        {{-- <div class="receipt-header text-center">
+      
+        @if($return_item_group < 0)
+        <div class="receipt-header text-center">
+            <strong>Return Transaction</strong>
+        </div>
+        <table class="summary">
+            @php
+                $totalrefund =0;
+                $totalcount =0;
+            @endphp
+            @foreach ($return_item_group as $key => $items)
+            <tr>
+                <td colspan="2">{{ $key }}</td>
+                <td colspan="1">
+                    @php $qty =0; @endphp
+                    @foreach ($items as $item)
+                        @php
+                            $qty +=$item->qty;
+                    @endphp
+                    
+                    @endforeach
+                    @php $totalcount +=$qty ; @endphp
+                    {{$qty}}
+                </td>
+                <td class="text-right">
+                    @php $price =0; @endphp
+                        @foreach ($items as $item)
+                            @php
+                                $price +=$item->totalamount;
+                        @endphp
+                    @endforeach
+                    @php
+                        $totalrefund +=$price;
+                    @endphp
+                    {{ number_format($price, 2) }}
+                </td>
+            </tr>
+            @endforeach
+            <tr>
+                <td class="total" colspan="2">Total</td>
+                <td class="total" >{{$totalcount}}</td>
+                <td class="total text-right">{{number_format($totalrefund,2)}}</td>
+            </tr>
+            
+        </table>
+        @endif
+        <br>
+        <div class="receipt-header text-center">
             <strong>Sales Transaction</strong>
         </div>
         <table class="summary">
@@ -878,54 +670,7 @@
                 <td class="total" >{{$totalsalescount}}</td>
                 <td class="total text-right" >{{number_format($totalsales,2)}}</td>
             </tr>
-        </table> --}}
-        @if($return_item_group < 0)
-        <div class="receipt-header text-center">
-            <strong>Return Transaction</strong>
-        </div>
-        <table class="summary">
-            @php
-                $totalrefund =0;
-                $totalcount =0;
-            @endphp
-            @foreach ($return_item_group as $key => $items)
-            <tr>
-                <td colspan="2">{{ $key }}</td>
-                <td colspan="1">
-                    @php $qty =0; @endphp
-                    @foreach ($items as $item)
-                        @php
-                            $qty +=$item->qty;
-                    @endphp
-                    
-                    @endforeach
-                    @php $totalcount +=$qty ; @endphp
-                    {{$qty}}
-                </td>
-                <td class="text-right">
-                    @php $price =0; @endphp
-                        @foreach ($items as $item)
-                            @php
-                                $price +=$item->price * $item->qty;
-                        @endphp
-                    @endforeach
-                    @php
-                        $totalrefund +=$price;
-                    @endphp
-                    {{ number_format($price, 2) }}
-                </td>
-            </tr>
-            @endforeach
-            <tr>
-                <td class="total" colspan="2">Total</td>
-                <td class="total" >{{$totalcount}}</td>
-                <td class="total text-right">{{number_format($totalrefund,2)}}</td>
-            </tr>
-            
         </table>
-        @endif
-        <br>
-        
         @endforeach
         <div class="receipt-footer text-center"><br>
             <strong>Thank you for choosing us!</strong><br><br>

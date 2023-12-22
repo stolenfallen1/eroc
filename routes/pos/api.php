@@ -125,9 +125,6 @@ Route::controller(OpenningAmountTransaction::class)->group(function () {
   Route::get('get-beginning', 'index');
   Route::get('check-cash-registry', 'cash_registry');
   Route::get('cash-registry', 'cash_registry_movement');
-  
-  
-  // Route::post('get-beginning', 'index');
   Route::get('get-beginning-transaction', 'beginning_transaction');
   Route::post('save-opening-amount', 'store');
   Route::put('update-opening-amount/{id}', 'update');
@@ -143,35 +140,8 @@ Route::controller(ClosingTransactionController::class)->group(function () {
 });
 
 
-Route::controller(CompanySettingsController::class)->group(function () {
-  Route::get('get-company-settings', 'index');
-  Route::put('update-company-settings/{id}', 'update');
-  Route::post('store-company-settings', 'store');
-});
 
-Route::controller(TerminalSettingsController::class)->group(function () {
-  Route::get('get-terminal', 'index');
-  Route::put('update-terminal/{id}', 'update');
-  Route::post('store-terminal', 'store');
-});
 
-Route::controller(TakeOrderTerminalController::class)->group(function () {
-  Route::get('get-take-order-terminal/{id}', 'show');
-  Route::put('update-take-order-terminal/{id}', 'update');
-  Route::post('store-take-order-terminal', 'store');
-});
-
-Route::controller(SeriesSettingsController::class)->group(function () {
-  Route::get('get-series-number', 'index');
-  Route::put('update-series-number/{id}', 'update');
-  Route::post('store-series-number', 'store');
-});
-
-Route::controller(BIRSettingsController::class)->group(function () {
-  Route::get('get-bir-settings', 'index');
-  Route::put('update-bir/{id}', 'update');
-  Route::post('store-bir', 'store');
-});
 
 
 Route::controller(Report_ItemizedController::class)->group(function () {

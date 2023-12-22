@@ -142,12 +142,11 @@ class MedsysPatient
 
     public function medsys_patient_master_searchColumns()
     {
-        $firstname = Request()->Firstname != 'null' ? Request()->Firstname : '';
-        $birthdate = Request()->birthdate != 'null' ? Request()->birthdate : '';
-        $sex = Request()->sex != 'null' ? Request()->sex : '';
-        $lastname = Request()->Lastname != 'null' ? Request()->Lastname : '';
-        $Hospnum = Request()->hospnum != 'null' ? Request()->hospnum : '';
-
+        $firstname = Request()->Firstname;
+        $birthdate = Request()->birthdate;
+        $sex = Request()->sex;
+        $lastname = Request()->Lastname;
+        $Hospnum = Request()->hospnum;
 
         if ($firstname) {
             $this->model_medys_patient_master->where('FirstName', 'LIKE', '' . $firstname . '%');

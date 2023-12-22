@@ -626,7 +626,7 @@
                                 @php $price =0; @endphp
                                     @foreach ($items as $item)
                                         @php
-                                            $price +=$item->price * $item->qty;
+                                            $price +=$item->totalamount;
                                     @endphp
                                 @endforeach
                                 @php

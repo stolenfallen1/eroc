@@ -3,6 +3,7 @@
 namespace App\Models\MMIS;
 
 use App\Models\MMIS\inventory\Delivery;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,5 +17,9 @@ class Audit extends Model
 
     public function delivery(){
         return $this->belongsTo(Delivery::class, 'delivery_id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class, 'audit_by', 'idnumber');
     }
 }

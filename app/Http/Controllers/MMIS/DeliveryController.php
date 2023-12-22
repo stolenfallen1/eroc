@@ -558,7 +558,7 @@ class DeliveryController extends Controller
     public function show($id){
         $delivery = Delivery::with(['warehouse', 'audit', 'items', 'receiver', 'purchaseOrder' => function($q1){
             $q1->with(['deliveryItems' => function($q2){
-              $q2->with('delivery.audit', 'item', 'unit')->whereHas('delivery', function($q3){
+              $q2->with('delivery.audit.user', 'item', 'unit')->whereHas('delivery', function($q3){
                 // $q3->whereHas('audit');
               });
             },'purchaseRequest' => function($q5){

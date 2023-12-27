@@ -23,6 +23,9 @@ class Orders extends Model
     public function order_items(){
         return $this->hasMany(OrderItems::class,'order_id', 'id')->where('isDeleted',0);
     }
+    public function return_order_items(){
+        return $this->hasMany(OrderItems::class,'order_id', 'id')->where('isDeleted',0);
+    }
     public function users()
     {
         return $this->belongsTo(User::class, 'pa_userid', 'idnumber');

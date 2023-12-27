@@ -18,7 +18,7 @@ class ReturnTransaction extends Model
     protected $table = 'refunds';
     protected $guarded = [];
   
-    protected $with = ['orders.order_items','orders.customers','orders.payment'];
+    protected $with = ['orders.order_items','orders.customers','orders.payment','return_orders.return_order_items'];
 
     public function refund_items(){
         return $this->hasMany(ReturnDetailsTransaction::class,'refund_id', 'id');
@@ -26,5 +26,9 @@ class ReturnTransaction extends Model
    
     public function orders(){
         return $this->belongsTo(Orders::class,'order_id', 'id');
+    }
+
+    public function return_orders(){
+        return $this->belongsTo(Orders::class,'returned_order_id', 'id');
     }
 }

@@ -113,7 +113,6 @@ class NewCustomerOrderController extends Controller
                             $price = (float)$row['item_Selling_Price_Out'];
                             $subtotal = ($priceout * $row['qty']) - $specialdiscount;
                         }
-// $totalamount = $subtotal - (float)$row['discount'];
 
                         $orders->order_items()->updateOrCreate(
                             [
@@ -125,12 +124,12 @@ class NewCustomerOrderController extends Controller
                             'order_item_qty' => $row['qty'],
                             'order_item_charge_price' => $pricein,
                             'order_item_cash_price' => $priceout,
-                            'order_item_price' => (float)$price,
+                            'order_item_price' => (float)$row['price'],
                             'order_item_vat_rate' => (float)$row['vat_rate'],
                             'order_item_vat_amount' => (float)$row['vat_amount'],
-                            'order_item_sepcial_discount' => abs($specialdiscount),
+                            'order_item_sepcial_discount' => 0,
                             'order_item_discount_amount' => (float)$row['discount'],
-                            'order_item_total_amount' => (float)$totalamount,
+                            'order_item_total_amount' => (float)$row['totalamount'],
                             'order_item_batchno' => $row['item_batch'],
                             'order_discount_type' => $row['discounttype'],
                             'isReturned' => '0',

@@ -1,6 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\POS\BIRSettingsController;
+use App\Http\Controllers\POS\v1\ReportsController;
+use App\Http\Controllers\POS\v1\BIRSettingsController;
 use App\Http\Controllers\POS\v1\NewItemsController;
 use App\Http\Controllers\POS\v1\OpenningController;
 use App\Http\Controllers\POS\v1\RegistryController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\POS\TerminalSettingsController;
 use App\Http\Controllers\POS\TakeOrderTerminalController;
 use App\Http\Controllers\POS\v1\NewCustomerOrderController;
 use App\Http\Controllers\POS\v1\NewCustomerPaymentController;
+use App\Http\Controllers\POS\v1\NewReturnTransactionController;
 
 
 Route::controller(OpenningController::class)->group(function () {
@@ -23,6 +25,15 @@ Route::controller(OpenningController::class)->group(function () {
 Route::controller(NewCustomersController::class)->group(function () {
     Route::get('customers', 'index');
 });
+
+
+Route::controller(NewReturnTransactionController::class)->group(function () {
+    Route::get('pos-get-return-orders', 'index');
+    Route::post('pos-save-return-orders', 'store');
+    Route::post('pos-approved-return-orders', 'approvedreturnedorder');
+
+});
+
 Route::controller(NewItemsController::class)->group(function () {
     Route::get('pos-warehouse-items', 'index');
 });
@@ -81,6 +92,11 @@ Route::controller(BIRSettingsController::class)->group(function () {
     Route::put('update-bir/{id}', 'update');
     Route::post('store-bir', 'store');
     Route::delete('delete-bir-settings/{id}', 'destroy');
+});
+
+
+Route::controller(ReportsController::class)->group(function () {
+    Route::post('get-accountability-report', 'accountability_report');
 });
 
 ?>

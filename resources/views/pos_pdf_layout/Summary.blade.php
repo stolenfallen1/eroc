@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Summary Report</title>
+    <title>Accountability Report</title>
     <style>
         body{
             font-family: arial, sans-serif;
@@ -275,43 +275,43 @@
                     <td>{{ $cashonhanddetails ? number_format(($amount_001 * $cashonhanddetails['cashonhand_details']['denomination_dot15']),2) : '0'}}</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">TOTAL CASH</td>
+                    <td  class="text-right" colspan="2">TOTAL CASH</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_details']['denomination_total']),2) : '0'}}</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">TOTAL CHECKS</td>
+                    <td  class="text-right" colspan="2">TOTAL CHECKS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_details']['denomination_checks_total_amount']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">TOTAL</td>
+                    <td  class="text-right" colspan="2">TOTAL</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_collection_amount']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">TOTAL COLLECTION FOR THE DAY</td>
+                    <td  class="text-right" colspan="2">TOTAL COLLECTION FOR THE DAY</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_collection_amount']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">LESS: COLLECTED CARD PAYMENTS</td>
+                    <td  class="text-right" colspan="2">LESS: COLLECTED CARD PAYMENTS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_less_collected_card_amount']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">NET COLLECTIONS FOR THE DAY</td>
+                    <td  class="text-right" colspan="2">NET COLLECTIONS FOR THE DAY</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_net_collections_for_the_day']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">ADD: UNCOLLECTED CARD PAYMENTS</td>
+                    <td  class="text-right" colspan="2">ADD: UNCOLLECTED CARD PAYMENTS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_add_uncollected_card_day']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">TOTAL TENDERED PAYMENTS</td>
+                    <td  class="text-right" colspan="2">TOTAL TENDERED PAYMENTS</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_tendered_amount']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">TOTAL COLLECTIONS FOR THE DAY</td>
+                    <td  class="text-right" colspan="2">TOTAL COLLECTIONS FOR THE DAY</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_total_collection_amount']),2) : '0'}}<</td>
                 </tr>
                 <tr>
-                    <td  class="text-left" colspan="2">OVERAGE/ (SHORTAGES)</td>
+                    <td  class="text-right" colspan="2">OVERAGE/ (SHORTAGES)</td>
                     <td>{{ $cashonhanddetails ? number_format(($cashonhanddetails['cashonhand_overage_shortages']),2) : '0'}}<</td>
                 </tr>
 

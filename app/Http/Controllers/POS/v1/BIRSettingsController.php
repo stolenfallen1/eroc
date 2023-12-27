@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\POS;
+namespace App\Http\Controllers\POS\v1;
 
 use Illuminate\Http\Request;
 use App\Models\POS\POSBIRSettings;

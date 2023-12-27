@@ -40,7 +40,6 @@ class NewCustomerPaymentController extends Controller
             if(Auth()->user()->role->name == 'Pharmacist Cashier') {
                 $data->where('user_id', Auth()->user()->idnumber);
                 $data->where('shift_id', Auth()->user()->shift);
-
             }
 
             $data->orderBy('id', 'desc');
@@ -56,7 +55,6 @@ class NewCustomerPaymentController extends Controller
         DB::connection('sqlsrv_pos')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-
             $terminal = (new Terminal())->terminal_details();
             $or_sequenceno = (new SeriesNo())->get_sequence('PSI', $terminal->terminal_code);
             $tran_sequenceno = (new SeriesNo())->get_sequence('PTN', $terminal->terminal_code);
@@ -103,20 +101,6 @@ class NewCustomerPaymentController extends Controller
             foreach ($orders as $row) {
                 $warehouse = Warehouseitems::where("item_Id",$row['order_item_id'])->where('warehouse_Id',Auth()->user()->warehouse_id)->where('branch_id',Auth()->user()->branch_id)->first();
                 $batch = ItemBatchModelMaster::where("id", $row['order_item_batchno'])->first();
-                
-                // $isConsumed = '0';
-                // $usedqty = (int)$batch->item_Qty_Used + $row['order_item_qty'];
-                // if($usedqty >= $batch->item_Qty) {
-                //     $isConsumed = '1';
-                // }
-                // $warehouse->update([
-                //         'item_OnHand'=> (int)$warehouse->item_OnHand - (int)$row['order_item_qty']   
-                // ]);
-                
-                // $batch->update([
-                //     'item_Qty_Used'=>  (int)$batch->item_Qty_Used + (int)$row['order_item_qty'],
-                //     'isConsumed'=>  $isConsumed 
-                // ]);
                 InventoryTransaction::create([
                     'branch_Id' => Auth()->user()->branch_id,
                     'warehouse_Group_Id' => '',

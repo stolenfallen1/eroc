@@ -59,6 +59,8 @@ class TerminalSettingsController extends Controller
                 'terminal_ip_address'=>$request->payload['terminal_ip_address'] ?? '',
                 'terminal_mac_address'=>$request->payload['terminal_mac_address'] ?? '',
                 'isActive'=>$request->payload['isActive'] ?? '',
+                'isitem_Selling_Price_Out'=>$request->payload['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In'=>$request->payload['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv_pos')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
@@ -112,6 +114,8 @@ class TerminalSettingsController extends Controller
                 'terminal_ip_address'=>$request->payload['terminal_ip_address'] ?? '',
                 'terminal_mac_address'=>$request->payload['terminal_mac_address'] ?? '',
                 'isActive'=>$request->payload['isActive'] ?? '',
+                'isitem_Selling_Price_Out'=>$request->payload['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In'=>$request->payload['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv_pos')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);

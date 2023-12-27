@@ -124,6 +124,7 @@ class RegistryController extends Controller
             return response()->json(["message" => 'error','status' => $e->getMessage()], 200);
         }
     }
+
     public function closedregistry()
     {
         DB::connection('sqlsrv_pos')->beginTransaction();
@@ -137,6 +138,7 @@ class RegistryController extends Controller
             $closingtransaction->update([
              
                 'sales_batch_number' => $sales_sequenceno,
+                'cashonhand_closing_transaction' => Carbon::now(),
                 'sales_batch_transaction_date' => Carbon::now(),
                 'report_date' => $report_date,
             ]);
@@ -149,7 +151,6 @@ class RegistryController extends Controller
 
             Payments::where('createdBy', Auth()->user()->idnumber)->where('shift_id', Auth()->user()->shift)->whereDate('payment_date', $report_date)->update([
                 'sales_batch_number' => $sales_sequenceno,
-                'sales_batch_transaction_date' => Carbon::now(),
                 'sales_batch_transaction_date' => Carbon::now(),
                 'report_date' => $report_date,
             ]);
@@ -165,6 +166,7 @@ class RegistryController extends Controller
             return response()->json(["message" => 'error','status' => $e->getMessage()], 200);
         }
     }
+    
     public function Generate_Shift_Sales()
     {
         $result = DB::connection('sqlsrv_pos')->update(

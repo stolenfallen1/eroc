@@ -136,12 +136,7 @@ Route::controller(ClosingTransactionController::class)->group(function () {
   Route::put('closing-transaction/{id}', 'closing_transaction');
   Route::put('post-transaction/{id}', 'posting_transaction');
   
-  
 });
-
-
-
-
 
 
 Route::controller(Report_ItemizedController::class)->group(function () {
@@ -158,10 +153,8 @@ Route::controller(Report_DailySalesController::class)->group(function () {
 });
 
 Route::controller(ReportsController::class)->group(function () {
-  Route::post('get-accountability-report', 'accountability_report');
   Route::post('get-bank-summary-report', 'BanknoteSummaryReport');
   Route::post('get-itemsummary-details-report', 'itemSummaryDetailReport');
   Route::post('get-cashier-name', 'getcashiername');
-  
 });
 

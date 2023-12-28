@@ -87,7 +87,7 @@ Route::controller(CategoryController::class)->group(function () {
     Route::get('sub-categories', 'getAllSubCategories');
     Route::get('classifications', 'getAllClassifications');
     Route::get('supplier-categories', 'getAllSupplierCategories');
-    Route::get('supplier-terms', 'getAllSupplierTerms');
+    Route::get('supplier-terms-all', 'getAllSupplierTerms');
 
 
     Route::post('get-category-list', 'mscAllcategory');
@@ -186,6 +186,7 @@ Route::controller(BranchController::class)->group(function () {
 
 Route::controller(DepartmentController::class)->group(function () {
     Route::get('departments', 'index');
+    Route::get('department-sections', 'getSections');
     Route::post('get-department-access', 'UserDeptAccess');
     Route::post('add-department-access', 'add_department_access');
     Route::post('remove-department-access', 'remove_department_access');

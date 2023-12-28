@@ -13,6 +13,7 @@ use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
+use App\Models\MMIS\inventory\Delivery;
 
 class PurchaseOrderController extends Controller
 {
@@ -20,10 +21,23 @@ class PurchaseOrderController extends Controller
         return (new PurchaseOrders)->searchable();
     }
 
+    public function getCount(){
+        return response()->json([
+            'comptroller_count' => purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->count(),
+            'administrator_count' => purchaseOrderMaster::where('admin_approved_date', '!=', null)->count(),
+            'corp_admin_count' => purchaseOrderMaster::where('corp_admin_approved_date', '!=', null)->count(),
+            'president_count' => purchaseOrderMaster::where('ysl_approved_date', '!=', null)->count()
+        ]);
+    }
+
     public function show($id)
     {
         return purchaseOrderMaster::with(['details'=>function($q){
-            $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            if(Request()->tab == 6){
+                $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            }else{
+                $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+            }
         }, 'purchaseRequest' => function($q){
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])->findOrfail($id);
@@ -31,6 +45,10 @@ class PurchaseOrderController extends Controller
 
     public function getByNumber()
     {
+        $has_delivery = Delivery::whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", Request()->number )
+        ->where('rr_Status', 11)->exists();
+        if($has_delivery) return response()->json(['error' => 'PO already exist'], 200);
+
         return purchaseOrderMaster::with(['latestdelivery.items' => function($q){
             $q->where('rr_Detail_Item_Qty_BackOrder', '!=', 0);
         }, 'details'=>function($q){
@@ -51,7 +69,9 @@ class PurchaseOrderController extends Controller
                     $query->where('invgroup_id', '!=', 2);
                 })->where(function($q2){
                     $q2->where(function($q3){
-                        $q3->where('po_Document_total_net_amount', '<', 100000)->where('corp_admin_approved_by', '!=', NULL);
+                        $q3->where('po_Document_total_net_amount', '<', 100000)->where(function($q4){
+                            $q4->where('corp_admin_approved_by', '!=', NULL)->orWhere('admin_approved_by', '!=', NULL);
+                        });
                     })->orWhere(function($q3){
                         $q3->where('po_Document_total_net_amount', '>', 99999)->where('ysl_approved_by', '!=', NULL);
                     });
@@ -63,15 +83,15 @@ class PurchaseOrderController extends Controller
         ->whereDoesntHave('delivery', function($q){
             $q->where('rr_Status', 11);
         })
-        ->whereHas('purchaseRequest', function($q){
-            if(Auth::user()->role->name == 'dietary' || Auth::user()->role->name == 'dietary head'){
-                $q->where('isPerishable', 1);
-            }else{
-                $q->where(function($q1){
-                    $q1->where('isPerishable', 0)->orWhere('isPerishable', NULL);
-                });
-            }
-        })
+        // ->whereHas('purchaseRequest', function($q){
+        //     if(Auth::user()->role->name == 'dietary' || Auth::user()->role->name == 'dietary head'){
+        //         $q->where('isPerishable', 1);
+        //     }else{
+        //         $q->where(function($q1){
+        //             $q1->where('isPerishable', 0)->orWhere('isPerishable', NULL);
+        //         });
+        //     }
+        // })
         ->first();
     }
 

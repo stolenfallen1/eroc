@@ -1,6 +1,9 @@
 <?php
 
 use Carbon\Carbon;
+use App\Models\OldMMIS\Branch;
+use App\Models\BuildFile\Warehouses;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Models\MMIS\inventory\Delivery;
 use App\Http\Controllers\AuthController;
@@ -11,8 +14,6 @@ use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
-use App\Models\BuildFile\Warehouses;
-use App\Models\OldMMIS\Branch;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,8 +35,8 @@ Route::group(['prefix' => 'admin'], function () {
 });
 
 Route::get('/print-purchase-order/{id}', function ($id) {
-    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
-        $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor', 'details' => function ($q) {
+        $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas.canvaser');
     }])->findOrfail($id);
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
@@ -43,15 +44,38 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $qrData = base64_encode($qrCode);
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+    $total_amount = 0;
+
+    foreach ($purchase_order['details'] as $key => $detail) {
+        $total_amount += $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'];
+    }
+
     $pdf_data = [
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'purchase_order' => $purchase_order,
-        'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d')
+        'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d'),
+        'canvaser' =>  $purchase_order['details'][0]['purchaseRequestDetail']['recommendedCanvas']['canvaser']['name'],
+        'total_amount' => $total_amount
     ];
     $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
+    $viewers = explode(',' , $purchase_order->viewers);
+    $is_viewer = false;
+    if(sizeof($viewers)){
+        foreach ($viewers as $viewer) {
+            if($viewer == Request()->id){
+                $is_viewer = true;
+            }
+        }
+    }
+    if($is_viewer == false){
+        array_push($viewers, Request()->id);
+        $purchase_order->update([
+            'viewers' => implode(',', $viewers)
+        ]);
+    }
 
-    return $pdf->stream('Purchase order-' . $id . '.pdf');
+    return $pdf->stream('PO-' . $purchase_order['vendor']['vendor_Name'] . '-' . Carbon::now()->format('m-d-Y') . '-' . $purchase_order['po_Document_number'] . '.pdf');
 });
 
 Route::get('/print-purchase-request/{id}', function ($id) {

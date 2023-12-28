@@ -16,7 +16,8 @@ class PurchaseOrders
   }
 
   public function searchable(){
-    $this->model->with('details', 'purchaseRequest', 'vendor', 'warehouse', 'status', 'user');
+    $this->model->with('details.canvas', 'purchaseRequest', 'vendor', 'warehouse', 'status', 'user');
+    $this->searchableColumns();
     $this->byBranch();
     $this->byItemGroup();
     $this->byDepartment();
@@ -28,6 +29,27 @@ class PurchaseOrders
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
+  }
+
+  public function searchableColumns(){
+    $searchable = ['po_number', 'pr_number'];
+    if (Request()->keyword) {
+      $keyword = Request()->keyword;
+      $this->model->where(function ($q) use ($keyword, $searchable) {
+          foreach ($searchable as $column) {
+              if ($column == 'po_number')
+                  $q->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", $keyword)
+                  ->orWhere('po_Document_number', 'LIKE' , '%' . $keyword . '%');
+                  // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+              else if($column == 'pr_number'){
+                $q->orWhereHas('purchaseRequest', function($q2) use($keyword){
+                  $q2->whereRaw("CONCAT(pr_Document_Prefix,'',pr_Document_Number,'',pr_Document_Suffix) = ?", $keyword)
+                  ->orWhere('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+                });
+              }
+          }
+      });
+    }
   }
   
   private function byBranch(){
@@ -88,6 +110,9 @@ class PurchaseOrders
     else if (Request()->tab == 5){
       $this->forPresident();
     }
+    else if (Request()->tab == 6){
+      $this->forDeclined();
+    }
   }
 
   private function byUser(){
@@ -102,7 +127,18 @@ class PurchaseOrders
         $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
       }
       else if($this->authUser->role->name == 'administrator'){
-        $this->model->where('comptroller_approved_date', '!=', null)->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
+        $this->model->whereNotNull('comptroller_approved_date')
+        ->where(function($q){
+          $q->whereNull('corp_admin_approved_date')->orWhereNull('corp_admin_cancelled_date');
+        })
+        ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
+      }else{
+        if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' && 
+          $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president'){
+          $this->model->whereNull('comptroller_approved_by')->where(function($q){
+            $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
+          });
+        }
       }
     }else{
       if($this->authUser->role->name == 'comptroller'){
@@ -118,9 +154,9 @@ class PurchaseOrders
         // $this->model->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => null, 'comptroller_cancelled_date' => null]);
       }
       else if($this->authUser->role->name == 'administrator'){
-
         $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
       }
+      
     }
     if($this->authUser->role->name == 'corporate admin'){
       $this->model->where(function($q1){
@@ -130,7 +166,7 @@ class PurchaseOrders
           $q2->where('invgroup_id', 2);
         });
       })->orWhere(function($q1){
-        $q1->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)
+        $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
         ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
         ->whereHas('purchaseRequest', function($q2){
           $q2->where('invgroup_id', '!=', 2);
@@ -141,24 +177,79 @@ class PurchaseOrders
       //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
     }
     else if($this->authUser->role->name == 'president'){
-      $this->model->where('corp_admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_total_net_amount', '>', 99999);
+      if(Request()->branch == 1){
+
+        $this->model->where(function($q){
+          $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
+        })
+        ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])
+        ->where('po_Document_total_net_amount', '>', 99999);
+
+      }else{
+
+        $this->model->where('corp_admin_approved_date', '!=', null)
+        ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])
+        ->where('po_Document_total_net_amount', '>', 99999);
+
+      }
     }
+
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forComptroller(){
     $this->model->where('comptroller_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forAdministrator(){
     $this->model->where('admin_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forCorpAdmin(){
     $this->model->where('corp_admin_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forPresident(){
     $this->model->where('ysl_approved_date', '!=', null);
+    $this->model->orderBy('created_at', 'desc');
+  }
+
+  private function forDeclined(){
+    if($this->authUser->role->name == 'president'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('ysl_cancelled_by');
+      });
+    }
+    else if($this->authUser->role->name == 'corporate admin'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('corp_admin_cancelled_by');
+      });
+    }
+    else if($this->authUser->role->name == 'administrator'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('admin_cancelled_by');
+      });
+    }
+    else if($this->authUser->role->name == 'comptroller'){
+      $this->model->whereHas('details', function($q){
+        $q->whereNotNull('comptroller_cancelled_by');
+      });
+    }else{
+      $this->model->whereHas('details', function($q){
+        if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+          $q->where('po_Document_warehouse_id', $this->authUser->warehouse_id)->whereNotNull('comptroller_cancelled_by')->orWhereNotNull('admin_cancelled_by')
+          ->orWhereNotNull('corp_admin_cancelled_by')->orWhereNotNull('ysl_cancelled_by');
+        }else{
+
+          $q->whereNotNull('comptroller_cancelled_by')->orWhereNotNull('admin_cancelled_by')
+          ->orWhereNotNull('corp_admin_cancelled_by')->orWhereNotNull('ysl_cancelled_by');
+        }
+      });
+    }
+    $this->model->orderBy('created_at', 'desc');
   }
 
 }

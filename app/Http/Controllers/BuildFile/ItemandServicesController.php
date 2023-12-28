@@ -78,7 +78,7 @@ class ItemandServicesController extends Controller
                 'isLotNo_Required'=> (int)$request->isLotNo_Required ?? '',
                 'isExpiryDate_Required'=> (int)$request->isExpiryDate_Required ?? '',
                 'isForProduction'=> (int) $request->isForProduction ?? '',
-                'isPerishable'=>(int) $request->isPerishable ?? '',
+                'isPersihable'=>(int) $request->isPerishable ?? '',
                 'isVatable'=> (int)$request->isVatable ?? '',
                 'isVatExempt'=> (int)$request->isVatExempt ?? '',
                 'isAllowDiscount'=>(int) $request->isAllowDiscount ?? '',
@@ -99,7 +99,7 @@ class ItemandServicesController extends Controller
                     'isReOrder' =>'0',
                     'isLotNo_Required' =>'0',
                     'created_at' => Carbon::now(),
-                    'DateCreated' => Carbon::now(),
+                    // 'DateCreated' => Carbon::now(),
                     'isActive' =>'1',
                     'CreatedBy'=>Auth()->user()->idnumber,
                 ]);
@@ -180,7 +180,7 @@ class ItemandServicesController extends Controller
             'isLotNo_Required'=> (int)$request->isLotNo_Required ?? '',
             'isExpiryDate_Required'=> (int)$request->isExpiryDate_Required ?? '',
             'isForProduction'=> (int) $request->isForProduction ?? '',
-            'isPerishable'=>(int) $request->isPerishable ?? '',
+            'isPersihable'=>(int) $request->isPerishable ?? '',
             'isVatable'=> (int)$request->isVatable ?? '',
             'isVatExempt'=> (int)$request->isVatExempt ?? '',
             'isAllowDiscount'=>(int) $request->isAllowDiscount ?? '',
@@ -377,5 +377,17 @@ class ItemandServicesController extends Controller
             DB::connection('sqlsrv_mmis')->rollBack();
             return response()->json(["error" => $e], 200);
         }
+    }
+
+    public function updateListCost(Request $request) {
+        Warehouseitems::where('id', $request->warehouse_item_id)->update([
+            'item_ListCost' => $request->item_ListCost,
+            'item_Markup_In' => $request->item_Markup_In,
+            'item_Markup_Out' => $request->item_Markup_Out,
+            'item_Selling_Price_In' => $request->item_Selling_Price_In,
+            'item_Selling_Price_Out' => $request->item_Selling_Price_Out
+        ]);
+
+        return response()->json(["message" => "success"], 200);
     }
 }

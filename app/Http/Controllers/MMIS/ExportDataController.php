@@ -6,6 +6,7 @@ use PDF;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\OldMMIS\Branch;
+use App\Models\BuildFile\Branchs;
 use App\Exports\WarehouseItemExport;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Warehouses;
@@ -37,26 +38,29 @@ class ExportDataController extends Controller
     private function unprocessedPO($request){
         $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest.branch', 'purchaseRequestDetail.recommendedCanvas.vendor')
         ->whereHas('purchaseOrder', function($q1) use($request){
-            $q1->where('po_Document_branch_id', $request->branch_id)->where('po_Document_warehouse_id', $request->department)->whereDoesntHave('delivery');
+            if($request->department){
+                $q1->where('po_Document_warehouse_id', $request->department);
+            }
+            $q1->where('po_Document_branch_id', $request->branch_id)->whereDoesntHave('delivery');
         })->get();
 
         if(sizeof($po_items) < 1){
             return response()->json(['error' => 'No data found'], 200);
         }
 
-        $branch = Branch::find($request->branch_id);
+        $branch = Branchs::find($request->branch_id);
         $warehouse = Warehouses::find($request->department);
         $pdf_data = [
             'items' => $po_items,
-            'branch_name' => $branch->companyname,
-            'warehouse_name' => $warehouse->warehouse_description,
+            'branch_name' => $branch->name,
+            'warehouse_name' => $warehouse->warehouse_description ?? 'ALL Department',
         ];
         $pdf = PDF::loadView('reports.undeliveredPO', ['pdf_data' => $pdf_data]);
         $path = public_path() .'/reports/';
         if(!file_exists($path)){
             mkdir($path);
         }
-        $filename = 'undelivered_po'. $branch->id . $warehouse->id . '.pdf';
+        $filename = 'undelivered_po'. $branch->id . '.pdf';
         if(file_exists($path . $filename)){
             File::delete($path . $filename);
         }
@@ -80,11 +84,11 @@ class ExportDataController extends Controller
         // ->whereHas('purchaseOrderDetails', function($q1) use($request){
         //     $q1->where('po_Document_branch_id', $request->branch_id)->where('po_Document_warehouse_id', $request->department)->whereDoesntHave('delivery');
         // })->get();
-        $branch = Branch::find($request->branch_id);
+        $branch = Branchs::find($request->branch_id);
         $warehouse = Warehouses::find($request->department);
         $pdf_data = [
             'items' => $pr_items,
-            'branch_name' => $branch->companyname,
+            'branch_name' => $branch->name,
             'warehouse_name' => $warehouse->warehouse_description,
         ];
         $pdf = PDF::loadView('reports.unprocessedPR', ['pdf_data' => $pdf_data]);

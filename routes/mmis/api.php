@@ -1,24 +1,35 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MMIS\UserController;
 use App\Http\Controllers\MMIS\AuditController;
-use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
+use App\Http\Controllers\MMIS\ExpenseController;
 use App\Http\Controllers\MMIS\DeliveryController;
+use App\Http\Controllers\MMIS\AuditTrailController;
+use App\Http\Controllers\MMIS\DashboardController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
+use App\Http\Controllers\MMIS\StockTransferController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
-use App\Http\Controllers\MMIS\StockTransferController;
-use Illuminate\Support\Facades\Route;
 
 Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
   Route::post('verify-passcode', 'getpermission');
+  Route::post('update-password', 'updatePassword');
+});
+
+Route::controller(DashboardController::class)->group(function () {
+  Route::get('purchase-request-count', 'getPurchaseRequestCount');
+  Route::get('canvass-count', 'getCanvasCount');
+  Route::get('purchase-order-count', 'getPurchaseOrderCount');
 });
 
 Route::controller(PurchaseRequestController::class)->group(function () {
   Route::get('purchase-request', [PurchaseRequestController::class, 'index']);
+  Route::put('restore-purchase-request/{id}', [PurchaseRequestController::class, 'restorePR']);
   Route::get('purchase-request/{id}', [PurchaseRequestController::class, 'show']);
   Route::put('purchase-request/void/{id}', [PurchaseRequestController::class, 'voidPR']);
   Route::post('purchase-request', [PurchaseRequestController::class, 'store']);
@@ -40,6 +51,7 @@ Route::controller(CanvasController::class)->group(function () {
 });
 
 Route::controller(PurchaseOrderController::class)->group(function () {
+  Route::get('purchase-orders-counts', 'getCount');
   Route::get('purchase-orders', 'index');
   Route::get('purchase-order/{id}', 'show');
   Route::post('purchase-order', 'store');
@@ -66,6 +78,11 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::post('consignment-pr', 'createConsignmentPr');
 });
 
+Route::controller(ExpenseController::class)->group(function () {
+  Route::get('expense-requisitions', 'index');
+  Route::post('expense-requisition', 'store');
+});
+
 Route::controller(StockTransferController::class)->group(function () {
   Route::put('stock-transfer-approved/{stock_transfer}', 'receiveTransfer');
   Route::get('stock-transfer', 'index');
@@ -89,6 +106,7 @@ Route::controller(StockRequisitionController::class)->group(function () {
 Route::controller(AuditController::class)->group(function () {
   Route::get('audits', 'index');
   Route::post('audit', 'store');
+  Route::put('audit/{audit}', 'update');
   // Route::post('stock-requisition', 'store');
 });
 

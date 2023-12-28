@@ -30,7 +30,7 @@ class CanvasController extends Controller
         })->whereHas('purchaseRequestDetails', function($q){
         $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function($q1){
-            $q1->where('canvas_Level2_ApprovedBy', '!=', null)->orWhere('canvas_Level2_CancelledBy', '!=', null);
+            $q1->where('canvas_Level2_ApprovedBy', '!=', null);
         })->whereDoesntHave('purchaseOrderDetails');
         });
         if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){
@@ -57,7 +57,7 @@ class CanvasController extends Controller
         $vat_amount = 0;
         $total_amount = $request->canvas_item_amount * $request->canvas_Item_Qty;
         if($request->canvas_item_vat_rate){
-            if($vendor->isVATInclusive == 0){
+            if($vendor->isVATInclusive == 0 || $vendor->isVATInclusive == null){
                 $vat_amount = $total_amount * ($request->canvas_item_vat_rate / 100);
                 $total_amount += $vat_amount;
             }else{

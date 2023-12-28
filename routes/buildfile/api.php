@@ -492,6 +492,10 @@ Route::resource('revenue-classes', RevenueClassController::class);
 Route::resource('transaction-classifications', TransactionClassificationController::class);
 Route::resource('transaction-codes', TransactionCodesController::class);
 
+Route::controller(TransactionCodesController::class)->group(function () {
+    Route::get('revenue-code', 'revenuecode');
+    Route::get('charge-code', 'chargingcode');
+});
 Route::resource('database-drivers', DriverController::class);
 
 

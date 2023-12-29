@@ -26,6 +26,7 @@ Route::controller(DashboardController::class)->group(function () {
   Route::get('canvass-count', 'getCanvasCount');
   Route::get('purchase-order-count', 'getPurchaseOrderCount');
   Route::get('department-cost', 'getDepartmentCost');
+  Route::get('top-items', 'getTopItems');
 });
 
 Route::controller(PurchaseRequestController::class)->group(function () {

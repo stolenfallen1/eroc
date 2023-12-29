@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\MMIS;
 
-use App\Http\Controllers\Controller;
-use App\Models\MMIS\inventory\Delivery;
-use App\Models\MMIS\procurement\purchaseOrderMaster;
-use App\Models\MMIS\procurement\PurchaseRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Models\BuildFile\Itemmasters;
+use App\Models\MMIS\inventory\Delivery;
+use App\Models\MMIS\inventory\DeliveryItems;
+use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
 
 class DashboardController extends Controller
 {
@@ -134,6 +136,11 @@ class DashboardController extends Controller
         }
 
         return $data;
+    }
+
+    public function getTopItems(){
+        return Itemmasters::withCount('deliveryItem')->orderBy('delivery_item_count', 'desc')
+        ->get()->take(20);
     }
     
 }

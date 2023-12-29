@@ -86,7 +86,7 @@ class DeliveryController extends Controller
                 $discount_percent = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_percent'];
                 $discount_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_amount'];
                 
-                if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
+                if($delivery->rr_Status == 5 || $delivery->rr_Status == 11 || isset($detail['rr_Detail_Item_ListCost'])){
                     $item_amount = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
                     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
                     if($vat_rate){

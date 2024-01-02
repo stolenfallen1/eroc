@@ -102,7 +102,7 @@ class ORSchedulesController extends Controller
 
     public function getORProcedures()
     {
-        $data = OperatingRoomProcedures::where('isactive', '1')->orderBy('descriptions', 'asc')->offset(0)->limit(10)->get();
+        $data = OperatingRoomProcedures::where('isactive', '1')->orderBy('descriptions', 'asc')->get();
         return response()->json($data, 200);
     }
 
@@ -791,7 +791,7 @@ class ORSchedulesController extends Controller
             if(Auth()->user()->role['name'] == 'Doctor') {
                 $data->where('registered_by', Auth()->user()->idnumber);
             }
-            if(Auth()->user()->role['name'] == 'Circulating Nurse') {
+            if(Auth()->user()->role['name'] == 'Scrub Nurse') {
                 $data->where('status_id', 14);
             }
             $data->orderBy('id', 'desc');

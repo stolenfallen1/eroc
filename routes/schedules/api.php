@@ -1,8 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Schedules\ORRoomsController;
+use App\Http\Controllers\Schedules\ORCaseTypeController;
+use App\Http\Controllers\Schedules\ORCategoryController;
 use App\Http\Controllers\Schedules\ORSchedulesController;
+use App\Http\Controllers\Schedules\ORStaffNurseController;
+use App\Http\Controllers\Schedules\ORNursePositionController;
+use App\Http\Controllers\Schedules\ORDoctorSpecialtyController;
 use App\Http\Controllers\Schedules\ORSchedulePatientController;
+use App\Http\Controllers\Schedules\ORDoctorController;
 
 
 Route::get('/registration', [ORSchedulesController::class, 'registration']);
@@ -15,6 +22,15 @@ Route::get('/getOperationRoomPendingSchedules', [ORSchedulesController::class, '
 Route::get('/getOperationRoomSchedulesStatus', [ORSchedulesController::class, 'OperatingroomSchedulesStatus']);
 Route::get('/getORSchedules', [ORSchedulesController::class, 'getORSchedules']);
 Route::get('/getORPatientDetails', [ORSchedulesController::class, 'getORPatientDetails']);
+Route::resource('or-categories', ORCategoryController::class);
+Route::resource('or-case-types', ORCaseTypeController::class);
+Route::resource('or-doctor-specialties', ORDoctorSpecialtyController::class);
+Route::resource('or-nurse-positions', ORNursePositionController::class);
+Route::resource('or-rooms', ORRoomsController::class);
+Route::resource('or-staff-nurse', ORStaffNurseController::class);
+Route::resource('or-doctors', ORDoctorController::class);
+
+
 
 
 Route::get('/schedules', [ORSchedulesController::class, 'index']);

@@ -126,7 +126,7 @@ class OperatingRoomSchedule
     public function checkStatus()
     {
         $status = ['14','15','16','17','18','19','20','21','22','23','24','25','26'];
-        if(Auth()->user()->role['name'] == 'Circulating Nurse') {
+        if(Auth()->user()->role['name'] == 'Scrub Nurse') {
             $status = ['20','21','22','23','24','25','26'];
         } elseif(Auth()->user()->role['name'] == 'Reception') {
             $status = ['14','15','16','17','18','19','20'];

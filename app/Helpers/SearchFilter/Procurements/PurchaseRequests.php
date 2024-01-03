@@ -28,7 +28,7 @@ class PurchaseRequests
     $this->byPriority();
     $this->byRequestedDate();
     $this->byRequiredDate();
-    $this->byYear();
+    // $this->byYear();
     $this->byUser();
     $this->byTab();
     $per_page = Request()->per_page;

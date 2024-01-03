@@ -139,7 +139,11 @@ class DashboardController extends Controller
     }
 
     public function getTopItems(){
-        return Itemmasters::withCount('deliveryItem')->orderBy('delivery_item_count', 'desc')
+        return Itemmasters::withCount('deliveryItem')
+        ->whereHas('deliveryItem', function($q1){
+            $q1->whereMonth('created_at', Request()->month)->whereYear('created_at', Request()->year);
+        })
+        ->orderBy('delivery_item_count', 'desc')
         ->get()->take(20);
     }
     

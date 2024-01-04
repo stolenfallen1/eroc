@@ -2,6 +2,7 @@
 
 namespace App\Models\POS;
 
+use App\Models\User;
 use App\Models\POS\Payments;
 use App\Models\POS\Customers;
 use App\Models\POS\OrderItems;
@@ -17,17 +18,27 @@ class Orders extends Model
     protected $connection = 'sqlsrv_pos';
     protected $table = 'orders';
     protected $guarded = [];
-    protected $with = ['order_items.ItemBatch','order_items.vwItem_details'];
+    protected $with = ['order_items.ItemBatch','order_items.vwItem_details','customers','users'];
 
     public function order_items(){
-        return $this->hasMany(OrderItems::class,'order_id', 'id');
+        return $this->hasMany(OrderItems::class,'order_id', 'id')->where('isDeleted',0);
     }
-
+    public function return_order_items(){
+        return $this->hasMany(OrderItems::class,'order_id', 'id')->where('isDeleted',0);
+    }
+    public function users()
+    {
+        return $this->belongsTo(User::class, 'pa_userid', 'idnumber');
+    }
     public function customers(){
         return $this->belongsTo(vwCustomers::class,'customer_id', 'id');
     }
 
     public function payment(){
         return $this->hasOne(Payments::class,'order_id', 'id');
+    }
+
+    public function search(){
+      
     }
 }

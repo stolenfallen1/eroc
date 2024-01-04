@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\BuildFile\FMS;
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\FMS\TransactionCodes;
-use Illuminate\Http\Request;
+use App\Models\BuildFile\FmsExamProcedureItems;
 
 class TransactionCodesController extends Controller
 {
@@ -24,7 +25,30 @@ class TransactionCodesController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-
+    
+    public function revenuecode()
+    {
+        try {
+            $data = TransactionCodes::query();
+            $data->with('medicare_type');
+            $data->where('transaction_code',Request()->keyword);
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+     public function chargingcode()
+    {
+        try {
+            $data = FmsExamProcedureItems::where('transaction_code',Request()->revenuecode)->get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+    
     public function store(Request $request)
     {
         try {

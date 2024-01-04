@@ -2,8 +2,9 @@
 
 namespace App\Models\Schedules;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Schedules\ORCirculatingNursesModel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ORScrubNursesModel extends Model
 {
@@ -15,8 +16,10 @@ class ORScrubNursesModel extends Model
     // protected $fillable = ['lastname', 'firstname', 'middlename', 'id','operating_room_scheduled_id'];
     protected $appends = ['scrubnurses'];
 
+  
     public function getScrubNursesAttribute()
     {
         return $this->lastname . ', ' . $this->firstname . ' ' . $this->middlename;
     }
+    
 }

@@ -16,6 +16,7 @@ class OpenningAmount extends Model
     protected $table = 'CashOnHand';
     protected $guarded = [];
     protected $appends = ['display_text'];
+    
     public function cashonhand_details(){
         return $this->hasOne(OpenningDetails::class,'cashonhand_id', 'id');
     }

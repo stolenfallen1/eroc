@@ -52,6 +52,8 @@ class TakeOrderTerminalController extends Controller
                 'terminal_takeorder_ip_address'=>$request->payload_takeorder_terminal['terminal_ip_address'] ?? '',
                 'terminal_takeorder_mac_address'=>$request->payload_takeorder_terminal['terminal_mac_address'] ?? '',
                 'isActive'=>$request->payload_takeorder_terminal['isActive'] ?? '',
+                'isitem_Selling_Price_Out'=>$request->payload_takeorder_terminal['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In'=>$request->payload_takeorder_terminal['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
@@ -109,6 +111,8 @@ class TakeOrderTerminalController extends Controller
                 'terminal_takeorder_ip_address'=>$request->payload_takeorder_terminal['terminal_ip_address'] ?? '',
                 'terminal_takeorder_mac_address'=>$request->payload_takeorder_terminal['terminal_mac_address'] ?? '',
                 'isActive'=>$request->payload_takeorder_terminal['isActive'] ?? '',
+                'isitem_Selling_Price_Out'=>$request->payload_takeorder_terminal['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In'=>$request->payload_takeorder_terminal['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
@@ -128,6 +132,9 @@ class TakeOrderTerminalController extends Controller
      */
     public function destroy($id)
     {
-        //
+       
+        $details = TerminalTakeOrder::find($id);
+        $details->delete();
+        return response()->json(["message" =>  'Record successfully deleted','status' => '200'], 200);
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Models\POS;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\MMIS\inventory\ItemBatch;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class vwWarehouseItems extends Model
@@ -16,6 +16,7 @@ class vwWarehouseItems extends Model
     protected $with = ['item_batch'];
 
     public function item_batch(){
-        return $this->hasMany(ItemBatch::class, 'item_Id', 'id')->whereDate('item_Expiry_Date','>',Carbon::now()->format('Y-m-d'));
+        return $this->hasMany(ItemBatchModelMaster::class, 'item_Id', 'id')->where('isConsumed',0);
+        // ->whereDate('item_Expiry_Date','>',Carbon::now()->format('Y-m-d'))
     }
 }

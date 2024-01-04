@@ -467,10 +467,18 @@
             </div>
             <div style="width: 100% !important;display:inline-block;">
                 <div style="width: 50% !important; display:inline-block;">
-                    <div class="text-left">Total Sales</div>
+                    <div class="text-left"> Sales</div>
                 </div>
                 <div style="width: 48% !important; display:inline-block;">
                     <div class="text-right">{{number_format($total_sales,2)}}</div>
+                </div> 
+            </div>
+             <div style="width: 100% !important;display:inline-block;">
+                <div style="width: 50% !important; display:inline-block;">
+                    <div class="text-left"> Refund</div>
+                </div>
+                <div style="width: 48% !important; display:inline-block;">
+                    <div class="text-right">{{number_format($total_refund,2)}}</div>
                 </div> 
             </div>
             <div style="width: 100% !important;display:inline-block;" class="total">
@@ -478,7 +486,8 @@
                     <div class="text-left">Total</div>
                 </div>
                 <div style="width: 60% !important; display:inline-block;">
-                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $total_sales)),2)}}</div>
+                    <div class="text-right"> {{number_format((($items[0]->opening_amount + $total_sales) - $total_refund),2)}}</div>
+                    
                 </div> 
             </div>
         </div>
@@ -582,48 +591,7 @@
             </div>
         </div>
         <br>
-        <div class="receipt-header text-center">
-            <strong>Sales Transaction</strong>
-        </div>
-        <table class="summary">
-            @php
-                $totalsales =0;
-                $totalsalescount =0;
-            @endphp
-            @foreach ($sales_item_group as $key => $items)
-                <tr>
-                    <td colspan="2">{{ $key }}</td>
-                    <td colspan="1">
-                        @php $qty =0; @endphp
-                        @foreach ($items as $item)
-                            @php
-                                $qty +=$item->qty;
-                        @endphp
-                        
-                        @endforeach
-                        @php $totalsalescount +=$qty ; @endphp
-                        {{$qty}}
-                    </td>
-                    <td class="text-right">
-                        @php $price =0; @endphp
-                            @foreach ($items as $item)
-                                @php
-                                    $price +=$item->price * $item->qty;
-                            @endphp
-                        @endforeach
-                        @php
-                            $totalsales +=$price;
-                        @endphp
-                        {{ number_format($price, 2) }}
-                    </td>
-                </tr>
-            @endforeach
-            <tr>
-                <td class="total" colspan="2">Total</td>
-                <td class="total" >{{$totalsalescount}}</td>
-                <td class="total text-right" >{{number_format($totalsales,2)}}</td>
-            </tr>
-        </table>
+      
         @if($return_item_group < 0)
         <div class="receipt-header text-center">
             <strong>Return Transaction</strong>
@@ -651,7 +619,7 @@
                     @php $price =0; @endphp
                         @foreach ($items as $item)
                             @php
-                                $price +=$item->price * $item->qty;
+                                $price +=$item->totalamount;
                         @endphp
                     @endforeach
                     @php
@@ -670,7 +638,48 @@
         </table>
         @endif
         <br>
-        
+        {{-- <div class="receipt-header text-center">
+            <strong>Sales Transaction</strong>
+        </div>
+        <table class="summary">
+            @php
+                $totalsales =0;
+                $totalsalescount =0;
+            @endphp
+            @foreach ($sales_item_group as $key => $items)
+                <tr>
+                    <td colspan="2">{{ $key }}</td>
+                    <td colspan="1">
+                        @php $qty =0; @endphp
+                        @foreach ($items as $item)
+                            @php
+                                $qty +=$item->qty;
+                        @endphp
+                        
+                        @endforeach
+                        @php $totalsalescount +=$qty ; @endphp
+                        {{$qty}}
+                    </td>
+                    <td class="text-right">
+                        @php $price =0; @endphp
+                            @foreach ($items as $item)
+                                @php
+                                    $price +=$item->totalamount;
+                            @endphp
+                        @endforeach
+                        @php
+                            $totalsales +=$price;
+                        @endphp
+                        {{ number_format($price, 2) }}
+                    </td>
+                </tr>
+            @endforeach
+            <tr>
+                <td class="total" colspan="2">Total</td>
+                <td class="total" >{{$totalsalescount}}</td>
+                <td class="total text-right" >{{number_format($totalsales,2)}}</td>
+            </tr>
+        </table> --}}
         @endforeach
         <div class="receipt-footer text-center"><br>
             <strong>Thank you for choosing us!</strong><br><br>

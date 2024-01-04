@@ -16,8 +16,18 @@ class TerminalSettingsController extends Controller
      */
     public function index()
     {
-        $data['terminal'] = Systerminals::all();
-        return response()->json($data,200);
+        try {
+            $data = Systerminals::query();
+            $data->with("takeOrders");
+            if(Request()->keyword) {
+                $data->where('terminal_name', 'LIKE', '%' . Request()->keyword . '%');
+            }
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
     }
 
     /**
@@ -49,6 +59,8 @@ class TerminalSettingsController extends Controller
                 'terminal_ip_address'=>$request->payload['terminal_ip_address'] ?? '',
                 'terminal_mac_address'=>$request->payload['terminal_mac_address'] ?? '',
                 'isActive'=>$request->payload['isActive'] ?? '',
+                'isitem_Selling_Price_Out'=>$request->payload['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In'=>$request->payload['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv_pos')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
@@ -102,6 +114,8 @@ class TerminalSettingsController extends Controller
                 'terminal_ip_address'=>$request->payload['terminal_ip_address'] ?? '',
                 'terminal_mac_address'=>$request->payload['terminal_mac_address'] ?? '',
                 'isActive'=>$request->payload['isActive'] ?? '',
+                'isitem_Selling_Price_Out'=>$request->payload['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In'=>$request->payload['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv_pos')->commit();
             return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
@@ -121,6 +135,8 @@ class TerminalSettingsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $details = Systerminals::find($id);
+        $details->delete();
+        return response()->json(["message" =>  'Record successfully deleted','status' => '200'], 200);
     }
 }

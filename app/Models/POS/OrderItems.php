@@ -26,7 +26,7 @@ class OrderItems extends Model
     }
 
     public function ItemBatch(){
-        return $this->belongsTo(ItemBatch::class,'order_item_batchno', 'id');
+        return $this->belongsTo(ItemBatch::class,'order_item_batchno', 'id')->where('isConsumed',0);
     }
 
     public function vwItem_details(){

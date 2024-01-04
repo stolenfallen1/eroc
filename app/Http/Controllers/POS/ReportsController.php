@@ -74,12 +74,11 @@ class ReportsController extends Controller
     }
     public function accountability_report(Request $request){
         if($request->payload) {
-           
             $user_id = Request()->payload['user_id'] ?? Auth()->user()->idnumber;
             $shift_id = Request()->payload['shift_id'] ?? Auth()->user()->shift;
             $date = Request()->payload['date'] ?? Carbon::now()->format('m/d/Y');
-            $terminal_id = Request()->payload['terminal_id'] ?? Auth()->user()->terminal_id;
-            $preparedby = Request()->payload['preparedby'] ?? Auth()->user()->name;
+            $terminal_id = Request()->payload['termninalid'] ?? Auth()->user()->terminal_id;
+            $preparedby = Request()->payload['cashierid'] ?? Auth()->user()->name;
 
             $data['print_layout'] = '';
             $data['date'] = $date;

@@ -74,12 +74,7 @@ class PosTransactionController extends Controller
     public function getrefundtype(Request $request)
     {
         
-        if($request->type == '1'){
-            $data['refundtype'] =  MscRefundType::where('isactive','1')->whereIn('id',['1','3'])->get();
-        }
-        if($request->type == '2'){
-            $data['refundtype'] =  MscRefundType::where('isactive','1')->whereIn('id',['2','3'])->get();
-        }
+       $data['refundtype'] =  MscRefundType::where('isactive', '1')->get();
         $data['message'] = 'success';
         return response()->json($data, 200);
     }

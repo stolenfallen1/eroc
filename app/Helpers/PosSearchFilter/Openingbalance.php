@@ -28,15 +28,21 @@ class Openingbalance
 
     public function searchColumns()
     {
-        if(Auth()->user()->role->name != 'Pharmacist Cashier') {
-            $this->model->whereDate('report_date', Request()->date);
-        }
+        // if(Auth()->user()->role->name != 'Pharmacist Cashier') {
+          
+        // }
+        $this->model->whereDate('report_date', Request()->date);
+
     }
     public function searchShift()
     {
-        if(Auth()->user()->role->name != 'Pharmacist Cashier') {
-          $this->model->where('shift_code', Request()->shift);
+        // if(Auth()->user()->role->name != 'Pharmacist Cashier') {
+        //   $this->model->where('shift_code', Request()->shift);
+        // }
+        if(Request()->shift){
+            $this->model->where('shift_code', Request()->shift);
         }
+
     }
     public function bystatus()
     {

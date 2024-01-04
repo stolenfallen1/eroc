@@ -6,6 +6,7 @@ use DB;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\POS\Orders;
+use App\Models\BuildFile\MscRefundType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -15,7 +16,7 @@ class Payments extends Model
     protected $connection = 'sqlsrv_pos';
     protected $table = 'payments';
     protected $guarded = [];
-    
+   
     
     public function orders()
     {
@@ -25,6 +26,9 @@ class Payments extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'idnumber');
     }
+
+    
+
     public function nofilterbyreportdate()
     {
         $shift = DB::connection('sqlsrv')->table('mscShiftSchedules')->where('shifts_code',Auth()->user()->shift)->first();

@@ -24,7 +24,7 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
     public function login(Request $request)
     {
         $credentials = $request->only('idnumber', 'password');
-        if($request->role != 1){
+        if($request->role == 2){
             $checkinvoiceifexist = Payments::select('sales_invoice_number')->where('sales_invoice_number', $request->sequenceno)->exists();
             if($checkinvoiceifexist) {
                 return response()->json(["message" => 'Sequence number already use!'], 401);
@@ -122,6 +122,7 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
         }
         $user = Auth::user();
         $user->pos_setting = POSSettings::where('isActive', '1')->first();
+        $user->isposetting = SystemSequence::where('code', 'PSI')->select('isSystem', 'isPos')->first();
         $user->sysTerminal = $this->checkTerminal();
         $user->check_is_allow_medsys_status = (new SysGlobalSetting())->check_is_allow_medsys_status();
         $user->serverIP =  config('app.pos_server_ip');

@@ -64,7 +64,7 @@ class Itemmasters extends Model
 
     public function deliveryItem()
     {
-        return $this->hasOne(DeliveryItems::class, 'rr_Detail_Item_Id', 'id');
+        return $this->hasMany(DeliveryItems::class, 'rr_Detail_Item_Id', 'id');
     }
 
 

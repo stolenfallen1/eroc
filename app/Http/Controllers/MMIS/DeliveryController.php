@@ -32,7 +32,7 @@ class DeliveryController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-            $has_dup_invoice_no = Delivery::where('rr_Document_Invoice_No', 'like', '%'.$request['rr_Document_Invoice_No'].'%')->exists();
+            $has_dup_invoice_no = Delivery::where('rr_Document_Invoice_No', $request['rr_Document_Invoice_No'])->exists();
             if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
             $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN1'])->first();
             $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
@@ -86,7 +86,7 @@ class DeliveryController extends Controller
                 $discount_percent = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_percent'];
                 $discount_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_amount'];
                 
-                if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
+                if($delivery->rr_Status == 5 || $delivery->rr_Status == 11 || isset($detail['rr_Detail_Item_ListCost'])){
                     $item_amount = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
                     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
                     if($vat_rate){
@@ -556,18 +556,21 @@ class DeliveryController extends Controller
     }
 
     public function show($id){
-        $delivery = Delivery::with(['purchaseOrder'=>function($q){
-            $q->with(['comptroller', 'administrator', 'corporateAdmin', 'president', 'purchaseRequest'=> function($q1){
-              $q1->with(['purchaseRequestDetails' => function($q2){
-                $q2->with('itemMaster', 'unit', 'purchaseOrderDetails.purchaseOrder',
-                'depApprovedBy', 'adminApprovedBy', 'conApprovedBy');
-              }, 'warehouse', 'itemGroup', 'user', 'category']);
-            }, 'details' => function($q1){
-              $q1->with('canvas.vendor', 'item', 'unit');
+        $delivery = Delivery::with(['warehouse', 'audit', 'items', 'receiver', 'purchaseOrder' => function($q1){
+            $q1->with(['deliveryItems' => function($q2){
+              $q2->with('delivery.audit.user', 'item', 'unit')->whereHas('delivery', function($q3){
+                // $q3->whereHas('audit');
+              });
+            },'purchaseRequest' => function($q5){
+              $q5->with('itemGroup', 'user', 'category');
+            }, 'comptroller', 'administrator', 'corporateAdmin', 'president', 'details' => function($q2){
+              $q2->with(['purchaseRequestDetail' => function($q3){
+                $q3->with(['purchaseRequest' => function($q4){
+                  $q4->with('warehouse', 'itemGroup', 'user', 'category');
+                }, 'itemMaster', 'unit', 'unit2', 'depApprovedBy', 'adminApprovedBy', 'conApprovedBy', 'recommendedCanvas']);
+              }, 'canvas.vendor']);
             }]);
-          }, 'items'=>function($q){
-            $q->with('item', 'unit');
-          },'audit'])->findOrfail($id);
+          }])->findOrfail($id);
         return response()->json(['delivery' => $delivery]);
     }
 

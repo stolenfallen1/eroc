@@ -28,7 +28,7 @@ class PurchaseRequests
     $this->byPriority();
     $this->byRequestedDate();
     $this->byRequiredDate();
-    $this->byYear();
+    // $this->byYear();
     $this->byUser();
     $this->byTab();
     $per_page = Request()->per_page;
@@ -183,10 +183,13 @@ class PurchaseRequests
         })->orWhere(function($q1){
           $q1->where('branch_Id', 1)->where('invgroup_id', '!=', 2);
         });
-      })->whereHas('purchaseRequestDetails', function($q1){
-        $q1->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null]);
       })
-      ->where('pr_DepartmentHead_ApprovedBy', '!=', null);
+      ->where('pr_DepartmentHead_ApprovedBy', '!=', null)->whereNull('pr_Branch_Level1_ApprovedBy')
+      ->whereNull('pr_Branch_Level1_CancelledBy');
+      // ->whereHas('purchaseRequestDetails', function($q2){
+      //   $q2->whereNull('pr_Branch_Level1_ApprovedBy')->whereNull('pr_Branch_Level1_CancelledBy')
+      //   ->whereNotNull('pr_DepartmentHead_ApprovedBy');
+      // })
 
       // $this->model
       // ->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])

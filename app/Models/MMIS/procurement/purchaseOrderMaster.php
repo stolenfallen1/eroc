@@ -7,6 +7,7 @@ use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
 use App\Models\BuildFile\Warehouses;
 use App\Models\MMIS\inventory\Delivery;
+use App\Models\MMIS\inventory\DeliveryItems;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,17 @@ class purchaseOrderMaster extends Model
 
     public function details(){
         return $this->hasMany(PurchaseOrderDetails::class, 'po_id', 'id');
+    }
+
+    public function deliveryItems(){
+        return $this->hasManyThrough(
+            DeliveryItems::class, 
+            Delivery::class, 
+            'po_id', 
+            'rr_id', 
+            'id', 
+            'id'
+        );
     }
 
     public function delivery(){

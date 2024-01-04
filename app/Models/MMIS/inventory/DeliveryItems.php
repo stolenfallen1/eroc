@@ -11,7 +11,7 @@ class DeliveryItems extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv_mmis";
-    protected $table = 'RRDetail';
+    protected $table = 'CDG_MMIS.dbo.RRDetail';
 
     protected $guarded = [];
 

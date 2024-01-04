@@ -130,7 +130,7 @@ Route::get('/print-delivery/{id}', function ($id) {
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Transaction_Date)->format('Y-m-d'),
+        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
         'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
     ];
     $pdf = PDF::loadView('pdf_layout.delivery', ['pdf_data' => $pdf_data]);

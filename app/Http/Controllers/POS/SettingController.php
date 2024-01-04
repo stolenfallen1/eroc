@@ -41,8 +41,12 @@ class SettingController extends Controller
         foreach($schedule as $row){
             $array[] = $row;
         }
+        
+        $localIP = getHostByName(getHostName());
         $data['schedule'] = $array;
         $data['remote_ip'] = $_SERVER['REMOTE_ADDR'];
+        $data['localIP'] = $localIP;
+        $data['getHostName'] = getHostName();
         $data['ip'] = (new GetIP())->value();
         $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);

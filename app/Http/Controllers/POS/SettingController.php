@@ -42,10 +42,10 @@ class SettingController extends Controller
             $array[] = $row;
         }
         
-        $localIP = getHostByName(getHostName());
+        $localIp = getHostByName(Request()->server('REMOTE_ADDR'));
         $data['schedule'] = $array;
         $data['remote_ip'] = $_SERVER['REMOTE_ADDR'];
-        $data['localIP'] = $localIP;
+        $data['localIP'] = $localIp;
         $data['getHostName'] = getHostName();
         $data['ip'] = (new GetIP())->value();
         $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();

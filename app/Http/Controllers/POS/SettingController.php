@@ -26,6 +26,7 @@ class SettingController extends Controller
             $array[] = $row;
         }
         $data['schedule'] = $array;
+        $data['ip'] = (new GetIP)->value();
         $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);
     }

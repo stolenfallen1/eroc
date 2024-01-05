@@ -31,6 +31,30 @@ class SettingController extends Controller
         return response()->json($data,200);
     }
 
+    
+    public function getLanIpAddress()
+    {
+            // Execute a shell command to get the LAN IP address
+            $output = shell_exec("/sbin/ifconfig");
+
+            // Use regular expression to extract the LAN IP address
+            preg_match("/inet addr:(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
+
+            // Return the LAN IP address if found, otherwise return false
+            return isset($matches[1]) ? $matches[1] : false;
+    }
+
+        function getwindowLanIpAddress()
+        {
+            // Execute a shell command to get the LAN IP address using ipconfig
+            $output = shell_exec("ipconfig");
+
+            // Use regular expression to extract the LAN IP address
+            preg_match("/IPv4 Address[^\d]+(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
+
+            // Return the LAN IP address if found, otherwise return false
+            return isset($matches[1]) ? $matches[1] : false;
+        }
 
     public function schedule()
     {
@@ -48,6 +72,10 @@ class SettingController extends Controller
         $data['clientip'] =Request()->getClientIp();
         $data['localIP'] = $localIp;
         $data['getHostName'] = getHostName();
+        $data['lanIpAddress '] = $this->getLanIpAddress();
+        $data['lanwindowIpAddress '] = $this->getwindowLanIpAddress();
+                
+
         $data['ip'] = (new GetIP())->value();
         $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);

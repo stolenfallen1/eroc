@@ -44,7 +44,7 @@ class SettingController extends Controller
             // return isset($matches[1]) ? $matches[1] : false;
 
             
-        $command = "/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'";
+        $command = "/usr/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'";
         $localIP = exec($command);
         echo $localIP;
 

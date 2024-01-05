@@ -35,7 +35,7 @@ class SettingController extends Controller
     public function getLanIpAddress()
     {
             // Execute a shell command to get the LAN IP address
-            $output = shell_exec("/sbin/ifconfig");
+            $output = shell_exec("/usr/sbin/ifconfig");
 
             // Use regular expression to extract the LAN IP address
             preg_match("/inet addr:(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
@@ -44,17 +44,17 @@ class SettingController extends Controller
             return isset($matches[1]) ? $matches[1] : false;
     }
 
-        function getwindowLanIpAddress()
-        {
-            // Execute a shell command to get the LAN IP address using ipconfig
-            $output = shell_exec("ipconfig");
+    function getwindowLanIpAddress()
+     {
+        // Execute a shell command to get the LAN IP address using ipconfig
+        $output = shell_exec("ipconfig");
 
-            // Use regular expression to extract the LAN IP address
-            preg_match("/IPv4 Address[^\d]+(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
+        // Use regular expression to extract the LAN IP address
+        preg_match("/IPv4 Address[^\d]+(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
 
-            // Return the LAN IP address if found, otherwise return false
-            return isset($matches[1]) ? $matches[1] : false;
-        }
+        // Return the LAN IP address if found, otherwise return false
+        return isset($matches[1]) ? $matches[1] : false;
+    }
 
     public function schedule()
     {

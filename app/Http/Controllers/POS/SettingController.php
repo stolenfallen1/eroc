@@ -45,6 +45,7 @@ class SettingController extends Controller
         $localIp = getHostByName(Request()->server('REMOTE_ADDR'));
         $data['schedule'] = $array;
         $data['remote_ip'] = $_SERVER['REMOTE_ADDR'];
+        $data['clientip'] =Request()->getClientIp();
         $data['localIP'] = $localIp;
         $data['getHostName'] = getHostName();
         $data['ip'] = (new GetIP())->value();

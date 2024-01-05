@@ -34,14 +34,20 @@ class SettingController extends Controller
     
     public function getLanIpAddress()
     {
-            // Execute a shell command to get the LAN IP address
-            $output = shell_exec("/usr/sbin/ifconfig");
+            // // Execute a shell command to get the LAN IP address
+            // $output = shell_exec("/usr/sbin/ifconfig");
 
-            // Use regular expression to extract the LAN IP address
-            preg_match("/inet addr:(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
+            // // Use regular expression to extract the LAN IP address
+            // preg_match("/inet addr:(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
 
-            // Return the LAN IP address if found, otherwise return false
-            return isset($matches[1]) ? $matches[1] : false;
+            // // Return the LAN IP address if found, otherwise return false
+            // return isset($matches[1]) ? $matches[1] : false;
+
+            
+        $command = "/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'";
+        $localIP = exec($command);
+        echo $localIP;
+
     }
 
     function getwindowLanIpAddress()

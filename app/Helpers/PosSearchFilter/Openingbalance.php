@@ -28,7 +28,7 @@ class Openingbalance
 
     public function searchColumns()
     {
-        // if(Auth()->user()->role->name != 'Pharmacist Cashier') {
+        // if(Auth()->user()->role->name != 'POS Cashier') {
           
         // }
         $this->model->whereDate('report_date', Request()->date);
@@ -36,7 +36,7 @@ class Openingbalance
     }
     public function searchShift()
     {
-        // if(Auth()->user()->role->name != 'Pharmacist Cashier') {
+        // if(Auth()->user()->role->name != 'POS Cashier') {
         //   $this->model->where('shift_code', Request()->shift);
         // }
         if(Request()->shift){
@@ -50,13 +50,13 @@ class Openingbalance
     }
     public function byUser()
     {
-        if(Auth()->user()->role->name == 'Pharmacist Cashier') {
+        if(Auth()->user()->role->name == 'POS Cashier') {
             $this->model->where('user_id', Auth()->user()->idnumber);
         }
     }
     public function bydate()
     {
-        if(Auth()->user()->role->name == 'Pharmacist Cashier') {
+        if(Auth()->user()->role->name == 'POS Cashier') {
             $this->model->whereDate('cashonhand_beginning_transaction', Carbon::now()->format('Y-m-d'));
         }
     }

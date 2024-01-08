@@ -90,9 +90,9 @@ class Orderlist
     public function searchTerminal(){
         $user_terminal = (new Terminal)->terminal_details();
        
-        if(Auth::user()->role->name == 'Pharmacist Assistant'){
+        if(Auth::user()->role->name == 'POS Take Order'){
             $this->model->where('terminal_id',$user_terminal->id);
-        }else if(Auth::user()->role->name == 'Pharmacist Cashier'){ 
+        }else if(Auth::user()->role->name == 'POS Cashier'){ 
             $this->model->where('terminal_id',Auth()->user()->terminal_id);
             // $this->model->where('take_order_terminal_id',Auth()->user()->terminal_id);
         }

@@ -74,8 +74,20 @@ Configure your application
     			}
   		]
 	}
+  module.exports = {
+  apps: [
+    {
+      name: 'CDG_MMIS',
+      exec_mode: 'cluster',
+      instances: '2', // Or a number of instances
+      script: './node_modules/nuxt/bin/nuxt.js',
+      args: 'start',
+      port: 6969,
+    }
+  ]
+}
 Build and serve the app
-    npm run build
+    npm run build && pm2 restart ecosystem.config.js
     pm2 start
     pm2 start ecosystem.config.js
     pm2 stop ecosystem.config.js

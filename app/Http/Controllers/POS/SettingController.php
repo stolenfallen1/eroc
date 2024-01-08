@@ -26,42 +26,12 @@ class SettingController extends Controller
             $array[] = $row;
         }
         $data['schedule'] = $array;
-        $data['ip'] = (new GetIP)->value();
-        $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+        $data['terminal'] = Systerminals::where('terminal_ip_address',Request()->clientIP)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);
     }
 
     
-    public function getLanIpAddress()
-    {
-            // // Execute a shell command to get the LAN IP address
-            // $output = shell_exec("/usr/sbin/ifconfig");
-
-            // // Use regular expression to extract the LAN IP address
-            // preg_match("/inet addr:(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
-
-            // // Return the LAN IP address if found, otherwise return false
-            // return isset($matches[1]) ? $matches[1] : false;
-
-            
-        $command = "/usr/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'";
-        $localIP = exec($command);
-        echo $localIP;
-
-    }
-
-    function getwindowLanIpAddress()
-     {
-        // Execute a shell command to get the LAN IP address using ipconfig
-        $output = shell_exec("ipconfig");
-
-        // Use regular expression to extract the LAN IP address
-        preg_match("/IPv4 Address[^\d]+(\d+\.\d+\.\d+\.\d+)/", $output, $matches);
-
-        // Return the LAN IP address if found, otherwise return false
-        return isset($matches[1]) ? $matches[1] : false;
-    }
-
+   
     public function schedule()
     {
         $schedule = DB::connection('sqlsrv_pos')->table('vwShift')->where('isActive','1')->select('shifts_code','Shift_description','beginning_military_hour')->get();
@@ -74,16 +44,7 @@ class SettingController extends Controller
         
         $localIp = getHostByName(Request()->server('REMOTE_ADDR'));
         $data['schedule'] = $array;
-        $data['remote_ip'] = $_SERVER['REMOTE_ADDR'];
-        $data['clientip'] =Request()->getClientIp();
-        $data['localIP'] = $localIp;
-        $data['getHostName'] = getHostName();
-        $data['lanIpAddress '] = $this->getLanIpAddress();
-        $data['lanwindowIpAddress '] = $this->getwindowLanIpAddress();
-                
-
-        $data['ip'] = (new GetIP())->value();
-        $data['terminal'] = Systerminals::where('terminal_ip_address',(new GetIP)->value())->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+        $data['terminal'] = Systerminals::where('terminal_ip_address',Request()->clientIP)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);
     }
     

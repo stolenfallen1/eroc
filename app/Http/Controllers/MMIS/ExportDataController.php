@@ -38,13 +38,24 @@ class ExportDataController extends Controller
     private function unprocessedPO($request){
         ini_set('max_execution_time', '-1');
         ini_set('memory_limit', '-1');
-        $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest.branch', 'purchaseRequestDetail.recommendedCanvas.vendor')
+        $po_query = PurchaseOrderDetails::query();
+        $po_query->with('item', 'purchaseOrder.purchaseRequest.branch', 
+        'purchaseRequestDetail.recommendedCanvas.vendor')
         ->whereHas('purchaseOrder', function($q1) use($request){
             if($request->department){
                 $q1->where('po_Document_warehouse_id', $request->department);
             }
             $q1->where('po_Document_branch_id', $request->branch_id)->whereDoesntHave('delivery');
-        })->get();
+        });
+
+        if(Request()->start_date){
+            $po_query->whereDate('pr_Transaction_Date', '>=', Carbon::parse(Request()->start_date));
+        }
+        if(Request()->end_date){
+            $po_query->whereDate('pr_Transaction_Date', '<=', Carbon::parse(Request()->end_date));
+        }
+        
+        $po_items = $po_query->get();
 
         if(sizeof($po_items) < 1){
             return response()->json(['error' => 'No data found'], 200);
@@ -72,6 +83,8 @@ class ExportDataController extends Controller
     }
 
     private function unprocessedPR($request){
+        ini_set('max_execution_time', '-1');
+        ini_set('memory_limit', '-1');
         $pr_items = PurchaseRequestDetails::with('itemMaster', 'purchaseRequest')->whereDoesntHave('purchaseOrderDetails')
         ->where(function($q1){
             $q1->whereNotNull('pr_Branch_level1_ApprovedBy')->orWhereNotNull('pr_Branch_level2_ApprovedBy');

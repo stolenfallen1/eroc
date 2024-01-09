@@ -36,6 +36,8 @@ class ExportDataController extends Controller
     }
 
     private function unprocessedPO($request){
+        ini_set('max_execution_time', '-1');
+        ini_set('memory_limit', '-1');
         $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest.branch', 'purchaseRequestDetail.recommendedCanvas.vendor')
         ->whereHas('purchaseOrder', function($q1) use($request){
             if($request->department){

@@ -174,6 +174,7 @@
           <th>Item Description</th>
           <th>Qty</th>
           <th>Unit</th>
+          <th>Discount</th>
           <th>Unit Cost</th>
           <th>Amount</th>
         </thead>
@@ -184,12 +185,13 @@
                 <td class="item-td" >{{ $detail['item']['item_name'] ?? '' }}</td>
                 <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] ?? 0 }}</td>
                 <td class="item-td" >{{ $detail['item']['unit']?$detail['item']['unit']['name']:'...' }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'] ?? 0, 2) }}</td>
               </tr>
           @endforeach
               <tr>
-                <td colspan="5" class="item-td-total" >Total amount</td>
+                <td colspan="6" class="item-td-total" >Total amount</td>
                 <td class="item-td" >{{ number_format($pdf_data['total_amount'] ?? 0, 2) }}</td>
               </tr>
         </tbody>

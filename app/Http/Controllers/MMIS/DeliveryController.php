@@ -297,7 +297,7 @@ class DeliveryController extends Controller
                 ]);
             }
 
-            if($delivery->rr_Status == 5 || isset($detail['rr_Detail_Item_ListCost'])){
+            if($delivery->rr_Status == 5 || $delivery->rr_Status == 11 || isset($detail['rr_Detail_Item_ListCost'])){
                 $delivery->update([
                     'rr_Document_TotalDiscountAmount' => $overall_discount_amount,
                     'rr_Document_TotalNetAmount' => $overall_total_net,

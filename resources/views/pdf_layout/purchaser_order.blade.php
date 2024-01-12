@@ -123,7 +123,7 @@
       <div class="header-section">
         <img src="{{ $pdf_data['logo'] }}" alt="Example Image" width="100" height="100">
         <div class="header-text">
-          <h3>{{$pdf_data['purchase_order']['branch']['name']}}</h3>
+          <h3>{{$pdf_data['purchase_order']?$pdf_data['purchase_order']['branch']?$pdf_data['purchase_order']['branch']['name']:'':''}}</h3>
           <h5 style="margin: -20px !important;">OSMEÑA BLVD, CEBU CITY, 6000 CEBU</h5>
           <h5>TIN 000-309-308-000</h5>
         </div>
@@ -136,35 +136,35 @@
         <tbody>
           <tr>
             <td class="left-width">Supplier Name</td>
-            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_Name']}}</td>
+            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']?$pdf_data['purchase_order']['vendor']['vendor_Name']:''}}</td>
             <td class="right-width">Date</td>
             <td class="underline">{{$pdf_data['transaction_date']}}</td>
           </tr>
           <tr>
             <td class="left-width">Contact Person</td>
-            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_ContactPerson']}}</td>
+            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_ContactPerson']??''}}</td>
             <td class="right-width">Invoice No.</td>
             <td class="underline"></td>
           </tr>
           <tr>
             <td class="left-width">Address</td>
-            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_Address']}}</td>
+            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_Address']??''}}</td>
             <td class="right-width">PO. No</td>
-            <td class="underline">{{$pdf_data['purchase_order']['code']}}</td>
+            <td class="underline">{{$pdf_data['purchase_order']['code']??''}}</td>
           </tr>
           <tr>
             <td class="left-width">Tel No.</td>
-            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_TelNo']}}</td>
+            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['vendor_TelNo']??''}}</td>
             <td class="right-width">Via</td>
-            <td class="underline">{{$pdf_data['purchase_order']['purchaseRequest']['code']}}</td>
+            <td class="underline">{{$pdf_data['purchase_order']['purchaseRequest']['code']??''}}</td>
           </tr>
           <tr>
             <td class="left-width">Terms</td>
-            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['term']['description']}}</td>
+            <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor']['term']['description']??''}}</td>
           </tr>
           <tr>
             <td class="left-width">Remarks</td>
-            <td class="mid-width underline">{{$pdf_data['purchase_order']['purchaseRequest']['pr_Justication']}}</td>
+            <td class="mid-width underline">{{$pdf_data['purchase_order']['purchaseRequest']['pr_Justication']??''}}</td>
           </tr>
         </tbody>
       </table>
@@ -175,22 +175,24 @@
           <th>Qty</th>
           <th>Unit</th>
           <th>Unit Cost</th>
+          <th>Discount</th>
           <th>Amount</th>
         </thead>
         <tbody>
           @foreach ($pdf_data['purchase_order']['details'] as $detail)
               <tr>
-                <td class="item-td" >{{ $detail['item']['id'] }}</td>
-                <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
-                <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] }}</td>
-                <td class="item-td" >{{ $detail['item']['unit']['name'] }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'], 2) }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'], 2) }}</td>
+                <td class="item-td" >{{ $detail['item']['id'] ?? '' }}</td>
+                <td class="item-td" >{{ $detail['item']['item_name'] ?? '' }}</td>
+                <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] ?? 0 }}</td>
+                <td class="item-td" >{{ $detail['item']['unit']?$detail['item']['unit']['name']:'...' }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'] ?? 0, 2) }}</td>
               </tr>
           @endforeach
               <tr>
-                <td colspan="5" class="item-td-total" >Total amount</td>
-                <td class="item-td" >{{ number_format($pdf_data['total_amount'], 2) }}</td>
+                <td colspan="6" class="item-td-total" >Total amount</td>
+                <td class="item-td" >{{ number_format($pdf_data['total_amount'] ?? 0, 2) }}</td>
               </tr>
         </tbody>
       </table>

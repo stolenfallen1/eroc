@@ -36,13 +36,26 @@ class ExportDataController extends Controller
     }
 
     private function unprocessedPO($request){
-        $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest.branch', 'purchaseRequestDetail.recommendedCanvas.vendor')
+        ini_set('max_execution_time', '-1');
+        ini_set('memory_limit', '-1');
+        $po_query = PurchaseOrderDetails::query();
+        $po_query->with('item', 'purchaseOrder.purchaseRequest.branch', 
+        'purchaseRequestDetail.recommendedCanvas.vendor')
         ->whereHas('purchaseOrder', function($q1) use($request){
             if($request->department){
                 $q1->where('po_Document_warehouse_id', $request->department);
             }
             $q1->where('po_Document_branch_id', $request->branch_id)->whereDoesntHave('delivery');
-        })->get();
+        });
+
+        if(Request()->start_date){
+            $po_query->whereDate('pr_Transaction_Date', '>=', Carbon::parse(Request()->start_date));
+        }
+        if(Request()->end_date){
+            $po_query->whereDate('pr_Transaction_Date', '<=', Carbon::parse(Request()->end_date));
+        }
+        
+        $po_items = $po_query->get();
 
         if(sizeof($po_items) < 1){
             return response()->json(['error' => 'No data found'], 200);
@@ -70,12 +83,23 @@ class ExportDataController extends Controller
     }
 
     private function unprocessedPR($request){
-        $pr_items = PurchaseRequestDetails::with('itemMaster', 'purchaseRequest')->whereDoesntHave('purchaseOrderDetails')
+        ini_set('max_execution_time', '-1');
+        ini_set('memory_limit', '-1');
+        $pr_query = PurchaseRequestDetails::query();
+        $pr_query->with('itemMaster', 'purchaseRequest')->whereDoesntHave('purchaseOrderDetails')
         ->where(function($q1){
             $q1->whereNotNull('pr_Branch_level1_ApprovedBy')->orWhereNotNull('pr_Branch_level2_ApprovedBy');
         })->whereHas('purchaseRequest', function($q1) use($request){
             $q1->where(['branch_Id' => $request->branch_id, 'warehouse_Id' => $request->department]);
-        })->get();
+        });
+        if(Request()->start_date){
+            $pr_query->whereDate('pr_Transaction_Date', '>=', Request()->start_date);
+        }
+        if(Request()->end_date){
+            $pr_query->whereDate('pr_Transaction_Date', '<=', Request()->end_date);
+        }
+
+        $pr_items = $pr_query->get();
 
         if(sizeof($pr_items) < 1){
             return response()->json(['error' => 'No data found'], 200);

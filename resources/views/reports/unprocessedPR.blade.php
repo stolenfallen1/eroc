@@ -180,7 +180,7 @@
               <tr>
                 <td class="item-td" >{{ $detail['purchaseRequest']['code'] }}</td>
                 <td class="item-td" >{{ date_format(date_create($detail['purchaseRequest']['pr_Transaction_Date']), "Y/m/d H:i:s") }}</td>
-                <td class="item-td" >{{ $detail['itemMaster']['item_name'] }}</td>
+                <td class="item-td" >{{ $detail['itemMaster']['item_name'] ?? '...' }}</td>
                 <td class="item-td" >{{ (int)$detail['item_Request_Department_Approved_Qty'] }}</td>
               </tr>
           @endforeach

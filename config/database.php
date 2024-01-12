@@ -204,8 +204,31 @@ return [
         ],
 
 
+        'sqlsrv_medsys_billing' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_BILLING_DB', '10.4.15.200'),
+            'port' => env('DB_PORT_MEDSYS_BILLING_DB', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_BILLING_DB', ''),
+            'username' => env('DB_USERNAME_MEDSYS_BILLING_DB', ''),
+            'password' => env('DB_PASSWORD_MEDSYS_BILLING_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
 
-
+         'sqlsrv_medsys_buildfile' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_BUILDFILE_DB', '10.4.15.200'),
+            'port' => env('DB_PORT_MEDSYS_BUILDFILE_DB', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_BUILDFILE_DB', ''),
+            'username' => env('DB_USERNAME_MEDSYS_BUILDFILE_DB', ''),
+            'password' => env('DB_PASSWORD_MEDSYS_BUILDFILE_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
 
 
 

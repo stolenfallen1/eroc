@@ -15,12 +15,14 @@ class HemodialysisMonitoringModel extends Model
     protected $table = 'HemodialysisMonitoring';
     protected $guarded = [];
     public $timestamps = false;
-    protected $with = ['items','patient_details'];
 
     public function items(){
         return $this->belongsTo(FmsExamProcedureItems::class,'item_id', 'map_item_id');
     }
-
+    
+    public function doctor_details(){
+        return $this->belongsTo(Doctor::class,'item_id', 'doctor_code');
+    }
     public function patient_details(){
         return $this->belongsTo(PatientMaster::class,'pid', 'patient_id');
     }

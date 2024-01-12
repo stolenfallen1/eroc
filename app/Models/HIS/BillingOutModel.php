@@ -2,6 +2,7 @@
 
 namespace App\Models\HIS;
 
+use App\Models\HIS\PatientRegistry;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Hospital\Doctor;
 use App\Models\BuildFile\FmsExamProcedureItems;
@@ -15,6 +16,11 @@ class BillingOutModel extends Model
     protected $guarded = [];
     public $timestamps = false;
     protected $with = ['items','doctor_details','requesting_doctor_details'];
+
+
+    public function patient_registry(){
+        return $this->belongsTo(PatientRegistry::class,'pid', 'patient_id');
+    }
 
     public function items(){
         return $this->belongsTo(FmsExamProcedureItems::class,'item_id', 'map_item_id');

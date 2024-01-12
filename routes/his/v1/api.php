@@ -8,6 +8,7 @@ use App\Http\Controllers\BuildFile\DepartmentController;
 use App\Http\Controllers\HIS\PatientRegistrationController;
 use App\Http\Controllers\BuildFile\Hospital\DoctorController;
 use App\Http\Controllers\HIS\HemodialysisMonitoringController;
+use App\Http\Controllers\HIS\HemodialysisDailyCensusController;
 
 Route::controller(PatientRegistrationController::class)->group(function () {
     Route::get('search-patient', 'search');
@@ -18,6 +19,11 @@ Route::controller(PatientRegistrationController::class)->group(function () {
 
 
 
+
+Route::controller(HemodialysisDailyCensusController::class)->group(function () {
+    Route::get('in-patient-daily-census', 'inpatient');
+    Route::get('out-patient-daily-census', 'outpatient');
+});
 
 Route::controller(HemodialysisMonitoringController::class)->group(function () {
     Route::get('patient-monitoring', 'index');

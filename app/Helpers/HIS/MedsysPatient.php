@@ -79,7 +79,7 @@ class MedsysPatient
                     $query->where('LastName', $last_name);
                     $query->where('FirstName', 'LIKE', '' . ltrim($first_name) . '%');
                 } else {
-                    $query->where('LastName', 'LIKE', '' . Request()->lastname . '%');
+                    $query->where('LastName', 'LIKE', '' . $last_name . '%');
                 }
             });
         }

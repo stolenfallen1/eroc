@@ -17,7 +17,7 @@ class PatientMaster extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'PatientMaster';
+    protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $guarded = [];
     protected $with = ['sex','civilstatus','nationality','religion','suffix','tittles','patient_registry_details'];
     protected $appends = ['patient_name'];

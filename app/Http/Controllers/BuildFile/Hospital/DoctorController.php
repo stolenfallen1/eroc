@@ -14,7 +14,6 @@ class DoctorController extends Controller
             $data = Doctor::query();
            
             if(!is_numeric(Request()->keyword)) {
-                
                 $patientname = Request()->keyword ?? '';
                 $names = explode(',', $patientname); // Split the keyword into firstname and lastname
                 $last_name = $names[0];
@@ -23,7 +22,7 @@ class DoctorController extends Controller
                     $data->where('lastname', $last_name);
                     $data->where('firstname', 'LIKE', '' . ltrim($first_name) . '%');
                 } else {
-                    $data->where('lastname', 'LIKE', '' . Request()->lastname . '%');
+                    $data->where('lastname', 'LIKE', '' . $last_name . '%');
                 }
             }else{
                 $data->where('doctor_code', 'LIKE', '%' . Request()->keyword . '%');

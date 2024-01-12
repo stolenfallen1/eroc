@@ -188,6 +188,7 @@ Route::controller(DepartmentController::class)->group(function () {
     Route::get('departments', 'index');
     Route::get('department-sections', 'getSections');
     Route::post('get-department-access', 'UserDeptAccess');
+
     Route::post('add-department-access', 'add_department_access');
     Route::post('remove-department-access', 'remove_department_access');
    
@@ -495,6 +496,13 @@ Route::resource('transaction-codes', TransactionCodesController::class);
 Route::controller(TransactionCodesController::class)->group(function () {
     Route::get('revenue-code', 'revenuecode');
     Route::get('charge-code', 'chargingcode');
+    Route::post('get-charges-code', 'chargingcode');
+
+    
+    Route::post('get-revenue-access', 'UserRevenueCodeAccess');
+    Route::post('add-revenue-access', 'add_revenue_access');
+    Route::post('remove-revenue-access', 'remove_revenue_access');
+
 });
 Route::resource('database-drivers', DriverController::class);
 

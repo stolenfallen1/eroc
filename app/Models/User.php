@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Models\POS\OpenningAmount;
 use App\Models\Approver\InvApprover;
 use App\Models\BuildFile\Warehouses;
+use App\Models\UserRevenueCodeAccess;
 use Illuminate\Notifications\Notifiable;
 use App\Models\BuildFile\Systemuseraccess;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -74,7 +75,7 @@ class User extends \TCG\Voyager\Models\User
 
     protected $with = ['warehouse','approvaldetail','branch', 'user_department_access','OpeningAmount'];
 
-    protected $appends = ['departments'];
+    protected $appends = ['departments','RevenueCode'];
 
     public function warehouse()
     {
@@ -121,6 +122,17 @@ class User extends \TCG\Voyager\Models\User
     public function getDepartmentsAttribute(){
         return $this->user_department_access()->pluck('warehouse_id');
     }
+
+     public function user_revenuecode_access()
+    {
+        return $this->hasMany(UserRevenueCodeAccess::class, 'user_id', 'idnumber');
+    }
+
+    public function getRevenueCodeAttribute()
+    {
+         return $this->user_revenuecode_access()->pluck('revenue_code');
+    }
+
     public function OpeningAmount(){
        return $this->belongsTo(OpenningAmount::class, 'user_id', 'idnumber')->whereDate('cashonhand_beginning_transaction',Carbon::now()->format('Y-m-d'));
     }

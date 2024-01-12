@@ -4,6 +4,7 @@ namespace App\Http\Controllers\BuildFile\FMS;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\UserRevenueCodeAccess;
 use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\FmsExamProcedureItems;
 
@@ -14,8 +15,9 @@ class TransactionCodesController extends Controller
         try {
             $data = TransactionCodes::query();
             $data->with('medicare_type');
+          
             if(Request()->keyword) {
-                $data->where('transaction_description', 'LIKE', '%'.Request()->keyword.'%');
+                $data->where('transaction_description', 'LIKE', '%' . Request()->keyword . '%');
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -25,13 +27,40 @@ class TransactionCodesController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-    
+ 
+    public function add_revenue_access(Request $request){
+        $data = UserRevenueCodeAccess::updateOrCreate(
+        [
+            'user_id'=>$request->idnumber ?? '',
+            'revenue_code'=>$request->revenue_code ?? '',
+        ],
+        [
+            'user_id'=>$request->idnumber ?? '',
+            'revenue_code'=>$request->revenue_code ?? '',
+        ]);
+        return response()->json($data,200);
+    }
+
+    public function UserRevenueCodeAccess(Request $request){
+        $data = UserRevenueCodeAccess::where('user_id', $request->idnumber)->get();
+        return response()->json($data, 200);
+    }
+
+    public function remove_revenue_access(Request $request){
+        UserRevenueCodeAccess::where('user_id',$request->idnumber)->where('revenue_code',$request->revenue_code)->delete();
+        return response()->json(['msg'=>'deleted'],200);
+    }
+
+
     public function revenuecode()
     {
         try {
             $data = TransactionCodes::query();
             $data->with('medicare_type');
-            $data->where('transaction_code',Request()->keyword);
+            $data->whereIn('id', Auth()->user()->RevenueCode);
+            if(Request()->keyword) {
+                $data->where('transaction_code', Request()->keyword);
+            }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
             return response()->json($data->paginate($page), 200);
@@ -39,16 +68,32 @@ class TransactionCodesController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-     public function chargingcode()
+
+
+    public function chargingcode()
     {
         try {
-            $data = FmsExamProcedureItems::where('transaction_code',Request()->revenuecode)->get();
-            return response()->json($data, 200);
+            $data = FmsExamProcedureItems::query();
+            $data->where('transaction_code', Request()->revenuecode);
+            if(Request()->chargecode){
+                $data->whereNotIn('map_item_id', Request()->chargecode);
+            }
+            if(Request()->keyword){
+                $data->where('exam_description','LIKE','%'.Request()->keyword.'%');
+            }
+            $data->with(['prices' => function ($q) {
+                $q->where('msc_price_scheme_id', Request()->patienttype);
+            }]);
+
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+         
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-    
+
     public function store(Request $request)
     {
         try {

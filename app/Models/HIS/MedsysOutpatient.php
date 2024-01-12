@@ -5,6 +5,7 @@ namespace App\Models\HIS;
 use Carbon\Carbon;
 use App\Models\HIS\PatientMaster;
 
+use App\Models\HIS\BillingOutModel;
 use App\Models\HIS\MedsysGuarantor;
 use App\Models\HIS\PatientRegistry;
 use Illuminate\Database\Eloquent\Model;
@@ -42,4 +43,7 @@ class MedsysOutpatient extends Model
         return $this->belongsTo(MedsysPatientOPDHistory::class,'IdNum', 'IDNum');
     }
     
+    public function patient_charges(){
+        return $this->hasMany(BillingOutModel::class,'case_no', 'IDNum');
+    }
 }

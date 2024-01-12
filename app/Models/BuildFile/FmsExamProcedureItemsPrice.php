@@ -5,14 +5,11 @@ namespace App\Models\BuildFile;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class FmsExamProcedureItems extends Model
+class FmsExamProcedureItemsPrice extends Model
 {
     use HasFactory;
-    protected $table = 'fmsExamProcedureItems';
+    protected $table = 'fmsExamProcedureItemPrices';
     protected $connection = "sqlsrv";
     protected $guarded = [];
 
-    public function prices(){
-        return $this->hasMany(FmsExamProcedureItemsPrice::class, 'med_item_id', 'map_item_id');
-    }
 }

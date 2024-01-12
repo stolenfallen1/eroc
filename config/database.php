@@ -190,7 +190,18 @@ return [
             'prefix_indexes' => true,
         ],
 
-
+        'sqlsrv_billingOut' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_BILLINGOUT_DB', '10.4.15.251'),
+            'port' => env('DB_PORT_BILLINGOUT_DB', '1433'),
+            'database' => env('DB_DATABASE_BILLINGOUT_DB', ''),
+            'username' => env('DB_USERNAME_BILLINGOUT_DB', ''),
+            'password' => env('DB_PASSWORD_BILLINGOUT_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
 
 
 

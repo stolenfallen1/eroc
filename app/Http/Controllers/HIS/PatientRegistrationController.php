@@ -58,6 +58,7 @@ class PatientRegistrationController extends Controller
         }
     }
 
+
     public function search()
     {
         try {
@@ -71,6 +72,7 @@ class PatientRegistrationController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
 
 
     public function check_patient_details()
@@ -93,6 +95,7 @@ class PatientRegistrationController extends Controller
         }
     }
 
+    
     public function store(Request $request)
     {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
@@ -218,6 +221,7 @@ class PatientRegistrationController extends Controller
                 'registry_hostname' => (new GetIP())->getHostname(),
                 'mscPatient_category' => $request->patient_registry['registry_info']['mscPatient_category'] ?? '',
                 'register_source' => $request->patient_registry['registry_info']['register_source'] ?? '',
+                'register_source_case_no' => $request->patient_registry['registry_info']['register_source_case_no'] ?? '',
                 'mscPrice_Schemes' => $request->patient_registry['registry_info']['mscPrice_Schemes'] ?? '',
                 'mscPrice_Groups' => $request->patient_registry['registry_info']['mscPrice_Groups'] ?? '',
                 'mscAccount_trans_types' => $request->patient_registry['registry_info']['mscAccount_trans_types'] ?? '',
@@ -414,6 +418,7 @@ class PatientRegistrationController extends Controller
                 'registry_hostname' => (new GetIP())->getHostname(),
                 'mscPatient_category' => $request->patient_registry['registry_info']['mscPatient_category'] ?? '',
                 'register_source' => $request->patient_registry['registry_info']['register_source'] ?? '',
+                'register_source_case_no' => $request->patient_registry['registry_info']['register_source_case_no'] ?? '',
                 'mscPrice_Schemes' => $request->patient_registry['registry_info']['mscPrice_Schemes'] ?? '',
                 'mscPrice_Groups' => $request->patient_registry['registry_info']['mscPrice_Groups'] ?? '',
                 'mscAccount_trans_types' => $request->patient_registry['registry_info']['mscAccount_trans_types'] ?? '',
@@ -602,7 +607,7 @@ class PatientRegistrationController extends Controller
                         'RevokeUsername' => $patientRegistryDetails->isRevoked == 1 ? Auth()->user()->name : '',
                         'RevokeDate' => $patientRegistryDetails->isRevoked == 1 ? $patientRegistryDetails->revoked_date : '',
                         'UserID' => $patientRegistryDetails->registry_userid,
-                                ]
+                        ]
                     );
 
                 }

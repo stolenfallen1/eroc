@@ -26,8 +26,7 @@ class MedsysPatient
         $this->medsys_patient_searchColumns();
         $this->filter_by_department();
         $this->orderby_adm_date();
-
-        $this->model_medys_outpatient->with('patient_details', 'new_patient_details');
+        $this->model_medys_outpatient->with('patient_details', 'new_patient_details','patient_charges');
         $per_page = Request()->per_page ?? '';
         return $this->model_medys_outpatient->paginate($per_page);
     }
@@ -89,21 +88,19 @@ class MedsysPatient
 
     public function medsys_patient_searchColumns()
     {
-
+        $query = $this->model_medys_outpatient;
         if (isset(Request()->discharged)) {
-            $this->model_medys_outpatient->whereNull('DcrDate');
+            $query->whereNull('DcrDate');
         }
-
         if (isset(Request()->admissionno)) {
-            $this->model_medys_outpatient->where('IDNum', '' . Request()->admissionno . '');
+            $query->where('IDNum', '' . Request()->admissionno . '');
         }
 
         if (isset(Request()->hospitalno)) {
-            $this->model_medys_outpatient->where('HospNum', '' . Request()->hospitalno . '');
+            $query->where('HospNum', '' . Request()->hospitalno . '');
         }
         if (isset(Request()->lastname)) {
-            $this->model_medys_outpatient->whereHas('patient_details', function ($query) {
-
+            $query->whereHas('patient_details', function ($query) {
                 $patientname = Request()->lastname ?? '';
                 $names = explode(',', $patientname); // Split the keyword into firstname and lastname
                 $last_name = $names[0];
@@ -122,7 +119,6 @@ class MedsysPatient
     public function medsys_scheduling_patient_master_searchable()
     {
         $this->medsys_patient_master_searchColumns();
-       
         $query = $this->model_medys_patient_master->with('patient_Inpatient', 'patient_registry');
         $query->whereHas('patient_registry', function ($query) {
             $query->whereDate('AdmDate', Carbon::now()->format('Y-m-d'));
@@ -147,25 +143,26 @@ class MedsysPatient
         $sex = Request()->sex;
         $lastname = Request()->Lastname;
         $Hospnum = Request()->hospnum;
-
+                
+        $query = $this->model_medys_patient_master;
         if ($firstname) {
-            $this->model_medys_patient_master->where('FirstName', 'LIKE', '' . $firstname . '%');
+           $query->where('FirstName', 'LIKE', '' . $firstname . '%');
         }
         if ($birthdate) {
-            $this->model_medys_patient_master->where('BirthDate', $birthdate);
+           $query->where('BirthDate', $birthdate);
         }
         if ($sex) {
-            $this->model_medys_patient_master->where('Sex', $sex);
+           $query->where('Sex', $sex);
         }
         if ($lastname) {
             if (is_numeric($lastname)) {
-                $this->model_medys_patient_master->where('HospNum', $lastname);
+               $query->where('HospNum', $lastname);
             } else {
-                $this->model_medys_patient_master->where('LastName', 'LIKE', '' . $lastname . '%');
+               $query->where('LastName', 'LIKE', '' . $lastname . '%');
             }
         }
         if($Hospnum) {
-            $this->model_medys_patient_master->where('Hospnum', $Hospnum);
+           $query->where('Hospnum', $Hospnum);
         }
 
     }
@@ -204,8 +201,7 @@ class MedsysPatient
 
     public function orderby_adm_date()
     {
-
-        // $this->model_medys_outpatient->orderBy('AdmDate', 'desc');
+        $this->model_medys_outpatient->orderBy('AdmDate', 'desc');
     }
 
     public function filter_by_department()

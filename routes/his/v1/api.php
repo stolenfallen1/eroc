@@ -18,11 +18,12 @@ Route::controller(PatientRegistrationController::class)->group(function () {
 });
 
 
-
-
 Route::controller(HemodialysisDailyCensusController::class)->group(function () {
     Route::get('in-patient-daily-census', 'inpatient');
     Route::get('out-patient-daily-census', 'outpatient');
+    Route::get('in-patient-daily-census-report', 'inpatient_daily_census_report');
+    Route::get('out-patient-daily-census-report', 'outpatient_daily_census_report');
+
 });
 
 Route::controller(HemodialysisMonitoringController::class)->group(function () {

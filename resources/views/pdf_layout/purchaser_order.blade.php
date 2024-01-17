@@ -193,7 +193,7 @@
               </tr>
           @endforeach
               <tr>
-                <td colspan="6" class="item-td-total" >Total amount</td>
+                <td colspan="7" class="item-td-total" >Total amount</td>
                 <td class="item-td" >{{ number_format($pdf_data['total_amount'] ?? 0, 2) }}</td>
               </tr>
         </tbody>

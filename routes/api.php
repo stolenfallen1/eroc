@@ -45,6 +45,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('mmis/api.php');
     require_once('itemandservices/api.php');
     require_once('his/api_hemodialysis.php');
+    require_once('his/api_users.php');
     require_once('schedules/api.php');
 });
 

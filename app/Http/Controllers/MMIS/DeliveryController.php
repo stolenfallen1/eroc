@@ -32,7 +32,7 @@ class DeliveryController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-            $has_dup_invoice_no = Delivery::where('rr_Document_Invoice_No', $request['rr_Document_Invoice_No'])->exists();
+            $has_dup_invoice_no = Delivery::where('rr_Document_Warehouse_Id', Auth::user()->warehouse_id)->where('rr_Document_Invoice_No', $request['rr_Document_Invoice_No'])->exists();
             if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
             $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN1'])->first();
             $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);

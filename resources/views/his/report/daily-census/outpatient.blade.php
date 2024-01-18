@@ -107,7 +107,7 @@
                     <th class="borderbottom" width="5%">NO.</th>
                     <th class="borderbottom" width="25%">NAME OF PATIENT</th>
                     <th class="borderbottom" width="10%">ROOM #</th>
-                    <th class="borderbottom" width="10%">SLIP</th>
+                    <th class="borderbottom" width="10%">CHARGESLIP</th>
                     <th class="borderbottom" width="26%">EXAM</th>
                     <th class="borderbottom" width="10%">ACCOUNT</th>
                     <th class="borderbottom" width="25%">PHYSICIAN</th>
@@ -122,6 +122,7 @@
                 @php 
                     $patient_type = array('CASH' => array(), 'COMPANY' => array()); 
                 @endphp
+                
                 @foreach($results as $type)
                     <?php
                         // Check if the condition is met

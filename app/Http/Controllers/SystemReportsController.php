@@ -42,6 +42,7 @@ class SystemReportsController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+    
     public function store(Request $request)
     {
         try {

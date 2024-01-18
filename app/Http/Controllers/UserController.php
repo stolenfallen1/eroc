@@ -68,6 +68,7 @@ class UserController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
     public function createdoctor(Request $request)
     {
         DB::connection('sqlsrv')->beginTransaction();
@@ -100,6 +101,7 @@ class UserController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+    
     public function update(Request $request, $id)
     {
         try {

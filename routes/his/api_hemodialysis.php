@@ -11,13 +11,13 @@ use App\Http\Controllers\HIS\HemodialysisMonitoringController;
 use App\Http\Controllers\HIS\HemodialysisDailyCensusController;
 use App\Http\Controllers\HIS\HemodialysisDoctorCommissionController;
 
+Route::resource('patient-registration', PatientRegistrationController::class);
 Route::controller(PatientRegistrationController::class)->group(function () {
     Route::get('search-patient', 'search');
     Route::get('patient-details', 'check_patient_details');
     Route::post('submit-patient-form', 'store');
     Route::put('update-patient/{id}', 'update');
 });
-
 
 Route::controller(HemodialysisDailyCensusController::class)->group(function () {
     Route::get('in-patient-daily-census', 'inpatient');
@@ -39,12 +39,10 @@ Route::controller(PostChargeController::class)->group(function () {
     Route::post('cancellationcharges', 'cancelcharges');
 });
 
-Route::resource('patient-registration', PatientRegistrationController::class);
 
 Route::controller(DoctorController::class)->group(function () {
     Route::get('his/doctors-list', 'index');
 });
-
 
 Route::controller(DepartmentController::class)->group(function () {
     Route::get('his/departments-list', 'departmentlist');

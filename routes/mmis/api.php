@@ -57,6 +57,7 @@ Route::controller(PurchaseOrderController::class)->group(function () {
   Route::get('purchase-orders', 'index');
   Route::get('purchase-order/{id}', 'show');
   Route::post('purchase-order', 'store');
+  Route::post('purchase-order-reconsider', 'reconsider');
   Route::get('purchase-order-by-number', 'getByNumber');
   Route::post('approve-purchase-order', 'approve');
 });

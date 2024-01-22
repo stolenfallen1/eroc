@@ -218,9 +218,11 @@
             <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['corporateAdmin']['name']}}</td></tr>
             <tr><td class="item-td">Corporate admin</td></tr>
           @endif
-          @if ($pdf_data['purchase_order']['president'] != null)
-            <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['president']['name']}}</td></tr>
-            <tr><td class="item-td">President</td></tr>
+          @if(isset($pdf_data['purchase_order']['president']))
+            @if ($pdf_data['purchase_order']['president'] != null)
+              <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['president']['name']}}</td></tr>
+              <tr><td class="item-td">President</td></tr>
+            @endif
           @endif
         </tbody>
       </table>

@@ -51,12 +51,14 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     }
     
     if($purchase_order->id == 6948){
-        $sortKeys = [8805,8798,8803,8804,8800,8801,8796,8797,8802,8795,8799];
-        $temp=[];
+        $sortKeys = [8805, 8798, 8803, 8804, 8800, 8801, 8796, 8797, 8802, 8795, 8799];
+        $temp = [];
+        $index = 0;
         foreach ($sortKeys as $sortkey) {
             foreach ($purchase_order['details'] as $detail) {
                 if($sortkey == $detail['id']){
-                    $temp[] = $detail;
+                    $temp[$index] = $detail;
+                    $index++;
                 }
             }
         }

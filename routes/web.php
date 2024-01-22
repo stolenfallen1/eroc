@@ -59,9 +59,8 @@ Route::get('/print-purchase-order/{id}', function ($id) {
                     $temp[] = $detail;
                 }
             }
-            $purchase_order['details'] = $temp;
         }
-
+        $purchase_order['details'] = $temp;
     }
 
     $pdf_data = [

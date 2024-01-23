@@ -175,7 +175,8 @@
           <th>Qty</th>
           <th>Unit</th>
           <th>Unit Cost</th>
-          <th>Discount</th>
+          <th>Discount rate/Unit </th>
+          <th>Discount amount</th>
           <th>Tax</th>
           <th>Amount</th>
         </thead>
@@ -187,13 +188,18 @@
                 <td class="item-td" >{{ (float)$detail['po_Detail_item_qty'] ?? 0 }}</td>
                 <td class="item-td" >{{ $detail['unit']?$detail['unit']['name']:'...' }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] ?? 0, 2) }}</td>
+                @if($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] > 0)
+                  <td class="item-td" >{{ number_format(($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] * ($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] / 100)) ?? 0, 2) }}</td>
+                @else
+                  <td class="item-td" >{{ number_format( 0, 2) }}</td>
+                @endif
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_vat_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'] ?? 0, 2) }}</td>
               </tr>
           @endforeach
               <tr>
-                <td colspan="7" class="item-td-total" >Total amount</td>
+                <td colspan="8" class="item-td-total" >Total amount</td>
                 <td class="item-td" >{{ number_format($pdf_data['total_amount'] ?? 0, 2) }}</td>
               </tr>
         </tbody>

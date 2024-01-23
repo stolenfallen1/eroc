@@ -208,8 +208,12 @@
       </div>
       <table class="signatory-section1">
         <tbody>
-          <tr><td class="underline item-td">{{$pdf_data['purchase_order']['administrator']['name']}}</td></tr>
-          <tr><td class="item-td">Administrator</td></tr>
+          @if(isset($pdf_data['purchase_order']['administrator']))
+            @if ($pdf_data['purchase_order']['administrator'] != null)
+              <tr><td class="underline item-td">{{$pdf_data['purchase_order']['administrator']['name']}}</td></tr>
+              <tr><td class="item-td">Administrator</td></tr>
+            @endif
+          @endif
           @if ($pdf_data['purchase_order']['comptroller'] != null)
           <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['comptroller']['name']}}</td></tr>
           @endif

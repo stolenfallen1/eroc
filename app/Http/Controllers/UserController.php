@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use DB;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use DB;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -32,42 +33,60 @@ class UserController extends Controller
 
         DB::connection('sqlsrv')->beginTransaction();
         try {
-            $check_if_exist = User::select('lastname', 'firstname', 'idnumber')
-            ->where('lastname', $request->payload['lastname'])
-            ->where('firstname', $request->payload['firstname'])
-            ->where('idnumber', $request->payload['idnumber'])
-            ->exists();
-            if(!$check_if_exist) {
-                $middlename = isset($request->payload['middlename']) ? $request->payload['middlename'] : '';
-                $data['data'] = User::create([
-                    'warehouse_id' => (int)$request->payload['warehouse_id'] ?? '',
-                    'branch_id' => (int)$request->payload['branch_id'] ?? '',
-                    'role_id' => (int)$request->payload['role_id'] ?? '',
-                    'firstname' => strtoupper($request->payload['firstname']),
-                    'lastname' => strtoupper($request->payload['lastname']),
-                    'middlename' => strtoupper($request->payload['middlename'] ?? ''),
-                    'birthdate' => $request->payload['birthdate']  ?? '',
-                    'email' => strtoupper($request->payload['email'] ?? ''),
-                    'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
-                    'mobileno' => $request->payload['mobileno'] ?? '',
-                    'idnumber' => $request->payload['idnumber'] ?? '',
-                    'passcode' => $request->payload['passcode'] ?? '',
-                    'isactive' => $request->payload['isactive'] ?? '',
-                    'updatedby' => Auth()->user()->idnumber,
-                    'password' => bcrypt($request->payload['password']),
-                ]);
-                $data['msg'] = 'Success';
-                DB::connection('sqlsrv')->commit();
-                return response()->json($data, 200);
+            $payload = $request->payload;
+            // Validation
+            $validator = Validator::make($payload, [
+                'idnumber' => 'required',
+                'lastname' => 'required',
+                'firstname' => 'required',
+                'middlename' => 'nullable',
+                'birthdate' => 'required',
+                'email' => 'required|email',
+                'role_id' => 'required',
+                'branch_id' => 'required',
+            ]);
 
+            // Check validation errors
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
             }
-            $data['msg'] = 'Already Exists!';
-            return Response()->json($data, 200);
+            // Check if user already exists
+            if (User::where('lastname', $request->payload['lastname'])
+                ->where('firstname', $request->payload['firstname'])
+                ->where('idnumber', $request->payload['idnumber'])
+                ->exists()) {
+                return response()->json(['msg' => 'Already Exists!'], 200);
+            }
+            // Create user
+            $data['data'] = User::create([
+                'warehouse_id' => (int) $request->payload['warehouse_id'] ?? '',
+                'branch_id' => (int) $request->payload['branch_id'] ?? '',
+                'role_id' => (int) $request->payload['role_id'] ?? '',
+                'section_id' => (int) $request->payload['section_id'] ?? '',
+                'firstname' => strtoupper($request->payload['firstname']),
+                'lastname' => strtoupper($request->payload['lastname']),
+                'middlename' => strtoupper($request->payload['middlename'] ?? ''),
+                'birthdate' => $request->payload['birthdate'] ?? '',
+                'suffix' => $request->payload['suffix'] ?? '',
+                'email' => strtoupper($request->payload['email'] ?? ''),
+                'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
+                'mobileno' => $request->payload['mobileno'] ?? '',
+                'idnumber' => $request->payload['idnumber'] ?? '',
+                'passcode' => $request->payload['passcode'] ?? '',
+                'isactive' => $request->payload['isactive'] ?? '',
+                'updatedby' => auth()->user()->idnumber,
+                'password' => bcrypt($request->payload['password']),
+            ]);
+            $data['msg'] = 'Success';
+            DB::connection('sqlsrv')->commit();
+            return response()->json($data, 200);
+
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
     public function createdoctor(Request $request)
     {
         DB::connection('sqlsrv')->beginTransaction();
@@ -100,18 +119,39 @@ class UserController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
     public function update(Request $request, $id)
     {
         try {
+            $payload = $request->payload;
+            // Validation
+            $validator = Validator::make($payload, [
+                'idnumber' => 'required',
+                'lastname' => 'required',
+                'firstname' => 'required',
+                'middlename' => 'nullable',
+                'birthdate' => 'required',
+                'email' => 'required|email',
+                'role_id' => 'required',
+                'branch_id' => 'required',
+            ]);
+
+            // Check validation errors
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            
             $user = User::where('id', $id)->first();
             $data['data'] = $user->update([
-                    'warehouse_id' => (int)$request->payload['warehouse_id'],
-                    'branch_id' => (int)$request->payload['branch_id'],
-                    'role_id' => (int)$request->payload['role_id'],
+                    'warehouse_id' => (int) $request->payload['warehouse_id'],
+                    'branch_id' => (int) $request->payload['branch_id'],
+                    'role_id' => (int) $request->payload['role_id'],
+                    'section_id' => (int) $request->payload['section_id'] ?? '',
                     'firstname' => strtoupper($request->payload['firstname']),
                     'lastname' => strtoupper($request->payload['lastname']),
                     'middlename' => strtoupper($request->payload['middlename'] ?? ''),
                     'birthdate' => $request->payload['birthdate']  ?? '',
+                    'suffix' => $request->payload['suffix'] ?? '',
                     'email' => strtoupper($request->payload['email'] ?? ''),
                     'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
                     'mobileno' => $request->payload['mobileno'] ?? '',

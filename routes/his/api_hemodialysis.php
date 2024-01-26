@@ -9,7 +9,9 @@ use App\Http\Controllers\HIS\PatientRegistrationController;
 use App\Http\Controllers\BuildFile\Hospital\DoctorController;
 use App\Http\Controllers\HIS\HemodialysisMonitoringController;
 use App\Http\Controllers\HIS\HemodialysisDailyCensusController;
+use App\Http\Controllers\HIS\HemodialysisDoctorCommissionController;
 
+Route::resource('patient-registration', PatientRegistrationController::class);
 Route::controller(PatientRegistrationController::class)->group(function () {
     Route::get('search-patient', 'search');
     Route::get('patient-details', 'check_patient_details');
@@ -17,17 +19,18 @@ Route::controller(PatientRegistrationController::class)->group(function () {
     Route::put('update-patient/{id}', 'update');
 });
 
-
-
-
 Route::controller(HemodialysisDailyCensusController::class)->group(function () {
     Route::get('in-patient-daily-census', 'inpatient');
     Route::get('out-patient-daily-census', 'outpatient');
+    Route::get('in-patient-daily-census-report', 'inpatient_daily_census_report');
+    Route::get('out-patient-daily-census-report', 'outpatient_daily_census_report');
+
 });
 
-Route::controller(HemodialysisMonitoringController::class)->group(function () {
-    Route::get('patient-monitoring', 'index');
- 
+Route::controller(HemodialysisDoctorCommissionController::class)->group(function () {
+    Route::get('doctor-commissions', 'index');
+    Route::get('commission-report', 'commission_report');
+
 });
 
 Route::controller(PostChargeController::class)->group(function () {
@@ -36,12 +39,10 @@ Route::controller(PostChargeController::class)->group(function () {
     Route::post('cancellationcharges', 'cancelcharges');
 });
 
-Route::resource('patient-registration', PatientRegistrationController::class);
 
 Route::controller(DoctorController::class)->group(function () {
     Route::get('his/doctors-list', 'index');
 });
-
 
 Route::controller(DepartmentController::class)->group(function () {
     Route::get('his/departments-list', 'departmentlist');

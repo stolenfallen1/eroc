@@ -122,12 +122,13 @@ return [
             'host' => env('DB_HOST_SCHEDULES', 'localhost'),
             'port' => env('DB_PORT_SCHEDULES', '1433'),
             'database' => env('DB_DATABASE_SCHEDULES', 'forge'),
-            'username' => env('DB_USERNAME_SCHED', 'forge'),
-            'password' => env('DB_PASSWORD_SCHED', ''),
+            'username' => env('DB_USERNAME_SCHEDULES_DB', 'forge'),
+            'password' => env('DB_PASSWORD_SCHEDULES_DB', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
         'sqlsrv_patient_data' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

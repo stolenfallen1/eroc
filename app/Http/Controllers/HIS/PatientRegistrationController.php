@@ -153,8 +153,13 @@ class PatientRegistrationController extends Controller
             }
 
             if ($this->check_is_allow_medsys) {
-                DB::connection('sqlsrv_medsys_patientdatacdg')->select("SET NOCOUNT ON ; EXEC sp_get_medsys_sequence 'hospnum'");
-                DB::connection('sqlsrv_medsys_patientdatacdg')->select("SET NOCOUNT ON ; EXEC sp_get_medsys_sequence 'opdid'");
+
+
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('HospNum');
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
+                
+                // DB::connection('sqlsrv_medsys_patientdatacdg')->select("SET NOCOUNT ON ; EXEC sp_get_medsys_sequence 'hospnum'");
+                // DB::connection('sqlsrv_medsys_patientdatacdg')->select("SET NOCOUNT ON ; EXEC sp_get_medsys_sequence 'opdid'");
 
                 $checkpatientMaster = PatientMaster::select('previous_patient_id')->where('previous_patient_id', $previous_patient_id)->exists();
                 $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'OPDId')->first();
@@ -281,16 +286,176 @@ class PatientRegistrationController extends Controller
                     'recent_generated' => $generated_medsys_opd_no,
                 ]);
             }
-            $this->medsys_patient_registration($generated_medsys_patient_id_no);
+
+
+
+            DB::connection('sqlsrv')->commit();
+
+            $patients = PatientMaster::where('previous_patient_id', $generated_medsys_patient_id_no)->firstOrFail();
+            $patientRegistryDetails = $patients->patient_registry_details;
+            // Determine account number
+            $accountNum = $patientRegistryDetails->mscAccount_type == '1' ? $patients->patient_id : $patientRegistryDetails->guarantor_id;
+
+            // Create or update MedsysPatientMaster
+            $newMedsysPatientMaster = MedsysPatientMaster::updateOrCreate(
+                ['HospNum' => $generated_medsys_patient_id_no],
+                [
+                    'HospNum' => $generated_medsys_patient_id_no,
+                    'Title' => $patients->title_id,
+                    'FirstName' => $patients->firstname ?? '',
+                    'LastName' => $patients->lastname ?? '',
+                    'MiddleName' => $patients->middlename ?? '',
+                    'BirthDate' => $patients->birthdate ?? '',
+                    'Age' => $patients->age ?? '',
+                    'BirthPlace' => $patients->birthplace ?? '',
+                    'Barangay' => $patients->barangay_id ?? '',
+                    'Housestreet' => $patients->bldgstreet ?? '',
+                    'ZipCode' => $patients->zipcode_id ?? '',
+                    'Sex' => $patients->sex_id == 1 ? 'M' : 'F',
+                    'CivilStatus' => $patients->civilstatus->map_item_id,
+                    'Email' => $patients->email_address ?? '',
+                    'EmailAddress' => $patients->email_address ?? '',
+                    'CellNum' => $patients->mobile_number ?? '',
+                    'SeniorCitizenID' => $patients->SeniorCitizen_ID_Number ?? '',
+                    'SeniorCitizen' => $patients->SeniorCitizen_ID_Number ? true : false,
+                    'Occupation' =>  '',
+                    'BloodType' =>  '',
+                    'AccountNum' => $patients->guarantor_id ?? ''
+                ]
+            );
+
+            $previouspatient_id = trim($generated_medsys_patient_id_no);
+            // Use the trimmed value in the query
+            $checkifexist = DB::connection('sqlsrv_medsys_patient_data')
+                ->table('tbmaster2')
+                ->select('HospNum')
+                ->where('HospNum', $previouspatient_id)
+                ->first();
+
+            $patient_details = [
+                    'HospNum' => $previouspatient_id,
+                    'BirthPlace' => $patients->birthplace,
+                    'NationalityID' => $patients->nationality->map_item_id,
+                    'ReligionID' => $patients->religion->map_item_id,
+            ];
+            if(!$checkifexist) {
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbmaster2')->insert($patient_details);
+            } else {
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbmaster2')->where('HospNum', $previouspatient_id)->update($patient_details);
+            }
+
+
+            // Determine hospital plan and industrial patient status
+            $hospitalPlan = $patientRegistryDetails->mscAccount_type == '1' ? 'P' : 'C';
+            $isIndustrialPatient = $patientRegistryDetails->mscAccount_trans_types == 5 ? 'Y' : '';
+
+            // Create or update MedsysOPDRegistry
+            $isMedsysOPDPatientExists = $newMedsysPatientMaster->opd_registry()->whereDate('AdmDate', Carbon::now()->format('Y-m-d'))->updateOrCreate(
+                [
+                    'IDNum' => $patientRegistryDetails->medsys_idnum,
+                    'HospNum' => $generated_medsys_patient_id_no
+                ],
+                [
+                    'HospNum' => $generated_medsys_patient_id_no,
+                    'IDNum' => $patientRegistryDetails->medsys_idnum,
+                    'AccountNum' => $accountNum,
+                    'AdmDate' => $patientRegistryDetails->registry_date,
+                    'Age' => $patients->age,
+                    'SeniorCitizenID' => $patients->SeniorCitizen_ID_Number ?? null,
+                    'SeniorCitizen' => $patients->isSeniorCitizen ?? 0,
+                    'IsRadiotherapy' => $patientRegistryDetails->isRadioTherapy,
+                    'IsChemo' => $patientRegistryDetails->isChemotherapy,
+                    'IsHemodialysis' => $patientRegistryDetails->isHemodialysis,
+                    'DOTS' => $patientRegistryDetails->isTBDots,
+                    'PAD' => $patientRegistryDetails->isPAD,
+                    'HosPlan' => $hospitalPlan,
+                    'PackageID' => '',
+                    'CashBasis' => '',
+                    'CreditLine' => $patientRegistryDetails->guarantor_credit_Limit,
+                    'PatientType' => '',
+                    'OPDStatus' => $patientRegistryDetails->registry_status ?? '',
+                    'IndustrialPatient' => $isIndustrialPatient,
+                    'HMOApprovalNum' => $patientRegistryDetails->guarantor_approval_no,
+                    'LOANum' => $patientRegistryDetails->guarantor_approval_code,
+                    'Host_Name' => $patientRegistryDetails->registry_hostname,
+                    'UserID' => $patientRegistryDetails->registry_userid,
+                ]
+            );
+
+            // Create or update MedsysHemoPatient (if applicable)
+            // if(Auth()->user()->warehouse->isHemodialysis == 1) {
+
+            if ($patientRegistryDetails->isHemodialysis == 1) {
+
+                $result = MedsysHemoPatient::selectRaw('ISNULL(MAX(CAST(HemoNum AS INT)), 0) as HEmoNum')->get();
+                $HEmoNum = $result[0]->HEmoNum + 1;
+                $isMedsysHemoPatientExists = $newMedsysPatientMaster->hemodialysis_registry()->whereNull('DcrDate')->whereDate('ADMDate', Carbon::now()->format('Y-m-d'))->updateOrCreate(
+                    [
+                        'IDNum' => $patientRegistryDetails->medsys_idnum,
+                        'HospNum' => $generated_medsys_patient_id_no
+                    ],
+                    [
+                        'HospNum' => $generated_medsys_patient_id_no,
+                        'IDNum' => $patientRegistryDetails->medsys_idnum,
+                        'HemoNum' => $result[0]->HEmoNum + 1,
+                        'AccountNum' => $accountNum,
+                        'OPDStatus' => $patientRegistryDetails->registry_status ?? 'C',
+                        'ADMDate' => $patientRegistryDetails->registry_date,
+                        'DoctorID' => $patientRegistryDetails->attending_doctor,
+                        'PatientType' => $patientRegistryDetails->register_source == 4 ? 'O' : ($patientRegistryDetails->register_source == 6 ? 'O' : 'I') ,
+                        'isHemoRegister' => $patientRegistryDetails->isHemodialysis == 1 ? 'Y' : '0',
+                        'RevokeUsername' => $patientRegistryDetails->isRevoked == 1 ? Auth()->user()->name : '',
+                        'RevokeDate' => $patientRegistryDetails->isRevoked == 1 ? $patientRegistryDetails->revoked_date : '',
+                        'UserID' => $patientRegistryDetails->registry_userid,
+                    ]
+                );
+            } else {
+
+                $newMedsysPatientMaster->hemodialysis_registry()->whereNull('DcrDate')->where('IDNum', $patientRegistryDetails->medsys_idnum)->where('HospNum', $generated_medsys_patient_id_no)->whereDate('ADMDate', Carbon::now()->format('Y-m-d'))->update(
+                    [
+                    'HospNum' => $generated_medsys_patient_id_no,
+                    'IDNum' => $patientRegistryDetails->medsys_idnum,
+                    'AccountNum' => $accountNum,
+                    'OPDStatus' => $patientRegistryDetails->registry_status ?? 'C',
+                    'ADMDate' => $patientRegistryDetails->registry_date,
+                    'DoctorID' => $patientRegistryDetails->attending_doctor,
+                    'PatientType' => $patientRegistryDetails->register_source == 4 ? 'O' : ($patientRegistryDetails->register_source == 6 ? 'O' : 'I') ,
+                    'isHemoRegister' => $patientRegistryDetails->isHemodialysis == 1 ? 'Y' : '0',
+                    'RevokeUsername' => $patientRegistryDetails->isRevoked == 1 ? Auth()->user()->name : '',
+                    'RevokeDate' => $patientRegistryDetails->isRevoked == 1 ? $patientRegistryDetails->revoked_date : '',
+                    'UserID' => $patientRegistryDetails->registry_userid,
+                    ]
+                );
+
+            }
+            // }
+
+            // Create or update MedsysPatientAllergies
+            MedsysPatientAllergies::updateOrCreate(
+                ['HospNum' => $generated_medsys_patient_id_no],
+                ['HospNum' => $generated_medsys_patient_id_no]
+            );
+
+            // Create or update MedsysGuarantor
+            MedsysGuarantor::updateOrCreate(
+                ['IDNum' => $patientRegistryDetails->medsys_idnum],
+                ['IDNum' => $patientRegistryDetails->medsys_idnum]
+            );
+
+            // Create or update MedsysPatientInformant
+            MedsysPatientInformant::updateOrCreate(
+                ['IDNum' => $patientRegistryDetails->medsys_idnum],
+                ['IDNum' => $patientRegistryDetails->medsys_idnum]
+            );
+
+            // Create or update MedsysPatientOPDHistory
+            MedsysPatientOPDHistory::updateOrCreate(
+                ['IdNum' => $patientRegistryDetails->medsys_idnum],
+                ['IdNum' => $patientRegistryDetails->medsys_idnum]
+            );
 
             DB::connection('sqlsrv_patient_data')->commit();
-            DB::connection('sqlsrv')->commit();
             // $this->medsys_patient_registration($generated_medsys_patient_id_no);
-            // if($this->medsys_patient_registration($generated_medsys_patient_id_no)) {
-            //     DB::connection('sqlsrv_patient_data')->rollback();
-            //     DB::connection('sqlsrv')->rollback();
-            //     return response()->json(["message" =>  'Rollback','status' => '200'], 200);
-            // }
 
             DB::connection('sqlsrv_medsys_patient_data')->commit();
             return response()->json(["message" =>  'Record successfully saved','status' => '200'], 200);

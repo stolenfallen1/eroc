@@ -26,12 +26,15 @@ class PatientMaster extends Model
     {
         return $this->lastname . ', ' .$this->firstname. ' ' .$this->middlename;
     }
+
     public function patient_new_registry(){
         return $this->belongsTo(PatientRegistry::class,'patient_id', 'patient_id');
     }
+
     public function patient_registry_details(){
         return $this->belongsTo(PatientRegistry::class,'patient_id', 'patient_id')->whereDate('registry_date', Carbon::now()->format('Y-m-d'));
     }
+    
     public function patient_registry(){
         return $this->belongsTo(PatientRegistry::class,'patient_id', 'patient_id');
     }

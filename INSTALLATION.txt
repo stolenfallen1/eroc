@@ -47,6 +47,8 @@ Step 5 – Setting Up Server Blocks (Recommended)
 
    #Next, let’s enable the file by creating a link from it to the sites-enabled directory, which Nginx reads from during startup:
    sudo ln -s /etc/nginx/sites-available/your_domain /etc/nginx/sites-enabled/
+
+   sudo ln -s /etc/nginx/sites-available/cdghis.conf /etc/nginx/sites-enabled/
    sudo nano /etc/nginx/nginx.conf
 	http {
     	    server_names_hash_bucket_size 64;

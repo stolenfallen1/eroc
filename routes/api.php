@@ -22,6 +22,7 @@ use App\Http\Controllers\Schedules\SchedulingDashboard;
 
 
 /*require_once('/schedules/api.php');*/
+Route::resource('userss', UserController::class);
 
 Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
 Route::post('login', [AuthController::class, 'login']);
@@ -44,7 +45,8 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('approver/api.php');
     require_once('mmis/api.php');
     require_once('itemandservices/api.php');
-    require_once('his/v1/api.php');
+    require_once('his/api_hemodialysis.php');
+    require_once('his/api_users.php');
     require_once('schedules/api.php');
 });
 

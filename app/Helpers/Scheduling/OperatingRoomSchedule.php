@@ -19,7 +19,7 @@ class OperatingRoomSchedule
 
     public function QueueScheduled()
     {
-        $status = ['15','20','21','22','23','24'];
+         $status = ['14','15','16','17','18','19','20','21','22','23','24','25','26'];
         $category = ['1','2','3'];
         $date = Request()->date ?? Carbon::now()->format('Y-m-d');
         $this->or_schedules->whereIn('schedule_status_id', $status)->whereIn('category_id', $category)->whereDate('schedule_date', $date);
@@ -30,7 +30,7 @@ class OperatingRoomSchedule
 
     public function QueueScheduledOptha()
     {
-        $status = ['15','20','21','22','23','24'];
+        $status = ['14','15','16','17','18','19','20','21','22','23','24','25','26'];
         $category = ['4'];
         $this->or_schedules->whereIn('schedule_status_id', $status)->whereIn('category_id', $category)->whereDate('schedule_date', Carbon::now()->format('Y-m-d'));
         $this->or_schedules->with('patientdetails', 'patientdetails.opd_registry', 'patientdetails.patient_Inpatient', 'scheduledRoomSlot', 'scheduledCategory', 'station_details', 'scheduledStatus', 'scheduledResident', 'scheduledCirculatingNurses', 'scheduledScrubNurses');
@@ -41,7 +41,8 @@ class OperatingRoomSchedule
     public function confirmed_scheduled()
     {
         $today = Request()->date ?? Carbon::now()->format('Y-m-d');
-        $status = ['14','15','16','17','18','19'];
+        $status = ['14','15','16','17','18','19','20','21','22','23','24','25','26'];
+
         $this->searchPatientName();
         $this->or_schedules->whereIn('schedule_status_id', $status)->whereBetween('schedule_date', [$today, $today])->get();
         $this->or_schedules->with('patientdetails', 'patientdetails.opd_registry', 'patientdetails.patient_Inpatient', 'scheduledRoomSlot', 'scheduledCategory', 'scheduledResident', 'scheduledCirculatingNurses', 'scheduledScrubNurses', 'station_details', 'scheduledStatus');
@@ -52,7 +53,7 @@ class OperatingRoomSchedule
     public function operatingroom_status()
     {
         $today = Request()->date ?? Carbon::now()->format('Y-m-d');
-        $status = ['20','21','22','23','24','25','26'];
+        $status = ['14','15','16','17','18','19','20','21','22','23','24','25','26'];
         $this->or_schedules->whereIn('schedule_status_id', $status)->whereBetween('schedule_date', [$today, $today])->get();
         $this->or_schedules->with('patientdetails', 'patientdetails.opd_registry', 'patientdetails.patient_Inpatient', 'scheduledRoomSlot', 'scheduledCategory', 'scheduledResident', 'scheduledCirculatingNurses', 'scheduledScrubNurses', 'station_details', 'scheduledStatus');
         $this->searchPatientName();

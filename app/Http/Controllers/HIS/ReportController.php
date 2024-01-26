@@ -75,7 +75,6 @@ class ReportController extends Controller
                 $data['enddate'] =  $enddate;
                 $result = DB::connection('sqlsrv_medsys_nurse_station')->select('EXEC spGlobal_DailyTransaction ?, ?, ?', [$startdate, $enddate, $type]);
                 $data['results'] = $result;
-
                 $data['view_path'] = 'his/report/daily-transaction/';
                 $data['public_path'] = '/his/dailyreport/';
                 return $this->print_out_layout($data, 'daily');
@@ -98,7 +97,6 @@ class ReportController extends Controller
 
         $pdf->loadView($data['view_path'].''.$name, $data)->save(public_path().''.$data['public_path'].''.$name.'_'.$filename);
         $path = url($data['public_path'].''.$name.'_'.$filename);
-
         return response()->json(['pdfUrl' => $path]);
     }
 

@@ -175,7 +175,8 @@
           <th>Qty</th>
           <th>Unit</th>
           <th>Unit Cost</th>
-          <th>Discount</th>
+          <th>Discount rate/Unit </th>
+          <th>Discount amount</th>
           <th>Tax</th>
           <th>Amount</th>
         </thead>
@@ -184,16 +185,21 @@
               <tr>
                 <td class="item-td" >{{ $detail['item']['id'] ?? '' }}</td>
                 <td class="item-td" >{{ $detail['item']['item_name'] ?? '' }}</td>
-                <td class="item-td" >{{ (int)$detail['po_Detail_item_qty'] ?? 0 }}</td>
-                <td class="item-td" >{{ $detail['item']['unit']?$detail['item']['unit']['name']:'...' }}</td>
+                <td class="item-td" >{{ (float)$detail['po_Detail_item_qty'] ?? 0 }}</td>
+                <td class="item-td" >{{ $detail['unit']?$detail['unit']['name']:'...' }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] ?? 0, 2) }}</td>
+                @if($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] > 0)
+                  <td class="item-td" >{{ number_format(($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] * ($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] / 100)) ?? 0, 2) }}</td>
+                @else
+                  <td class="item-td" >{{ number_format( 0, 2) }}</td>
+                @endif
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_vat_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'] ?? 0, 2) }}</td>
               </tr>
           @endforeach
               <tr>
-                <td colspan="7" class="item-td-total" >Total amount</td>
+                <td colspan="8" class="item-td-total" >Total amount</td>
                 <td class="item-td" >{{ number_format($pdf_data['total_amount'] ?? 0, 2) }}</td>
               </tr>
         </tbody>
@@ -208,8 +214,12 @@
       </div>
       <table class="signatory-section1">
         <tbody>
-          <tr><td class="underline item-td">{{$pdf_data['purchase_order']['administrator']['name']}}</td></tr>
-          <tr><td class="item-td">Administrator</td></tr>
+          @if(isset($pdf_data['purchase_order']['administrator']))
+            @if ($pdf_data['purchase_order']['administrator'] != null)
+              <tr><td class="underline item-td">{{$pdf_data['purchase_order']['administrator']['name']}}</td></tr>
+              <tr><td class="item-td">Administrator</td></tr>
+            @endif
+          @endif
           @if ($pdf_data['purchase_order']['comptroller'] != null)
           <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['comptroller']['name']}}</td></tr>
           @endif
@@ -218,9 +228,11 @@
             <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['corporateAdmin']['name']}}</td></tr>
             <tr><td class="item-td">Corporate admin</td></tr>
           @endif
-          @if ($pdf_data['purchase_order']['president'] != null)
-            <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['president']['name']}}</td></tr>
-            <tr><td class="item-td">President</td></tr>
+          @if(isset($pdf_data['purchase_order']['president']))
+            @if ($pdf_data['purchase_order']['president'] != null)
+              <tr><td class=" comptroller underline item-td">{{$pdf_data['purchase_order']['president']['name']}}</td></tr>
+              <tr><td class="item-td">President</td></tr>
+            @endif
           @endif
         </tbody>
       </table>

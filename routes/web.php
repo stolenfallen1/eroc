@@ -46,8 +46,24 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
     $total_amount = 0;
 
+    
     foreach ($purchase_order['details'] as $key => $detail) {
         $total_amount += $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'];
+    }
+    
+    if($purchase_order->id == 6948){
+        $sortKeys = [8805, 8798, 8803, 8804, 8800, 8801, 8796, 8797, 8802, 8795, 8799];
+        $temp = [];
+        $index = 0;
+        foreach ($sortKeys as $sortkey) {
+            foreach ($purchase_order['details'] as $detail) {
+                if($sortkey == $detail['id']){
+                    $temp[$index] = $detail;
+                    $index++;
+                }
+            }
+        }
+        $purchase_order['details'] = $temp;
     }
 
     $pdf_data = [

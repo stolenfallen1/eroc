@@ -95,6 +95,55 @@ class PurchaseOrderController extends Controller
         ->first();
     }
 
+    public function reconsider(Request $request){
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            $authUser = Auth::user();
+            $column1 = '';
+            $column2 = '';
+            $column3 = '';
+
+            if($authUser->role->name == 'president'){
+                $column1 = 'ysl_cancelled_by';
+                $column2 = 'ysl_cancelled_date';
+                $column3 = 'ysl_cancelled_remarks';
+            }
+            elseif($authUser->role->name == 'comptroller'){
+                $column1 = 'comptroller_cancelled_by';
+                $column2 = 'comptroller_cancelled_date';
+                $column3 = 'comptroller_cancelled_remarks';
+            }
+            elseif($authUser->role->name == 'administrator'){
+                $column1 = 'admin_cancelled_by';
+                $column2 = 'admin_cancelled_date';
+                $column3 = 'admin_cancelled_remarks';
+            }
+            elseif($authUser->role->name == 'corporate admin'){
+                $column1 = 'corp_admin_cancelled_by';
+                $column2 = 'corp_admin_cancelled_date';
+                $column3 = 'corp_admin_cancelled_remarks';
+            }
+            
+            purchaseOrderMaster::where('id', $request->id)->update([
+                $column1 => NULL,
+                $column2 => NULL,
+                $column3 => NULL,
+            ]);
+            foreach ($request['details'] as $key => $detail) {
+                PurchaseOrderDetails::where('id', $detail['id'])->update([
+                    $column1 => NULL,
+                    $column2 => NULL,
+                    $column3 => NULL
+                ]);
+            }
+            DB::connection('sqlsrv_mmis')->commit();
+            return 'success';
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv_mmis')->commit();
+            return $e;
+        }
+    }
+
     public function store(Request $request) {
 
         DB::connection('sqlsrv')->beginTransaction();

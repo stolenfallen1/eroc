@@ -22,6 +22,7 @@ use App\Http\Controllers\Schedules\SchedulingDashboard;
 
 
 /*require_once('/schedules/api.php');*/
+Route::resource('userss', UserController::class);
 
 Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
 Route::post('login', [AuthController::class, 'login']);

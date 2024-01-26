@@ -33,15 +33,14 @@ class UserController extends Controller
 
         DB::connection('sqlsrv')->beginTransaction();
         try {
-
-
+            $payload = $request->payload;
             // Validation
-            $validator = Validator::make($request->all(), [
+            $validator = Validator::make($payload, [
                 'idnumber' => 'required',
                 'lastname' => 'required',
                 'firstname' => 'required',
                 'middlename' => 'nullable',
-                'birthdate' => 'required|date_format:m-d-Y',
+                'birthdate' => 'required',
                 'email' => 'required|email',
                 'role_id' => 'required',
                 'branch_id' => 'required',
@@ -63,10 +62,12 @@ class UserController extends Controller
                 'warehouse_id' => (int) $request->payload['warehouse_id'] ?? '',
                 'branch_id' => (int) $request->payload['branch_id'] ?? '',
                 'role_id' => (int) $request->payload['role_id'] ?? '',
+                'section_id' => (int) $request->payload['section_id'] ?? '',
                 'firstname' => strtoupper($request->payload['firstname']),
                 'lastname' => strtoupper($request->payload['lastname']),
                 'middlename' => strtoupper($request->payload['middlename'] ?? ''),
                 'birthdate' => $request->payload['birthdate'] ?? '',
+                'suffix' => $request->payload['suffix'] ?? '',
                 'email' => strtoupper($request->payload['email'] ?? ''),
                 'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
                 'mobileno' => $request->payload['mobileno'] ?? '',
@@ -122,15 +123,35 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $payload = $request->payload;
+            // Validation
+            $validator = Validator::make($payload, [
+                'idnumber' => 'required',
+                'lastname' => 'required',
+                'firstname' => 'required',
+                'middlename' => 'nullable',
+                'birthdate' => 'required',
+                'email' => 'required|email',
+                'role_id' => 'required',
+                'branch_id' => 'required',
+            ]);
+
+            // Check validation errors
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            
             $user = User::where('id', $id)->first();
             $data['data'] = $user->update([
                     'warehouse_id' => (int) $request->payload['warehouse_id'],
                     'branch_id' => (int) $request->payload['branch_id'],
                     'role_id' => (int) $request->payload['role_id'],
+                    'section_id' => (int) $request->payload['section_id'] ?? '',
                     'firstname' => strtoupper($request->payload['firstname']),
                     'lastname' => strtoupper($request->payload['lastname']),
                     'middlename' => strtoupper($request->payload['middlename'] ?? ''),
                     'birthdate' => $request->payload['birthdate']  ?? '',
+                    'suffix' => $request->payload['suffix'] ?? '',
                     'email' => strtoupper($request->payload['email'] ?? ''),
                     'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
                     'mobileno' => $request->payload['mobileno'] ?? '',

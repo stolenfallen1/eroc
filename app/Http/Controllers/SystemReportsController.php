@@ -46,20 +46,30 @@ class SystemReportsController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = SystemReports::select('description')
-                        ->where('description', $request->payload['description'])->where('system_id', $request->payload['system_id'])->where('module_id', $request->payload['module_id'])
-                        ->first();
-            if(!$check_if_exist) {
-                $data['data'] = SystemReports::create([
-                    'description' => $request->payload['description'],
-                    'module_id' => $request->payload['module_id'],
-                     'system_id' => $request->payload['system_id'],
-                    'isActive' => $request->payload['isActive'],
-                ]);
-                $data['msg'] = 'Success';
-                return Response()->json($data, 200);
+
+            // Validation
+            $validator = Validator::make($request->all(), [
+                'description' => 'required',
+                'system_id' => 'required',
+                'module_id' => 'required',
+            ]);
+
+            // Check validation errors
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
             }
-            $data['msg'] = 'Already Exists!';
+
+            if(SystemReports::select('description')->where('description', $request->payload['description'])->where('system_id', $request->payload['system_id'])->where('module_id', $request->payload['module_id'])->exists()){
+                return response()->json(['msg' => 'Already Exists!'], 200);
+            }
+            
+            $data['data'] = SystemReports::create([
+                'description' => $request->payload['description'],
+                'module_id' => $request->payload['module_id'],
+                'system_id' => $request->payload['system_id'],
+                'isActive' => $request->payload['isActive'],
+            ]);
+            $data['msg'] = 'Success';
             return Response()->json($data, 200);
 
 
@@ -74,7 +84,7 @@ class SystemReportsController extends Controller
             $data['data'] = SystemReports::where('id', $id)->update([
                            'description' => $request->payload['description'],
                            'module_id' => $request->payload['module_id'],
-                            'system_id' => $request->payload['system_id'],
+                           'system_id' => $request->payload['system_id'],
                            'isActive' => $request->payload['isActive'],
                         ]);
 
@@ -87,8 +97,8 @@ class SystemReportsController extends Controller
 
     public function add_report_access(Request $request){
         $data = UserAssignedReports::create([
-                'user_id' => $request->idnumber,
-                'report_id' => $request->report_id,
+            'user_id' => $request->idnumber,
+            'report_id' => $request->report_id,
         ]);
         return response()->json($data, 200);
 

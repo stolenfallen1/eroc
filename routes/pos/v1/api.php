@@ -35,7 +35,7 @@ Route::controller(NewReturnTransactionController::class)->group(function () {
 });
 
 Route::controller(NewItemsController::class)->group(function () {
-    Route::get('pos-warehouse-items', 'index');
+    Route::post('pos-warehouse-items', 'index');
 });
 
 Route::controller(NewCustomerOrderController::class)->group(function () {

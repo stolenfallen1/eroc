@@ -46,6 +46,7 @@ class RoleController extends Controller
         $data['permission'] =$permission;
         return response()->json($data, 200);
     }
+    
     public function add_permission(Request $request)
     {
 

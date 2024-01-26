@@ -16,7 +16,12 @@ class NewItemsController extends Controller
             $setting = POSSettings::where('company_name', 'like', '%Cebu Doctors University Hospital, Inc.%')->first();
             $data = vwWarehouseItems::query();
             if(Request()->keyword) {
-                $data->where('item_name', 'LIKE', '%' . Request()->keyword . '%');
+                $data->whereNotIn('id', Request()->selecteditem);
+                if(Request()->type == 'barcode'){
+                    $data->where('item_Barcode', Request()->keyword);
+                }else{
+                    $data->where('item_name', 'LIKE', '%' . Request()->keyword . '%');
+                }
             }
             if(Request()->category) {
                 $data->where('item_Category_Id', Request()->category);

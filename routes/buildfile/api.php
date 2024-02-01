@@ -3,9 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SystemReportsController;
 use App\Http\Controllers\BuildFile\ItemController;
 use App\Http\Controllers\BuildFile\UnitController;
+use App\Http\Controllers\GlobalSettingsController;
 use App\Http\Controllers\BuildFile\BrandController;
+use App\Http\Controllers\Database\DriverController;
 use App\Http\Controllers\BuildFile\BranchController;
 use App\Http\Controllers\BuildFile\VendorController;
 use App\Http\Controllers\BuildFile\ApproverController;
@@ -41,6 +44,7 @@ use App\Http\Controllers\BuildFile\Hospital\SuffixController;
 use App\Http\Controllers\BuildFile\MscManufacturerController;
 use App\Http\Controllers\BuildFile\address\BarangayController;
 use App\Http\Controllers\BuildFile\address\ProvinceController;
+use App\Http\Controllers\BuildFile\EmployeePositionController;
 use App\Http\Controllers\BuildFile\FMS\AccountClassController;
 use App\Http\Controllers\BuildFile\FMS\AccountGroupController;
 use App\Http\Controllers\BuildFile\FMS\MedicareTypeController;
@@ -78,9 +82,6 @@ use App\Http\Controllers\BuildFile\Hospital\PatientRelationsController;
 use App\Http\Controllers\BuildFile\Hospital\Setting\SubModuleController;
 use App\Http\Controllers\BuildFile\Hospital\Setting\SubSystemController;
 use App\Http\Controllers\BuildFile\FMS\TransactionClassificationController;
-use App\Http\Controllers\Database\DriverController;
-use App\Http\Controllers\GlobalSettingsController;
-use App\Http\Controllers\SystemReportsController;
 
 Route::controller(CategoryController::class)->group(function () {
     Route::get('categories', 'getAllCategory');
@@ -383,9 +384,14 @@ Route::controller(RoleController::class)->group(function () {
 
 });
 Route::resource('roles', RoleController::class);
+Route::resource('positions', EmployeePositionController::class);
+
 
 
 // ======================== hospital build ==========================
+
+
+
 
 Route::controller(SystemController::class)->group(function () {
     Route::get('systems-list', 'list');

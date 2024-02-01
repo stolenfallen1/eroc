@@ -40,10 +40,13 @@ class User extends \TCG\Voyager\Models\User
         'password',
         'warehouse_id',
         'branch_id',
+        'position_id',
+        'section_id',
         'role_id',
         'firstname',
         'lastname',
         'middlename',
+        'suffix',
         'birthdate',
         'mobileno',
         'idnumber',
@@ -73,7 +76,7 @@ class User extends \TCG\Voyager\Models\User
         'email_verified_at' => 'datetime',
     ];
 
-    protected $with = ['warehouse','approvaldetail','branch', 'user_department_access','OpeningAmount'];
+    protected $with = ['warehouse','approvaldetail','branch', 'user_department_access','OpeningAmount','systemUserAccess'];
 
     protected $appends = ['departments','RevenueCode'];
 

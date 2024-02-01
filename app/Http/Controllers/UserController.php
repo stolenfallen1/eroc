@@ -41,7 +41,6 @@ class UserController extends Controller
                 'firstname' => 'required',
                 'middlename' => 'nullable',
                 'birthdate' => 'required',
-                'email' => 'required|email',
                 'role_id' => 'required',
                 'branch_id' => 'required',
             ]);
@@ -58,25 +57,34 @@ class UserController extends Controller
                 return response()->json(['msg' => 'Already Exists!'], 200);
             }
             // Create user
-            $data['data'] = User::create([
-                'warehouse_id' => (int) $request->payload['warehouse_id'] ?? '',
-                'branch_id' => (int) $request->payload['branch_id'] ?? '',
-                'role_id' => (int) $request->payload['role_id'] ?? '',
-                'section_id' => (int) $request->payload['section_id'] ?? '',
-                'firstname' => strtoupper($request->payload['firstname']),
-                'lastname' => strtoupper($request->payload['lastname']),
-                'middlename' => strtoupper($request->payload['middlename'] ?? ''),
-                'birthdate' => $request->payload['birthdate'] ?? '',
-                'suffix' => $request->payload['suffix'] ?? '',
-                'email' => strtoupper($request->payload['email'] ?? ''),
-                'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
-                'mobileno' => $request->payload['mobileno'] ?? '',
-                'idnumber' => $request->payload['idnumber'] ?? '',
-                'passcode' => $request->payload['passcode'] ?? '',
-                'isactive' => $request->payload['isactive'] ?? '',
-                'updatedby' => auth()->user()->idnumber,
-                'password' => bcrypt($request->payload['password']),
+            $user = User::create([
+               'warehouse_id' => (int) $request->payload['warehouse_id'],
+                    'branch_id' => (int) $request->payload['branch_id'],
+                    'role_id' => (int) $request->payload['role_id'],
+                    'section_id' => (int) $request->payload['section_id'] ?? '',
+                    'position_id' => (int) $request->payload['position_id'] ?? '',
+                    'firstname' => $request->payload['firstname'],
+                    'lastname' => $request->payload['lastname'],
+                    'middlename' => $request->payload['middlename'] ?? '',
+                    'birthdate' => $request->payload['birthdate']  ?? '',
+                    'suffix' => $request->payload['suffix'] ?? '',
+                    'email' => $request->payload['email'] ?? '',
+                    'name' => $request->payload['lastname'] . ', ' . $request->payload['firstname'] . ' ' . $request->payload['middlename'],
+                    'mobileno' => $request->payload['mobileno'] ?? '',
+                    'idnumber' => $request->payload['idnumber'] ?? '',
+                    'passcode' => $request->payload['passcode'] ?? '',
+                    'isactive' => $request->payload['isactive'] ?? '',
+                    'updatedby' => auth()->user()->idnumber,
+                    'password' => bcrypt($request->payload['password']),
             ]);
+            if($request->payload['system']){
+                foreach($request->payload['system'] as $system){
+                    $user->systemUserAccess()->create([
+                        'subsystem_id'=> $system
+                    ]);
+                }
+            }
+           
             $data['msg'] = 'Success';
             DB::connection('sqlsrv')->commit();
             return response()->json($data, 200);
@@ -122,6 +130,7 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
+        DB::connection('sqlsrv')->beginTransaction();
         try {
             $payload = $request->payload;
             // Validation
@@ -131,7 +140,6 @@ class UserController extends Controller
                 'firstname' => 'required',
                 'middlename' => 'nullable',
                 'birthdate' => 'required',
-                'email' => 'required|email',
                 'role_id' => 'required',
                 'branch_id' => 'required',
             ]);
@@ -140,20 +148,21 @@ class UserController extends Controller
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 422);
             }
-            
+
             $user = User::where('id', $id)->first();
             $data['data'] = $user->update([
                     'warehouse_id' => (int) $request->payload['warehouse_id'],
                     'branch_id' => (int) $request->payload['branch_id'],
                     'role_id' => (int) $request->payload['role_id'],
                     'section_id' => (int) $request->payload['section_id'] ?? '',
-                    'firstname' => strtoupper($request->payload['firstname']),
-                    'lastname' => strtoupper($request->payload['lastname']),
-                    'middlename' => strtoupper($request->payload['middlename'] ?? ''),
+                    'position_id' => (int) $request->payload['position_id'] ?? '',
+                    'firstname' => $request->payload['firstname'],
+                    'lastname' => $request->payload['lastname'],
+                    'middlename' => $request->payload['middlename'] ?? '',
                     'birthdate' => $request->payload['birthdate']  ?? '',
                     'suffix' => $request->payload['suffix'] ?? '',
-                    'email' => strtoupper($request->payload['email'] ?? ''),
-                    'name' => strtoupper($request->payload['lastname']) . ', ' . strtoupper($request->payload['firstname']) . ' ' . strtoupper($request->payload['middlename']),
+                    'email' => $request->payload['email'] ?? '',
+                    'name' => $request->payload['lastname'] . ', ' . $request->payload['firstname'] . ' ' . $request->payload['middlename'],
                     'mobileno' => $request->payload['mobileno'] ?? '',
                     'idnumber' => $request->payload['idnumber'] ?? '',
                     'passcode' => $request->payload['passcode'] ?? '',
@@ -162,10 +171,27 @@ class UserController extends Controller
                     'password' => isset($request->payload['password']) ? bcrypt($request->payload['password']) : $user->password,
                 ]);
 
+            if($request->payload['system']) {
+                foreach($request->payload['system'] as $system) {
+                    $user->systemUserAccess()->updateOrCreate(
+                        [
+                            'subsystem_id' => $system,
+                            'user_id' => $request->payload['id']
+                        ],
+                        [
+                        'subsystem_id' => $system
+                    ]);
+                }
+            }
+            $user->systemUserAccess()->where('user_id',$request->payload['id'])->whereNotIn('subsystem_id', $request->payload['system'])->delete();
             $data['msg'] = 'Success';
+            DB::connection('sqlsrv')->commit();
+
             return Response()->json($data, 200);
 
         } catch (\Exception $e) {
+                        
+            DB::connection('sqlsrv')->rollback();
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }

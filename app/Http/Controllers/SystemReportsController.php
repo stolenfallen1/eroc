@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\SystemReports;
 use App\Models\UserAssignedReports;
 use App\Models\BuildFile\Hospital\Setting\System;
+use Illuminate\Support\Facades\Validator;
 
 class SystemReportsController extends Controller
 {
@@ -46,9 +47,10 @@ class SystemReportsController extends Controller
     public function store(Request $request)
     {
         try {
+            $payload = $request->payload;
 
             // Validation
-            $validator = Validator::make($request->all(), [
+            $validator = Validator::make($payload, [
                 'description' => 'required',
                 'system_id' => 'required',
                 'module_id' => 'required',

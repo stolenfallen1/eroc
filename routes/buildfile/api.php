@@ -389,10 +389,6 @@ Route::resource('positions', EmployeePositionController::class);
 
 
 // ======================== hospital build ==========================
-
-
-
-
 Route::controller(SystemController::class)->group(function () {
     Route::get('systems-list', 'list');
 });

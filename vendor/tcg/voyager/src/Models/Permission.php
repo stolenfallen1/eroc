@@ -4,6 +4,7 @@ namespace TCG\Voyager\Models;
 
 use TCG\Voyager\Facades\Voyager;
 use App\Models\Database\Database;
+use App\Models\BuildFile\SidebarGroup;
 use Illuminate\Database\Eloquent\Model;
 
 class Permission extends Model
@@ -24,8 +25,13 @@ class Permission extends Model
     {
         return $this->belongsTo(DataType::class, 'table_name', 'name');
     }
+    
+    public function sidebarGroup()
+    {
+        return $this->hasOne(SidebarGroup::class, 'id', 'sidebar_group_id');
+    }
 
-    public static function generateFor($table_name, $table_driver = null, $module_id = null, $sub_module_id = null, $module_name = null)
+    public static function generateFor($table_name, $table_driver = null, $module_id = null, $sub_module_id = null, $module_name = null, $sidebar_group_id = null)
     {
 
         $actions = ['browse_', 'read_', 'edit_', 'add_', 'delete_', 'print_', 'post_', 'approved_'];
@@ -40,6 +46,7 @@ class Permission extends Model
                 'module' => $module_name,
                 'module_id' => $module_id,
                 'sub_module_id' => $sub_module_id,
+                'sidebar_group_id' => $sidebar_group_id,
                 'key' => $newKey
             ];
 

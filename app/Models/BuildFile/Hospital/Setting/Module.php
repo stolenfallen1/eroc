@@ -14,6 +14,7 @@ class Module extends Model
     protected $connection = "sqlsrv";
     protected $guarded = [];
     protected $with = ['systems','reports'];
+    
     public function systems()
     {
         return $this->belongsTo(System::class, 'system_id', 'id');

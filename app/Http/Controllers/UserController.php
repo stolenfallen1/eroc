@@ -77,7 +77,7 @@ class UserController extends Controller
                     'updatedby' => auth()->user()->idnumber,
                     'password' => bcrypt($request->payload['password']),
             ]);
-            if($request->payload['system']){
+            if(isset($request->payload['system'])){
                 foreach($request->payload['system'] as $system){
                     $user->systemUserAccess()->create([
                         'subsystem_id'=> $system
@@ -171,7 +171,7 @@ class UserController extends Controller
                     'password' => isset($request->payload['password']) ? bcrypt($request->payload['password']) : $user->password,
                 ]);
 
-            if($request->payload['system']) {
+            if(isset($request->payload['system'])) {
                 foreach($request->payload['system'] as $system) {
                     $user->systemUserAccess()->updateOrCreate(
                         [
@@ -182,8 +182,9 @@ class UserController extends Controller
                         'subsystem_id' => $system
                     ]);
                 }
+                $user->systemUserAccess()->where('user_id', $request->payload['id'])->whereNotIn('subsystem_id', $request->payload['system'])->delete();
             }
-            $user->systemUserAccess()->where('user_id',$request->payload['id'])->whereNotIn('subsystem_id', $request->payload['system'])->delete();
+          
             $data['msg'] = 'Success';
             DB::connection('sqlsrv')->commit();
 

@@ -7,20 +7,21 @@ use TCG\Voyager\Models\Role;
 use App\Models\RolePermission;
 use TCG\Voyager\Facades\Voyager;
 use TCG\Voyager\Models\Permission;
+use App\Models\BuildFile\SidebarGroup;
 
 class RoleController extends Controller
 {
     public function permission()
     {
-        if(Request()->id){
-            return response()->json(['data' => Permission::with('database_driver')->where('module_id',(int)Request()->id)->where('sub_module_id','!=',0)->get()]);
+        if(Request()->id) {
+            return response()->json(['data' => Permission::with('database_driver')->where('module_id', (int) Request()->id)->where('sub_module_id', '!=', 0)->get()]);
         }
         return response()->json(['data' => Permission::with('database_driver')->get()]);
     }
 
     public function list()
     {
-        return response()->json(['data' => Role::orderBy('name','asc')->get()]);
+        return response()->json(['data' => Role::orderBy('name', 'asc')->get()]);
     }
 
     public function index()
@@ -28,7 +29,7 @@ class RoleController extends Controller
         try {
             $data = Role::query();
             if(Request()->keyword) {
-                $data->where('display_name', 'LIKE', '%'.Request()->keyword.'%')->orWhere('name', 'LIKE', '%'.Request()->keyword.'%');
+                $data->where('display_name', 'LIKE', '%' . Request()->keyword . '%')->orWhere('name', 'LIKE', '%' . Request()->keyword . '%');
             }
             $data->orderBy('name', 'asc');
             $page  = Request()->per_page ?? '1';
@@ -41,12 +42,10 @@ class RoleController extends Controller
     public function role_permission()
     {
         $data['role'] = Role::with('permissions')->findOrFail(Request()->role_id);
-        $permission = Permission::with('database_driver', 'tablename')->whereNotNull('module_id')->where('sub_module_id','0')->orderBy('module','asc')->get();
-       
-        $data['permission'] =$permission;
+        $data['permission'] = Permission::with('database_driver', 'tablename', 'sidebarGroup')->whereNotNull('module_id')->where('sub_module_id', '0')->orderBy('module', 'asc')->get();
         return response()->json($data, 200);
     }
-    
+
     public function add_permission(Request $request)
     {
 
@@ -71,6 +70,7 @@ class RoleController extends Controller
                 $data['data'] = Role::create([
                     'name' => $request->payload['name'],
                     'display_name' => $request->payload['display_name'],
+                    'isactive' => $request->payload['isactive'],
                  ]);
                 $data['msg'] = 'Success';
                 return Response()->json($data, 200);
@@ -90,6 +90,7 @@ class RoleController extends Controller
             $data['data'] = Role::where('id', $id)->update([
                        'name' => $request->payload['name'],
                        'display_name' => $request->payload['display_name'],
+                        'isactive' => $request->payload['isactive'],
                    ]);
 
             $data['msg'] = 'Success';

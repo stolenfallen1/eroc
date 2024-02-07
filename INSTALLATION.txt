@@ -88,6 +88,7 @@ Configure your application
     }
   ]
 }
+
 Build and serve the app
     npm run build && pm2 restart ecosystem.config.js
     pm2 start

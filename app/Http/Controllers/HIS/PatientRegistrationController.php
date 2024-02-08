@@ -350,7 +350,7 @@ class PatientRegistrationController extends Controller
             $isIndustrialPatient = $patientRegistryDetails->mscAccount_trans_types == 5 ? 'Y' : '';
 
             // Create or update MedsysOPDRegistry
-            $isMedsysOPDPatientExists = $newMedsysPatientMaster->opd_registry()->whereDate('AdmDate', Carbon::now()->format('Y-m-d'))->updateOrCreate(
+            $isMedsysOPDPatientExists = $newMedsysPatientMaster->opd_registry()->updateOrCreate(
                 [
                     'IDNum' => $patientRegistryDetails->medsys_idnum,
                     'HospNum' => $generated_medsys_patient_id_no
@@ -698,12 +698,11 @@ class PatientRegistrationController extends Controller
             $isIndustrialPatient = $patientRegistryDetails->mscAccount_trans_types == 5 ? 'Y' : '';
 
             // Create or update MedsysOPDRegistry
-            $isMedsysOPDPatientExists = $newMedsysPatientMaster->opd_registry()->whereDate('AdmDate', Carbon::now()->format('Y-m-d'))->updateOrCreate(
-                [
-                    'IDNum' => $patientRegistryDetails->medsys_idnum,
-                    'HospNum' => $previous_patient_id,
-                    'AdmDate' => Carbon::now()->toDateString(),
-                ],
+            $isMedsysOPDPatientExists = $newMedsysPatientMaster->opd_registry()
+            ->whereDate('AdmDate', Carbon::now()->format('Y-m-d'))
+            ->where('IDNum',  $patientRegistryDetails->medsys_idnum)
+            ->where('HospNum',$previous_patient_id)
+            ->update(
                 [
                     'HospNum' => $previous_patient_id,
                     'IDNum' => $patientRegistryDetails->medsys_idnum,
@@ -738,11 +737,12 @@ class PatientRegistrationController extends Controller
 
                     $result = MedsysHemoPatient::selectRaw('ISNULL(MAX(CAST(HemoNum AS INT)), 0) as HEmoNum')->get();
                     $HEmoNum = $result[0]->HEmoNum + 1;
-                    $isMedsysHemoPatientExists = $newMedsysPatientMaster->hemodialysis_registry()->whereNull('DcrDate')->whereDate('ADMDate', Carbon::now()->format('Y-m-d'))->updateOrCreate(
-                        [
-                            'IDNum' => $patientRegistryDetails->medsys_idnum,
-                            'HospNum' => $previous_patient_id
-                        ],
+                    $isMedsysHemoPatientExists = $newMedsysPatientMaster->hemodialysis_registry()
+                    ->whereNull('DcrDate')
+                    ->whereDate('ADMDate', Carbon::now()->format('Y-m-d'))
+                    ->where('IDNum',  $patientRegistryDetails->medsys_idnum)
+                    ->where('HospNum',$previous_patient_id)
+                    ->update(
                         [
                             'HospNum' => $previous_patient_id,
                             'IDNum' => $patientRegistryDetails->medsys_idnum,
@@ -760,7 +760,11 @@ class PatientRegistrationController extends Controller
                     );
                 } else {
 
-                    $newMedsysPatientMaster->hemodialysis_registry()->whereNull('DcrDate')->where('IDNum', $patientRegistryDetails->medsys_idnum)->where('HospNum', $previous_patient_id)->whereDate('ADMDate', Carbon::now()->format('Y-m-d'))->update(
+                    $newMedsysPatientMaster->hemodialysis_registry()->whereNull('DcrDate')
+                    ->where('IDNum', $patientRegistryDetails->medsys_idnum)
+                    ->where('HospNum', $previous_patient_id)
+                    ->whereDate('ADMDate', Carbon::now()->format('Y-m-d'))
+                    ->update(
                         [
                         'HospNum' => $previous_patient_id,
                         'IDNum' => $patientRegistryDetails->medsys_idnum,

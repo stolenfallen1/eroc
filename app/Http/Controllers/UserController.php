@@ -58,7 +58,7 @@ class UserController extends Controller
             }
             // Create user
             $user = User::create([
-               'warehouse_id' => (int) $request->payload['warehouse_id'],
+                'warehouse_id' => (int) $request->payload['warehouse_id'],
                     'branch_id' => (int) $request->payload['branch_id'],
                     'role_id' => (int) $request->payload['role_id'],
                     'section_id' => (int) $request->payload['section_id'] ?? '',
@@ -154,7 +154,7 @@ class UserController extends Controller
                     'warehouse_id' => (int) $request->payload['warehouse_id'],
                     'branch_id' => (int) $request->payload['branch_id'],
                     'role_id' => (int) $request->payload['role_id'],
-                    'section_id' => (int) $request->payload['section_id'] ?? '',
+                    'section_id' => isset($request->payload['section_id']) ? (int) $request->payload['section_id'] : NULL,
                     'position_id' => (int) $request->payload['position_id'] ?? '',
                     'firstname' => $request->payload['firstname'],
                     'lastname' => $request->payload['lastname'],

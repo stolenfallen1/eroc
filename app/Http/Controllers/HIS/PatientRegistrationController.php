@@ -701,7 +701,8 @@ class PatientRegistrationController extends Controller
             $isMedsysOPDPatientExists = $newMedsysPatientMaster->opd_registry()->whereDate('AdmDate', Carbon::now()->format('Y-m-d'))->updateOrCreate(
                 [
                     'IDNum' => $patientRegistryDetails->medsys_idnum,
-                    'HospNum' => $previous_patient_id
+                    'HospNum' => $previous_patient_id,
+                    'AdmDate' => Carbon::now()->toDateString(),
                 ],
                 [
                     'HospNum' => $previous_patient_id,

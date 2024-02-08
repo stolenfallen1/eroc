@@ -70,7 +70,7 @@ class RoleController extends Controller
                 $data['data'] = Role::create([
                     'name' => $request->payload['name'],
                     'display_name' => $request->payload['display_name'],
-                    'isactive' => $request->payload['isactive'],
+                    'isactive' => isset($request->payload['isactive']) ? (int) $request->payload['isactive'] : null,
                  ]);
                 $data['msg'] = 'Success';
                 return Response()->json($data, 200);
@@ -88,9 +88,9 @@ class RoleController extends Controller
         try {
 
             $data['data'] = Role::where('id', $id)->update([
-                       'name' => $request->payload['name'],
-                       'display_name' => $request->payload['display_name'],
-                        'isactive' => $request->payload['isactive'],
+                    'name' => $request->payload['name'],
+                    'display_name' => $request->payload['display_name'],
+                    'isactive' => isset($request->payload['isactive']) ? (int) $request->payload['isactive'] : null,
                    ]);
 
             $data['msg'] = 'Success';

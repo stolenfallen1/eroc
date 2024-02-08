@@ -155,7 +155,7 @@ class UserController extends Controller
                     'branch_id' => (int) $request->payload['branch_id'],
                     'role_id' => (int) $request->payload['role_id'],
                     'section_id' => isset($request->payload['section_id']) ? (int) $request->payload['section_id'] : NULL,
-                    'position_id' => (int) $request->payload['position_id'] ?? '',
+                    'position_id' => isset($request->payload['position_id']) ? (int) $request->payload['position_id'] : NULL,
                     'firstname' => $request->payload['firstname'],
                     'lastname' => $request->payload['lastname'],
                     'middlename' => $request->payload['middlename'] ?? '',

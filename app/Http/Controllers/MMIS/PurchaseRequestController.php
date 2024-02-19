@@ -199,7 +199,7 @@ class PurchaseRequestController extends Controller
             'item_SubCategory_Id' => $request->item_SubCategory_Id,
             'pr_Document_Number' => $request->pr_Document_Number,
             'pr_Document_Prefix' => $request->pr_Document_Prefix,
-            'pr_Document_Suffix' => $request->pr_Document_Suffix,
+            'pr_Document_Suffix' => $request->pr_Document_Suffix
         ]);
 
         if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {

@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Models\BuildFile\Hospital;
+namespace App\Models\BuildFile;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CivilStatus extends Model
+class mscGenericnames extends Model
 {
     use HasFactory;
-    protected $table = 'mscCivilStatuses';
+    protected $table = 'mscGenericnames';
     protected $connection = "sqlsrv";
     protected $guarded = [];
 }

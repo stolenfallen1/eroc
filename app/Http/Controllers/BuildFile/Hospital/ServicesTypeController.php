@@ -8,6 +8,17 @@ use Illuminate\Http\Request;
 
 class ServicesTypeController extends Controller
 {
+    public function list(){
+
+        try {
+            $data = ServicesType::where('isactive',1)->orderBy('id', 'desc')->get();
+            return response()->json($data, 200);
+
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+
+    }
     public function index()
     {
         try {

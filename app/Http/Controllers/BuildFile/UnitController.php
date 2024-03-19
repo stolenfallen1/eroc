@@ -28,13 +28,13 @@ class UnitController extends Controller
                     'name' => $request->payload['name'],
                     'isactive' => $request->payload['isactive'],
                 ]);
-                $data['msg'] = 'Success';
+                $data['msg'] = 'Record successfully saved';
                 return Response()->json($data, 200);
             }
             $data['msg'] = 'Already Exists!';
-            return Response()->json($data, 200);
+            return Response()->json($data, 400);
         } catch (\Exception $e) {
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 404);
         }
     }
 
@@ -45,21 +45,21 @@ class UnitController extends Controller
                        'name' => $request->payload['name'],
                        'isactive' => $request->payload['isactive'],
                    ]);
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record successfully saved';
             return Response()->json($data, 200);
 
         } catch (\Exception $e) {
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 404);
         }
     }
     public function destroy($id)
     {
         try {
             $data['data'] = Unitofmeasurement::where('id', $id)->delete();
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record successfully Delete';
             return Response()->json($data, 200);
         } catch (\Exception $e) {
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 404);
         }
     }
 

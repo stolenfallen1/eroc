@@ -32,31 +32,31 @@ Step 5 – Setting Up Server Blocks (Recommended)
   sudo nano /var/www/your_domain/html/index.html
   sudo nano /etc/nginx/sites-available/your_domain
   	server {
-        	listen 80;
-        	listen [::]:80;
+        listen 80;
+        listen [::]:80;
 
-        	root /var/www/your_domain/html;
-        	index index.html index.htm index.nginx-debian.html;
+        root /var/www/your_domain/html;
+        index index.html index.htm index.nginx-debian.html;
 
-        	server_name your_domain www.your_domain;
+        server_name your_domain www.your_domain;
 
-        	location / {
-                	try_files $uri $uri/ =404;
-        	}
+        location / {
+                try_files $uri $uri/ =404;
+        }
  	}
 
-   #Next, let’s enable the file by creating a link from it to the sites-enabled directory, which Nginx reads from during startup:
-   sudo ln -s /etc/nginx/sites-available/your_domain /etc/nginx/sites-enabled/
+  #Next, let’s enable the file by creating a link from it to the sites-enabled directory, which Nginx reads from during startup:
+  sudo ln -s /etc/nginx/sites-available/your_domain /etc/nginx/sites-enabled/
 
-   sudo ln -s /etc/nginx/sites-available/cdgorscheduling.conf /etc/nginx/sites-enabled/
-   sudo nano /etc/nginx/nginx.conf
+  sudo ln -s /etc/nginx/sites-available/cdgorscheduling.conf /etc/nginx/sites-enabled/
+  sudo nano /etc/nginx/nginx.conf
 	http {
     	    server_names_hash_bucket_size 64;
 	}
 
   #Next, test to make sure that there are no syntax errors in any of your Nginx files: 
-   sudo nginx -t
-   sudo systemctl restart nginx
+  sudo nginx -t
+  sudo systemctl restart nginx
 
 
 Deploy Nuxt using PM2

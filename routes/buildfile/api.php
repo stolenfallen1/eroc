@@ -18,6 +18,7 @@ use App\Http\Controllers\BuildFile\PriorityController;
 use App\Http\Controllers\BuildFile\SupplierController;
 use App\Http\Controllers\BuildFile\AntibioticController;
 use App\Http\Controllers\BuildFile\DepartmentController;
+use App\Http\Controllers\BuildFile\DosageFormController;
 use App\Http\Controllers\BuildFile\GenericNameController;
 use App\Http\Controllers\BuildFile\mscCurrencyController;
 use App\Http\Controllers\BuildFile\SubCategoryController;
@@ -52,6 +53,7 @@ use App\Http\Controllers\BuildFile\FMS\RevenueClassController;
 use App\Http\Controllers\BuildFile\Hospital\CompanyController;
 use App\Http\Controllers\BuildFile\Hospital\IDTypesController;
 use App\Http\Controllers\BuildFile\TherapeuticClassController;
+use App\Http\Controllers\BuildFile\Hospital\BuildingController;
 use App\Http\Controllers\BuildFile\Hospital\CaseTypeController;
 use App\Http\Controllers\BuildFile\MscWarehouseGroupController;
 use App\Http\Controllers\BuildFile\DrugAdministrationController;
@@ -70,6 +72,7 @@ use App\Http\Controllers\BuildFile\Hospital\BankAccountsController;
 use App\Http\Controllers\BuildFile\Hospital\HospitalPlanController;
 use App\Http\Controllers\BuildFile\Hospital\ServicesTypeController;
 use App\Http\Controllers\BuildFile\Hospital\AdmissionTypeController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalRoomsController;
 use App\Http\Controllers\BuildFile\Hospital\NationalitiesController;
 use App\Http\Controllers\BuildFile\Hospital\PaymentMethodController;
 use App\Http\Controllers\BuildFile\Hospital\Setting\ModuleController;
@@ -78,13 +81,24 @@ use App\Http\Controllers\BuildFile\Hospital\ShiftSchedulesController;
 use App\Http\Controllers\BuildFile\Hospital\AdmissionSourceController;
 use App\Http\Controllers\BuildFile\Hospital\TransactionTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DoctorCategoriesController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalModalityController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalServicesController;
 use App\Http\Controllers\BuildFile\Hospital\PatientRelationsController;
 use App\Http\Controllers\BuildFile\Hospital\Setting\SubModuleController;
 use App\Http\Controllers\BuildFile\Hospital\Setting\SubSystemController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalRoomsClassController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalRoomsStatusController;
 use App\Http\Controllers\BuildFile\FMS\TransactionClassificationController;
+use App\Http\Controllers\BuildFile\Hospital\DoctorSpecializationController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalSevicesSectionController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalItemandSuppliesController;
+use App\Http\Controllers\BuildFile\Hospital\HospitalRoomsAccomodationController;
 
 Route::controller(CategoryController::class)->group(function () {
+
+    Route::get('services-categories', 'getServicesCategory');
     Route::get('categories', 'getAllCategory');
+
     Route::get('sub-categories', 'getAllSubCategories');
     Route::get('classifications', 'getAllClassifications');
     Route::get('supplier-categories', 'getAllSupplierCategories');
@@ -98,6 +112,18 @@ Route::controller(CategoryController::class)->group(function () {
     Route::delete('delete-category/{id}', 'destroy');
 });
 
+Route::controller(HospitalSevicesSectionController::class)->group(function () {
+    Route::get('services-section', 'list');
+});
+
+
+Route::resource('modalities', HospitalModalityController::class);
+Route::controller(HospitalModalityController::class)->group(function () {
+    Route::get('get-modalities', 'list');
+});
+
+
+
 Route::controller(VendorController::class)->group(function () {
     Route::get('vendors', 'index');
     Route::post('vendors', 'store');
@@ -108,7 +134,12 @@ Route::controller(VendorController::class)->group(function () {
 Route::controller(ItemController::class)->group(function () {
     Route::get('items', 'searchItem');
     Route::get('items-group', 'getItemGroup');
+    Route::get('services-items-group', 'getServicesItemGroup');
+
 });
+
+
+
 
 Route::controller(UnitController::class)->group(function () {
     Route::get('units', 'index');
@@ -155,10 +186,9 @@ Route::controller(GenericNameController::class)->group(function () {
     Route::post('create-generic-name', 'store');
     Route::put('update-generic-name/{id}', 'update');
     Route::delete('delete-generic-name/{id}', 'destroy');
-
-
 });
 
+Route::resource('dosages', DosageFormController::class);
 Route::controller(DrugAdministrationController::class)->group(function () {
     Route::get('drug-administration', 'index');
     Route::get('dosage-forms', 'dosageForms');
@@ -192,7 +222,6 @@ Route::controller(DepartmentController::class)->group(function () {
 
     Route::post('add-department-access', 'add_department_access');
     Route::post('remove-department-access', 'remove_department_access');
-   
 });
 
 
@@ -308,9 +337,24 @@ Route::controller(mscPriceController::class)->group(function () {
     Route::get('list-price-schemes', 'list');
 });
 
-
+Route::resource('consultants', DoctorController::class);
 Route::controller(DoctorController::class)->group(function () {
+    Route::get('search-doctors', 'list');
     Route::get('get-doctors', 'list');
+    Route::get('doctors', 'index');
+
+});
+
+Route::controller(HospitalRoomsAccomodationController::class)->group(function () {
+    Route::get('get-room-accomodations', 'list');
+});
+
+Route::controller(HospitalRoomsClassController::class)->group(function () {
+    Route::get('get-room-class', 'list');
+});
+
+Route::controller(HospitalRoomsStatusController::class)->group(function () {
+    Route::get('get-room-status', 'list');
 });
 
 Route::controller(CompanyController::class)->group(function () {
@@ -379,6 +423,8 @@ Route::controller(RoleController::class)->group(function () {
     Route::get('get-role', 'list');
     Route::get('get-permissions', 'permission');
     Route::get('get-role-permission', 'role_permission');
+
+    Route::post('submit-selected-permission', 'save_permission');
     Route::post('add-permission', 'add_permission');
     Route::delete('delete-roles/{id}', 'destroy');
 
@@ -388,7 +434,7 @@ Route::resource('positions', EmployeePositionController::class);
 
 
 
-// ======================== hospital build ==========================
+// ======================== hospital build file ==========================
 Route::controller(SystemController::class)->group(function () {
     Route::get('systems-list', 'list');
 });
@@ -401,8 +447,9 @@ Route::controller(ModuleController::class)->group(function () {
     Route::get('get-system-modules', 'systemModule');
     Route::get('systems-drivers', 'systemsdriver');
 });
-Route::resource('system-modules', ModuleController::class);
 
+
+Route::resource('system-modules', ModuleController::class);
 Route::resource('system-sub-modules', SubModuleController::class);
 
 
@@ -456,7 +503,17 @@ Route::controller(CivilStatusController::class)->group(function () {
 Route::resource('civil-status', CivilStatusController::class);
 Route::resource('statuses', StatusController::class);
 Route::resource('patient-relations', PatientRelationsController::class);
+
+
+Route::controller(DoctorCategoriesController::class)->group(function () {
+    Route::get('get-doctor-categories', 'list');
+});
 Route::resource('doctor-categories', DoctorCategoriesController::class);
+
+
+Route::controller(ServicesTypeController::class)->group(function () {
+    Route::get('get-services-type', 'list');
+});
 Route::resource('services-type', ServicesTypeController::class);
 
 
@@ -476,6 +533,40 @@ Route::controller(BanksController::class)->group(function () {
 Route::resource('bank-accounts', BankAccountsController::class);
 Route::resource('credit-cards', CreditCardsController::class);
 Route::resource('debit-cards', DebitCardsController::class);
+
+
+
+
+
+Route::controller(BuildingController::class)->group(function () {
+    Route::get('buildings', 'list');
+    Route::get('assign-station', 'listofAssignStation');
+    Route::post('assigned-station', 'store_assignedstation');
+});
+
+
+Route::resource('submit-rooms-and-beds', HospitalRoomsController::class);
+Route::controller(HospitalRoomsController::class)->group(function () {
+    Route::get('rooms-and-beds', 'index');
+});
+
+
+Route::resource('item-and-services', HospitalServicesController::class);
+Route::controller(HospitalServicesController::class)->group(function () {
+    Route::get('search-services', 'search');
+});
+
+
+Route::resource('item-and-supplies', HospitalItemandSuppliesController::class);
+Route::controller(HospitalItemandSuppliesController::class)->group(function () {
+    Route::get('search-item-and-supplies', 'search');
+});
+
+
+Route::controller(DoctorSpecializationController::class)->group(function () {
+    Route::get('get-doctors-specializations', 'list');
+});
+
 // ==================end hospital build=============================
 
 
@@ -500,7 +591,7 @@ Route::controller(TransactionCodesController::class)->group(function () {
     Route::get('charge-code', 'chargingcode');
     Route::post('get-charges-code', 'chargingcode');
 
-    
+
     Route::post('get-revenue-access', 'UserRevenueCodeAccess');
     Route::post('add-revenue-access', 'add_revenue_access');
     Route::post('remove-revenue-access', 'remove_revenue_access');
@@ -520,7 +611,9 @@ Route::controller(SystemReportsController::class)->group(function () {
     Route::get('reports', 'list');
     Route::post('get-assigned-report', 'assigned_report');
     Route::post('add-report-access', 'add_report_access');
+    Route::post('add-report', 'addreport');
     Route::post('remove-report-access', 'remove_report_access');
+    Route::get('get-reports', 'mscReportlist');
 });
 
 Route::resource('system-reports', SystemReportsController::class);

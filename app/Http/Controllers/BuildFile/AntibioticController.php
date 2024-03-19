@@ -30,9 +30,7 @@ class AntibioticController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = Antibioticclass::select('name')
-                       ->where('name', $request->payload['name'])
-                       ->first();
+            $check_if_exist = Antibioticclass::select('name')->where('name', $request->payload['name'])->first();
             if(!$check_if_exist) {
                 $data['data'] = Antibioticclass::create([
                     'name' => $request->payload['name'],
@@ -54,10 +52,10 @@ class AntibioticController extends Controller
     {
         try {
             $data['data'] = Antibioticclass::where('id', $id)->update([
-                            'code' => $request->payload['code'],
-                            'name' => $request->payload['name'],
-                            'isActive' => $request->payload['isActive']
-                         ]);
+            'code' => $request->payload['code'],
+            'name' => $request->payload['name'],
+            'isActive' => $request->payload['isActive']
+            ]);
             $data['msg'] = 'Success';
             return Response()->json($data, 200);
         } catch (\Exception $e) {

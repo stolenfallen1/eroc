@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use TCG\Voyager\Models\Role;
 use App\Models\RolePermission;
 use TCG\Voyager\Facades\Voyager;
+use Illuminate\Support\Facades\DB;
 use TCG\Voyager\Models\Permission;
 use App\Models\BuildFile\SidebarGroup;
 
@@ -48,7 +49,6 @@ class RoleController extends Controller
 
     public function add_permission(Request $request)
     {
-
         if($request->payload['type'] == true) {
             $data = RolePermission::insert([
                 'permission_id' => $request->payload['id'],
@@ -58,9 +58,47 @@ class RoleController extends Controller
         if($request->payload['type'] == false) {
             $data = RolePermission::where('permission_id', $request->payload['id'])->where('role_id', $request->payload['role_id'])->delete();
         }
-
         return response()->json($data, 200);
     }
+
+    public function save_permission(Request $request)
+    {
+        DB::connection('sqlsrv')->beginTransaction();
+        try {
+            $remove_permission = $request->remove_permission;
+            $payload = $request->payload;
+            $role_id = $request->id;
+
+            $permission_ids = collect($payload)->pluck('id')->all();
+            $remove_permissions = collect($remove_permission)->pluck('id')->all();
+
+            // Remove existing permissions
+            if (!empty($remove_permissions)) {
+                RolePermission::where('role_id', $role_id)->whereIn('permission_id', $remove_permissions)->delete();
+            }
+            // Insert or update permissions
+            if (!empty($permission_ids)) {
+                foreach ($permission_ids as $permission_id) {
+                    RolePermission::updateOrCreate(
+                        [
+                            'role_id' => $role_id,
+                            'permission_id' => $permission_id,
+                        ],
+                        [
+                            'role_id' => $role_id,
+                            'permission_id' => $permission_id,
+                        ]
+                    );
+                }
+            }
+            DB::connection('sqlsrv')->commit();
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv')->rollback();
+            return response()->json(["error" => $e], 200);
+        }
+        return response()->json(["message" => "Record successfully saved"], 200);
+    }
+
 
     public function store(Request $request)
     {
@@ -86,16 +124,13 @@ class RoleController extends Controller
     public function update(Request $request, $id)
     {
         try {
-
             $data['data'] = Role::where('id', $id)->update([
-                    'name' => $request->payload['name'],
-                    'display_name' => $request->payload['display_name'],
-                    'isactive' => isset($request->payload['isactive']) ? (int) $request->payload['isactive'] : null,
-                   ]);
-
+                'name' => $request->payload['name'],
+                'display_name' => $request->payload['display_name'],
+                'isactive' => isset($request->payload['isactive']) ? (int) $request->payload['isactive'] : null,
+            ]);
             $data['msg'] = 'Success';
             return Response()->json($data, 200);
-
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);
         }

@@ -37,16 +37,17 @@ class PurchaseOrders
       $keyword = Request()->keyword;
       $this->model->where(function ($q) use ($keyword, $searchable) {
           foreach ($searchable as $column) {
-              if ($column == 'po_number')
-                  $q->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", $keyword)
-                  ->orWhere('po_Document_number', 'LIKE' , '%' . $keyword . '%');
-                  // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
+              if ($column == 'po_number'){
+                $q->whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", $keyword)
+                ->orWhere('po_Document_number', 'LIKE' , '%' . $keyword . '%');
+              }
               else if($column == 'pr_number'){
                 $q->orWhereHas('purchaseRequest', function($q2) use($keyword){
                   $q2->whereRaw("CONCAT(pr_Document_Prefix,'',pr_Document_Number,'',pr_Document_Suffix) = ?", $keyword)
                   ->orWhere('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
                 });
               }
+                  // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
           }
       });
     }
@@ -158,20 +159,23 @@ class PurchaseOrders
       }
       
     }
+
     if($this->authUser->role->name == 'corporate admin'){
-      $this->model->where(function($q1){
-        $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
-        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
-        ->whereHas('purchaseRequest', function($q2){
-          $q2->where('invgroup_id', 2);
-        });
-      })->orWhere(function($q1){
-        $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
-        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
-        ->whereHas('purchaseRequest', function($q2){
-          $q2->where('invgroup_id', '!=', 2);
-        });
-      });
+      $this->model->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
+        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+      // $this->model->where(function($q1){
+      //   $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
+      //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
+      //   ->whereHas('purchaseRequest', function($q2){
+      //     $q2->where('invgroup_id', 2);
+      //   });
+      // })->orWhere(function($q1){
+      //   $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
+      //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])
+      //   ->whereHas('purchaseRequest', function($q2){
+      //     $q2->where('invgroup_id', '!=', 2);
+      //   });
+      // });
 
       // $this->model->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)
       //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);

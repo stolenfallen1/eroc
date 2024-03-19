@@ -421,7 +421,8 @@ class PurchaseRequests
       $this->model->with(['purchaseRequestDetails' => function($q1){
         $q1->with('itemMaster')->whereNotNull('pr_DepartmentHead_CancelledBy');
       }])->whereHas('purchaseRequestDetails', function($q){
-        $q->where('pr_DepartmentHead_CancelledBy', $this->authUser->idnumber);
+        // $q->where('pr_DepartmentHead_CancelledBy', $this->authUser->idnumber);
+        $q->whereNotNull('pr_DepartmentHead_CancelledBy');
       });
     }
     else if ($this->authUser->role->name == 'consultant'){

@@ -13,8 +13,9 @@ class AccountGroupController extends Controller
     public function index()
     {
         $data = AccountGroup::query();
+        $data->with("getAccountClass","getAccountType");
         if(Request()->keyword) {
-            $data->where('gl_description', 'LIKE', '%'.Request()->keyword.'%')->orWhere('acct_class', 'LIKE', '%'.Request()->keyword.'%');
+            $data->where('account_group_description', 'LIKE', '%'.Request()->keyword.'%')->orWhere('account_class', 'LIKE', '%'.Request()->keyword.'%');
         }
         $data->orderBy('id', 'desc');
         $page  = Request()->per_page ?? '1';
@@ -25,14 +26,17 @@ class AccountGroupController extends Controller
     {
 
         try {
-            $check_if_exist = AccountGroup::select('gl_description')
-                       ->where('gl_description', $request->payload['gl_description'])
+            $check_if_exist = AccountGroup::select('account_group_description')
+                       ->where('account_group_code', $request->payload['account_group_code'])
+                       ->where('account_group_description', $request->payload['account_group_description'])
                        ->first();
             if(!$check_if_exist) {
                 $data['data'] = AccountGroup::create([
-                    'acct_type' => $request->payload['acct_type'],
-                    'gl_description' => $request->payload['gl_description'],
-                    'acct_class' => $request->payload['acct_class'],
+                    'account_group_code' => $request->payload['account_group_code'],
+                    'account_type' => $request->payload['account_type'],
+                    'account_group_description' => $request->payload['account_group_description'],
+                    'account_class' => $request->payload['account_class'],
+                    'remarks' => $request->payload['remarks'],
                     'createdBy' => Auth()->user()->idnumber,
                 ]);
                 $data['msg'] = 'Success';
@@ -53,9 +57,11 @@ class AccountGroupController extends Controller
         try {
 
             $data['data'] = AccountGroup::where('id', $id)->update([
-                          'acct_type' => $request->payload['acct_type'],
-                          'gl_description' => $request->payload['gl_description'],
-                          'acct_class' => $request->payload['acct_class'],
+                           'account_group_code' => $request->payload['account_group_code'],
+                          'account_type' => $request->payload['account_type'],
+                          'account_group_description' => $request->payload['account_group_description'],
+                          'account_class' => $request->payload['account_class'],
+                           'remarks' => $request->payload['remarks'],
                           'createdBy' => Auth()->user()->idnumber,
                        ]);
 

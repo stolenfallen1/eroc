@@ -573,8 +573,17 @@ Route::controller(DoctorSpecializationController::class)->group(function () {
 
 // ==================FMS build=============================
 Route::resource('account-classes', AccountClassController::class);
-Route::resource('account-groups', AccountGroupController::class);
+
+Route::controller(AccountClassController::class)->group(function () {
+    Route::get('get-account-class', 'list');
+});
+
 Route::resource('account-types', AccountTypeController::class);
+Route::controller(AccountTypeController::class)->group(function () {
+    Route::get('get-account-type', 'list');
+});
+
+Route::resource('account-groups', AccountGroupController::class);
 Route::resource('cost-centers', CostCenterController::class);
 
 Route::controller(MedicareTypeController::class)->group(function () {

@@ -15,7 +15,7 @@ class DepartmentController extends Controller
         return response()->json(['departments' => Warehouses::with('sections')->where('warehouse_Branch_Id', Request()->branch_id)->where('isWarehouse', 1)->get() ]);
         // return response()->json(['departments' => Warehouses::get() ]);
     }
-
+  
     public function departmentlist(){
         $data = Warehouses::query();
         $data->orderBy('id', 'desc');

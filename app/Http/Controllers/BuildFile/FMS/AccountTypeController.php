@@ -9,12 +9,17 @@ use App\Models\BuildFile\FMS\AccountType;
 
 class AccountTypeController extends Controller
 {
- 
+      public function list()
+    {
+        $data = AccountType::get();
+        return response()->json($data, 200);
+    }
+
     public function index()
     {
         $data = AccountType::query();
         if(Request()->keyword) {
-            $data->where('acct_description', 'LIKE', '%'.Request()->keyword.'%')->orWhere('acct_type', 'LIKE', '%'.Request()->keyword.'%');
+            $data->where('account_description', 'LIKE', '%'.Request()->keyword.'%')->orWhere('account_type', 'LIKE', '%'.Request()->keyword.'%');
         }
         $data->orderBy('id', 'desc');
         $page  = Request()->per_page ?? '1';
@@ -25,14 +30,14 @@ class AccountTypeController extends Controller
     {
 
         try {
-            $check_if_exist = AccountType::select('acct_description')
-                       ->where('acct_description', $request->payload['acct_description'])
+            $check_if_exist = AccountType::select('account_description')
+                       ->where('account_description', $request->payload['account_description'])
                        ->first();
             if(!$check_if_exist) {
                 $data['data'] = AccountType::create([
-                    'acct_type' => $request->payload['acct_type'],
-                    'acct_description' => $request->payload['acct_description'],
-                    'acct_type' => $request->payload['acct_type'],
+                    'account_type' => $request->payload['account_type'],
+                    'account_description' => $request->payload['account_description'],
+                    'account_type' => $request->payload['account_type'],
                     'createdBy' => Auth()->user()->idnumber,
                 ]);
                 $data['msg'] = 'Success';
@@ -52,9 +57,9 @@ class AccountTypeController extends Controller
         try {
 
             $data['data'] = AccountType::where('id', $id)->update([
-                          'acct_type' => $request->payload['acct_type'],
-                          'acct_description' => $request->payload['acct_description'],
-                          'acct_type' => $request->payload['acct_type'],
+                          'account_type' => $request->payload['account_type'],
+                          'account_description' => $request->payload['account_description'],
+                          'account_type' => $request->payload['account_type'],
                           'createdBy' => Auth()->user()->idnumber,
                        ]);
 

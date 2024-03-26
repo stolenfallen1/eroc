@@ -11,4 +11,6 @@ class RolePermission extends Model
     protected $connection = 'sqlsrv';
     protected $table = 'permission_role';
     protected $guarded = [];
+    
+    public $timestamps = false;
 }

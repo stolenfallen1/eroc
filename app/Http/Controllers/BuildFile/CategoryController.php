@@ -10,6 +10,7 @@ use App\Models\BuildFile\Itemcategories;
 use App\Helpers\Buildfile\CategoryFilter;
 use App\Models\BuildFile\Classifications;
 use App\Models\BuildFile\Itemsubcategories;
+use App\Models\BuildFile\Hospital\mscHospitalExamItemCategory;
 
 class CategoryController extends Controller
 {
@@ -18,6 +19,13 @@ class CategoryController extends Controller
         $data = Itemcategories::where('invgroup_id', Request()->invgroup_id)->get();
         return response()->json($data, 200);
     }
+    public function getServicesCategory()
+    {
+        $data = mscHospitalExamItemCategory::with('revenue')->where('msc_Exam_itemgroup_id', Request()->invgroup_id)->get();
+        return response()->json($data, 200);
+    }
+
+
     public function list()
     {
         return (new CategoryFilter())->searchable();

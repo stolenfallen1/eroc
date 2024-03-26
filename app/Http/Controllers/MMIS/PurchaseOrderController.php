@@ -57,7 +57,6 @@ class PurchaseOrderController extends Controller
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])
         ->where(function($q){
-
             $q->where(function($q1){
                 $q1->whereHas('purchaseRequest', function($query){
                     $query->where('invgroup_id', 2);

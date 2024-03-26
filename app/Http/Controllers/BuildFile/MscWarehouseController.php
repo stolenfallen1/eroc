@@ -18,6 +18,10 @@ class MscWarehouseController extends Controller
             if(Request()->keyword) {
                 $data->where('warehouse_description', 'LIKE', '%'.Request()->keyword.'%');
             }
+            if(isset(Request()->warehouse_Group_Id)) {
+                $data->where('warehouse_Group_Id', Request()->warehouse_Group_Id);
+            }
+
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
             return response()->json(['warehouse' => $data->paginate($page)], 200);
@@ -56,25 +60,25 @@ class MscWarehouseController extends Controller
                 $data['warehouse'] = Warehouses::create([
                     'warehouse_Group_Id' => $request->payload['warehouse_Group_Id'],
                     'warehouse_Branch_Id' => $request->payload['warehouse_Branch_Id'],
-                    'isHemodialysis' => $request->payload['isWarehouse'],
-                    'isPeritoneal' => $request->payload['isPeritoneal'],
-                    'isLINAC' => $request->payload['isLINAC'],
-                    'isCOBALT' => $request->payload['isCOBALT'],
-                    'isChemotherapy' => $request->payload['isChemotherapy'],
-                    'isBrachytherapy' => $request->payload['isBrachytherapy'],
-                    'isDebridement' => $request->payload['isDebridement'],
-                    'isTBDots' => $request->payload['isTBDots'],
-                    'isPAD' => $request->payload['isPAD'],
-                    'isRadioTherapy' => $request->payload['isRadioTherapy'],
-                    'isWarehouse' => $request->payload['isWarehouse'],
-                    'isDispensing' => $request->payload['isDispensing'],
-                    'isPurchasing' => $request->payload['isPurchasing'],
-                    'isAllowedRR' => $request->payload['isAllowedRR'],
-                    'warehouse_Code' => $request->payload['warehouse_Code'],
-                    'warehouse_description' => $request->payload['warehouse_description'],
-                    'isActive' => $request->payload['isActive'],
+                    'isHemodialysis' => isset($request->payload['isHemodialysis']) ? $request->payload['isHemodialysis'] : 0 ,
+                    'isPeritoneal' => isset($request->payload['isPeritoneal']) ? $request->payload['isPeritoneal'] : 0 ,
+                    'isLINAC' => isset($request->payload['isLINAC']) ? $request->payload['isLINAC'] : 0,
+                    'isCOBALT' => isset($request->payload['isCOBALT']) ? $request->payload['isCOBALT'] : 0,
+                    'isChemotherapy' => isset($request->payload['isChemotherapy']) ? $request->payload['isChemotherapy'] : 0,
+                    'isBrachytherapy' => isset($request->payload['isBrachytherapy']) ? $request->payload['isBrachytherapy'] : 0,
+                    'isDebridement' => isset($request->payload['isDebridement']) ? $request->payload['isDebridement'] : 0 ,
+                    'isTBDots' => isset($request->payload['isTBDots']) ? $request->payload['isTBDots'] : 0 ,
+                    'isPAD' => isset($request->payload['isPAD']) ? $request->payload['isPAD'] : 0 ,
+                    'isRadioTherapy' => isset($request->payload['isRadioTherapy']) ? $request->payload['isRadioTherapy'] : 0,
+                    'isWarehouse' => isset($request->payload['isWarehouse']) ? $request->payload['isWarehouse'] : 0,
+                    'isDispensing' => isset($request->payload['isDispensing']) ? $request->payload['isDispensing'] : 0,
+                    'isPurchasing' => isset($request->payload['isPurchasing']) ? $request->payload['isPurchasing'] : 0,
+                    'isAllowedRR' => isset($request->payload['isAllowedRR']) ? $request->payload['isAllowedRR'] : 0,
+                    'warehouse_Code' => isset($request->payload['warehouse_Code']) ? $request->payload['warehouse_Code'] : null,
+                    'warehouse_description' => isset($request->payload['warehouse_description']) ? $request->payload['warehouse_description'] : null,
+                    'isActive' => isset($request->payload['isActive']) ? $request->payload['isActive'] : 0
                 ]);
-                $data['msg'] = 'Success';
+                $data['msg'] = 'Record successfully saved';
                 return Response()->json($data, 200);
             }
             $data['msg'] = 'Already Exists!';
@@ -91,28 +95,28 @@ class MscWarehouseController extends Controller
 
         try {
             $data['warehouse'] = Warehouses::where('id', $id)->update([
-                                   'warehouse_Group_Id' => $request->payload['warehouse_Group_Id'],
-                                   'warehouse_Branch_Id' => $request->payload['warehouse_Branch_Id'],
-                                    'isHemodialysis' => $request->payload['isWarehouse']  ?? false,
-                                    'isPeritoneal' => $request->payload['isPeritoneal']  ?? false,
-                                    'isLINAC' => $request->payload['isLINAC']  ?? false,
-                                    'isCOBALT' => $request->payload['isCOBALT']  ?? false,
-                                    'isChemotherapy' => $request->payload['isChemotherapy']  ?? false,
-                                    'isBrachytherapy' => $request->payload['isBrachytherapy']  ?? false,
-                                    'isDebridement' => $request->payload['isDebridement']  ?? false,
-                                    'isTBDots' => $request->payload['isTBDots']  ?? false,
-                                    'isPAD' => $request->payload['isPAD']  ?? false,
-                                    'isRadioTherapy' => $request->payload['isRadioTherapy'],
-                                   'isWarehouse' => $request->payload['isWarehouse'] ?? false,
-                                   'isDispensing' => $request->payload['isDispensing'] ?? false,
-                                   'isPurchasing' => $request->payload['isPurchasing'] ?? false,
-                                   'isAllowedRR' => $request->payload['isAllowedRR'] ?? false,
-                                   'warehouse_Code' => $request->payload['warehouse_Code'],
-                                   'warehouse_description' => $request->payload['warehouse_description'],
-                                   'isActive' => $request->payload['isActive'],
-                               ]);
+                    'warehouse_Group_Id' => $request->payload['warehouse_Group_Id'],
+                    'warehouse_Branch_Id' => $request->payload['warehouse_Branch_Id'],
+                    'isHemodialysis' => isset($request->payload['isHemodialysis']) ? $request->payload['isHemodialysis'] : 0 ,
+                    'isPeritoneal' => isset($request->payload['isPeritoneal']) ? $request->payload['isPeritoneal'] : 0 ,
+                    'isLINAC' => isset($request->payload['isLINAC']) ? $request->payload['isLINAC'] : 0,
+                    'isCOBALT' => isset($request->payload['isCOBALT']) ? $request->payload['isCOBALT'] : 0,
+                    'isChemotherapy' => isset($request->payload['isChemotherapy']) ? $request->payload['isChemotherapy'] : 0,
+                    'isBrachytherapy' => isset($request->payload['isBrachytherapy']) ? $request->payload['isBrachytherapy'] : 0,
+                    'isDebridement' => isset($request->payload['isDebridement']) ? $request->payload['isDebridement'] : 0 ,
+                    'isTBDots' => isset($request->payload['isTBDots']) ? $request->payload['isTBDots'] : 0 ,
+                    'isPAD' => isset($request->payload['isPAD']) ? $request->payload['isPAD'] : 0 ,
+                    'isRadioTherapy' => isset($request->payload['isRadioTherapy']) ? $request->payload['isRadioTherapy'] : 0,
+                    'isWarehouse' => isset($request->payload['isWarehouse']) ? $request->payload['isWarehouse'] : 0,
+                    'isDispensing' => isset($request->payload['isDispensing']) ? $request->payload['isDispensing'] : 0,
+                    'isPurchasing' => isset($request->payload['isPurchasing']) ? $request->payload['isPurchasing'] : 0,
+                    'isAllowedRR' => isset($request->payload['isAllowedRR']) ? $request->payload['isAllowedRR'] : 0,
+                    'warehouse_Code' => isset($request->payload['warehouse_Code']) ? $request->payload['warehouse_Code'] : null,
+                    'warehouse_description' => isset($request->payload['warehouse_description']) ? $request->payload['warehouse_description'] : null,
+                    'isActive' => isset($request->payload['isActive']) ? $request->payload['isActive'] : 0
+                ]);
 
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record successfully updated';
             return Response()->json($data, 200);
 
 
@@ -124,7 +128,7 @@ class MscWarehouseController extends Controller
     {
         try {
             $data['data'] = Warehouses::where('id', $id)->delete();
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record successfully deleted';
             return Response()->json($data, 200);
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);

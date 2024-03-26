@@ -27,5 +27,8 @@ class CategoryFilter
         if ($keyword) {
             $this->model->where('name', 'LIKE', ''.$keyword.'%');
         }
+        if (Request()->invgroup_id) {
+            $this->model->where('invgroup_id',Request()->invgroup_id);
+        }
     }
 }

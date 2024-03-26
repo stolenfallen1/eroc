@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers\BuildFile;
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Genericnames;
-use Illuminate\Http\Request;
+use App\Models\BuildFile\mscGenericnames;
 
 class GenericNameController extends Controller
 {
     public function index()
     {
-        return response()->json(['generic_name' => Genericnames::all()], 200);
+        return response()->json(['generic_name' => mscGenericnames::all()], 200);
     }
     public function list()
     {
         try {
             $data = Genericnames::query();
             if(Request()->keyword) {
-                $data->where('generic_names', 'LIKE', '%'.Request()->keyword.'%');
+                $data->where('generic_name', 'LIKE', '%'.Request()->keyword.'%');
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -30,17 +31,14 @@ class GenericNameController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = Genericnames::select('generic_names')
-                       ->where('generic_names', $request->payload['generic_names'])
-                       ->first();
+            $check_if_exist = Genericnames::select('generic_name')->where('generic_name', $request->payload['generic_name'])->first();
             if(!$check_if_exist) {
                 $data['data'] = Genericnames::create([
-                    'generic_names' => $request->payload['generic_names'],
-                    'generic_key' => $request->payload['generic_key'],
-                    'generic_id' => $request->payload['generic_id'],
-                    'isactive' => $request->payload['isactive']
+                    'generic_name' => $request->payload['generic_name'],
+                    'generic_description' => $request->payload['generic_description'],
+                    'isActive' => $request->payload['isActive']
                 ]);
-                $data['msg'] = 'Success';
+                $data['msg'] = 'Record Successfully Saved';
                 return Response()->json($data, 200);
             }
             $data['msg'] = 'Already Exists!';
@@ -55,13 +53,12 @@ class GenericNameController extends Controller
     {
         try {
             $data['data'] = Genericnames::where('id', $id)->update([
-                           'generic_names' => $request->payload['generic_names'],
-                           'generic_key' => $request->payload['generic_key'],
-                           'generic_id' => $request->payload['generic_id'],
-                           'isactive' => $request->payload['isactive']
+                           'generic_name' => $request->payload['generic_name'],
+                           'generic_description' => $request->payload['generic_description'],
+                           'isActive' => $request->payload['isActive']
                         ]);
 
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record Successfully Update';
             return Response()->json($data, 200);
 
         } catch (\Exception $e) {
@@ -72,7 +69,7 @@ class GenericNameController extends Controller
     {
         try {
             $data['data'] = Genericnames::where('id', $id)->delete();
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record Successfully Deleted';
             return Response()->json($data, 200);
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);

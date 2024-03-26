@@ -2,8 +2,9 @@
 
 namespace App\Models\BuildFile;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\BuildFile\Hospital\mscHospitalExamItemCategory;
 
 class FmsExamProcedureItems extends Model
 {
@@ -11,6 +12,11 @@ class FmsExamProcedureItems extends Model
     protected $table = 'fmsExamProcedureItems';
     protected $connection = "sqlsrv";
     protected $guarded = [];
+
+
+    public function category(){
+        return $this->belongsTo(mscHospitalExamItemCategory::class, 'msc_item_category_ID', 'id');
+    }
 
     public function prices(){
         return $this->hasMany(FmsExamProcedureItemsPrice::class, 'med_item_id', 'map_item_id');

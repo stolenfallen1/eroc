@@ -11,4 +11,8 @@ class PriceScheme extends Model
     protected $connection = "sqlsrv";
     protected $table = "CDG_CORE.dbo.mscPriceSchemes";
     protected $guarded = [];
+
+    public function priceGroups(){
+        return $this->belongsTo(PriceGroup::class,'msc_price_group_id','id');
+    }
 }

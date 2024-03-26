@@ -36,16 +36,14 @@ class DrugAdministrationController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = Drugadministration::select('route_name')
-                       ->where('route_name', $request->payload['route_name'])
-                       ->first();
+            $check_if_exist = Drugadministration::select('route_name')->where('route_name', $request->payload['route_name'])->first();
             if(!$check_if_exist) {
                 $data['data'] = Drugadministration::create([
                     'route_name' => $request->payload['route_name'],
                     'route_description' => $request->payload['route_description'],
                     'isActive' => $request->payload['isActive'],
                 ]);
-                $data['msg'] = 'Success';
+                $data['msg'] = 'Record successfully saved';
                 return Response()->json($data, 200);
             }
             $data['msg'] = 'Already Exists!';
@@ -65,7 +63,7 @@ class DrugAdministrationController extends Controller
                            'isActive' => $request->payload['isActive'],
                         ]);
 
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record successfully saved';
             return Response()->json($data, 200);
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);
@@ -75,7 +73,7 @@ class DrugAdministrationController extends Controller
     {
         try {
             $data['data'] = Drugadministration::where('id', $id)->delete();
-            $data['msg'] = 'Success';
+            $data['msg'] = 'Record successfully deleted';
             return Response()->json($data, 200);
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);

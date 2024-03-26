@@ -23,7 +23,7 @@ class CivilStatusController extends Controller
 
             $data = CivilStatus::query();
             if(Request()->keyword) {
-                $data->where('status_description', 'LIKE', '%'.Request()->keyword.'%');
+                $data->where('civil_status_description', 'LIKE', '%'.Request()->keyword.'%');
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -37,12 +37,12 @@ class CivilStatusController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = CivilStatus::select('status_description')
-                        ->where('status_description', $request->payload['status_description'])
+            $check_if_exist = CivilStatus::select('civil_status_description')
+                        ->where('civil_status_description', $request->payload['civil_status_description'])
                         ->first();
             if(!$check_if_exist) {
                 $data['data'] = CivilStatus::create([
-                    'status_description' => $request->payload['status_description'],
+                    'civil_status_description' => $request->payload['civil_status_description'],
                     'isactive' => $request->payload['isactive'],
                 ]);
                 $data['msg'] = 'Success';
@@ -61,7 +61,7 @@ class CivilStatusController extends Controller
         try {
 
             $data['data'] = CivilStatus::where('id', $id)->update([
-                           'status_description' => $request->payload['status_description'],
+                           'civil_status_description' => $request->payload['civil_status_description'],
                            'isactive' => $request->payload['isactive'],
                         ]);
 

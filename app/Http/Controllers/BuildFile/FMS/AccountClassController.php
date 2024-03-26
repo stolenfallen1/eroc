@@ -8,11 +8,21 @@ use Illuminate\Http\Request;
 
 class AccountClassController extends Controller
 {
+
+     public function list()
+    {
+        $data = AccountClass::get();
+        return response()->json($data, 200);
+    }
+
+
     public function index()
     {
 
         try {
             $data = AccountClass::query();
+            $data->with("getAccountClass", "getAccountType");
+
             if(Request()->keyword) {
                 $data->where('Description', 'LIKE', '%'.Request()->keyword.'%')->orWhere('Class', 'LIKE', '%'.Request()->keyword.'%');
             }

@@ -155,6 +155,11 @@ class PurchaseOrderController extends Controller
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;
+                
+                $checkPO = purchaseOrderMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('po_Document_vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                if ($checkPO) {
+                    $number = $checkPO->po_Document_number;
+                }
                 $po = purchaseOrderMaster::updateOrCreate(
                     [
                         'pr_request_id' => $purchase_order['pr_request_id'],
@@ -188,33 +193,34 @@ class PurchaseOrderController extends Controller
                         'po_status_id' => 1,
                     ]
                 );
-                
-                $sequence->update([
-                    'seq_no' => (int) $sequence->seq_no + 1,
-                    'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
-                ]);
-                
-                foreach ($purchase_order['items'] as $item) {
-                    $po->details()->updateOrCreate(
-                        [
-                           'po_Detail_item_id'=>  $item['item_Id'],
-                           'pr_detail_id'=>  $item['id'],
-                           'canvas_id'=>  $item['recommended_canvas']['id'],
-                        ],
-                        [
-                        'po_Detail_item_id' => $item['item_Id'],
-                        'po_Detail_item_listcost' => $item['recommended_canvas']['canvas_item_net_amount'],
-                        'po_Detail_item_qty' => $item['recommended_canvas']['canvas_Item_Qty'],
-                        'po_Detail_item_unitofmeasurement_id' => $item['recommended_canvas']['canvas_Item_UnitofMeasurement_Id'],
-                        'po_Detail_item_discount_percent' => $item['recommended_canvas']['canvas_item_discount_percent'],
-                        'po_Detail_item_discount_amount' => $item['recommended_canvas']['canvas_item_discount_amount'],
-                        'po_Detail_vat_percent' => $item['recommended_canvas']['canvas_item_vat_rate'],
-                        'po_Detail_vat_amount' => $item['recommended_canvas']['canvas_item_vat_amount'],
-                        'po_Detail_net_amount' => round($item['recommended_canvas']['canvas_item_net_amount'], 4),
-                        'pr_detail_id' => $item['id'],
-                        'canvas_id' => $item['recommended_canvas']['id'],
-                        'isFreeGoods' => $item['recommended_canvas']['isFreeGoods'],
+                // update if not exist 
+                if (!$checkPO) {
+                    $sequence->update([
+                        'seq_no' => (int) $sequence->seq_no + 1,
+                        'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
                     ]);
+                }
+                foreach ($purchase_order['items'] as $item) {
+                        $po->details()->updateOrCreate(
+                            [
+                            'po_Detail_item_id'=>  $item['item_Id'],
+                            'pr_detail_id'=>  $item['id'],
+                            'canvas_id'=>  $item['recommended_canvas']['id'],
+                            ],
+                            [
+                            'po_Detail_item_id' => $item['item_Id'],
+                            'po_Detail_item_listcost' => $item['recommended_canvas']['canvas_item_net_amount'],
+                            'po_Detail_item_qty' => $item['recommended_canvas']['canvas_Item_Qty'],
+                            'po_Detail_item_unitofmeasurement_id' => $item['recommended_canvas']['canvas_Item_UnitofMeasurement_Id'],
+                            'po_Detail_item_discount_percent' => $item['recommended_canvas']['canvas_item_discount_percent'],
+                            'po_Detail_item_discount_amount' => $item['recommended_canvas']['canvas_item_discount_amount'],
+                            'po_Detail_vat_percent' => $item['recommended_canvas']['canvas_item_vat_rate'],
+                            'po_Detail_vat_amount' => $item['recommended_canvas']['canvas_item_vat_amount'],
+                            'po_Detail_net_amount' => round($item['recommended_canvas']['canvas_item_net_amount'], 4),
+                            'pr_detail_id' => $item['id'],
+                            'canvas_id' => $item['recommended_canvas']['id'],
+                            'isFreeGoods' => $item['recommended_canvas']['isFreeGoods'],
+                        ]);
                 }
             }
             DB::connection('sqlsrv')->commit();

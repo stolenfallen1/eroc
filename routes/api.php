@@ -38,6 +38,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('pos/refresh', [AuthPOSController::class, 'refreshToken']);
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);
+    
     require_once('pos/api.php');
     require_once('pos/v1/api.php');
     require_once('buildfile/api.php');

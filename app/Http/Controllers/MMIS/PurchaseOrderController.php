@@ -203,9 +203,9 @@ class PurchaseOrderController extends Controller
                 foreach ($purchase_order['items'] as $item) {
                         $po->details()->updateOrCreate(
                             [
-                            'po_Detail_item_id'=>  $item['item_Id'],
-                            'pr_detail_id'=>  $item['id'],
-                            'canvas_id'=>  $item['recommended_canvas']['id'],
+                                'po_Detail_item_id'=>  $item['item_Id'],
+                                'pr_detail_id'=>  $item['id'],
+                                'canvas_id'=>  $item['recommended_canvas']['id'],
                             ],
                             [
                             'po_Detail_item_id' => $item['item_Id'],

@@ -35,6 +35,7 @@ class PurchaseOrders
     $searchable = ['po_number', 'pr_number'];
     if (Request()->keyword) {
       $keyword = Request()->keyword;
+      $this->model->whereNotIn('po_status_id',['4']);
       $this->model->where(function ($q) use ($keyword, $searchable) {
           foreach ($searchable as $column) {
               if ($column == 'po_number'){

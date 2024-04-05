@@ -26,6 +26,7 @@ class PurchaseOrders
     $this->byEndDate();
     $this->byTab();
     $this->byUser();
+    $this->model->whereNotIn('po_status_id',['4']);
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -35,7 +36,6 @@ class PurchaseOrders
     $searchable = ['po_number', 'pr_number'];
     if (Request()->keyword) {
       $keyword = Request()->keyword;
-      $this->model->whereNotIn('po_status_id',['4']);
       $this->model->where(function ($q) use ($keyword, $searchable) {
           foreach ($searchable as $column) {
               if ($column == 'po_number'){
@@ -67,6 +67,19 @@ class PurchaseOrders
     if(Request()->department){
       $this->model->where('po_Document_warehouse_id', Request()->department);
     }
+    // $role_name = ['comptroller', 'administrator','president','corporate admin','purchaser'];
+    // if (!in_array($this->authUser->role->name, $role_name, true)) {
+    //   if(Request()->department){
+    //     $this->model->where('po_Document_warehouse_id', Request()->department);
+    //   }
+    // }else{
+    //   if(Request()->department){
+    //     if($this->authUser->role->warehouse_id != Request()->department){
+    //       $this->model->where('po_Document_warehouse_id', Request()->department);
+    //     }
+    //   }
+    // }
+    
   }
   
   private function byItemGroup()

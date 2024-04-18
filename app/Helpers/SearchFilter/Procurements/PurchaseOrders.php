@@ -137,7 +137,7 @@ class PurchaseOrders
   }
 
   private function forApproval(){
-    if(Request()->branch == 1){
+    if($this->authUser->branch_id == 1){
       if($this->authUser->role->name == 'comptroller'){
         $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
       }

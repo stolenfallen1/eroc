@@ -151,7 +151,7 @@ class PurchaseOrderController extends Controller
             $authUser = Auth::user();
             $uom = Unitofmeasurement::where('name', 'like', '%Day%')->first();
             foreach ($request->purchase_orders as $purchase_order) {
-                $sequence = SystemSequence::where(['isActive' => true, 'code' => 'PO1'])->first();
+                $sequence = SystemSequence::where(['isActive' => true, 'code' => 'PO7'])->first();
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;
@@ -229,7 +229,7 @@ class PurchaseOrderController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
-            return response()->json(["error" => $e], 200);
+            return response()->json(["error" => $e->getMessage()], 200);
         }
     }
 

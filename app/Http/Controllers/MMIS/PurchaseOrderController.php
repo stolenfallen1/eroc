@@ -151,7 +151,11 @@ class PurchaseOrderController extends Controller
             $authUser = Auth::user();
             $uom = Unitofmeasurement::where('name', 'like', '%Day%')->first();
             foreach ($request->purchase_orders as $purchase_order) {
-                $sequence = SystemSequence::where(['isActive' => true, 'code' => 'PO7'])->first();
+                if($purchase_order['po_Document_branch_id'] == 1){
+                    $sequence = SystemSequence::where(['isActive' => true, 'code' => 'PO1', 'branch_id' => $purchase_order['po_Document_branch_id']])->first();
+                }else{
+                    $sequence = SystemSequence::where(['isActive' => true, 'code' => 'PO7', 'branch_id' => $purchase_order['po_Document_branch_id']])->first();
+                }
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;

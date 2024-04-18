@@ -50,6 +50,8 @@ class PurchaseRequests
                   $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
           }
       });
+    }else{
+      $this->model->where('pr_Document_Number', 'like', "000%");
     }
   }
   

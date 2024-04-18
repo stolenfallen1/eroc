@@ -34,7 +34,12 @@ class DeliveryController extends Controller
         try {
             $has_dup_invoice_no = Delivery::where('rr_Document_Warehouse_Id', Auth::user()->warehouse_id)->where('po_Document_Number',$request['po_Document_number'])->where('rr_Document_Invoice_No', $request['rr_Document_Invoice_No'])->exists();
             if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
-            $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN1'])->first();
+            if(Auth::user()->branch_id == 1){
+                $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN1'])->where('branch_id', Auth::user()->branch_id)->first();
+            }else{
+                $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN2'])->where('branch_id', Auth::user()->branch_id)->first();
+            }
+           
             $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
             $prefix = $sequence->seq_prefix;
             $suffix = $sequence->seq_suffix;
@@ -206,8 +211,11 @@ class DeliveryController extends Controller
                         //     ]);
                         // }
     
-                        
-                        $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+                        if(Auth::user()->branch_id == 1){
+                            $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+                        }else{
+                            $sequence1 = SystemSequence::where('code', 'ITCR2')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
+                        }
                         $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
     
                         // return $detail['purchase_request_detail'];
@@ -311,7 +319,7 @@ class DeliveryController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
-            return response()->json(["error" => $e], 200);
+            return response()->json(["error" => $e->getMessage()], 200);
         }
     }
 

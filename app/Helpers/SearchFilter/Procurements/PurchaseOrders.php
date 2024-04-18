@@ -51,13 +51,16 @@ class PurchaseOrders
                   // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
           }
       });
+    }else{
+      $this->model->where('po_Document_number', 'like', "000%");
     }
   }
   
   private function byBranch(){
     if($this->authUser->branch_id == 1)
     {
-      $this->model->where('po_Document_branch_id', Request()->branch);
+      $branch =  Request()->branch ? Request()->branch : $this->authUser->branch_id;
+      $this->model->where('po_Document_branch_id',$branch);
     }else{
       $this->model->where('po_Document_branch_id', $this->authUser->branch_id);
     }
@@ -137,7 +140,7 @@ class PurchaseOrders
   }
 
   private function forApproval(){
-    if(Request()->branch == 1){
+    if($this->authUser->branch_id == 1){
       if($this->authUser->role->name == 'comptroller'){
         $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
       }
@@ -170,13 +173,20 @@ class PurchaseOrders
       }
       else if($this->authUser->role->name == 'administrator'){
         $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
+      }else{
+        $this->model->whereNull('comptroller_approved_by')->where(function($q){
+          $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
+        });
       }
       
     }
 
     if($this->authUser->role->name == 'corporate admin'){
-      $this->model->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
-        ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+      if($this->authUser->branch_id == Request()->branch){
+        $this->model->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+      }else{
+        $this->model->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+      }
       // $this->model->where(function($q1){
       //   $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)
       //   ->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])

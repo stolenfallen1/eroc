@@ -48,7 +48,14 @@ class CanvasController extends Controller
     {
         $authUser = Auth::user();
         $vendor = Vendors::findOrfail($request->vendor_id);
-        $sequence = SystemSequence::where(['isActive' => true, 'code' => 'CSN1'])->first();
+        $pr = PurchaseRequest::findOrfail($request->pr_request_id);
+       
+        if($pr->branch_Id == 1){
+            $sequence = SystemSequence::where(['isActive' => true, 'code' => 'CSN1','branch_id'=> $pr->branch_Id])->first();
+        }else{
+            $sequence = SystemSequence::where(['isActive' => true, 'code' => 'CSN7','branch_id'=> $pr->branch_Id])->first();
+        }
+        
         $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
         $prefix = $sequence->seq_prefix;
         $suffix = $sequence->seq_suffix;

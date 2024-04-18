@@ -302,7 +302,7 @@ class PurchaseRequestController extends Controller
             foreach ($items as $key => $item ) {
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
                 // return Auth::user()->role->name;
-                $this->addPharmaCanvas($item);
+                // $this->addPharmaCanvas($item);
                 if(isset($item['isapproved']) && $item['isapproved'] == true){
                     $prd->update([
                         'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
@@ -342,7 +342,7 @@ class PurchaseRequestController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollBack();
             DB::connection('sqlsrv_mmis')->rollBack();
-            return response()->json(['error' => $e], 200);
+            return response()->json(['error' => $e->getMessage()], 200);
         }
     }
 

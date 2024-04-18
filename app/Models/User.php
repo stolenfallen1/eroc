@@ -13,6 +13,7 @@ use App\Models\BuildFile\Warehouses;
 use App\Models\UserRevenueCodeAccess;
 use Illuminate\Notifications\Notifiable;
 use App\Models\BuildFile\Systemuseraccess;
+use App\Models\BuildFile\UserRoleItemGroup;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\BuildFile\SystemCentralSequences;
 use App\Models\MMIS\procurement\PurchaseRequest;
@@ -78,7 +79,7 @@ class User extends \TCG\Voyager\Models\User
 
     protected $with = ['warehouse','approvaldetail','branch', 'user_department_access','OpeningAmount','systemUserAccess'];
 
-    protected $appends = ['departments','RevenueCode'];
+    protected $appends = ['departments','RevenueCode','assigneditemgroup','assingcategory'];
 
     public function warehouse()
     {
@@ -122,6 +123,18 @@ class User extends \TCG\Voyager\Models\User
         return $this->hasMany(UserDeptAccess::class, 'user_id', 'idnumber');
     }
 
+    public function assined_item_group()
+    {
+        return $this->hasMany(UserRoleItemGroup::class, 'login_id', 'idnumber');
+    }
+    public function getAssigneditemgroupAttribute(){
+        return $this->assined_item_group()->pluck('inventory_group_id');
+    }
+    public function getAssingcategoryAttribute(){
+        return $this->assined_item_group()->pluck('inventory_category_id')->unique();
+    }
+
+    
     public function getDepartmentsAttribute(){
         return $this->user_department_access()->pluck('warehouse_id');
     }

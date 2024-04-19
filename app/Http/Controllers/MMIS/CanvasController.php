@@ -40,6 +40,8 @@ class CanvasController extends Controller
                 $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
             });
         }
+        
+        $model->where('pr_Document_Number', 'like', "000%");
         if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 
         return $model->count();
     }

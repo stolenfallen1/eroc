@@ -303,39 +303,74 @@ class PurchaseRequestController extends Controller
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
                 // return Auth::user()->role->name;
                 // $this->addPharmaCanvas($item);
-                if(isset($item['isapproved']) && $item['isapproved'] == true){
-                    $prd->update([
+                if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
+                    if(isset($item['isapproved']) && $item['isapproved'] == true){
+                        $prd->update([
+                            'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                            'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                            'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                            'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                        ]);
+                    } else{
+                        $prd->update([
+                            'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
+                            'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+                        ]);
+                    }
+                }else{
+                    if(isset($item['isapproved']) && $item['isapproved'] == true){
+                        $prd->update([
+                            'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
+                            'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
+                            
+                            'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                            'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                            'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                            'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                            'is_submitted' => 1,
+                        ]);
+                    } else{
+                        $prd->update([
+                            'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
+                            'pr_Branch_Level2_CancelledDate' => Carbon::now(),
+                        ]);
+                    }
+                }
+               
+            }
+            if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
+                $pr = PurchaseRequest::where('id', $request->id)->first();
+                if($request->isapproved){
+                    $pr->update([
+                        'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                        'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                    ]);
+                }else{
+                    $pr->update([
+                        'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
+                        'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+                        'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
+                        'pr_Status_Id' => 3
+                    ]);
+                }
+            }else{
+                $pr = PurchaseRequest::where('id', $request->id)->first();
+                if($request->isapproved){
+                    $pr->update([
                         'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
                         'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
-                        
-                        'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                        'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                        'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                        'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                        'is_submitted' => 1,
+                        'pr_Status_Id' => 6
                     ]);
-                } else{
-                    $prd->update([
+                }else{
+                    $pr->update([
                         'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
                         'pr_Branch_Level2_CancelledDate' => Carbon::now(),
+                        'pr_Branch_Level2_Cancelled_Remarks' => $request->remarks,
+                        'pr_Status_Id' => 3
                     ]);
                 }
             }
-            $pr = PurchaseRequest::where('id', $request->id)->first();
-            if($request->isapproved){
-                $pr->update([
-                    'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
-                    'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
-                    'pr_Status_Id' => 6
-                ]);
-            }else{
-                $pr->update([
-                    'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
-                    'pr_Branch_Level2_CancelledDate' => Carbon::now(),
-                    'pr_Branch_Level2_Cancelled_Remarks' => $request->remarks,
-                    'pr_Status_Id' => 3
-                ]);
-            }
+           
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
             return response()->json(['message' => 'success'], 200);

@@ -59,9 +59,12 @@ class PurchaseOrders
   private function byBranch(){
     if($this->authUser->branch_id == 1)
     {
-      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name != 'purchaser'){
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president'){
         $branch =  Request()->branch ? Request()->branch : $this->authUser->branch_id;
         $this->model->where('po_Document_branch_id',$branch);
+      }
+      else{
+        $this->model->where('po_Document_branch_id',Request()->branch);
       }
     }else{
       $this->model->where('po_Document_branch_id', $this->authUser->branch_id);

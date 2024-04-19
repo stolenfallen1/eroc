@@ -31,6 +31,7 @@ class PurchaseRequests
     // $this->byYear();
     $this->byUser();
     $this->byTab();
+    $this->model->whereNotIn('pr_Status_Id',['4']);
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -80,6 +81,9 @@ class PurchaseRequests
       $this->model->where('warehouse_Id',Request()->department);
     }else{
       if($this->authUser->branch_id != 1 && $this->authUser->isDepartmentHead && $this->authUser->isConsultant){
+        $this->model->whereIn('warehouse_Id', $this->authUser->departments);
+      }
+      if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
         $this->model->whereIn('warehouse_Id', $this->authUser->departments);
       }
     }
@@ -295,13 +299,11 @@ class PurchaseRequests
       $q->where(function($q2){
         $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
       })->where(function($q2){
-        $q2->where('is_submitted', 1)->orWhereNull('is_submitted',false)->orWhereNull('is_submitted');
+        $q2->where('is_submitted', false)->orWhereNull('is_submitted');
       });
     }])->where(function($q1){
       $q1->where(function($q2){
-        $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
-        ->where('invgroup_id', '!=', 2)
-        ->whereHas('purchaseRequestDetails', function ($q3){
+        $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->where('invgroup_id', '!=', 2)->whereHas('purchaseRequestDetails', function ($q3){
           $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
         });
       })
@@ -318,6 +320,7 @@ class PurchaseRequests
         // $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
       })->orWhereDoesntHave('canvases');
     });
+
 
     // $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){
     //   // $q->where('is_submitted', NULL)->orWhere('is_submitted', false)
@@ -354,8 +357,8 @@ class PurchaseRequests
       $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function($q1){
           $q1->where(function($q2){
-            // $q2->where('canvas_Branch_Id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
-            // ->orWhere('canvas_Branch_Id', 1);
+            $q2->where('canvas_Branch_Id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
+            ->orWhere('canvas_Branch_Id', 1);
           })->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         });
     });
@@ -367,6 +370,7 @@ class PurchaseRequests
             });
         })->where('is_submitted', true);
     }]);
+
     $this->model->orderBy('created_at', 'desc');
   }
 

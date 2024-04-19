@@ -19,6 +19,7 @@ class Vendors
     $this->byPRDetail();
     $this->searchColumns();
     $this->model->where('deleted_at', NULL);
+    $this->model->orderBy('vendor_Name','asc');
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

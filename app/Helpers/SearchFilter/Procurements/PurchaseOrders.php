@@ -59,8 +59,13 @@ class PurchaseOrders
   private function byBranch(){
     if($this->authUser->branch_id == 1)
     {
-      $branch =  Request()->branch ? Request()->branch : $this->authUser->branch_id;
-      $this->model->where('po_Document_branch_id',$branch);
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president'){
+        $branch =  Request()->branch ? Request()->branch : $this->authUser->branch_id;
+        $this->model->where('po_Document_branch_id',$branch);
+      }
+      else{
+        $this->model->where('po_Document_branch_id',Request()->branch);
+      }
     }else{
       $this->model->where('po_Document_branch_id', $this->authUser->branch_id);
     }
@@ -68,7 +73,15 @@ class PurchaseOrders
 
   private function byDepartment(){
     if(Request()->department){
-      $this->model->where('po_Document_warehouse_id', Request()->department);
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name != 'purchaser'){
+        $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
+      }else{
+        $this->model->where('po_Document_warehouse_id', Request()->department);
+      }
+    }else{
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name != 'purchaser'){
+        $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
+      }
     }
     // $role_name = ['comptroller', 'administrator','president','corporate admin','purchaser'];
     // if (!in_array($this->authUser->role->name, $role_name, true)) {
@@ -152,7 +165,7 @@ class PurchaseOrders
         ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
       }else{
         if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' && 
-          $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president'){
+          $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' ){
           $this->model->whereNull('comptroller_approved_by')->where(function($q){
             $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
           });

@@ -295,6 +295,8 @@ class PurchaseRequestController extends Controller
     }
 
     private function approveByConsultant($request){
+
+       
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
@@ -304,7 +306,7 @@ class PurchaseRequestController extends Controller
                 // return Auth::user()->role->name;
                 // $this->addPharmaCanvas($item);
                 if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
-                    if(Auth()->user()->branch_id != 1){
+                    if($request->branch_Id != 1){
                         if(isset($item['isapproved']) && $item['isapproved'] == true){
                             $prd->update([
                                 'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
@@ -373,7 +375,7 @@ class PurchaseRequestController extends Controller
             }
             if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                 $pr = PurchaseRequest::where('id', $request->id)->first();
-                if(Auth()->user()->branch_id != 1){
+                if($request->branch_Id != 1){
                     if($request->isapproved){
                         $pr->update([
                             'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,

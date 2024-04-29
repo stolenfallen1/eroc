@@ -59,7 +59,7 @@ class PurchaseOrders
   private function byBranch(){
     if($this->authUser->branch_id == 1)
     {
-      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president'){
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name !='audit'){
         $branch =  Request()->branch ? Request()->branch : $this->authUser->branch_id;
         $this->model->where('po_Document_branch_id',$branch);
       }
@@ -73,13 +73,13 @@ class PurchaseOrders
 
   private function byDepartment(){
     if(Request()->department){
-      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name != 'purchaser'){
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name !='audit' && $this->authUser->role->name != 'purchaser'){
         $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
       }else{
         $this->model->where('po_Document_warehouse_id', Request()->department);
       }
     }else{
-      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name != 'purchaser'){
+      if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' &&  $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' && $this->authUser->role->name !='audit' && $this->authUser->role->name != 'purchaser'){
         $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
       }
     }

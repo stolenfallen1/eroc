@@ -20,7 +20,11 @@ class NewItemsController extends Controller
                 if(Request()->type == 'barcode'){
                     $data->where('item_Barcode', Request()->keyword);
                 }else{
-                    $data->where('item_name', 'LIKE', '%' . Request()->keyword . '%');
+                    if(is_numeric(Request()->keyword)){
+                        $data->where('id', 'LIKE', '%' . Request()->keyword . '%');
+                    }else{
+                        $data->where('item_name', 'LIKE', '%' . Request()->keyword . '%');
+                    }
                 }
             }
             if(Request()->category) {

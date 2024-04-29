@@ -16,7 +16,7 @@ class vwWarehouseItems extends Model
     protected $with = ['item_batch'];
 
     public function item_batch(){
-        return $this->hasMany(ItemBatchModelMaster::class, 'item_Id', 'id')->where('isConsumed',0);
+        return $this->hasMany(ItemBatchModelMaster::class, 'item_Id', 'id')->where('isConsumed',0)->where('warehouse_Id', Auth()->user()->warehouse_id);
         // ->whereDate('item_Expiry_Date','>',Carbon::now()->format('Y-m-d'))
     }
 }

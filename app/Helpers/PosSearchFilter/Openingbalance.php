@@ -31,7 +31,10 @@ class Openingbalance
         // if(Auth()->user()->role->name != 'POS Cashier') {
           
         // }
-        $this->model->whereDate('report_date', Request()->date);
+        if( Request()->date){
+
+            $this->model->whereDate('report_date', Request()->date);
+        }
 
     }
     public function searchShift()
@@ -46,7 +49,10 @@ class Openingbalance
     }
     public function bystatus()
     {
-        $this->model->where('isposted', Request()->status);
+        if(Request()->status){
+
+            $this->model->where('isposted', Request()->status);
+        }
     }
     public function byUser()
     {

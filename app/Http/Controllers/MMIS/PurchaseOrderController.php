@@ -196,6 +196,19 @@ class PurchaseOrderController extends Controller
                 if ($checkPO) {
                     $number = $checkPO->po_Document_number;
                 }
+                $po_Document_discount_percent = 0;
+                $po_Document_discount_amount = 0;
+                $po_Document_vat_amount = 0;
+                $po_Document_total_net_amount = 0;
+                if(sizeof($purchase_order['items']) > 0){
+                    foreach ($purchase_order['items'] as $item) {
+                        $po_Document_discount_percent += round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
+                        $po_Document_discount_amount += round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
+                        $po_Document_vat_amount += round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
+                        $po_Document_total_net_amount += round($item['recommended_canvas']['canvas_item_net_amount'], 4);
+                    }
+                }
+
                 $po = purchaseOrderMaster::updateOrCreate(
                     [
                         'pr_request_id' => $purchase_order['pr_request_id'],
@@ -218,12 +231,12 @@ class PurchaseOrderController extends Controller
                         'po_Document_overdue_date_value' => 0,
                         'po_Document_total_item_ordered' => sizeof($purchase_order['items']),
                         'po_Document_total_gross_amount' => $purchase_order['po_Document_total_gross_amount'],
-                        'po_Document_discount_percent' =>  $purchase_order['po_Document_discount_percent'],
-                        'po_Document_discount_amount' => $purchase_order['po_Document_discount_amount'],
+                        'po_Document_discount_percent' =>  $po_Document_discount_percent,
+                        'po_Document_discount_amount' =>  $po_Document_discount_amount,
                         'po_Document_isvat_inclusive' => $purchase_order['po_Document_isvat_inclusive'],
                         'po_Document_vat_percent' => $purchase_order['po_Document_vat_percent'],
-                        'po_Document_vat_amount' => $purchase_order['po_Document_vat_amount'],
-                        'po_Document_total_net_amount' => $purchase_order['po_Document_total_net_amount'],
+                        'po_Document_vat_amount' => $po_Document_vat_amount,
+                        'po_Document_total_net_amount' => $po_Document_total_net_amount,
                         'pr_request_id' => $purchase_order['pr_request_id'],
                         'po_Document_userid' => $authUser->idnumber,
                         'po_status_id' => 1,

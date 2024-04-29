@@ -87,7 +87,8 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     if($is_viewer == false){
         array_push($viewers, Request()->id);
         $purchase_order->update([
-            'viewers' => implode(',', $viewers)
+            'viewers' => implode(',', $viewers),
+            'isprinted'=>1
         ]);
     }
 

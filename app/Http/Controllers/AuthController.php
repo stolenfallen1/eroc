@@ -22,7 +22,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             $user = Auth::user();
             if($user->isactive == 1) {
                 $token = $user->createToken();
-                $user->load('role.permissions', 'roles');
+                // $user->load('role.permissions', 'roles');
                 return response()->json(['user' => $user, 'access_token' => $token], 200);
             }
             // return $this->sendLoginResponse($request);

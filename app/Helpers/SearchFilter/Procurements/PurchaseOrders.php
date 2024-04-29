@@ -234,8 +234,7 @@ class PurchaseOrders
 
       }
     }
-
-    $this->model->orderBy('created_at', 'desc');
+    $this->model->orderBy('isprinted', 'desc');
   }
 
   private function forComptroller(){
@@ -292,5 +291,4 @@ class PurchaseOrders
     }
     $this->model->orderBy('created_at', 'desc');
   }
-
 }

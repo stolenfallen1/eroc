@@ -291,5 +291,4 @@ class PurchaseOrders
     }
     $this->model->orderBy('created_at', 'desc');
   }
-
 }

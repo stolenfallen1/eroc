@@ -71,7 +71,7 @@ class PurchaseOrderController extends Controller
                 $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas');
             }
         }, 'purchaseRequest' => function($q){
-            $q->with('user', 'itemGroup', 'category');
+            $q->with('user', 'itemGroup', 'category','purchaseRequestAttachments');
         }, 'vendor', 'warehouse', 'user'])->findOrfail($id);
     }
 

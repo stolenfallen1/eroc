@@ -408,7 +408,16 @@ class PurchaseRequests
   private function forPurchaseOrder(){
     $this->model->where(function($q1){
       $q1->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
-    })->whereHas('purchaseRequestDetails', function($q){
+    })->with(['purchaseRequestDetails'=>function($q){
+      $q->with('recommendedCanvas.vendor')
+        ->where(function($query){
+            $query->whereHas('recommendedCanvas', function($query1){
+                $query1->whereNotNull('canvas_Level2_ApprovedBy');
+            });
+        })->where('is_submitted', true);
+    }])
+    
+    ->whereHas('purchaseRequestDetails', function($q){
       $q->where('is_submitted', true)
       ->whereHas('recommendedCanvas', function($q1){
         $q1->where(function($q2){

@@ -272,21 +272,20 @@ class PurchaseOrders
 
   private function forAdministrator(){
     $this->model->where('admin_approved_date', '!=', null);
-    // $this->model->orderBy('created_at', 'desc');
     $this->model->orderBy('isprinted', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forCorpAdmin(){
     $this->model->where('corp_admin_approved_date', '!=', null);
-    // $this->model->orderBy('created_at', 'desc');
-    
     $this->model->orderBy('isprinted', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forPresident(){
     $this->model->where('ysl_approved_date', '!=', null);
-    // $this->model->orderBy('created_at', 'desc');
     $this->model->orderBy('isprinted', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forDeclined(){
@@ -321,6 +320,7 @@ class PurchaseOrders
         }
       });
     }
+    $this->model->orderBy('isprinted', 'asc');
     $this->model->orderBy('created_at', 'desc');
   }
 }

@@ -153,6 +153,7 @@ class PurchaseOrders
   }
 
   private function forApproval(){
+    
     if($this->authUser->branch_id == 1){
       if($this->authUser->role->name == 'comptroller'){
         $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
@@ -186,6 +187,8 @@ class PurchaseOrders
             $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
           });
         }
+
+        $this->model->orderBy('isprinted', 'asc');
       }else {
         if($this->authUser->role->name != 'comptroller' && $this->authUser->role->name != 'administrator' && 
           $this->authUser->role->name != 'corporate admin' && $this->authUser->role->name != 'president' ){
@@ -193,7 +196,9 @@ class PurchaseOrders
             $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
           });
         }
+        $this->model->orderBy('isprinted', 'asc');
       }
+      
     }else{
       if($this->authUser->role->name == 'comptroller'){
         $this->model->where(function($q){
@@ -257,27 +262,31 @@ class PurchaseOrders
 
       }
     }
-    $this->model->orderBy('isprinted', 'desc');
   }
 
   private function forComptroller(){
     $this->model->where('comptroller_approved_date', '!=', null);
-    $this->model->orderBy('created_at', 'desc');
+    // $this->model->orderBy('created_at', 'desc');
+    $this->model->orderBy('isprinted', 'desc');
   }
 
   private function forAdministrator(){
     $this->model->where('admin_approved_date', '!=', null);
-    $this->model->orderBy('created_at', 'desc');
+    // $this->model->orderBy('created_at', 'desc');
+    $this->model->orderBy('isprinted', 'asc');
   }
 
   private function forCorpAdmin(){
     $this->model->where('corp_admin_approved_date', '!=', null);
-    $this->model->orderBy('created_at', 'desc');
+    // $this->model->orderBy('created_at', 'desc');
+    
+    $this->model->orderBy('isprinted', 'asc');
   }
 
   private function forPresident(){
     $this->model->where('ysl_approved_date', '!=', null);
-    $this->model->orderBy('created_at', 'desc');
+    // $this->model->orderBy('created_at', 'desc');
+    $this->model->orderBy('isprinted', 'asc');
   }
 
   private function forDeclined(){

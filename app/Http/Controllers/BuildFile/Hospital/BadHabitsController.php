@@ -24,23 +24,18 @@ class BadHabitsController extends Controller
             return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
-    
-    
-    public function search() {
-
-    }
 
     public function store(Request $request) {
         DB::beginTransaction();
         try {
             BadHabits::updateOrCreate(
                 [
-                    'description'=>  $request->description
+                    'description'=>  $request->payload['description']
                 ],
                 [
-                    'description' => $request->description ?? '',
-                    'desc_remarks' => $request->desc_remarks ?? '',
-                    'isactive' => true,
+                    'description' => $request->payload['description'] ?? '',
+                    'desc_remarks' => $request->payload['desc_remarks'] ?? '',
+                    'isactive' => $request->payload['isactive'] ?? false, 
                     'createdBy' => Auth()->user()->idnumber,
                     'created_at' => now(),
                 ]
@@ -59,9 +54,9 @@ class BadHabitsController extends Controller
         DB::beginTransaction();
         try {
             BadHabits::where('id',$id)->update([
-                'description' => $request->description ?? '',
-                'desc_remarks' => $request->desc_remarks ?? '',
-                'isactive' => true, 
+                'description' => $request->payload['description'] ?? '',
+                'desc_remarks' => $request->payload['desc_remarks'] ?? '',
+                'isactive' => $request->payload['isactive'] ?? '', 
                 'updatedBy' => Auth()->user()->idnumber,
                 'updated_at' => now(),                             
             ]);
@@ -72,5 +67,18 @@ class BadHabitsController extends Controller
             DB::rollback();
             return response()->json(["msg" => $e->getMessage()], 200);
         } 
+    }
+
+    public function destroy($id) {
+        DB::beginTransaction();
+        try {
+            BadHabits::where('id',$id)->delete();
+            DB::commit();
+            return response()->json(['msg'=>'success'], 200);
+
+        } catch(\Exception $e) {
+            DB::rollback();
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
     }
 }

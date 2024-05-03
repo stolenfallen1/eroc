@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BuildFile\Hospital\BadHabitsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -566,6 +567,8 @@ Route::controller(HospitalItemandSuppliesController::class)->group(function () {
 Route::controller(DoctorSpecializationController::class)->group(function () {
     Route::get('get-doctors-specializations', 'list');
 });
+
+Route::resource('bad-habits', BadHabitsController::class);
 
 // ==================end hospital build=============================
 

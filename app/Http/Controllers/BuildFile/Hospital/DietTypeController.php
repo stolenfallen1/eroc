@@ -3,23 +3,22 @@
 namespace App\Http\Controllers\BuildFile\Hospital;
 
 use App\Http\Controllers\Controller;
-use App\Models\BuildFile\Hospital\BadHabits;
+use App\Models\BuildFile\Hospital\DietType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class BadHabitsController extends Controller
+class DietTypeController extends Controller
 {
-
+    
     public function index() {
         try {
-            $data = BadHabits::query();
+            $data = DietType::query();
             if(Request()->keyword) {
                 $data->where('description', 'LIKE', '%'.Request()->keyword.'%');
-            } 
+            }
             $data->orderBy('isactive', 'desc')->orderBy('id', 'asc');
-            $page  = Request()->per_page ?? '15';
+            $page = Request()->per_page ?? '15';
             return response()->json($data->paginate($page), 200);
-    
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);
         }
@@ -28,17 +27,16 @@ class BadHabitsController extends Controller
     public function store(Request $request) {
         DB::beginTransaction();
         try {
-            BadHabits::updateOrCreate(
+            DietType::updateOrCreate(
                 [
-                    'description'=>  $request->payload['description']
+                    'description' => $request->payload['description']
                 ],
                 [
                     'description' => $request->payload['description'] ?? '',
-                    'desc_remarks' => $request->payload['desc_remarks'] ?? '',
                     'isactive' => $request->payload['isactive'] ?? false, 
                     'createdBy' => Auth()->user()->idnumber,
                     'created_at' => now(),
-                ]
+                ],
             );
             DB::commit();
             return response()->json(['msg'=>'success'], 200);
@@ -48,17 +46,15 @@ class BadHabitsController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
-    
 
     public function update(Request $request, $id) {
         DB::beginTransaction();
         try {
-            BadHabits::where('id',$id)->update([
+            DietType::where('id', $id)->update([
                 'description' => $request->payload['description'] ?? '',
-                'desc_remarks' => $request->payload['desc_remarks'] ?? '',
-                'isactive' => $request->payload['isactive'] ?? '', 
+                'isactive' => $request->payload['isactive'], 
                 'updatedBy' => Auth()->user()->idnumber,
-                'updated_at' => now(),                             
+                'updated_at' => now(),
             ]);
             DB::commit();
             return response()->json(['msg'=>'success'], 200);
@@ -66,16 +62,15 @@ class BadHabitsController extends Controller
         } catch(\Exception $e) {
             DB::rollback();
             return response()->json(["msg" => $e->getMessage()], 200);
-        } 
+        }
     }
 
     public function destroy($id) {
         DB::beginTransaction();
         try {
-            BadHabits::where('id',$id)->delete();
+            DietType::where('id',$id)->delete();
             DB::commit();
             return response()->json(['msg'=>'success'], 200);
-
         } catch(\Exception $e) {
             DB::rollback();
             return response()->json(["msg" => $e->getMessage()], 200);

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\BuildFile\Hospital\BadHabitsController;
+use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DispositionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -354,9 +356,7 @@ Route::controller(HospitalRoomsClassController::class)->group(function () {
     Route::get('get-room-class', 'list');
 });
 
-Route::controller(HospitalRoomsStatusController::class)->group(function () {
-    Route::get('get-room-status', 'list');
-});
+// Route::resource('hospital-room-status', HospitalRoomsStatusController::class);
 
 Route::controller(CompanyController::class)->group(function () {
     Route::get('get-companies', 'list');
@@ -569,6 +569,10 @@ Route::controller(DoctorSpecializationController::class)->group(function () {
 });
 
 Route::resource('bad-habits', BadHabitsController::class);
+
+Route::resource('diet-type', DietTypeController::class);
+
+Route::resource('disposition-type', DispositionController::class);
 
 // ==================end hospital build=============================
 

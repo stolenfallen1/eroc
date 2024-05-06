@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BuildFile\Hospital\BadHabitsController;
+use App\Http\Controllers\BuildFile\Hospital\DietMealsController;
 use App\Http\Controllers\BuildFile\Hospital\DietMealTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DietSubTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
@@ -574,6 +575,7 @@ Route::controller(DoctorSpecializationController::class)->group(function () {
 
 Route::resource('bad-habits', BadHabitsController::class);
 
+Route::resource('diet-meals', DietMealsController::class);
 Route::resource('diet-type', DietTypeController::class);
 Route::resource('diet-sub-type', DietSubTypeController::class);
 Route::resource('diet-meal-type', DietMealTypeController::class);

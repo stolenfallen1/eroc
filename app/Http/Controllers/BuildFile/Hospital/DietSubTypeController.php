@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\BuildFile\Hospital;
 
 use App\Http\Controllers\Controller;
-use App\Models\BuildFile\Hospital\DietType;
+use App\Models\BuildFile\Hospital\DietSubType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class DietTypeController extends Controller
+class DietSubTypeController extends Controller
 {
-    
     public function index() {
         try {
-            $data = DietType::query();
+            $data = DietSubType::query();
             if(Request()->keyword) {
                 $data->where('description', 'LIKE', '%'.Request()->keyword.'%');
             }
@@ -27,14 +26,14 @@ class DietTypeController extends Controller
     public function store(Request $request) {
         DB::beginTransaction();
         try {
-            DietType::updateOrCreate(
+            DietSubType::updateOrCreate(
                 [
                     'description' => $request->payload['description']
                 ],
                 [
                     'description' => $request->payload['description'] ?? '',
                     'isactive' => $request->payload['isactive'] ?? false, 
-                    'createdBy' => Auth()->user()->idnumber,
+                    'createdby' => Auth()->user()->idnumber,
                     'created_at' => now(),
                 ],
             );
@@ -50,10 +49,10 @@ class DietTypeController extends Controller
     public function update(Request $request, $id) {
         DB::beginTransaction();
         try {
-            DietType::where('id', $id)->update([
+            DietSubType::where('id', $id)->update([
                 'description' => $request->payload['description'] ?? '',
                 'isactive' => $request->payload['isactive'], 
-                'updatedBy' => Auth()->user()->idnumber,
+                'updatedby' => Auth()->user()->idnumber,
                 'updated_at' => now(),
             ]);
             DB::commit();
@@ -68,7 +67,7 @@ class DietTypeController extends Controller
     public function destroy($id) {
         DB::beginTransaction();
         try {
-            DietType::where('id',$id)->delete();
+            DietSubType::where('id',$id)->delete();
             DB::commit();
             return response()->json(['msg'=>'success'], 200);
         } catch(\Exception $e) {

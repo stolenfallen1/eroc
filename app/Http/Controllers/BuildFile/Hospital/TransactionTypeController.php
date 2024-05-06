@@ -24,7 +24,7 @@ class TransactionTypeController extends Controller
             if(Request()->keyword) {
                 $data->where('description', 'LIKE', '%'.Request()->keyword.'%');
             }
-            $data->orderBy('id', 'desc');
+            $data->orderBy('id', 'asc');
             $page  = Request()->per_page ?? '1';
             return response()->json($data->paginate($page), 200);
 

@@ -1,8 +1,13 @@
 <?php
 
 use App\Http\Controllers\BuildFile\Hospital\BadHabitsController;
+use App\Http\Controllers\BuildFile\Hospital\DietMealsController;
+use App\Http\Controllers\BuildFile\Hospital\DietMealTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DietSubTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DispositionController;
+use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
+use App\Models\BuildFile\Hospital\mscHospitalRoomStatus;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -356,7 +361,7 @@ Route::controller(HospitalRoomsClassController::class)->group(function () {
     Route::get('get-room-class', 'list');
 });
 
-// Route::resource('hospital-room-status', HospitalRoomsStatusController::class);
+Route::resource('hospital-room-status', mscHospitalRoomStatusController::class);
 
 Route::controller(CompanyController::class)->group(function () {
     Route::get('get-companies', 'list');
@@ -570,7 +575,10 @@ Route::controller(DoctorSpecializationController::class)->group(function () {
 
 Route::resource('bad-habits', BadHabitsController::class);
 
+Route::resource('diet-meals', DietMealsController::class);
 Route::resource('diet-type', DietTypeController::class);
+Route::resource('diet-sub-type', DietSubTypeController::class);
+Route::resource('diet-meal-type', DietMealTypeController::class);
 
 Route::resource('disposition-type', DispositionController::class);
 

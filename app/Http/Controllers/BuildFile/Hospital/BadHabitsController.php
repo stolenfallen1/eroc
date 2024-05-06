@@ -21,7 +21,7 @@ class BadHabitsController extends Controller
             return response()->json($data->paginate($page), 200);
     
         } catch (\Exception $e) {
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
 
@@ -45,7 +45,7 @@ class BadHabitsController extends Controller
 
         } catch(\Exception $e) {
             DB::rollback();
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
     
@@ -65,7 +65,7 @@ class BadHabitsController extends Controller
 
         } catch(\Exception $e) {
             DB::rollback();
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         } 
     }
 
@@ -78,7 +78,7 @@ class BadHabitsController extends Controller
 
         } catch(\Exception $e) {
             DB::rollback();
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
 }

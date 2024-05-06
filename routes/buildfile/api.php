@@ -471,10 +471,7 @@ Route::resource('age-bracket', AgeBracketController::class);
 Route::resource('bed-status', BedStatusController::class);
 Route::resource('blood-types', BloodTypeController::class);
 Route::resource('death-type', DeathTypeController::class);
-
-Route::controller(CaseTypeController::class)->group(function () {
-    Route::get('get-case-type', 'list');
-});
+Route::resource('case-type', CaseTypeController::class);
 
 Route::controller(TransactionTypeController::class)->group(function () {
     Route::get('get-transaction-type', 'list');
@@ -569,9 +566,7 @@ Route::controller(HospitalItemandSuppliesController::class)->group(function () {
 });
 
 
-Route::controller(DoctorSpecializationController::class)->group(function () {
-    Route::get('get-doctors-specializations', 'list');
-});
+Route::resource('doctor-specialization', DoctorSpecializationController::class);
 
 Route::resource('bad-habits', BadHabitsController::class);
 

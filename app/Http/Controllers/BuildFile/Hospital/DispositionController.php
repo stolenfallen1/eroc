@@ -20,7 +20,7 @@ class DispositionController extends Controller
             $page = Request()->per_page ?? '15';
             return response()->json($data->paginate($page), 200);
         } catch (\Exception $e) {
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
 
@@ -43,7 +43,7 @@ class DispositionController extends Controller
 
         } catch(\Exception $e) {
             DB::rollback();
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
 
@@ -61,7 +61,7 @@ class DispositionController extends Controller
 
         } catch(\Exception $e) {
             DB::rollback();
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
 
@@ -73,7 +73,7 @@ class DispositionController extends Controller
             return response()->json(['msg'=>'success'], 200);
         } catch(\Exception $e) {
             DB::rollback();
-            return response()->json(["msg" => $e->getMessage()], 200);
+            return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
 }

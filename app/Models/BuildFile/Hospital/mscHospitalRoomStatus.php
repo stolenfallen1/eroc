@@ -2,15 +2,13 @@
 
 namespace App\Models\BuildFile\Hospital;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Models\BuildFile\Hospital\mscHospitalStation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class mscHospitalRoomsStatus extends Model
+class mscHospitalRoomStatus extends Model
 {
     use HasFactory;
     protected $table = 'mscHospitalRoomStatus';
     protected $connection = "sqlsrv";
     protected $guarded = [];
-   
 }

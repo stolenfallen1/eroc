@@ -3,6 +3,8 @@
 use App\Http\Controllers\BuildFile\Hospital\BadHabitsController;
 use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DispositionController;
+use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
+use App\Models\BuildFile\Hospital\mscHospitalRoomStatus;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -356,7 +358,7 @@ Route::controller(HospitalRoomsClassController::class)->group(function () {
     Route::get('get-room-class', 'list');
 });
 
-// Route::resource('hospital-room-status', HospitalRoomsStatusController::class);
+Route::resource('hospital-room-status', mscHospitalRoomStatusController::class);
 
 Route::controller(CompanyController::class)->group(function () {
     Route::get('get-companies', 'list');

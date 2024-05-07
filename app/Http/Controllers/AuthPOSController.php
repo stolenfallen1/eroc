@@ -48,7 +48,7 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
 
                 User::where('id', $user->id)->update($updateData);
                 $token = $user->createToken();
-                $user->load('role.permissions', 'roles');
+                // $user->load('role.permissions', 'roles');
 
                 return response()->json(
                     [

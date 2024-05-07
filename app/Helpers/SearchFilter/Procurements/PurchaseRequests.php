@@ -205,6 +205,7 @@ class PurchaseRequests
 
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);
       $this->model->whereNull('pr_Branch_Level1_ApprovedBy');
+      $this->model->whereNull('pr_Branch_Level2_ApprovedBy');
       $this->model->whereNull('pr_Branch_Level1_CancelledBy');
       
       $this->model->with(['purchaseRequestDetails'=>function ($q){
@@ -231,13 +232,11 @@ class PurchaseRequests
           $q->where(function($q1){
             $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null);
           })->orWhere(function($q1){
-            $q1->where('branch_Id', 1)->where('pr_DepartmentHead_ApprovedBy', '!=', null);
+            $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null);
           });
         })->where(['pr_Branch_Level2_ApprovedBy' => null, 'pr_Branch_Level2_CancelledBy' => null]);
       }
-        // $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
-        // ->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('invgroup_id', 2);
-
+        $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])->where('pr_DepartmentHead_ApprovedBy', '!=', null);
         $this->model->with(['purchaseRequestDetails'=>function ($q){
           $q->with('itemMaster');
         }]);
@@ -308,7 +307,8 @@ class PurchaseRequests
         });
       })
       ->orWhere(function($q2){
-        $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->where('invgroup_id', 2)->whereHas('purchaseRequestDetails', function ($q3){
+        // ->where('invgroup_id', 2)
+        $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3){
           $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
         });
       });

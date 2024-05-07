@@ -19,7 +19,7 @@ class Canvases
   public function searchable(){
     $this->model->with('vendor', 'unit', 'attachments');
     $this->model->where('pr_request_details_id', Request()->details_id);
-    // $this->byBranch();
+    $this->byBranch();
     $this->byTab();
     $this->byItemGroup();
     $this->byCategory();
@@ -32,13 +32,12 @@ class Canvases
     return $this->model->paginate($per_page);
   }
   
-  // private function byBranch(){
-  //   if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || 
-  //       $this->authUser->role->name == 'consultant' || $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
-  //   {
-  //     $this->model->where('branch_Id', $this->authUser->branch_id);
-  //   }
-  // }
+  private function byBranch(){
+    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' ||  $this->authUser->role->name == 'consultant' || $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
+    {
+      $this->model->where('branch_Id', $this->authUser->branch_id);
+    }
+  }
 
   private function byItemGroup()
   {

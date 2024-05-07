@@ -304,7 +304,10 @@ class PurchaseRequestController extends Controller
             foreach ($items as $key => $item ) {
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
                 // return Auth::user()->role->name;
-                // $this->addPharmaCanvas($item);
+                if(!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
+                    $this->addPharmaCanvas($item);
+                }
+             
                 if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                     if($request->branch_Id != 1){
                         if(isset($item['isapproved']) && $item['isapproved'] == true){
@@ -470,7 +473,15 @@ class PurchaseRequestController extends Controller
             $discount_amount = $total_amount * ($item['discount'] / 100);
         }
 
-        CanvasMaster::create([
+        CanvasMaster::updateOrCreate(
+            [
+                'pr_request_id' => Request()->id,
+                'pr_request_details_id' =>  $item['id'],
+                'canvas_Item_Id' => $item['item_Id'],
+                'vendor_id' => $vendor->id,
+                'canvas_Branch_Id' => Request()->branch_Id
+            ],
+            [
             'canvas_Document_Number' => $number,
             'canvas_Document_Prefix' => $prefix,
             'canvas_Document_Suffix' => $suffix,

@@ -1,5 +1,13 @@
 <?php
 
+use App\Http\Controllers\BuildFile\Hospital\BadHabitsController;
+use App\Http\Controllers\BuildFile\Hospital\DietMealsController;
+use App\Http\Controllers\BuildFile\Hospital\DietMealTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DietSubTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
+use App\Http\Controllers\BuildFile\Hospital\DispositionController;
+use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
+use App\Models\BuildFile\Hospital\mscHospitalRoomStatus;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -353,9 +361,7 @@ Route::controller(HospitalRoomsClassController::class)->group(function () {
     Route::get('get-room-class', 'list');
 });
 
-Route::controller(HospitalRoomsStatusController::class)->group(function () {
-    Route::get('get-room-status', 'list');
-});
+Route::resource('hospital-room-status', mscHospitalRoomStatusController::class);
 
 Route::controller(CompanyController::class)->group(function () {
     Route::get('get-companies', 'list');
@@ -465,10 +471,7 @@ Route::resource('age-bracket', AgeBracketController::class);
 Route::resource('bed-status', BedStatusController::class);
 Route::resource('blood-types', BloodTypeController::class);
 Route::resource('death-type', DeathTypeController::class);
-
-Route::controller(CaseTypeController::class)->group(function () {
-    Route::get('get-case-type', 'list');
-});
+Route::resource('case-type', CaseTypeController::class);
 
 Route::controller(TransactionTypeController::class)->group(function () {
     Route::get('get-transaction-type', 'list');
@@ -560,12 +563,20 @@ Route::controller(HospitalServicesController::class)->group(function () {
 Route::resource('item-and-supplies', HospitalItemandSuppliesController::class);
 Route::controller(HospitalItemandSuppliesController::class)->group(function () {
     Route::get('search-item-and-supplies', 'search');
+    Route::get('report-count', 'report_count');
 });
 
 
-Route::controller(DoctorSpecializationController::class)->group(function () {
-    Route::get('get-doctors-specializations', 'list');
-});
+Route::resource('doctor-specialization', DoctorSpecializationController::class);
+
+Route::resource('bad-habits', BadHabitsController::class);
+
+Route::resource('diet-meals', DietMealsController::class);
+Route::resource('diet-type', DietTypeController::class);
+Route::resource('diet-sub-type', DietSubTypeController::class);
+Route::resource('diet-meal-type', DietMealTypeController::class);
+
+Route::resource('disposition-type', DispositionController::class);
 
 // ==================end hospital build=============================
 

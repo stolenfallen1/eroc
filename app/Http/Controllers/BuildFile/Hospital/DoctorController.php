@@ -30,7 +30,7 @@ class DoctorController extends Controller
             } else {
                 $data->where('doctor_code', 'LIKE', '%' . Request()->keyword . '%');
             }
-            $data->orderBy('id', 'desc');
+            $data->orderBy('isactive', 'desc')->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
             return response()->json($data->paginate($page), 200);
 

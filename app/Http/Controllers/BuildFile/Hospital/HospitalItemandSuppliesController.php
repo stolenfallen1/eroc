@@ -30,7 +30,7 @@ class HospitalItemandSuppliesController extends Controller
             if(Request()->keyword) {
                 $data->where('item_name', 'LIKE', '%'.Request()->keyword.'%');
             }
-            $data->orderBy('id', 'desc');
+            $data->orderBy('isactive', 'desc')->orderBy('id', 'asc');
             $page  = Request()->per_page ?? '1';
             return response()->json($data->paginate($page), 200);
 
@@ -38,6 +38,57 @@ class HospitalItemandSuppliesController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
+    public function report_count() {
+        try {
+            
+            $inventoryGroups = [
+                2 => "DRUGS AND MEDICINES",
+                1 => "SUPPLIES",
+                3 => "ASSETS",
+                4 => "EQUIPMENTS",
+                6 => "OTHERS"
+            ];
+
+            $groupCounts = [];
+
+            foreach ($inventoryGroups as $groupId => $groupName) {
+                $count = Itemmasters::where('item_InventoryGroup_Id', $groupId)
+                                    ->where('isActive', 1)
+                                    ->count();
+
+                if ($groupId != 3 && $groupId != 4) {
+                    $groupCounts[] = [
+                        "id" => $groupId,
+                        "name" => $groupName,
+                        "total" => $count
+                    ];
+                }
+            }
+            $combinedAssetsEquipmentsCount = Itemmasters::whereIn('item_InventoryGroup_Id', [3, 4])
+                                                ->where('isActive', 1)
+                                                ->count();
+    
+
+            array_unshift($groupCounts, [
+                "id" => "3_4",
+                "name" => "ASSETS & EQUIPMENTS",
+                "total" => $combinedAssetsEquipmentsCount
+            ]);
+            usort($groupCounts, function ($a, $b) use ($inventoryGroups) {
+                // Get the position of group IDs in the inventoryGroups array
+                $orderA = array_search($a['id'], array_keys($inventoryGroups));
+                $orderB = array_search($b['id'], array_keys($inventoryGroups));
+                return $orderA <=> $orderB;
+            });
+            return response()->json($groupCounts, 200);
+    
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
+    
+    
 
     public function search()
     {

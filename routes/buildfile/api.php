@@ -563,6 +563,7 @@ Route::controller(HospitalServicesController::class)->group(function () {
 Route::resource('item-and-supplies', HospitalItemandSuppliesController::class);
 Route::controller(HospitalItemandSuppliesController::class)->group(function () {
     Route::get('search-item-and-supplies', 'search');
+    Route::get('report-count', 'report_count');
 });
 
 

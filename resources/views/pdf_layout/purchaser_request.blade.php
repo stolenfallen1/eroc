@@ -120,7 +120,7 @@
         <div class="header-text">
           <h3>{{$pdf_data['purchase_request']['branch']['name']}}</h3>
           <h5 style="margin: -20px !important;">{{$pdf_data['purchase_request']['branch']['address']}}</h5>
-          <h5>TIN 000-309-308-000</h5>
+          <h5>TIN {{$pdf_data['purchase_request']['branch']['TIN']}}</h5>
         </div>
       </div>
       <div class="title-section">

@@ -126,7 +126,7 @@
         <img src="{{ $pdf_data['logo'] }}" alt="Example Image" width="100" height="100">
         <div class="header-text">
           <h3>{{$pdf_data['purchase_order']?$pdf_data['purchase_order']['branch']?$pdf_data['purchase_order']['branch']['name']:'':''}}</h3>
-          <h5 style="margin: -20px !important;">OSMEÑA BLVD, CEBU CITY, 6000 CEBU</h5>
+          <h5 style="margin: -20px !important;">{{$pdf_data['purchase_order']?$pdf_data['purchase_order']['branch']?$pdf_data['purchase_order']['branch']['address']:'':''}}</h5>
           <h5>TIN 000-309-308-000</h5>
         </div>
         <img class="qr-code" src="{{ $pdf_data['qr'] }}" alt="Example Image" width="100" height="100">

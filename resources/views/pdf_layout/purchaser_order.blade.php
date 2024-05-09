@@ -105,7 +105,9 @@
           .comptroller{
             padding-top: 25px !important;
           }
-
+          .itemname{
+            width: 250px;
+          }
           .csstransforms {
             position: absolute;
             top: 200;
@@ -181,13 +183,26 @@
           <th>Amount</th>
         </thead>
         <tbody>
+          @php $totalamount = 0; @endphp
           @foreach ($pdf_data['purchase_order']['details'] as $detail)
+              @php $totalamount += $detail['po_Detail_net_amount']; @endphp
               <tr>
                 <td class="item-td" >{{ $detail['item']['id'] ?? '' }}</td>
-                <td class="item-td" >{{ $detail['item']['item_name'] ?? '' }}</td>
+                <td class="item-td ">{{ $detail['item']['item_name'] ?? '' }}</td>
                 <td class="item-td" >{{ (float)$detail['po_Detail_item_qty'] ?? 0 }}</td>
                 <td class="item-td" >{{ $detail['unit']?$detail['unit']['name']:'...' }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format(($detail['po_Detail_item_listcost'] / $detail['po_Detail_item_qty']) ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_percent'] ?? 0, 2) }}</td>
+                @if($detail['po_Detail_item_discount_percent'] > 0)
+                  <td class="item-td" >{{ number_format(($detail['po_Detail_item_qty'] * ($detail['po_Detail_item_discount_percent'] / 100)) ?? 0, 2) }}</td>
+                @else
+                  <td class="item-td" >{{ number_format( 0, 2) }}</td>
+                @endif
+                <td class="item-td" >{{ number_format($detail['po_Detail_vat_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['po_Detail_net_amount'] ?? 0, 2) }}</td>
+
+
+                {{-- <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] ?? 0, 2) }}</td>
                 @if($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] > 0)
                   <td class="item-td" >{{ number_format(($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] * ($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_discount_percent'] / 100)) ?? 0, 2) }}</td>
@@ -195,12 +210,12 @@
                   <td class="item-td" >{{ number_format( 0, 2) }}</td>
                 @endif
                 <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_vat_amount'] ?? 0, 2) }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'] ?? 0, 2) }}</td> --}}
               </tr>
           @endforeach
               <tr>
                 <td colspan="8" class="item-td-total" >Total amount</td>
-                <td class="item-td" >{{ number_format($pdf_data['total_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($totalamount ?? 0, 2) }}</td>
               </tr>
         </tbody>
       </table>

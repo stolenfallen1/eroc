@@ -27,6 +27,6 @@ class MedsysTBDailyBillModel extends Model
     }
 
     public function inpatient_datails(){
-        return $this->belongsTo(MedsysInpatient::class,'IdNum', 'IdNum')->with('patient_details');
+        return $this->belongsTo(MedsysInpatient::class,'IdNum', 'IdNum')->with('patient_details','station_details');
     }
 }

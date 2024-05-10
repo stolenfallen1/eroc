@@ -19,7 +19,7 @@ class PatientScheduling
     }
     public function PatientSchedules()
     {
-        $this->model_medys_outpatient->with('patient_details', 'new_patient_details');
+        $this->model_medys_outpatient->with('patient_details', 'new_patient_details','station_details');
         $per_page = Request()->per_page ?? '';
         return $this->model_medys_outpatient->paginate($per_page);
     }

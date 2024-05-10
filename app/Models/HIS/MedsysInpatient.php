@@ -13,7 +13,8 @@ class MedsysInpatient extends Model
     protected $connection = 'sqlsrv_medsys_patient_data';
     protected $table = 'PATIENT_DATA.dbo.tbpatient';
     protected $guarded = [];
-    protected $with = ['station_details'];
+    protected $primaryKey = 'HospNum';
+    protected $with = [];
 
     public function patient_details()
     {

@@ -35,7 +35,7 @@ class MedsysPatient
     {
         $this->inpatient_current_register();
         $this->medsys_inpatient_searchColumns();
-        $this->model_medys_inpatient->with('patient_details');
+        $this->model_medys_inpatient->with('patient_details','station_details');
         $per_page = Request()->per_page ?? '';
         return $this->model_medys_inpatient->paginate($per_page);
     }
@@ -131,7 +131,7 @@ class MedsysPatient
     {
         $this->medsys_patient_master_searchColumns();
         $this->model_medys_patient_master->with('patient_Inpatient', 'patient_registry');
-        $per_page = '-1';
+        $per_page = '15';
         return $this->model_medys_patient_master->paginate($per_page);
     }
 

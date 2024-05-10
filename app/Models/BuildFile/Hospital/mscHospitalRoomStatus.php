@@ -5,7 +5,7 @@ namespace App\Models\BuildFile\Hospital;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class mscHospitalRoomStatus extends Model
+class mscHospitalRoomsStatus extends Model
 {
     use HasFactory;
     protected $table = 'mscHospitalRoomStatus';

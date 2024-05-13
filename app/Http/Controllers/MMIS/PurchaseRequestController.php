@@ -89,9 +89,9 @@ class PurchaseRequestController extends Controller
                 else{
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('canvases', function($query1){
-                            $query1->whereDoesntHave('purchaseRequestDetail', function($q1){
-                                $q1->where('is_submitted', true);
-                            });
+                            // $query1->whereDoesntHave('purchaseRequestDetail', function($q1){
+                            //     $q1->where('is_submitted', [true,false]);
+                            // });
                         })->orWhereDoesntHave('canvases');
                     })->where(function($q2){
                         $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
@@ -360,7 +360,6 @@ class PurchaseRequestController extends Controller
                         $prd->update([
                             'pr_Branch_Level2_ApprovedBy' => Auth::user()->idnumber,
                             'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
-                            
                             'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                             'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                             'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],

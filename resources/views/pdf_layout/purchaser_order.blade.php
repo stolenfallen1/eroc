@@ -255,9 +255,36 @@
         <tbody>
           <tr><td>ORDERED BY :</td></tr>
           <tr><td style="padding-top:10px; text-transform: uppercase;" class="item-td underline">{{$pdf_data['canvaser']}}</td></tr>
-          <tr><td> ( ) Central Supply </td></tr>
-          <tr><td> ( ) Pharmacy </td></tr>
-          <tr><td> ( ) Others Engineering Department </td></tr>
+          <tr>
+            <td>
+              <div style="display: inline-block; width: 100%;">
+                <div style="display: inline-block; width: 10%; vertical-align: top;"><input type="checkbox"  style="position: relative;"></div>
+                <div style="display: inline-block; width: 85%; vertical-align: middle;"> 
+                  <div style="margin-top: 5px;">Central Supply </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div style="display: inline-block; width: 100%;">
+                <div style="display: inline-block; width: 10%; vertical-align: top;"><input type="checkbox"  style="position: relative;"></div>
+                <div style="display: inline-block; width: 85%; vertical-align: middle;"> 
+                  <div style="margin-top: 5px;">Pharmacy</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td> 
+              <div style="display: inline-block; width: 100%;">
+                <div style="display: inline-block; width: 10%; vertical-align: top;"><input type="checkbox" checked style="position: relative;"></div>
+                <div style="display: inline-block; width: 85%; vertical-align: middle;"> 
+                  <div style="margin-top: 5px;">Others {{$pdf_data['purchase_order']['warehouse']['warehouse_description']}}</div>
+                </div>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </body>

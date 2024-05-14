@@ -305,7 +305,9 @@ class PurchaseRequestController extends Controller
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
                 // return Auth::user()->role->name;
                 if(!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
-                    $this->addPharmaCanvas($item);
+                    if($request->invgroup_id == 2){
+                        $this->addPharmaCanvas($item);
+                    }
                 }
              
                 if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){

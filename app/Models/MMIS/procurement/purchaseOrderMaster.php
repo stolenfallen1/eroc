@@ -60,7 +60,7 @@ class purchaseOrderMaster extends Model
     public function warehouse(){
         return $this->belongsTo(Warehouses::class, 'po_Document_warehouse_id');
     }
-
+    
     public function status(){
         return $this->belongsTo(InvStatus::class, 'po_status_id');
     }

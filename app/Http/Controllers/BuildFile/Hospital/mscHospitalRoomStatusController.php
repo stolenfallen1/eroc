@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\BuildFile\Hospital;
 
 use App\Http\Controllers\Controller;
-use App\Models\BuildFile\Hospital\mscHospitalRoomStatus;
+use App\Models\BuildFile\Hospital\mscHospitalRoomsStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -11,7 +11,7 @@ class mscHospitalRoomStatusController extends Controller
 {
     public function index() {
         try {
-            $data = mscHospitalRoomStatus::query();
+            $data = mscHospitalRoomsStatus::query();
             if(Request()->keyword) {
                 $data->where('room_description', 'LIKE', '%'.Request()->keyword.'%');
             } 
@@ -27,7 +27,7 @@ class mscHospitalRoomStatusController extends Controller
     public function store(Request $request) {
         DB::beginTransaction();
         try {
-            mscHospitalRoomStatus::updateOrCreate(
+            mscHospitalRoomsStatus::updateOrCreate(
                 [
                     'room_description'=>  $request->payload['room_description']
                 ],
@@ -50,7 +50,7 @@ class mscHospitalRoomStatusController extends Controller
     public function update(Request $request, $id) {
         DB::beginTransaction();
         try {
-            mscHospitalRoomStatus::where('id', $id)->update([
+            mscHospitalRoomsStatus::where('id', $id)->update([
                 'room_description' => $request->payload['room_description'] ?? '',
                 'isActive' => $request->payload['isActive'], 
                 'isSystemDefault' => $request->payload['isSystemDefault'], 
@@ -68,7 +68,7 @@ class mscHospitalRoomStatusController extends Controller
     public function destroy($id) {
         DB::beginTransaction();
         try {
-            mscHospitalRoomStatus::where('id', $id)->delete();
+            mscHospitalRoomsStatus::where('id', $id)->delete();
             DB::commit();
             return response()->json(['msg'=>'success'], 200);
         } catch(\Exception $e) {

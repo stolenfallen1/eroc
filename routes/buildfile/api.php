@@ -7,7 +7,6 @@ use App\Http\Controllers\BuildFile\Hospital\DietSubTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DispositionController;
 use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
-use App\Models\BuildFile\Hospital\mscHospitalRoomStatus;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -360,7 +359,9 @@ Route::controller(HospitalRoomsAccomodationController::class)->group(function ()
 Route::controller(HospitalRoomsClassController::class)->group(function () {
     Route::get('get-room-class', 'list');
 });
-
+Route::controller(HospitalRoomsStatusController::class)->group(function () {
+    Route::get('get-room-status', 'list');
+});
 Route::resource('hospital-room-status', mscHospitalRoomStatusController::class);
 
 Route::controller(CompanyController::class)->group(function () {

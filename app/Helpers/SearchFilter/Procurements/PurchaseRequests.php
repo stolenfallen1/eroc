@@ -331,7 +331,8 @@ class PurchaseRequests
       $q1->whereHas('canvases', function($q1){
         $q1->whereDoesntHave('purchaseRequestDetail', function($q2){
           $q2->where('is_submitted', true);
-        })->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+        });
+        $q1->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
       })->orWhereDoesntHave('canvases');
     });
 

@@ -2,16 +2,17 @@
 
 namespace App\Models\MMIS\procurement;
 
-use App\Models\Approver\InvStatus;
-use App\Models\BuildFile\Branchs;
-use App\Models\BuildFile\Itemcategories;
-use App\Models\BuildFile\ItemGroup;
-use App\Models\BuildFile\Itemsubcategories;
-use App\Models\BuildFile\Priority;
-use App\Models\BuildFile\Warehouses;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\BuildFile\Branchs;
+use App\Models\Approver\InvStatus;
+use App\Models\BuildFile\Priority;
+use App\Models\BuildFile\ItemGroup;
+use App\Models\BuildFile\Warehouses;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Itemcategories;
+use App\Models\BuildFile\Itemsubcategories;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\MMIS\procurement\PurchaseRequestDetails;
 
 class PurchaseRequest extends Model
 {

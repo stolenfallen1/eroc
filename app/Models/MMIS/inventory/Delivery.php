@@ -72,6 +72,6 @@ class Delivery extends Model
     }
 
     public function getAuditCodeAttribute(){
-        return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-"). ' - ' . generateCompleteSequence($this->po_Document_Prefix, $this->po_Document_Number, $this->po_Document_Suffix, "-");
+        return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-"). ' - ' . generateCompleteSequence($this->po_Document_Prefix, $this->po_Document_Number, $this->po_Document_Suffix, "-").'- INVOICE - '.$this->rr_Document_Invoice_No;
     }
 }

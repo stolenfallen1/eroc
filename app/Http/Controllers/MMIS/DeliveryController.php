@@ -563,8 +563,10 @@ class DeliveryController extends Controller
         }
     }
 
-    public function show($id){
-
+    public function show(Request $request){
+        $id = Request()->id;
+        $po = Request()->po;
+        $invoice = Request()->invoice;
         $delivery = Delivery::with(['warehouse', 'audit', 'items', 'receiver', 'purchaseOrder' => function($q1){
             $q1->with(['deliveryItems' => function($q2){
               $q2->with('delivery.audit.user', 'item', 'unit')->whereHas('delivery', function($q3){
@@ -581,7 +583,7 @@ class DeliveryController extends Controller
                 }, 'itemMaster', 'unit', 'unit2', 'depApprovedBy', 'adminApprovedBy', 'conApprovedBy', 'recommendedCanvas']);
               }, 'canvas.vendor']);
             }]);
-          }])->where('po_id',$id)->first();
+          }])->where('po_id',$po)->where('rr_Document_Invoice_No',$invoice)->first();
         return response()->json(['delivery' => $delivery]);
     }
 

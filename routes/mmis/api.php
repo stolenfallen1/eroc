@@ -77,6 +77,7 @@ Route::controller(DeliveryController::class)->group(function () {
   Route::post('consignments', 'storeConsignment');
   Route::put('deliveries', 'update');
   Route::get('delivery/{id}', 'show');
+  Route::get('delivery', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
   Route::post('consignment-pr', 'createConsignmentPr');
 });

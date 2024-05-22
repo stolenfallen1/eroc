@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\MMIS;
 
-use App\Helpers\SearchFilter\inventory\StockTransfers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +13,8 @@ use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\StockTransfer;
 use App\Models\MMIS\inventory\InventoryTransaction;
+use App\Models\MMIS\inventory\ItemBatchModelMaster;
+use App\Helpers\SearchFilter\inventory\StockTransfers;
 
 class StockTransferController extends Controller
 {
@@ -34,8 +35,8 @@ class StockTransferController extends Controller
             $suffix = $sequence->seq_suffix;
             $delivery = Delivery::with('purchaseOrder')->where('id', $request->delivery_id)->first();
             $stock_transfer = StockTransfer::create([
-                'sender_warehouse' => $authUser->warehouse_id, 
-                'receiver_warehouse' => $request->warehouse_id,
+                'sender_warehouse' => $request->warehouse_id, 
+                'receiver_warehouse' => $request->towarehouse_id,
                 'transfer_by' => $authUser->idnumber, 
                 'delivery_id' => $request->delivery_id, 
                 'pr_id' => $delivery->purchaseOrder->pr_Request_id,
@@ -88,6 +89,40 @@ class StockTransferController extends Controller
                     $receiver_warehouse->update([
                         'item_OnHand' => (float)$receiver_warehouse->item_OnHand + (float)$batch['item_Qty']
                     ]);
+
+                    ItemBatchModelMaster::updateOrCreate(
+                        [
+                            'warehouse_Id' => $stock_transfer->sender_warehouse,
+                            'item_Id' => $batch['item_Id'],
+                            'batch_Number' => $batch['batch_Number'],
+                        ],
+                        [
+                            'item_Qty_Used' => $batch['item_Qty'],
+                            'isConsumed' =>1 
+                        ]
+                    );
+
+
+                    ItemBatchModelMaster::updateOrCreate(
+                        [
+                            'warehouse_Id' => $stock_transfer->receiver_warehouse,
+                            'item_Id' => $batch['item_Id'],
+                            'batch_Number' => $batch['batch_Number'],
+                        ],
+                        [
+                            'warehouse_Id' => $stock_transfer->receiver_warehouse,
+                            'item_Id' => $batch['item_Id'],
+                            'batch_Number' => $batch['batch_Number'],
+                            'branch_id' => $batch['branch_id'],
+                            'batch_Transaction_Date' => $batch['batch_Transaction_Date'],
+                            'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                            'item_Expiry_Date' => $batch['item_Expiry_Date'],
+                            'delivery_item_id' => $batch['delivery_item_id'],
+                            'price' => $batch['price'],
+                            'mark_up' => $batch['mark_up'],
+                            'item_Qty' => (float)$batch['item_Qty'],
+                        ]
+                    );
 
                     InventoryTransaction::create([
                         'branch_Id' => $delivery->rr_Document_Branch_Id,
@@ -147,7 +182,7 @@ class StockTransferController extends Controller
         } catch (\Throwable $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
-            return response()->json(["error" => $e], 200);
+            return response()->json(["error" => $e->getMessage()], 200);
         }
     }
 

@@ -25,8 +25,10 @@ class PurchaseOrderController extends Controller
         $branch = Request()->branch_id ? Request()->branch_id : Auth()->user()->branch_id;
         $comptroller_count = purchaseOrderMaster::where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
         $administrator_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
-        $corp_admin_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
-        $president_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
+        $corp_admin_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where('corp_admin_approved_date', '=', null)->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
+        $president_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where(function($q){
+            $q->where('corp_admin_approved_date', '=', null)->orWhere('corp_admin_approved_date', '!=', null);
+        })->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
        
         if(Auth()->user()->role->name != 'comptroller' && Auth()->user()->role->name != 'administrator' &&  Auth()->user()->role->name != 'corporate admin' && Auth()->user()->role->name != 'president' && Auth()->user()->role->name != 'purchaser'){
             $comptroller_count->where('po_Document_warehouse_id',Auth()->user()->warehouse_id);

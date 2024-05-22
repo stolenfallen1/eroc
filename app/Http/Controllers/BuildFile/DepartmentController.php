@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Auth;
 class DepartmentController extends Controller
 {
     public function index(){
-        // Request()->branch_id
-        return response()->json(['departments' => Warehouses::with('sections')->where('warehouse_Branch_Id',Auth()->user()->branch_id)->where('isWarehouse', 1)->get() ]);
+        $branch = Request()->branch_id ? Request()->branch_id : Auth()->user()->branch_id;
+        return response()->json(['departments' => Warehouses::with('sections')->where('warehouse_Branch_Id',$branch)->where('isWarehouse', 1)->get() ]);
         // return response()->json(['departments' => Warehouses::get() ]);
     }
   

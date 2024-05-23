@@ -167,11 +167,8 @@ class StockTransferController extends Controller
                         'seq_no' => (int) $sequence->seq_no + 1,
                         'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
                     ]);
-
                 }
-
             }
-
             $stock_transfer->update([
                 'status' => 1003, 
                 'received_by' => Auth::user()->idnumber

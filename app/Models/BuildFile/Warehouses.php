@@ -2,6 +2,7 @@
 
 namespace App\Models\BuildFile;
 
+use App\Models\BuildFile\SubWarehouses;
 use App\Models\MMIS\inventory\Delivery;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\MMIS\inventory\ItemBatch;

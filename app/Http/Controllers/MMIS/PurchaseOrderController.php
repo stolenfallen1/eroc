@@ -274,6 +274,7 @@ class PurchaseOrderController extends Controller
                         ]);
                 }
             }
+
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
             return response()->json(['message' => 'success'], 200);

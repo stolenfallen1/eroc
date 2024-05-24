@@ -8,6 +8,7 @@ use App\Models\BuildFile\ItemGroup;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Warehouses;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\SearchFilter\WarehouseLocationItems;
 use App\Models\BuildFile\Hospital\mscHospitalServicesItemGroup;
 
 class ItemController extends Controller
@@ -16,7 +17,12 @@ class ItemController extends Controller
     {
         return (new Items())->searchable();
     }
-
+    
+    public function searchwarehouseItem()
+    {
+        return (new WarehouseLocationItems())->searchable();
+    }
+    
     public function getItemGroup()
     {
         $warehouse_id = Request()->wh_id ?? Auth::user()->warehouse_id;

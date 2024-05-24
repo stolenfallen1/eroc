@@ -164,7 +164,11 @@ class DeliveryController extends Controller
                         $warehouse_item->update([
                             'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
                         ]);
-    
+                        $batchdetails = ItemBatchModelMaster::where('item_Id',$batch['item_Id'])->where('warehouse_id',$delivery->rr_Document_Warehouse_Id)->first();
+                        $batchqty = 0;
+                        if($batchdetails){
+                            $batchqty = $batchdetails->item_Qty;
+                        }
                         ItemBatchModelMaster::create([
                             'branch_id' => $delivery->rr_Document_Branch_Id,
                             'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
@@ -172,7 +176,7 @@ class DeliveryController extends Controller
                             'batch_Transaction_Date' => Carbon::now(),
                             'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
                             'item_Id' => $batch['item_Id'],
-                            'item_Qty' => $batch['item_Qty'],
+                            'item_Qty' => (float) $batchqty  + $batch['item_Qty'],
                             'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
                             'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
                             'isConsumed' => 0,
@@ -245,7 +249,6 @@ class DeliveryController extends Controller
 
                 if(isset($detail['free_goods'])){
                     foreach ($detail['free_goods'] as $key1 => $batch) {
-                        return "test";
                         
                         $warehouse_item = Warehouseitems::where([
                         'branch_id' => $delivery->rr_Document_Branch_Id,

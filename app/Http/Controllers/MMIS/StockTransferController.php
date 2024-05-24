@@ -174,7 +174,7 @@ class StockTransferController extends Controller
                     ]
                 );
 
-                $ItemBatchModelMaster = ItemBatchModelMaster::find($item['transfer_item_batch_id']);
+                $ItemBatchModelMaster = ItemBatchModelMaster::where('item_Id',$item['transfer_item_id'])->where('warehouse_id',$requestpayload['sender_warehouse_id'])->first();
                 ItemBatchModelMaster::updateOrCreate(
                     [
                         'item_Id' => $item['transfer_item_id'],
@@ -186,11 +186,11 @@ class StockTransferController extends Controller
                     ]
                 );
 
-                $ItemBatchModelMasterreceiver = ItemBatchModelMaster::find($item['transfer_item_batch_id']);
+                $ItemBatchModelMasterreceiver = ItemBatchModelMaster::where('item_Id',$item['transfer_item_id'])->where('warehouse_id',$requestpayload['receiver_warehouse_id'])->first();
                 ItemBatchModelMaster::updateOrCreate(
                     [
                         'item_Id' => $item['transfer_item_id'],
-                        'warehouse_id' => $requestpayload['receiver_warehouse_id'],
+                        'warehouse_id' => $requestpayload['receiver_warehouse_id']
                     ],
                     [
                         'warehouse_id' => $requestpayload['receiver_warehouse_id'],
@@ -208,7 +208,7 @@ class StockTransferController extends Controller
                         'model_SerialNumber' => $ItemBatchModelMasterreceiver->model_SerialNumber,
                         'model_Transaction_Date' => $ItemBatchModelMasterreceiver->model_Transaction_Date,
                         'model_Remarks' => $ItemBatchModelMasterreceiver->model_Remarks,
-                        'item_Qty' => (float)$item['received_item_qty'],
+                        'item_Qty' => (float)$ItemBatchModelMasterreceiver->item_Qty + $item['received_item_qty'],
                         'isConsumed' => (($ItemBatchModelMasterreceiver->item_Qty_Used + $item['received_item_qty']) == $ItemBatchModelMasterreceiver->item_Qty) ? 1 : 0,
                     ]
                 );

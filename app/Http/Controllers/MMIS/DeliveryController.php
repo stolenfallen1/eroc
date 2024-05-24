@@ -164,12 +164,19 @@ class DeliveryController extends Controller
                         $warehouse_item->update([
                             'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
                         ]);
-                        $batchdetails = ItemBatchModelMaster::where('item_Id',$batch['item_Id'])->where('warehouse_id',$delivery->rr_Document_Warehouse_Id)->first();
+                        $batchdetails = ItemBatchModelMaster::where('batch_Number',$batch['batch_Number'])->where('item_Id',$batch['item_Id'])->where('warehouse_id',$delivery->rr_Document_Warehouse_Id)->first();
                         $batchqty = 0;
                         if($batchdetails){
                             $batchqty = $batchdetails->item_Qty;
                         }
-                        ItemBatchModelMaster::create([
+                        ItemBatchModelMaster::updateOrCreate(
+                            [
+                                'branch_id' => $delivery->rr_Document_Branch_Id,
+                                'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                                'batch_Number' => $batch['batch_Number'],
+                                'item_Id' => $batch['item_Id'],
+                            ],
+                            [
                             'branch_id' => $delivery->rr_Document_Branch_Id,
                             'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
                             'batch_Number' => $batch['batch_Number'],

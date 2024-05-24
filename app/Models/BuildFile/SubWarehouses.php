@@ -14,6 +14,7 @@ class SubWarehouses extends Model
     protected $guarded = [];
 
     protected $with = ['warehouseDetails'];
+    
     public function warehouseDetails(){
         return $this->belongsTo(Warehouses::class, 'sub_warehouse_id');
     }

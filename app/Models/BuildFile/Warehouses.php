@@ -56,7 +56,7 @@ class Warehouses extends Model
 
     public function subWarehouse()
     {
-        // return $this->hasMany(SubWarehouses::class, 'warehouse_id', 'id');
+        return $this->hasMany(SubWarehouses::class, 'warehouse_id', 'id');
     }
 
 }

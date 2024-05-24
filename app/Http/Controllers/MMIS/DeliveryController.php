@@ -128,7 +128,6 @@ class DeliveryController extends Controller
                     'rr_Detail_Item_Vat_Amount' => $vat_amount ?? 0,
                 ]);
                 
-
                 if($detail['item']['isLotNo_Required'] != "1" && $detail['rr_Detail_Item_Qty_Received'] > 0 ){
                     $batch_seq = SystemSequence::where('seq_description', 'like','%Receiving Batch NUmber%')->where('branch_id', Auth::user()->branch_id)->first();
                     

@@ -53,5 +53,9 @@ class Warehouses extends Model
         return $this->hasMany(WarehouseSection::class, 'warehouse_id', 'id');
     }
 
+    public function subWarehouse()
+    {
+        return $this->hasMany(SubWarehouses::class, 'warehouse_id', 'id');
+    }
 
 }

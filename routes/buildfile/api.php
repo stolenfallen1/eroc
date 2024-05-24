@@ -140,6 +140,7 @@ Route::controller(VendorController::class)->group(function () {
 
 Route::controller(ItemController::class)->group(function () {
     Route::get('items', 'searchItem');
+    Route::get('warehouse-location-items', 'searchwarehouseItem');
     Route::get('items-group', 'getItemGroup');
     Route::get('services-items-group', 'getServicesItemGroup');
 

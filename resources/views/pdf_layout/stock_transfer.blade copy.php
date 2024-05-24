@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Stock Transfer Transaction</title>
+        <title>Delivery</title>
         <style>
 
           .header-section{
@@ -58,7 +58,7 @@
             width: 80px;
           }
           .mid-width{
-            width: 320px;
+            width: 370px;
           }
 
           .underline{
@@ -104,10 +104,6 @@
           .comptroller{
             padding-top: 25px !important;
           }
-          .text-right{
-            text-align: right;
-            text-transform: uppercase;
-          }
 
           .csstransforms {
             position: absolute;
@@ -126,86 +122,69 @@
       <div class="header-section">
         <img src="{{ $pdf_data['logo'] }}" alt="Example Image" width="100" height="100">
         <div class="header-text">
-          <h3>{{$pdf_data['stock_transfer']['branch']['name']}}</h3>
-          <h5 style="margin: -20px !important;">{{$pdf_data['stock_transfer']['branch']['address']}}</h5>
-          <h5>TIN {{$pdf_data['stock_transfer']['branch']['TIN']}}</h5>
+          <h3>{{$pdf_data['stock_transfer']['delivery']['branch']['name']}}</h3>
+          <h5 style="margin: -20px !important;">{{$pdf_data['stock_transfer']['delivery']['branch']['address']}}</h5>
+          <h5>TIN {{$pdf_data['stock_transfer']['delivery']['branch']['TIN']}}</h5>
         </div>
         <img class="qr-code" src="{{ $pdf_data['qr'] }}" alt="Example Image" width="100" height="100">
       </div>
       <div class="title-section">
-        <h3>STOCK TRANSFER REPORT</h3>
+        <h3>RECEIVING REPORT</h3>
       </div>
       <table class="info-section">
         <tbody>
           <tr>
-            <td class="left-width">Document No</td>
-            <td class="mid-width underline">{{$pdf_data['stock_transfer']['document_number']}}</td>
-            <td class="right-width">Print date</td>
-            <td class="underline">{{date('Y-m-d H:i:s A')}}</td>
+            <td class="left-width">Invoice number</td>
+            <td class="mid-width underline">{{$pdf_data['stock_transfer']['delivery']['rr_Document_Invoice_No']}}</td>
+            <td class="right-width">Transfer date</td>
+            <td class="underline">{{$pdf_data['transaction_date']}}</td>
           </tr>
           <tr>
-            <td class="left-width">Source Location</td>
+            <td class="left-width">RR No.</td>
+            <td class="mid-width underline">{{$pdf_data['stock_transfer']['delivery']['code']}}</td>
+            <td class="right-width">PR No.</td>
+            <td class="underline">{{$pdf_data['stock_transfer']['delivery']['purchaseOrder']['purchaseRequest']['code']}}</td>
+          </tr>
+          <tr>
+            <td class="left-width">Sender</td>
             <td class="mid-width underline">{{$pdf_data['stock_transfer']['warehouseSender']['warehouse_description']}}</td>
-            <td class="right-width">Transfer Date</td>
-            <td class="underline">{{date('Y-m-d H:i:s A',strtotime($pdf_data['stock_transfer']['transfer_date']))}}</td>
+            <td class="right-width">PO No.</td>
+            <td class="underline">{{$pdf_data['stock_transfer']['delivery']['po_number']}}</td>
           </tr>
           <tr>
-            <td class="left-width">Target Location</td>
+            <td class="left-width">Receiver</td>
             <td class="mid-width underline">{{$pdf_data['stock_transfer']['warehouseReceiver']['warehouse_description']}}</td>
-            <td class="right-width">Received Date</td>
-            <td class="underline">{{$pdf_data['stock_transfer']['received_date'] ? date('Y-m-d H:i:s A',strtotime($pdf_data['stock_transfer']['received_date'] )) : ''}}</td>
+            <td class="right-width">Delivery date</td>
+            <td class="underline">{{$pdf_data['delivery_date']}}</td>
           </tr>
-         
         </tbody>
       </table>
       <table class="item-section">
         <thead>
-          <tr>
-            <th rowspan="2">Code</th>
-            <th rowspan="2">Item Description</th>
-            <th colspan="4">Transfer</th>
-            <th colspan="4">Received</th>
-          </tr>
-          
-          <tr>
-            <th>Qty</th>
-            <th>Unit</th>
-            <th>Unit Cost</th>
-            <th>Amount</th>
-            <th>Qty</th>
-            <th>Unit</th>
-            <th>Unit Cost</th>
-            <th>Amount</th>
-          </tr>
+          <th>Invoice no.</th>
+          <th>Code</th>
+          <th>Item Description</th>
+          <th>Qty</th>
+          <th>Unit</th>
+          <th>Unit Cost</th>
+          <th>Amount</th>
         </thead>
         <tbody>
-          @php 
-           $total = 0;
-           $receivedtotal = 0;
-          @endphp
-          @foreach ($pdf_data['stock_transfer']['stockTransferDetails'] as $detail)
-              @php 
-                $total += (float)$detail['transfer_item_total_cost'];
-                $receivedtotal += (float)$detail['received_item_total_cost'];
-              @endphp
+          @foreach ($pdf_data['stock_transfer']['delivery']['items'] as $detail)
               <tr>
-                <td class="item-td" >{{ $detail['transfer_item_id'] }}</td>
-                <td class="item-td" >{{ $detail['itemdetails']['itemMaster']['item_name'] }}</td>
-                <td class="item-td" >{{ (float)$detail['transfer_item_qty'] }}</td>
-                <td class="item-td" >{{ $detail['itemdetails']['itemMaster']['unit']['name'] }}</td>
-                <td class="item-td" >{{ number_format($detail['transfer_item_unit_cost'],2) }}</td>
-                <td class="item-td" >{{ number_format($detail['transfer_item_total_cost'],2) }}</td>
-                <td class="item-td" >{{ (float)$detail['received_item_qty'] }}</td>
-                <td class="item-td" >{{ $detail['received_item_qty'] ? $detail['itemdetails']['itemMaster']['unit']['name'] :'' }}</td>
-                <td class="item-td" >{{ number_format($detail['received_item_unit_cost'],2) }}</td>
-                <td class="item-td" >{{ number_format($detail['received_item_total_cost'],2) }}</td>
+                <td class="item-td" >{{ $pdf_data['stock_transfer']['delivery']['rr_Document_Invoice_No'] }}</td>
+                <td class="item-td" >{{ $detail['item']['id'] }}</td>
+                <td class="item-td" >{{ $detail['item']['item_name'] }}</td>
+                <td class="item-td" >{{ (int)$detail['rr_Detail_Item_Qty_Received'] }}</td>
+                <td class="item-td" >{{ $detail['unit']['name'] }}</td>
+                <td class="item-td" >{{ $detail['rr_Detail_Item_ListCost'] }}</td>
+                <td class="item-td" >{{ number_format($detail['rr_Detail_Item_TotalNetAmount'], 4) }}</td>
               </tr>
           @endforeach
           <tr>
-            <td colspan="5" class="text-right">Total Amount</td>
-            <td class="item-td">{{number_format($total, 2)}}</td>
-            <td colspan="3"></td>
-            <td class="item-td">{{number_format($receivedtotal, 2)}}</td>
+            <td colspan="5"></td>
+            <td class="item-td">Total Amount</td>
+            <td class="item-td">{{number_format($pdf_data['stock_transfer']['delivery']['rr_Document_TotalNetAmount'], 4)}}</td>
           </tr>
         </tbody>
       </table>
@@ -230,7 +209,7 @@
       <table class="signatory-section2">
         <tbody>
           <tr><td class="margin-bottom:10px;">RECEIVED BY :</td></tr>
-          <tr><td style="padding-top:10px; text-transform: uppercase;" class="item-td underline">{{$pdf_data['stock_transfer']['receivedBy'] ? $pdf_data['stock_transfer']['receivedBy']['name'] : ''}}</td></tr>
+          <tr><td style="padding-top:20px; text-transform: uppercase;" class="item-td underline">{{'   '}}</td></tr>
           {{-- <tr><td> ( ) Central Supply </td></tr>
           <tr><td> ( ) Pharmacy </td></tr>
           <tr><td> ( ) Others Engineering Department </td></tr> --}}

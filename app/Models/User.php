@@ -77,7 +77,7 @@ class User extends \TCG\Voyager\Models\User
         'email_verified_at' => 'datetime',
     ];
 
-    protected $with = ['warehouse','approvaldetail','branch', 'user_department_access','OpeningAmount','systemUserAccess'];
+    protected $with = ['warehouse','warehouse.subWarehouse','approvaldetail','branch', 'user_department_access','OpeningAmount','systemUserAccess'];
 
     protected $appends = ['departments','RevenueCode','assigneditemgroup','assingcategory'];
 

@@ -59,7 +59,7 @@ class Itemmasters extends Model
         return $this->belongsTo(Brands::class, 'item_Brand_Id', 'id');
     }
     public function batchs(){
-        return $this->hasMany(ItemBatchModelMaster::class, 'item_Id', 'id');
+        return $this->hasMany(ItemBatchModelMaster::class, 'item_Id', 'id')->where('warehouse_id',Auth::user()->warehouse_id);
     }
 
     public function deliveryItem()

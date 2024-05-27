@@ -14,6 +14,9 @@ class OutpatientRegistrationController extends Controller
         try { 
             $data = Patient::query();
             $data->with('sex', 'patientRegistry');
+            $data->whereHas('patientRegistry', function($query) {
+                $query->where('mscAccount_trans_types', 1); // Patients that are outpatients only
+            });
             if(Request()->keyword) {
                 $data->where('lastname', 'LIKE', '%'.Request()->keyword.'%') 
                     ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
@@ -40,9 +43,9 @@ class OutpatientRegistrationController extends Controller
                 [
                     'patient_id' => $request->payload['patient_id'] ?? null,
                     'title_id' => $request->payload['title_id'] ?? null,
-                    'lastname' => $request->payload['lastname'],
-                    'firstname' => $request->payload['firstname'],
-                    'middlename' => $request->payload['middlename'] ?? null,
+                    'lastname' => ucwords($request->payload['lastname']),
+                    'firstname' => ucwords($request->payload['firstname']),
+                    'middlename' => ucwords($request->payload['middlename'] ?? null),
                     'suffix_id' => $request->payload['suffix_id'] ?? null,
                     'birthdate' => $request->payload['birthdate'] ?? null,
                     'sex_id' => $request->payload['sex_id'] ?? null,

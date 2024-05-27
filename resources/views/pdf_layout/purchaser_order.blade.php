@@ -194,7 +194,7 @@
                 <td class="item-td" >{{ number_format(($detail['po_Detail_item_listcost'] / $detail['po_Detail_item_qty']) ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_percent'] ?? 0, 2) }}</td>
                 @if($detail['po_Detail_item_discount_percent'] > 0)
-                  <td class="item-td" >{{ number_format(($detail['po_Detail_item_qty'] * ($detail['po_Detail_item_discount_percent'] / 100)) ?? 0, 2) }}</td>
+                  <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_amount'], 2) }}</td>
                 @else
                   <td class="item-td" >{{ number_format( 0, 2) }}</td>
                 @endif

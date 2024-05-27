@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use App\Models\BuildFile\Itemmasters;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\MMIS\procurement\CanvasMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
@@ -49,9 +50,8 @@ class CanvasController extends Controller
     public function store(Request $request)
     {
         $authUser = Auth::user();
-        $vendor = Vendors::findOrfail($request->vendor_id);
         $pr = PurchaseRequest::findOrfail($request->pr_request_id);
-       
+        $itemDetails = Itemmasters::findOrfail($request->canvas_Item_Id);
         if($pr->branch_Id == 1){
             $sequence = SystemSequence::where(['isActive' => true, 'code' => 'CSN1','branch_id'=> $pr->branch_Id])->first();
         }else{
@@ -65,17 +65,17 @@ class CanvasController extends Controller
         $discount_amount = 0;
         $vat_amount = 0;
         $total_amount = $request->canvas_item_amount * $request->canvas_Item_Qty;
-        if($request->canvas_item_vat_rate){
-            if($vendor->isVATInclusive == 0 || $vendor->isVATInclusive == null){
-                $vat_amount = $total_amount * ($request->canvas_item_vat_rate / 100);
-                $total_amount += $vat_amount;
-            }else{
-                $vat_amount = $total_amount * ($request->canvas_item_vat_rate / 100);
-            }
-        }
+        
         if($request->canvas_discount_percent){
             $discount_amount = $total_amount * ($request->canvas_discount_percent / 100);
         }
+
+        if($request->canvas_item_vat_rate){
+            if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
+                $vat_amount = ($total_amount - $discount_amount) * ($request->canvas_item_vat_rate / 100);
+            }
+        }
+        $canvas_item_total_amount =($total_amount - $discount_amount) + $vat_amount;
 
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
@@ -90,7 +90,7 @@ class CanvasController extends Controller
                 'requested_date' => Carbon::parse($request->requested_date),
                 'canvas_Branch_Id' => $authUser->branch_id,
                 'canvas_Warehouse_Group_Id' => $authUser->warehouse->warehouse_Group_Id,
-                'canvas_Warehouse_Id' => $authUser->warehouse->warehouse_Group_Id,
+                'canvas_Warehouse_Id' => $pr->warehouse_Id,
                 'vendor_id' => $request->vendor_id,
                 'pr_request_id' => $request->pr_request_id,
                 'pr_request_details_id' => $request->pr_request_details_id,
@@ -98,10 +98,10 @@ class CanvasController extends Controller
                 'canvas_Item_Qty' => $request->canvas_Item_Qty,
                 'canvas_Item_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
                 'canvas_item_amount' => $request->canvas_item_amount,
-                'canvas_item_total_amount' => $total_amount,
+                'canvas_item_total_amount' => $canvas_item_total_amount,
                 'canvas_item_discount_percent' => $request->canvas_discount_percent,
                 'canvas_item_discount_amount' => $discount_amount,
-                'canvas_item_net_amount' => $total_amount - $discount_amount,
+                'canvas_item_net_amount' => $canvas_item_total_amount,
                 'canvas_lead_time' => $request->canvas_lead_time,
                 'canvas_remarks' => $request->canvas_remarks,
                 'currency_id' => $request->currency_id,

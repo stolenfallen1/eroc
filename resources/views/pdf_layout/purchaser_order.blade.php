@@ -191,7 +191,7 @@
                 <td class="item-td ">{{ $detail['item']['item_name'] ?? '' }}</td>
                 <td class="item-td" >{{ (float)$detail['po_Detail_item_qty'] ?? 0 }}</td>
                 <td class="item-td" >{{ $detail['unit']?$detail['unit']['name']:'...' }}</td>
-                <td class="item-td" >{{ number_format(($detail['po_Detail_item_listcost'] / $detail['po_Detail_item_qty']) ?? 0, 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_percent'] ?? 0, 2) }}</td>
                 @if($detail['po_Detail_item_discount_percent'] > 0)
                   <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_amount'], 2) }}</td>

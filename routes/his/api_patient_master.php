@@ -14,6 +14,10 @@ Route::controller(OutpatientRegistrationController::class)->group(function () {
     Route::post('register-outpatient', 'register');
 });
 Route::controller(EmergencyRegistrationController::class)->group(function () {
+    Route::get('get-emergency', 'index');
     Route::post('register-emergency', 'register');
 });
-Route::post('register-inpatient', [InpatientRegistrationController::class, 'register']);
+Route::controller(InpatientRegistrationController::class)->group(function () {
+    Route::get('get-inpatient', 'index');
+    Route::post('register-inpatient', 'register');
+});

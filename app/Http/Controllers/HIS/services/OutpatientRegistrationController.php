@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\HIS\services;
 
 use App\Http\Controllers\Controller;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use Illuminate\Http\Request;
@@ -16,18 +17,20 @@ class OutpatientRegistrationController extends Controller
             $data->with('sex', 'patientRegistry');
             $data->whereHas('patientRegistry', function($query) {
                 $query->where('mscAccount_trans_types', 1); // Patients that are outpatients only
+                if(Request()->keyword) {
+                    $query->where(function($subQuery) {
+                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%') 
+                                ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
+                                ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
+                    });
+                }
             });
-            if(Request()->keyword) {
-                $data->where('lastname', 'LIKE', '%'.Request()->keyword.'%') 
-                    ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
-                    ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
-            }
             $data->orderBy('id', 'asc');
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to fetch patients',
+                'message' => 'Failed to get outpatient patients',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -36,12 +39,15 @@ class OutpatientRegistrationController extends Controller
     public function register(Request $request) {
         DB::beginTransaction();
         try {
+            $sequence = SystemSequence::where('code','MPID')->first();
+            $patient_id = $request->payload['patient_id'] ?? $sequence->seq_no;
             $patient = Patient::updateOrCreate(
                 [
-                    'lastname' => $request->payload['lastname'], // For now, we will use lastname as the unique identifier 
+                    'lastname' => $request->payload['lastname'],
+                    'firstname' => $request->payload['firstname'], 
                 ],
                 [
-                    'patient_id' => $request->payload['patient_id'] ?? null,
+                    'patient_id' => $patient_id,
                     'title_id' => $request->payload['title_id'] ?? null,
                     'lastname' => ucwords($request->payload['lastname']),
                     'firstname' => ucwords($request->payload['firstname']),
@@ -94,7 +100,7 @@ class OutpatientRegistrationController extends Controller
             
             $patientRegistry = PatientRegistry::updateOrCreate(
                 [
-                    'patient_id' => $patient->id,
+                    'patient_id' => $patient_id,
                 ],
                 [
                     'mscBranches_id' => $request->payload['mscBranches_id'] ?? 1,
@@ -201,9 +207,13 @@ class OutpatientRegistrationController extends Controller
                     'updated_at' => now(),
                 ]
             );
+            $sequence->update([
+                'seq_no' => $sequence->seq_no + 1,
+                'recent_generated' => $sequence->seq_no,
+            ]);
             DB::commit();
             return response()->json([
-                'message' => 'Patient registered successfully',
+                'message' => 'Outpatient data registered successfully',
                 'patient' => $patient,
                 'patientRegistry' => $patientRegistry
             ], 200);
@@ -211,7 +221,7 @@ class OutpatientRegistrationController extends Controller
         } catch(\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Failed to register patient',
+                'message' => 'Failed to register outpatient data',
                 'error' => $e->getMessage()
             ], 500);
         }

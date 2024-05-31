@@ -35,11 +35,10 @@ class StockTransfer {
 
   private function byTab(){
     if(Request()->tab == 1){
-      $this->model->where('status', 12);
+      $this->model->whereIn('status',['12','5']);
     }elseif (Request()->tab == 2) {
-      $this->model->where('status', 13);
+      $this->model->whereIn('status', ['13','5']);
     }
   }
-
   
 }

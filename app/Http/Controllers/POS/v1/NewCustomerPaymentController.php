@@ -117,7 +117,6 @@ class NewCustomerPaymentController extends Controller
                     'createdBy' => Auth()->user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                 ]);
-
             }
 
             if($or_sequenceno->isSystem == '0') {

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\MMIS;
 
-use App\Helpers\SearchFilter\inventory\Deliveries;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Helpers\RecomputePrice;
+use App\Models\BuildFile\Vendors;
+use PhpParser\Node\Stmt\TryCatch;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -12,13 +14,12 @@ use App\Models\MMIS\inventory\Delivery;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\MMIS\inventory\ItemBatch;
+use App\Models\MMIS\inventory\ItemModel;
 use App\Models\BuildFile\FmsTransactionCode;
-use App\Models\BuildFile\Vendors;
 use App\Models\MMIS\inventory\DeliveryItems;
+use App\Helpers\SearchFilter\inventory\Deliveries;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
-use App\Models\MMIS\inventory\ItemModel;
-use PhpParser\Node\Stmt\TryCatch;
 
 class DeliveryController extends Controller
 {
@@ -191,35 +192,7 @@ class DeliveryController extends Controller
                             'mark_up' => $batch['mark_up'] ?? 0,
                         ]);
     
-                        // if($detail['item']['auth_warehouse_item']['isLotNo_Required'] == "1"){
-                        //     ItemBatch::create([
-                        //         'branch_id' => $delivery->rr_Document_Branch_Id,
-                        //         'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
-                        //         'batch_Number' => $batch['batch_Number'],
-                        //         'batch_Transaction_Date' => Carbon::now(),
-                        //         'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
-                        //         'item_Id' => $batch['item_Id'],
-                        //         'item_Qty' => $batch['item_Qty'],
-                        //         'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        //         'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
-                        //         'isConsumed' => 0,
-                        //         'delivery_item_id' => $delivery_item->id,
-                        //     ]);
-                        // }else{
-                        //     ItemModel::create([
-                        //         'branch_id' => $delivery->rr_Document_Branch_Id,
-                        //         'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
-                        //         'model_Number' => $batch['batch_Number'],
-                        //         'model_Transaction_Date' => Carbon::now(),
-                        //         'model_Remarks' => $batch['batch_Remarks'] ?? NULL,
-                        //         'item_Id' => $batch['item_Id'],
-                        //         'item_Qty' => $batch['item_Qty'],
-                        //         'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        //         'model_SerialNumber' => $batch['batch_Number'],
-                        //         'isConsumed' => 0,
-                        //         'delivery_item_id' => $delivery_item->id,
-                        //     ]);
-                        // }
+                        (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'in');
     
                         if(Auth::user()->branch_id == 1){
                             $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only

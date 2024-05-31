@@ -45,4 +45,8 @@ class CanvasMaster extends Model
     {
         return $this->hasMany(PurchaseOrderDetails::class, 'canvas_id', 'id');
     }
+
+    public function comptroller(){
+        return $this->belongsTo(User::class, 'canvas_Level2_ApprovedBy', 'idnumber');
+    }
 }

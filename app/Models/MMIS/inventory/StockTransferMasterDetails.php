@@ -15,7 +15,7 @@ class StockTransferMasterDetails extends Model
     protected $connection = 'sqlsrv_mmis';
     protected $table = 'CDG_MMIS.dbo.stockTransfersMasterDetail';
     protected $guarded = [];
-
+    protected $appends = ['transfer_qty','received_qty'];
     protected $with = ['itemdetails','itemdetails.itemMaster','batchs','itemdetails.itemMaster.unit'];
 
     public function itemdetails()
@@ -24,5 +24,11 @@ class StockTransferMasterDetails extends Model
     }
     public function batchs(){
         return $this->hasMany(ItemBatchModelMaster::class, 'id','transfer_item_batch_id');
+    }
+    public function getTransferQtyAttribute(){
+        return (float) $this->transfer_item_qty - (float)$this->received_item_qty;
+    }
+    public function getReceivedQtyAttribute(){
+        return (float)$this->received_item_qty;
     }
 }

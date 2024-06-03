@@ -38,7 +38,6 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
             $shift = $request->shift != 0 ? $request->shift : $shift;
 
             $user = Auth::user();
-
             if ($user->isactive == 1) {
                 $updateData = [
                     'user_ipaddress' => $ipaddress,
@@ -47,18 +46,13 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
                 ];
 
                 User::where('id', $user->id)->update($updateData);
-                $token = $user->createToken();
+                // $token = $user->createToken();
                 // $user->load('role.permissions', 'roles');
-
-                return response()->json(
-                    [
-                        'user' => $user,
-                        'access_token' => $token,
-                        'token_type' => 'Bearer',
-                        'expires_in' => config('sanctum.expiration'),
-                    ],
-                    200
-                );
+                if($user->isactive == 1) {
+                    $token = $user->createToken();
+                    // $user->load('role.permissions', 'roles');
+                    return response()->json(['user' => $user, 'access_token' => $token], 200);
+                }
             }
         }
 
@@ -99,6 +93,18 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
 
     public function userDetails()
     {
+        $modulelist = Voyager::model('MenuItem')->whereNull('parent_id')->where('menu_id', '1')->orderBy('order', 'asc')->get();
+        $modulelist->filter(function ($item) {
+            // check if action
+            return !$item->children->isEmpty() || Auth::user()->can('browse', $item);
+
+        })->filter(function ($item) {
+            // Filter out empty menu-items
+            if ($item->url == '' && $item->route == '' && $item->children->count() == 0) {
+                return false;
+            }
+            return true;
+        });
         if (!$this->checkTerminal()) {
             return response()->json(["message" => 'You are not allowed to access'], 403);
         }

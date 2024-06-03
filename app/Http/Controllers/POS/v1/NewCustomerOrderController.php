@@ -109,12 +109,23 @@ class NewCustomerOrderController extends Controller
                        
                         $specialdiscount = ($pricein - $priceout) * $row['qty'];
                         $subtotal =   ($pricein * $row['qty']) - $specialdiscount;
-                        $price = (float)$row['item_Selling_Price_In'];
+                        
 
-                        $totalamount = $subtotal - (float)$row['discount'];
+                      
+                        
                         if(Request()->customer['customer_type'] == 'regular'){
-                            $price = (float)$row['item_Selling_Price_Out'];
-                            $subtotal = ($priceout * $row['qty']) - $specialdiscount;
+                            $price = (float)$row['price'];
+                            // $price = (float)$row['item_Selling_Price_Out'];
+                            // $subtotal = ($priceout * $row['qty']) - $specialdiscount;
+                            $discount = $row['discount'];
+                            $totalamount = (float)$row['totalamount'];
+
+                        }else{
+                            $total = (float)$row['price'] * (float)$row['qty'];
+                            $vat = (float)$row['vat_amount'] * (float)$row['qty'];
+                            $compute_total_minus_vat = $total - $vat;
+                            $discount = ((float)($total - $vat) * 0.20);
+                            $totalamount = $compute_total_minus_vat - $discount;
                         }
 
                         $orders->order_items()->updateOrCreate(
@@ -131,8 +142,8 @@ class NewCustomerOrderController extends Controller
                             'order_item_vat_rate' => (float)$row['vat_rate'],
                             'order_item_vat_amount' => (float)$row['vat_amount'],
                             'order_item_sepcial_discount' => 0,
-                            'order_item_discount_amount' => (float)$row['discount'],
-                            'order_item_total_amount' => (float)$row['totalamount'],
+                            'order_item_discount_amount' => (float)$discount,
+                            'order_item_total_amount' => (float)$totalamount,
                             'order_item_batchno' => $row['item_batch'],
                             'order_discount_type' => $row['discounttype'],
                             'isReturned' => '0',

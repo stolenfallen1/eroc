@@ -39,6 +39,22 @@ class DoctorController extends Controller
         }
     }
 
+    public function his_list() {
+        try {
+            $data = Doctor::query();
+            $data->with("doctorAddress","doctorClinicAddress");
+            if(Request()->keyword) {
+                $data->where('lastname', 'LIKE', '%' . Request()->keyword . '%')
+                    ->orWhere('firstname', 'LIKE', '%' . Request()->keyword . '%');
+            }
+            $data->orderBy('isactive', 'desc')->orderBy('id', 'asc');
+            $page = Request()->per_page ?? '50';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
+
 
     public function list()
     {

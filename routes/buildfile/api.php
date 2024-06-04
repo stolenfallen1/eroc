@@ -350,7 +350,7 @@ Route::controller(DoctorController::class)->group(function () {
     Route::get('search-doctors', 'list');
     Route::get('get-doctors', 'list');
     Route::get('doctors', 'index');
-
+    Route::get('get-his-doctors', 'his_list');
 });
 
 Route::controller(HospitalRoomsAccomodationController::class)->group(function () {
@@ -367,6 +367,7 @@ Route::resource('hospital-room-status', mscHospitalRoomStatusController::class);
 
 Route::controller(CompanyController::class)->group(function () {
     Route::get('get-companies', 'list');
+    Route::get('get-company-list', 'index');
 });
 
 Route::controller(CountryController::class)->group(function () {

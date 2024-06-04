@@ -28,20 +28,14 @@ class Openingbalance
 
     public function searchColumns()
     {
-        // if(Auth()->user()->role->name != 'POS Cashier') {
-          
-        // }
         if( Request()->date){
-
             $this->model->whereDate('report_date', Request()->date);
         }
 
     }
     public function searchShift()
     {
-        // if(Auth()->user()->role->name != 'POS Cashier') {
-        //   $this->model->where('shift_code', Request()->shift);
-        // }
+       
         if(Request()->shift){
             $this->model->where('shift_code', Request()->shift);
         }
@@ -49,10 +43,9 @@ class Openingbalance
     }
     public function bystatus()
     {
-        if(Request()->status){
-
+        // if(Request()->status){
             $this->model->where('isposted', Request()->status);
-        }
+        // }
     }
     public function byUser()
     {

@@ -28,8 +28,7 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
         }
 
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
-            $ipaddress = $request['clientIP'];
-
+            $ipaddress = $request['clientIP'] ? $request['clientIP'] : (new GetIP())->value();
             if ((new Terminal())->check_terminal($ipaddress) == 0) {
                 return response()->json(["message" => 'You are not allowed to access'], 401);
             }

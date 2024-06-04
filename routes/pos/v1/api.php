@@ -17,6 +17,7 @@ use App\Http\Controllers\POS\v1\NewReturnTransactionController;
 
 Route::controller(OpenningController::class)->group(function () {
     Route::get('opening', 'index');
+    Route::post('update-or-siries','updateornumber');
     Route::post('process-opening-amount', 'store');
     Route::get('cards/{id}', 'getcard');
 });

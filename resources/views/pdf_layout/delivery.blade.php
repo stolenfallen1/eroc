@@ -165,6 +165,7 @@
           <th>Unit</th>
           <th>Unit Cost</th>
           <th>Discount</th>
+          <th>Vat</th>
           <th>Amount</th>
         </thead>
         <tbody>
@@ -177,6 +178,7 @@
                 <td class="item-td" >{{ $detail['unit']['name'] }}</td>
                 <td class="item-td" >{{ number_format($detail['rr_Detail_Item_ListCost'], 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['rr_Detail_Item_TotalDiscount_Amount'], 2) }}</td>
+                <td class="item-td" >{{ number_format($detail['rr_Detail_Item_Vat_Rate'], 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['rr_Detail_Item_TotalNetAmount'], 2) }}</td>
               </tr>
           @endforeach

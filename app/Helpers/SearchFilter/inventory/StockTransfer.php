@@ -20,6 +20,7 @@ class StockTransfer {
     $this->model->with('stockTransferDetails','warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy','status');
     $this->byTab();
     $this->byWarehouse();
+    $this->model->orderBy('id','desc');
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
@@ -35,11 +36,10 @@ class StockTransfer {
 
   private function byTab(){
     if(Request()->tab == 1){
-      $this->model->where('status', 12);
+      $this->model->whereIn('status',['12','5']);
     }elseif (Request()->tab == 2) {
-      $this->model->where('status', 13);
+      $this->model->whereIn('status', ['13','5']);
     }
   }
-
   
 }

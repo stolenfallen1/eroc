@@ -24,6 +24,33 @@ class OpenningController extends Controller
         return response()->json($data, 200);
     }
 
+    public function updateornumber(Request $request){
+        $series = SystemSequence::where('terminal_code',Request()->terminal)->where('code', Request()->code)->where('isSystem',Request()->isSystem)->first();
+        if(Payments::where('sales_invoice_number', Request()->orseries)->exists()){
+            $data['msg'] = 'OR number is already exists';
+            $data['status'] = 'error';
+           
+            if((int)Request()->isSystem){
+                $seriesno =  $series->seq_no;
+            }else{
+                $seriesno =  $series->manual_seq_no;
+            }
+            $data['series'] = $seriesno;
+        }else{
+            if((int)Request()->isSystem){
+                $series->seq_no  = Request()->orseries;
+            }else{
+                $series->manual_seq_no  = Request()->orseries;
+            }
+            $series->save();
+            $data['series'] = Request()->orseries;
+            $data['msg'] = 'update sucessfully';
+            $data['status'] = 'sucess';
+        }
+       
+       
+        return response()->json($data,200);
+    }
     public function store(Request $request)
     {
         DB::connection('sqlsrv_pos')->beginTransaction();
@@ -70,6 +97,7 @@ class OpenningController extends Controller
       
     }
 
+
     public function getcard($type)
     {
         if($type == '2'){
@@ -80,4 +108,5 @@ class OpenningController extends Controller
         $data['message'] = 'success';
         return response()->json($data, 200);
     }
+
 }

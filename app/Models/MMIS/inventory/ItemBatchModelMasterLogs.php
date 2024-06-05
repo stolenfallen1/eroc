@@ -3,16 +3,14 @@
 namespace App\Models\MMIS\inventory;
 
 use Carbon\Carbon;
-use App\Models\BuildFile\Warehouses;
-use App\Models\BuildFile\Itemmasters;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class ItemBatchModelMaster extends Model
+class ItemBatchModelMasterLogs extends Model
 {
     use HasFactory;
 
-    protected $table = 'CDG_MMIS.dbo.itemBatchModelNumberMaster';
+    protected $table = 'CDG_MMIS.dbo.itemBatchModelNumberMaster_log';
     protected $connection = "sqlsrv_mmis";
 
     protected $guarded = [];

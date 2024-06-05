@@ -25,7 +25,7 @@ class SettingController extends Controller
         foreach($schedule as $row){
             $array[] = $row;
         }
-        $data['schedule'] = $array;
+        $data['schedule'] = $array;        
         $data['terminal'] = Systerminals::where('terminal_ip_address',Request()->clientIP)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);
     }
@@ -34,6 +34,10 @@ class SettingController extends Controller
    
     public function schedule()
     {
+        $currentHour24 = date('H');
+        
+        // $currentHour24 = date('H');
+        // ->where('beginning_military_hour','>=',$currentHour24)
         $schedule = DB::connection('sqlsrv_pos')->table('vwShift')->where('isActive','1')->select('shifts_code','Shift_description','beginning_military_hour')->get();
         $all = Array('shifts_code'=>'0','Shift_description'=>'All Shift','beginning_military_hour'=>'0');
         $array = [];
@@ -42,9 +46,11 @@ class SettingController extends Controller
             $array[] = $row;
         }
         
-        $localIp = getHostByName(Request()->server('REMOTE_ADDR'));
+        $localIp = Request()->clientIP ? Request()->clientIP : getHostByName(Request()->server('REMOTE_ADDR'));
         $data['schedule'] = $array;
-        $data['terminal'] = Systerminals::where('terminal_ip_address',Request()->clientIP)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
+        $data['localIp'] = $localIp;
+        $data['currentHour24'] = $currentHour24;
+        $data['terminal'] = Systerminals::where('terminal_ip_address',$localIp)->select('terminal_code','id','terminal_Machine_Identification_Number','terminal_serial_number')->first();
         return response()->json($data,200);
     }
     

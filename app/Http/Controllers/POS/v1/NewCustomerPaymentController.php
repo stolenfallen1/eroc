@@ -37,7 +37,7 @@ class NewCustomerPaymentController extends Controller
                 $date  = Request()->date;
             }
             $data->whereDate('payment_date',$date);
-            if(Auth()->user()->role->name == 'Pharmacist Cashier') {
+            if(Auth()->user()->role->name == 'POS Cashier') {
                 $data->where('user_id', Auth()->user()->idnumber);
                 $data->where('shift_id', Auth()->user()->shift);
             }
@@ -117,7 +117,6 @@ class NewCustomerPaymentController extends Controller
                     'createdBy' => Auth()->user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
                 ]);
-
             }
 
             if($or_sequenceno->isSystem == '0') {

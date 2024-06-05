@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Helpers\RecomputePrice;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -101,18 +102,19 @@ class StockTransferController extends Controller
             $transaction1 = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
             $sequence = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
             $receivestocks = StockTransferMaster::where('id', $id)->first();
-            $receivestocks->update([
-                'received_by' => Auth::user()->idnumber, 
-                'received_date' => Carbon::now(), 
-                'status' => 13,
-            ]);
+          
             $requestpayload = $request->payload;
+            $total_transfer_qty = 0;
+            $total_received_qty = 0;
             foreach($requestpayload['selecteditems'] as $item){
+                $total_transfer_qty += (float)$item['transfer_qty'];
+                $total_received_qty += (float)$item['received_item_qty'];
+                $selectItem =  $receivestocks->stockTransferDetails()->where('stock_transfer_id',$id)->where('transfer_item_id',$item['transfer_item_id'])->first();
                 $receivestocks->stockTransferDetails()->where('stock_transfer_id',$id)->where('transfer_item_id',$item['transfer_item_id'])->update([
-                    'received_item_qty'=> (float)$item['received_item_qty'],
+                    'received_item_qty'=> (float) $selectItem->received_item_qty + (float)$item['received_item_qty'],
                     'received_item_batch_id'=> $item['transfer_item_batch_id'],
                     'received_item_unit_cost'=> (float)$item['transfer_item_unit_cost'],
-                    'received_item_total_cost'=> (float)($item['transfer_item_unit_cost'] * $item['received_item_qty']),
+                    'received_item_total_cost'=> (float) $selectItem->received_item_total_cost + ((float)($item['transfer_item_unit_cost'] * $item['received_item_qty'])),
                 ]);
 
            
@@ -133,7 +135,7 @@ class StockTransferController extends Controller
                 if($receiver_warehouse){
                     $receivedqty = $receiver_warehouse->item_OnHand;
                 }
-                Warehouseitems::updateOrCreate(
+                $receiver = Warehouseitems::updateOrCreate(
                     [
                         'warehouse_Id' => $requestpayload['receiver_warehouse_id'],
                         'item_Id' => $item['transfer_item_id'],
@@ -174,45 +176,49 @@ class StockTransferController extends Controller
                     ]
                 );
 
-                $ItemBatchModelMaster = ItemBatchModelMaster::where('item_Id',$item['transfer_item_id'])->where('warehouse_id',$requestpayload['sender_warehouse_id'])->first();
+                $senderBatch = ItemBatchModelMaster::where('id',$item['transfer_item_batch_id'])->where('item_Id',$item['transfer_item_id'])->where('warehouse_id',$requestpayload['sender_warehouse_id'])->first();
                 ItemBatchModelMaster::updateOrCreate(
                     [
-                        'item_Id' => $item['transfer_item_id'],
+                        'item_Id' => $item['transfer_item_id'],  
+                        'batch_Number' => $senderBatch->batch_Number,
                         'warehouse_id' => $requestpayload['sender_warehouse_id'],
                     ],
                     [
-                        'item_Qty_Used' => $ItemBatchModelMaster->item_Qty_Used + $item['transfer_item_qty'],
-                        'isConsumed' => (($ItemBatchModelMaster->item_Qty_Used + $item['transfer_item_qty']) == $ItemBatchModelMaster->item_Qty) ? 1 : 0,
+                        'item_Qty_Used' => $senderBatch->item_Qty_Used + $item['transfer_item_qty'],
+                        'isConsumed' => (($senderBatch->item_Qty_Used + $item['transfer_item_qty']) == $senderBatch->item_Qty) ? 1 : 0,
                     ]
                 );
 
-                $ItemBatchModelMasterreceiver = ItemBatchModelMaster::where('item_Id',$item['transfer_item_id'])->where('warehouse_id',$requestpayload['receiver_warehouse_id'])->first();
+                $receiverBatch = ItemBatchModelMaster::where('id',$item['transfer_item_batch_id'])->where('item_Id',$item['transfer_item_id'])->where('warehouse_id',$requestpayload['receiver_warehouse_id'])->first();
+                $qty = $receiverBatch ? $receiverBatch->item_Qty : 0;
+                $qty_used = $receiverBatch ? $receiverBatch->item_Qty_Used : 0;
+                $unit = $receiverBatch ? $receiverBatch->item_UnitofMeasurement_Id : $senderBatch->item_UnitofMeasurement_Id;
                 ItemBatchModelMaster::updateOrCreate(
                     [
-                        'item_Id' => $item['transfer_item_id'],
+                        'item_Id' => $item['transfer_item_id'],                        
+                        'batch_Number' => $receiverBatch ? $receiverBatch->batch_Number : $senderBatch->batch_Number,
                         'warehouse_id' => $requestpayload['receiver_warehouse_id']
                     ],
                     [
                         'warehouse_id' => $requestpayload['receiver_warehouse_id'],
                         'item_Id' => $item['transfer_item_id'],
-                        'batch_Number' => $ItemBatchModelMasterreceiver->batch_Number,
+                        'batch_Number' => $receiverBatch ? $receiverBatch->batch_Number : $senderBatch->batch_Number,
                         'branch_id' => Auth()->user()->branch_id,
-                        'batch_Transaction_Date' => $ItemBatchModelMasterreceiver->batch_Transaction_Date,
-                        'batch_Remarks' => $ItemBatchModelMasterreceiver->batch_Remarks,
-                        'item_UnitofMeasurement_Id' => $ItemBatchModelMasterreceiver->item_UnitofMeasurement_Id,
-                        'delivery_item_id' => $ItemBatchModelMasterreceiver->delivery_item_id,
-                        'item_Expiry_Date' => $ItemBatchModelMasterreceiver->item_Expiry_Date,
-                        'price' => (float)$ItemBatchModelMasterreceiver->price,
-                        'mark_up' => (float)$ItemBatchModelMasterreceiver->mark_up,
-                        'model_Number' => $ItemBatchModelMasterreceiver->model_Number,
-                        'model_SerialNumber' => $ItemBatchModelMasterreceiver->model_SerialNumber,
-                        'model_Transaction_Date' => $ItemBatchModelMasterreceiver->model_Transaction_Date,
-                        'model_Remarks' => $ItemBatchModelMasterreceiver->model_Remarks,
-                        'item_Qty' => (float)$ItemBatchModelMasterreceiver->item_Qty + $item['received_item_qty'],
-                        'isConsumed' => (($ItemBatchModelMasterreceiver->item_Qty_Used + $item['received_item_qty']) == $ItemBatchModelMasterreceiver->item_Qty) ? 1 : 0,
+                        'batch_Transaction_Date' => $receiverBatch ? $receiverBatch->batch_Transaction_Date : $senderBatch->batch_Transaction_Date,
+                        'batch_Remarks' => $receiverBatch ? $receiverBatch->batch_Remarks : $senderBatch->batch_Remarks,
+                        'item_UnitofMeasurement_Id' => $receiverBatch ? $receiverBatch->item_UnitofMeasurement_Id : $senderBatch->item_UnitofMeasurement_Id,
+                        'delivery_item_id' => $receiverBatch ? $receiverBatch->delivery_item_id : $senderBatch->delivery_item_id,
+                        'item_Expiry_Date' => $receiverBatch ? $receiverBatch->item_Expiry_Date : $senderBatch->item_Expiry_Date,
+                        'price' => $receiverBatch ? $receiverBatch->price : $senderBatch->price,
+                        'mark_up' => $receiverBatch ? $receiverBatch->mark_up : $senderBatch->mark_up,
+                        'model_Number' => $receiverBatch ? $receiverBatch->model_Number : $senderBatch->model_Number,
+                        'model_SerialNumber' => $receiverBatch ? $receiverBatch->model_SerialNumber : $senderBatch->model_SerialNumber,
+                        'model_Transaction_Date' => $receiverBatch ? $receiverBatch->model_Transaction_Date : $senderBatch->model_Transaction_Date,
+                        'model_Remarks' => $receiverBatch ? $receiverBatch->model_Remarks : $senderBatch->model_Remarks,
+                        'item_Qty' => $qty + $item['received_item_qty'],
+                        'isConsumed' => (($qty_used + $item['received_item_qty']) == $qty) ? 1 : 0,
                     ]
                 );
-
                 $itemmaster = Itemmasters::find($item['transfer_item_id']);
                 InventoryTransaction::create([
                     'branch_Id' => Auth()->user()->branch_id,
@@ -221,8 +227,8 @@ class StockTransferController extends Controller
                     'transaction_Item_Id' => $item['transfer_item_id'],
                     'transaction_Date' => Carbon::now(),
                     'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
-                    'transaction_Item_UnitofMeasurement_Id' => $ItemBatchModelMasterreceiver->item_UnitofMeasurement_Id,
-                    'transaction_Qty' => $item['received_item_qty'],
+                    'transaction_Item_UnitofMeasurement_Id' =>$unit,
+                    'transaction_Qty' => (float)$item['received_item_qty'],
                     'transaction_Item_OnHand' => (float)$receivedqty + $item['received_item_qty'],
                     'transaction_Item_ListCost' => (float)$item['transfer_item_unit_cost'],
                     'transaction_UserID' =>  Auth::user()->idnumber,
@@ -243,22 +249,39 @@ class StockTransferController extends Controller
                     'transaction_Item_Id' => $item['transfer_item_id'],
                     'transaction_Date' => Carbon::now(),
                     'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
-                    'transaction_Item_UnitofMeasurement_Id' => $ItemBatchModelMasterreceiver->item_UnitofMeasurement_Id,
+                    'transaction_Item_UnitofMeasurement_Id' => $unit,
                     'transaction_Qty' => $item['received_item_qty'],
                     'transaction_Item_OnHand' => (float)$sender_warehouse->item_OnHand - $item['received_item_qty'],
                     'transaction_Item_ListCost' => (float)$item['transfer_item_unit_cost'],
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction1->transaction_code ?? '',
                 ]);
 
                 $sequence1->update([
                     'seq_no' => (int) $sequence->seq_no + 1,
                     'recent_generated' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),
                 ]);
+
+              
+               
+                
             }
+
+            $checkqty = '5';
+            if($total_transfer_qty === $total_received_qty){
+                $checkqty = '13';
+            }
+            $receivestocks->update([
+                'received_by' => Auth::user()->idnumber, 
+                'received_date' => Carbon::now(), 
+                'status' => $checkqty,
+            ]);
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
+            
+            (new RecomputePrice())->compute($receiver['warehouse_Id'],'',$receiver['item_Id'],'in');
+            (new RecomputePrice())->compute($requestpayload['sender_warehouse_id'],'',$item['transfer_item_id'],'in');
             return response()->json(['message' => 'success'], 200);
         } catch (\Throwable $e) {
             DB::connection('sqlsrv')->rollback();

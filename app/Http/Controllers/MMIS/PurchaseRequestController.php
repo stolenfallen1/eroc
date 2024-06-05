@@ -75,7 +75,7 @@ class PurchaseRequestController extends Controller
                     })->whereDoesntHave('purchaseOrderDetails');
                 }else if(Request()->tab==10){
                     $q->with(['itemMaster', 'canvases', 'recommendedCanvas' => function($q){
-                        $q->with('vendor', 'canvaser', 'unit');
+                        $q->with('vendor', 'canvaser','comptroller', 'unit');
                     }, 'unit', 'PurchaseOrderDetails' => function($query1){
                         $query1->with('purchaseOrder.user', 'unit');
                     }]);

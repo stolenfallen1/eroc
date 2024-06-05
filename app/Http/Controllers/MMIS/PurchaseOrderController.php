@@ -260,6 +260,7 @@ class PurchaseOrderController extends Controller
                             ],
                             [
                             'po_Detail_item_id' => $item['item_Id'],
+                            'po_detail_currency_id' => $item['recommended_canvas']['currency_id'],
                             'po_Detail_item_listcost' => $item['recommended_canvas']['canvas_item_net_amount'],
                             'po_Detail_item_qty' => $item['recommended_canvas']['canvas_Item_Qty'],
                             'po_Detail_item_unitofmeasurement_id' => $item['recommended_canvas']['canvas_Item_UnitofMeasurement_Id'],

@@ -35,9 +35,13 @@ class SettingController extends Controller
     public function schedule()
     {
         $currentHour24 = date('H');
+        
+        // $currentHour24 = date('H');
         // ->where('beginning_military_hour','>=',$currentHour24)
         $schedule = DB::connection('sqlsrv_pos')->table('vwShift')->where('isActive','1')->select('shifts_code','Shift_description','beginning_military_hour')->get();
+        $all = Array('shifts_code'=>'0','Shift_description'=>'All Shift','beginning_military_hour'=>'0');
         $array = [];
+        $array[] = $all;
         foreach($schedule as $row){
             $array[] = $row;
         }

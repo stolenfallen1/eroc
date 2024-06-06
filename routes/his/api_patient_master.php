@@ -12,6 +12,7 @@ Route::resource('patient-master', MasterPatientController::class);
 Route::controller(OutpatientRegistrationController::class)->group(function () {
     Route::get('get-outpatient', 'index');
     Route::post('register-outpatient', 'register');
+    Route::put('update-outpatient/{id}', 'update');
 });
 Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('get-emergency', 'index');

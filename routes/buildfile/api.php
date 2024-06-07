@@ -488,6 +488,9 @@ Route::controller(HospitalPlanController::class)->group(function () {
     Route::get('get-hospital-plan', 'list');
 });
 Route::resource('hospital-plan', HospitalPlanController::class);
+Route::controller(IDTypesController::class)->group(function () {
+    Route::get('get-id-types', 'list');
+});
 Route::resource('id-types', IDTypesController::class);
 
 Route::controller(ReligionsController::class)->group(function () {

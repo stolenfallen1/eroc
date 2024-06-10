@@ -149,7 +149,8 @@ class Report_ZController extends Controller
     }
 
     public function Zreading_all_shift(){
-
+    
+        try
         $date = Carbon::parse(Request()->payload['date'])->format('Y-m-d');
         $terminalid = Auth()->user()->terminal_id;
         $possetting = POSSettings::with('bir_settings')->where('isActive', '1')->first();

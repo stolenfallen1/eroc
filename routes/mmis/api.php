@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ManualUpdateController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MMIS\UserController;
 use App\Http\Controllers\MMIS\AuditController;
@@ -125,3 +126,9 @@ Route::controller(AuditTrailController::class)->group(function () {
   // Route::post('stock-requisition', 'store');
 });
 
+
+
+Route::controller(ManualUpdateController::class)->group(function () {
+  Route::post('update-pr-details', 'update_purchaserequest');
+  Route::post('update-pr-canvas-details', 'update_purchasecanvass');
+});

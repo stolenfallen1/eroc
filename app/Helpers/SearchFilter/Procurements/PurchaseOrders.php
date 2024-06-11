@@ -251,7 +251,7 @@ class PurchaseOrders
         })
         
         ->where(function($query) {
-            $query->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 9999);
+            $query->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 99999);
         })
         ->orWhere(function($query) {
             $query->where('po_Document_currency_id', 2)->where('po_Document_total_net_amount', '>', 2000);

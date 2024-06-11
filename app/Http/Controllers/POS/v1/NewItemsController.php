@@ -18,7 +18,7 @@ class NewItemsController extends Controller
             if(Request()->keyword) {
                 $data->whereNotIn('id', Request()->selecteditem);
                 if(Request()->type == 'barcode'){
-                    $data->where('item_Barcode', Request()->keyword);
+                    $data->where('item_Barcode', Request()->keyword)->orWhere('item_name', 'LIKE', '%' . Request()->keyword . '%');
                 }else{
                     if(is_numeric(Request()->keyword)){
                         $data->where('id', 'LIKE', '%' . Request()->keyword . '%');

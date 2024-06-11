@@ -251,10 +251,10 @@ class PurchaseOrders
         })
         
         ->where(function($query) {
-            $query->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 99999);
+            $query->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 99999)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null]);
         })
         ->orWhere(function($query) {
-            $query->where('po_Document_currency_id', 2)->where('po_Document_total_net_amount', '>', 2000);
+            $query->where('po_Document_currency_id', 2)->where('po_Document_total_net_amount', '>', 2000)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null]);
         })
         ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null]);
         // ->where('po_Document_total_net_amount', '>', 99999)->where('po_Document_total_net_amount', '>', 2000)->where(function($q){

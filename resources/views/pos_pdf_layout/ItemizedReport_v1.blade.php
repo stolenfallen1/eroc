@@ -257,7 +257,7 @@
                                             @endphp
                                             @foreach ($items as $item)
                                                 @php  
-                                                    $totalamount += ((float)$item->price * $item->qty) 
+                                                    $totalamount += ((float)$item->totalamount) 
                                                 @endphp
                                                 <tr>
                                                     <td style="width:1%;"></td>
@@ -268,7 +268,7 @@
                                                     <td style="width:20%;" >{{$item->itemname}}</td>
                                                     <td >{{(int)$item->qty}}</td>
                                                     <td style="width:2%;">{{number_format(((float)$item->price),2)}}</td>
-                                                    <td style="width:2%;">{{number_format(((float)$item->price * $item->qty),2)}}</td>
+                                                    <td style="width:2%;">{{number_format(((float)$item->totalamount),2)}}</td>
                                                 </tr>
                                             @endforeach
                                             @php  

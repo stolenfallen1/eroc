@@ -177,11 +177,11 @@
                     $totalamount = 0;
                 @endphp
                 @foreach ($data as $row)
-                    @php $totalamount += (float)$row->price * $row->qty; @endphp
+                    @php $totalamount += (float)$row->totalamount; @endphp
                     <tr>
                         <td >{{$row->invnno}}</td>
                         <td >{{$row->itemname}}</td>
-                        <td class="text-right" >{{number_format(($row->price * $row->qty),2)}}</td>
+                        <td class="text-right" >{{number_format($row->totalamount,2)}}</td>
                         <td class="text-center">{{$row->Method}}</td>
                     </tr>
                 @endforeach

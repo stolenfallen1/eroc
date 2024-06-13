@@ -203,7 +203,7 @@
         if ($item->statusdesc == 'POS -  Completed Order Sales') {
             $total_sales_transaction++;
             $total_transaction++;
-            $total_sales_amount += (float) $item->price * $item->qty;
+            $total_sales_amount += (float) $item->totalamount;
             
             $totaldiscount += (float) $item->discount;
             $invoice = $item->invnno;
@@ -389,7 +389,7 @@
                                 @endphp
                                 @foreach ($items as $item)
                                     @php
-                                        $total_amount += (float) $item->price * $item->qty;
+                                        $total_amount += (float) $item->totalamount;
                                     @endphp
                                 @endforeach
                                 @php
@@ -409,7 +409,7 @@
                                 @endphp
                                 @foreach ($items as $item)
                                     @php
-                                        $total_amount += (float) $item->price * $item->qty;
+                                        $total_amount += (float) $item->totalamount;
                                         
                                     @endphp
                                 @endforeach
@@ -430,7 +430,7 @@
                                 @endphp
                                 @foreach ($items as $item)
                                     @php
-                                        $total_amount += (float) $item->price * $item->qty;
+                                        $total_amount += (float) $item->totalamount;
                                         
                                     @endphp
                                 @endforeach
@@ -498,7 +498,7 @@
                     @php $price =0; @endphp
                         @foreach ($items as $item)
                             @php
-                                $price +=$item->price * $item->qty;
+                                $price +=$item->totalamount;
                         @endphp
                     @endforeach
                     @php
@@ -668,7 +668,7 @@
                         @php $price =0; @endphp
                             @foreach ($items as $item)
                                 @php
-                                    $price +=$item->price * $item->qty;
+                                    $price +=$item->totalamount;
                             @endphp
                         @endforeach
                         @php

@@ -155,14 +155,14 @@
                                 $count =1;
                                 foreach ($itemGroup as  $itemname => $itemval) {
                                     foreach($itemval as $key =>$row) {
-                                        $subtotalamount +=(float)$row['price'] * (float)$row['qty'];
+                                        $subtotalamount +=(float)$row['totalamount'];
                                         ?>
                                             <tr>
                                                 <td  class="text-center">{{$count++}}</td>
                                                 <td >{{$itemname}}</td>
                                                 <td class="text-center">{{(float)$row['qty']}}</td>
                                                 <td>{{number_format((float)$row['price'], 2)}}</td>
-                                                <td >{{number_format(((float)$row['price'] * (float)$row['qty']), 2)}}</td>
+                                                <td >{{number_format(((float)$row['totalamount']), 2)}}</td>
                                             </tr>
                                         <?php
                                     }

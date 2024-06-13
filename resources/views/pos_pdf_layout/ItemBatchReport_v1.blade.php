@@ -155,7 +155,7 @@
                     @if(count($data) > 0)
                      
                        @foreach ($data as $row)
-                            @php  $totalamount += $row->order_item_price * $row->order_item_qty  @endphp
+                            @php  $totalamount += $row->totalamount  @endphp
                            <tr>
                                 <td>{{$row->invnno}}</td>
                                 <td>{{$row->transno}}</td>
@@ -164,7 +164,7 @@
                                 <td>{{$row->itemname}}</td>
                                 <td>{{(int)$row->order_item_qty}}</td>
                                 <td class="text-right">{{number_format($row->order_item_price,2)}}</td>
-                                <td class="text-right">{{number_format(($row->order_item_price * (int)$row->order_item_qty),2)}}</td>
+                                <td class="text-right">{{number_format($row->totalamount,2)}}</td>
                            </tr>
                        @endforeach
                        

@@ -15,7 +15,7 @@ use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
-
+use App\Http\Controllers\POS\Report_ZController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -26,6 +26,9 @@ use App\Http\Controllers\BuildFile\ItemandServicesController;
 | contains the "web" middleware group. Now create something great!
 |
 */
+Route::controller(Report_ZController::class)->group(function () {
+    Route::get('get-z-report-all-shift', 'generate_z_report');
+});
 
 
 

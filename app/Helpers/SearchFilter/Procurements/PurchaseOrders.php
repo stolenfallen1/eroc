@@ -246,16 +246,17 @@ class PurchaseOrders
     else if($this->authUser->role->name == 'president'){
       if(Request()->branch == 1){
 
-        $this->model->where(function($q){
+        $this->model
+        ->where(function($q){
           $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
         })
-        
         ->where(function($query) {
-            $query->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_currency_id', 2)->where('po_Document_total_net_amount', '>', 2000);
+            $query->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_currency_id', 2)->where('po_Document_total_net_amount', '>', 2000);
         })
         ->orWhere(function($query) {
-            $query->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 99999);
+            $query->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 99999);
         })
+        
         ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null]);
         // ->where('po_Document_total_net_amount', '>', 99999)->where('po_Document_total_net_amount', '>', 2000)->where(function($q){
         //   $q->where('currency_id')->orWhere('currency_id');
@@ -278,18 +279,25 @@ class PurchaseOrders
   }
 
   private function forAdministrator(){
+    $this->model->where('comptroller_approved_date', '!=', null);
     $this->model->where('admin_approved_date', '!=', null);
     $this->model->orderBy('isprinted', 'asc');
     $this->model->orderBy('created_at', 'desc');
   }
 
   private function forCorpAdmin(){
+    $this->model->where('comptroller_approved_date', '!=', null);
     $this->model->where('corp_admin_approved_date', '!=', null);
     $this->model->orderBy('isprinted', 'asc');
     $this->model->orderBy('created_at', 'desc');
   }
 
   private function forPresident(){
+   
+    $this->model->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)
+      ->where(function($q){
+        $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
+    });
     $this->model->where('ysl_approved_date', '!=', null);
     $this->model->orderBy('isprinted', 'asc');
     $this->model->orderBy('created_at', 'desc');

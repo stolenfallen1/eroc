@@ -202,10 +202,12 @@ class DeliveryController extends Controller
                         $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
     
                         // return $detail['purchase_request_detail'];
+                        $batchdetail = ItemBatchModelMaster::where('batch_Number',$batch['batch_Number'])->where('item_Id',$batch['item_Id'])->where('warehouse_id',$delivery->rr_Document_Warehouse_Id)->first();
                         InventoryTransaction::create([
                             'branch_Id' => $delivery->rr_Document_Branch_Id,
                             'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
                             'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
+                            'transaction_Item_Batch_Detail' => $batchdetail['id'],
                             'transaction_Item_Id' =>  $batch['item_Id'],
                             'transaction_Date' => Carbon::now(),
                             'trasanction_Reference_Number' => generateCompleteSequence($sequence1->seq_prefix, $sequence1->seq_no, $sequence1->seq_suffix, ''),

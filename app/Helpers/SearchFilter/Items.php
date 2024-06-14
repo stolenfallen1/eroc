@@ -59,13 +59,13 @@ class Items
 
   private function withWareHouseItems(){
     if(Request()->wareHouseItems){
-      $this->model->with('wareHouseItems');
+      $this->model->with('wareHouseItems','wareHouseItems.branch');
     }
   }
 
   private function withWareHouseItem(){
     if(Request()->wareHouseItem || Request()->for_sr){
-      $this->model->with('wareHouseItem');
+      $this->model->with('wareHouseItem','wareHouseItem.branch','wareHouseItem.warehouse');
     }
   }
 

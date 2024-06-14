@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\BuildFile\Warehouses;
 use App\Models\BuildFile\Itemmasters;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Unitofmeasurement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ItemBatchModelMaster extends Model
@@ -35,6 +36,11 @@ class ItemBatchModelMaster extends Model
         return $this->batch_Number . ' -  Expiry Date :' . Carbon::parse($this->item_Expiry_Date)->format('d/m/Y'). ' -  QTY : '.((float)$this->item_Qty - $this->item_Qty_Used);
     }
 
+    public function unit(){
+        return $this->belongsTo(Unitofmeasurement::class, 'item_UnitofMeasurement_Id','id');
+    }
+
+    
     public function transactions(){
         return $this->hasMany(InventoryTransaction::class, 'batch_id', 'id');
     }

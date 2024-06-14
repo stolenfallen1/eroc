@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class IDTypesController extends Controller
 {
+    public function list() {
+        try {
+            $data = IDTypes::get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
+
     public function index()
     {
         try {

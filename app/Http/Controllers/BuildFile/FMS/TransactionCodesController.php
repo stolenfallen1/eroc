@@ -27,7 +27,17 @@ class TransactionCodesController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
- 
+
+    public function list() {
+        try {
+            $data = TransactionCodes::query();
+            $data->with('medicare_type');
+            return response()->json($data->get(), 200);
+        } catch(\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
+
     public function add_revenue_access(Request $request){
         $data = UserRevenueCodeAccess::updateOrCreate(
         [
@@ -88,7 +98,6 @@ class TransactionCodesController extends Controller
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
             return response()->json($data->paginate($page), 200);
-         
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);
         }

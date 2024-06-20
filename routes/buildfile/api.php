@@ -619,6 +619,7 @@ Route::resource('transaction-classifications', TransactionClassificationControll
 Route::resource('transaction-codes', TransactionCodesController::class);
 
 Route::controller(TransactionCodesController::class)->group(function () {
+    Route::get('get-transaction-codes', 'list');
     Route::get('revenue-code', 'revenuecode');
     Route::get('charge-code', 'chargingcode');
     Route::post('get-charges-code', 'chargingcode');

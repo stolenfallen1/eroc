@@ -14,12 +14,12 @@ class OutpatientRegistrationController extends Controller
     public function index() {
         try { 
             $data = Patient::query();
-            $data->with('sex', 'civilStatus', 'patientRegistry');
+            $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
             $data->whereHas('patientRegistry', function($query) {
                 $query->where('mscAccount_trans_types', 1); // Patients that are outpatients only
                 if(Request()->keyword) {
                     $query->where(function($subQuery) {
-                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%') 
+                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
                                 ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
                                 ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
                     });
@@ -128,7 +128,7 @@ class OutpatientRegistrationController extends Controller
                     'register_source' => $request->payload['register_source'] ?? null,
                     'register_type' => $request->payload['register_type'] ?? null, 
                     'register_source_case_no' => $request->payload['register_source_case_no'] ?? null,
-                    'mscAccount_type' => $request->payload['mscAccount_type'] ?? '',
+                    'mscAccount_type' => $request->payload['mscAccount_type'] ?? null,
                     'mscAccount_discount_id' => $request->payload['mscAccount_discount_id'] ?? null,
                     'mscAccount_trans_types' => $request->payload['mscAccount_trans_types'], 
                     'mscPatient_category' => $request->payload['mscPatient_category'] ?? null,
@@ -197,8 +197,8 @@ class OutpatientRegistrationController extends Controller
                     'isTBDots' => $isTBDots,
                     'isPAD' => $isPAD,
                     'isRadioTherapy' => $isRadioTherapy,
-                    'attending_doctor' => $request->payload['selectedConsultant'][0]['doctor_code'] ?? null,
-                    'attending_doctor_fullname' => $request->payload['selectedConsultant'][0]['doctor_name'] ?? null,
+                    'attending_doctor' => $request->payload['selectedConsultant'][0]['attending_doctor'] ?? null,
+                    'attending_doctor_fullname' => $request->payload['selectedConsultant'][0]['attending_doctor_fullname'] ?? null,
                     'mscDispositions' => $request->payload['mscDispositions'] ?? null,
                     'mscAdmResults' => $request->payload['mscAdmResults'] ?? null,
                     'mscDeath_Types' => $request->payload['mscDeath_Types'] ?? null,

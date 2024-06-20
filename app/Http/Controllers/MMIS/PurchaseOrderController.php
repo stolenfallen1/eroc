@@ -198,19 +198,36 @@ class PurchaseOrderController extends Controller
                 if ($checkPO) {
                     $number = $checkPO->po_Document_number;
                 }
+                
+                // if(sizeof($purchase_order['items']) > 0){
+                //     foreach ($purchase_order['items'] as $item) {
+                //         $po_Document_discount_percent += round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
+                //         $po_Document_discount_amount += round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
+                //         $po_Document_vat_amount += round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
+                //         $po_Document_total_net_amount += round($item['recommended_canvas']['canvas_item_net_amount'], 4);
+                //     }
+                // }
                 $po_Document_discount_percent = 0;
                 $po_Document_discount_amount = 0;
                 $po_Document_vat_amount = 0;
                 $po_Document_total_net_amount = 0;
                 if(sizeof($purchase_order['items']) > 0){
-                    foreach ($purchase_order['items'] as $item) {
-                        $po_Document_discount_percent += round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
-                        $po_Document_discount_amount += round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
-                        $po_Document_vat_amount += round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
-                        $po_Document_total_net_amount += round($item['recommended_canvas']['canvas_item_net_amount'], 4);
-                    }
+                    $po_Document_discount_percent = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
+                    }, $purchase_order['items']));
+                    
+                    $po_Document_discount_amount = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
+                    }, $purchase_order['items']));
+                    
+                    $po_Document_vat_amount = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
+                    }, $purchase_order['items']));
+                    
+                    $po_Document_total_net_amount = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_net_amount'], 4);
+                    }, $purchase_order['items']));
                 }
-
                 $po = purchaseOrderMaster::updateOrCreate(
                     [
                         'pr_request_id' => $purchase_order['pr_request_id'],

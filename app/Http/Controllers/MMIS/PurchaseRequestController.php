@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\MMIS;
 
+use Exception;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\MMIS\TestModel;
@@ -12,14 +13,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Models\BuildFile\SystemSequence;
+use App\Models\MMIS\inventory\Consignment;
 use App\Http\Requests\Procurement\PRRequest;
 use App\Models\MMIS\procurement\CanvasMaster;
+use App\Models\MMIS\inventory\ConsignmentItem;
+use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Helpers\SearchFilter\inventory\Consignments;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
-use Exception;
 
 class PurchaseRequestController extends Controller
 {
@@ -105,6 +109,7 @@ class PurchaseRequestController extends Controller
 
     public function store(Request $request)
     {
+
         $status = InvStatus::where('Status_description', 'like', '%pending%')->select('id')->first()->id;
         $user = Auth::user();
         $sequence = SystemSequence::where('seq_description', 'like', '%Purchase Requisition Series Number%')
@@ -122,6 +127,13 @@ class PurchaseRequestController extends Controller
         DB::connection('sqlsrv_mmis')->beginTransaction();
 
         try {
+            $ismed = NULL;
+            if($request->invgroup_id == 2){
+                $ismed = 1;
+            }
+            if(isset($request->isconsignments) && $request->isconsignments == 1){
+                $ismed = 1;
+            }
             $pr = PurchaseRequest::create([
                 'branch_Id' => (int)$user->branch_id,
                 'warehouse_Id' => (int)$user->warehouse_id,
@@ -138,6 +150,8 @@ class PurchaseRequestController extends Controller
                 'pr_Document_Suffix' => $suffex ?? "",
                 'pr_Status_Id' => $status ?? null,
                 'isPerishable' => $request->isPerishable ?? 0,
+                'isconsignment'=>isset($request->isconsignments) ? 1 : 0 ,
+                'ismedicine'=>$ismed 
             ]);
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
                 foreach ($request->attachments as $key => $attachment) {
@@ -168,8 +182,55 @@ class PurchaseRequestController extends Controller
                     'vat_type' => $item['vat_type'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
-            }
 
+                if(isset($request->isconsignments) && $request->isconsignments == 1){
+                    ConsignmentItem::create([
+                        'pr_request_id' => $pr['id'],
+                        'rr_id' => $request['consignmentid'],
+                        'item_group_id' => $request->invgroup_id,
+                        'category_id' =>$request->item_Category_Id,
+                        'request_item_id' => $item['item_Id'],
+                        'consignmen_item_id' => $item['item_Id'],
+                        'consignment_qty' => $item['rr_Detail_Item_Qty_Received'],
+                        'request_qty' => $item['item_Request_Qty'],
+                        'createdby' => $user->idnumber,
+                        'consignment_balance_qty' => $item['rr_Detail_Item_Qty_Received'] - $item['item_Request_Qty'],
+                    ]);
+
+                    $check = ConsignmentItems::where('rr_id', $request['consignmentid'])
+                        ->where('rr_Detail_Item_Id', $item['item_Id'])
+                        ->first();
+
+                    if ($check) {
+                        // Update the pr_item_qty
+                            ConsignmentItems::where('rr_id', $request['consignmentid'])
+                            ->where('rr_Detail_Item_Id', $item['item_Id'])
+                            ->update([
+                                'pr_item_qty' => $check->pr_item_qty + $item['item_Request_Qty'],
+                            ]);
+                            $check1 = ConsignmentItems::where('rr_id', $request['consignmentid'])
+                            ->where('rr_Detail_Item_Id', $item['item_Id'])
+                            ->first();
+                            ConsignmentItems::where('rr_id', $request['consignmentid'])
+                            ->where('rr_Detail_Item_Id', $item['item_Id'])
+                            ->update([
+                                'pr_back_qty' => $check1->rr_Detail_Item_Qty_Received - ($check->pr_item_qty + $item['item_Request_Qty']),
+                            ]);
+                        // Check if all items are received
+                        $allItemsReceived = ConsignmentItems::where('rr_id', $request['consignmentid'])
+                            ->where('pr_back_qty', '>', 0)
+                            ->exists();
+
+                        if (!$allItemsReceived) {
+                            Consignment::where('id', $request['consignmentid'])->update([
+                                'receivedstatus' => 1
+                            ]);
+                        }
+                    }
+                }
+            }
+           
+            
             $sequence->update([
                 'seq_no' => (int) $sequence->seq_no + 1,
                 'recent_generated' => generateCompleteSequence($prefix, $number, $suffex, "-"),
@@ -181,7 +242,7 @@ class PurchaseRequestController extends Controller
         } catch (\Exception  $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
-            return response()->json(["error" => $e], 200);
+            return response()->json(["error" => $e->getMessage()], 200);
         }
         
 

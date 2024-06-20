@@ -18,7 +18,7 @@ class Items
 
   public function searchable()
   {
-    $this->model->with('itemGroup', 'itemCategory', 'unit');
+    $this->model->with('itemGroup', 'itemCategory', 'unit','wareHouseItem');
     $this->byBranch();
     $this->byCategory();
     $this->bySubCategory();

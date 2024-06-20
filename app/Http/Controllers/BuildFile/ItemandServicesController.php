@@ -189,8 +189,8 @@ class ItemandServicesController extends Controller
             'isAllowStatOrder'=> (int)$request->isAllowStatOrder ?? '',
             'item_StatPercent'=> (int)$request->item_StatPercent ?? '',
             'isIncludeInStatement'=> (int)$request->isIncludeInStatement ?? '',
-            'DateModified' => Carbon::now(),
-            'ModifiedBy'=>Auth()->user()->idnumber,
+            // 'DateModified' => Carbon::now(),
+            // 'ModifiedBy'=>Auth()->user()->idnumber, 
             'isActive'=> (int) '1'
         ]);
         // $items->wareHouseItems()->where('item_Id',$items->id)->update([
@@ -305,8 +305,14 @@ class ItemandServicesController extends Controller
             'item_Maximum_StockLevel' => $request->item_Maximum_StockLevel,
             'isExpiryDate_Required' => $request->isExpiryDate_Required,
             'isLotNo_Required' => $request->isLotNo_Required,
+            'item_discount' => $request->item_discount,
             'isModelNo_Required' => $request->isModelNo_Required,
+            'isConsignment' => $request->isConsignment,
             'ModifiedBy'=>Auth()->user()->idnumber,
+        ]);
+
+        $item->itemMaster()->where('map_item_id',$request->map_item_id)->update([
+            'isConsignment' => $request->isConsignment,
         ]);
         return response()->json(["message" => "success"], 200);
     }

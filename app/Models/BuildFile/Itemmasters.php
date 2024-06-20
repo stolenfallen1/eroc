@@ -26,9 +26,10 @@ class Itemmasters extends Model
     }
 
     public function wareHouseItem(){
-        return $this->hasOne(Warehouseitems::class, 'item_Id', 'id')->where('warehouse_Id', Request()->warehouse_idd);
+        // $warehouse = Request()->warehouse_idd ?? Auth::user()->warehouse_id;
+        $warehouse = isset(Request()->warehouse_idd) ? Request()->warehouse_idd : Auth::user()->warehouse_id;
+        return $this->hasOne(Warehouseitems::class, 'item_Id', 'id')->where('warehouse_Id', $warehouse);
     }
-
     public function authWarehouseItem(){
         return $this->hasOne(Warehouseitems::class, 'item_Id', 'id')
             ->where('warehouse_Id', Auth::user()->warehouse_id)->where('branch_id', Auth::user()->branch_id);

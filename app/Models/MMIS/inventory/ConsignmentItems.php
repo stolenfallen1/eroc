@@ -3,26 +3,33 @@
 namespace App\Models\MMIS\inventory;
 
 use App\Models\BuildFile\Itemmasters;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\MMIS\inventory\Consignment;
 use App\Models\BuildFile\Unitofmeasurement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class DeliveryItems extends Model
+class ConsignmentItems extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv_mmis";
-    protected $table = 'CDG_MMIS.dbo.RRDetail';
+    protected $table = 'CDG_MMIS.dbo.RRDetailConsignment';
 
     protected $guarded = [];
 
+    protected $appends = ['total_qty'];
+
+
+    public function getTotalQtyAttribute(){
+        return (float)$this->rr_Detail_Item_Qty_Received - (float)$this->pr_item_qty;
+    }
     public function batchs()
     {
-        return $this->hasMany(ItemBatchModelMaster::class, 'delivery_item_id', 'id')->whereNotIn('isconsignment',[1]);
+        return $this->hasMany(ItemBatchModelMaster::class, 'delivery_item_id', 'id')->where('isconsignment',1);
     }
 
     public function delivery()
     {
-        return $this->belongsTo(Delivery::class, 'rr_id');
+        return $this->belongsTo(Consignment::class, 'rr_id');
     }
 
     public function item()

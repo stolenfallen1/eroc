@@ -214,6 +214,7 @@ class PurchaseRequests
 
         $this->model->whereNull('pr_Branch_Level2_ApprovedBy');
         $this->model->whereNull('pr_Branch_Level1_CancelledBy');
+        $this->model->whereNull('ismedicine');
       }
 
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);

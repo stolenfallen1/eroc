@@ -15,6 +15,7 @@ use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\StockTransferController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
+use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
 use App\Http\Controllers\MMIS\InventoryTransactionController;
 
 Route::controller(UserController::class)->group(function () {
@@ -80,11 +81,18 @@ Route::controller(InventoryTransactionController::class)->group(function () {
 Route::controller(DeliveryController::class)->group(function () {
   Route::get('deliveries', 'index');
   Route::post('deliveries', 'store');
-  Route::post('consignments', 'storeConsignment');
   Route::put('deliveries', 'update');
   Route::get('delivery/{id}', 'show');
   Route::get('delivery', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
+
+});
+
+Route::controller(ConsignmentDeliveryController::class)->group(function () {
+  Route::get('consignments', 'index');
+  Route::post('consignments', 'store');
+  Route::get('get-consignment', 'list');
+  Route::put('consignments/{id}', 'update');
   Route::post('consignment-pr', 'createConsignmentPr');
 });
 

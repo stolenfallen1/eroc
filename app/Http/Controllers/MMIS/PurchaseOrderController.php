@@ -8,12 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MMIS\inventory\Delivery;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Unitofmeasurement;
+use App\Models\MMIS\inventory\ConsignmentItem;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
-use App\Models\MMIS\inventory\Delivery;
 
 class PurchaseOrderController extends Controller
 {
@@ -290,7 +291,17 @@ class PurchaseOrderController extends Controller
                             'canvas_id' => $item['recommended_canvas']['id'],
                             'isFreeGoods' => $item['recommended_canvas']['isFreeGoods'],
                         ]);
+                        $checkifconsignment = ConsignmentItem::where('pr_request_id',$purchase_order['pr_request_id'])->where('request_item_id',$item['item_Id'])->first();
+                        if($checkifconsignment){
+                            $checkifconsignment->update([
+                                'po_id' => $po['id'],
+                                'canvas_id' => $item['recommended_canvas']['id'],
+                                'updatedby' => $authUser->idnumber
+                            ]);
+                        } 
                 }
+
+                
             }
 
             DB::connection('sqlsrv')->commit();

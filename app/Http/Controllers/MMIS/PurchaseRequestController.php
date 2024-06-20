@@ -193,6 +193,7 @@ class PurchaseRequestController extends Controller
                         'consignmen_item_id' => $item['item_Id'],
                         'consignment_qty' => $item['rr_Detail_Item_Qty_Received'],
                         'request_qty' => $item['item_Request_Qty'],
+                        'batch_id' => $item['batch_id'],
                         'createdby' => $user->idnumber,
                         'consignment_balance_qty' => $item['rr_Detail_Item_Qty_Received'] - $item['item_Request_Qty'],
                     ]);

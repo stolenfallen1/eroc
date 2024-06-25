@@ -22,7 +22,7 @@ class Patient extends Model
 {
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
-    protected $connection = "sqlsrv";
+    protected $connection = "sqlsrv_patient_data";
     protected $guarded = [];
 
     // Relationships

@@ -2,6 +2,7 @@
 
 namespace App\Models\HIS\services;
 
+use App\Models\HIS\services\Patient;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\FMS\AccountType;
 use App\Models\BuildFile\Hospital\Company;
@@ -16,10 +17,13 @@ class PatientRegistry extends Model
 {
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
-    protected $connection = "sqlsrv";
+    protected $connection = "sqlsrv_patient_data";
     protected $guarded = [];
 
     // Relationships
+    public function patient_details(){
+        return $this->belongsTo(Patient::class,'patient_id', 'patient_id');
+    }
     public function branch() {
         return $this->belongsTo(Branchs::class, 'branch_id', 'id');
     }

@@ -50,4 +50,5 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('his/api_users.php');
     require_once('his/api_settings.php');
     require_once('schedules/api.php');
+    require_once('his/api_his_functions.php');
 });

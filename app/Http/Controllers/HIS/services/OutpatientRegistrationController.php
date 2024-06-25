@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,8 +16,16 @@ class OutpatientRegistrationController extends Controller
         try { 
             $data = Patient::query();
             $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
-            $data->whereHas('patientRegistry', function($query) {
-                $query->where('mscAccount_trans_types', 1); // Patients that are outpatients only
+            $today = Carbon::now()->format('Y-m-d');
+            
+            $data->whereHas('patientRegistry', function($query) use ($today) {
+                $query->where('mscAccount_trans_types', 1); 
+                $query->whereDate('registry_date', $today)
+                    ->where(function($q) use ($today) {
+                        $q->whereNull('discharged_date')
+                            ->orWhereDate('discharged_date', '>=', $today);
+                    });
+
                 if(Request()->keyword) {
                     $query->where(function($subQuery) {
                         $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
@@ -28,6 +37,7 @@ class OutpatientRegistrationController extends Controller
             $data->orderBy('id', 'asc');
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to get outpatient patients',
@@ -124,8 +134,8 @@ class OutpatientRegistrationController extends Controller
                     'abscond_details' => $request->payload['abscond_details'] ?? null,
                     'createdBy' => Auth()->user()->idnumber,
                     'updatedBy' => Auth()->user()->idnumber,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
                 ]
             );
             $patientRegistry = PatientRegistry::updateOrCreate(
@@ -151,7 +161,7 @@ class OutpatientRegistrationController extends Controller
                     'queue_number' => $request->payload['queue_number'] ?? null,
                     'arrived_date' => $request->payload['arrived_date'] ?? null,
                     'registry_userid' => Auth()->user()->idnumber,
-                    'registry_date' => now(),
+                    'registry_date' => Carbon::now(),
                     'registry_status' => $request->payload['registry_status'] ?? null,
                     'registry_department_id' => $request->payload['registry_department_id'] ?? null,
                     'discharged_userid' => $request->payload['discharged_userid'] ?? null,
@@ -234,9 +244,9 @@ class OutpatientRegistrationController extends Controller
                     'isWithConsent_DPA' => $request->payload['isWithConsent_DPA'] ?? false,
                     'registry_remarks' => $request->payload['registry_remarks'] ?? null, 
                     'CreatedBy' => Auth()->user()->idnumber,
-                    'created_at' => now(),
+                    'created_at' => Carbon::now(),
                     'UpdatedBy' => Auth()->user()->idnumber,
-                    'updated_at' => now(),
+                    'updated_at' => Carbon::now(),
                 ]
             );
             $registry_sequence->update([
@@ -324,7 +334,7 @@ class OutpatientRegistrationController extends Controller
                 'isAbscond' => $request->payload['isAbscond'] ?? $patient->isAbscond,
                 'abscond_details' => $request->payload['abscond_details'] ?? $patient->abscond_details,
                 'updatedBy' => Auth()->user()->idnumber,
-                'updated_at' => now(),
+                'updated_at' => Carbon::now(),
             ]);
             
             $patient_id = $patient->patient_id;
@@ -343,7 +353,7 @@ class OutpatientRegistrationController extends Controller
                 'queue_number' => $request->payload['queue_number'] ?? $patientRegistry->queue_number,
                 'arrived_date' => $request->payload['arrived_date'] ?? $patientRegistry->arrived_date,
                 'registry_userid' => Auth()->user()->idnumber,
-                'registry_date' => now(),
+                'registry_date' => Carbon::now(),
                 'registry_status' => $request->payload['registry_status'] ?? $patientRegistry->registry_status,
                 'registry_department_id' => $request->payload['registry_department_id'] ?? $patientRegistry->registry_department_id,
                 'discharged_userid' => $request->payload['discharged_userid'] ?? $patientRegistry->discharged_userid,
@@ -426,7 +436,7 @@ class OutpatientRegistrationController extends Controller
                 'isWithConsent_DPA' => $request->payload['isWithConsent_DPA'] ?? $patientRegistry->isWithConsent_DPA,
                 'registry_remarks' => $request->payload['registry_remarks'] ?? $patientRegistry->registry_remarks, 
                 'UpdatedBy' => Auth()->user()->idnumber,
-                'updated_at' => now(),
+                'updated_at' => Carbon::now(),
             ]);   
             
             DB::commit();

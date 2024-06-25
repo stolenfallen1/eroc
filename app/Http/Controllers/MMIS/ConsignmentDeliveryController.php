@@ -9,6 +9,7 @@ use App\Models\BuildFile\Vendors;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\BuildFile\Itemmasters;
 use App\Models\MMIS\inventory\Delivery;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
@@ -18,13 +19,49 @@ use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Helpers\SearchFilter\inventory\Consignments;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
+use App\Helpers\SearchFilter\inventory\PurchaseOrderConsignments;
 
 class ConsignmentDeliveryController extends Controller
 {
     public function index()
     {
-        return (new Consignments)->searchable();
+        if(Request()->tab == 3){
+            return (new Consignments)->searchable();
+        }else if( Request()->tab == 4 || Request()->tab == 5){
+            return (new PurchaseOrderConsignments)->searchable();
+        }
+       
     }
+    public function auditconsignment()
+    {
+        return (new PurchaseOrderConsignments)->auditsearchable();
+    }
+    
+    public function updatePOconsignment()
+    {
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            if(Request()->payload){
+                $payload = Request()->payload;
+                $has_dup_invoice_no = PurchaseOrderConsignment::where('po_id',$payload['po_id'])->where('invoice_no', $payload['invoice_no'])->exists();
+                if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
+                PurchaseOrderConsignment::where('id',$payload['id'])->update([
+                    'invoice_no'=>$payload['invoice_no'],
+                    'invoice_date'=>$payload['invoice_date']
+                ]);
+                DB::connection('sqlsrv_mmis')->commit();
+                return response()->json(['message' => 'success'], 200);
+            }
+        }
+        catch (\Exception $e) {
+            DB::connection('sqlsrv_mmis')->rollback();
+            return response()->json(["error" => $e->getMessage()], 200);
+        }
+    }
+
+
+    
     public function list()
     {
         $data = Consignment::with('status', 'vendor', 'warehouse','items','items.item','items.batchs')->whereNull('receivedstatus')->get();
@@ -45,6 +82,36 @@ class ConsignmentDeliveryController extends Controller
             $prefix = $sequence->seq_prefix;
             $suffix = $sequence->seq_suffix;
 
+
+            $rr_Document_TotalGrossAmount = 0;
+            $rr_Document_TotalDiscountAmount = 0;
+            $rr_Document_TotalNetAmount = 0;
+            $rr_Document_Vat_Inclusive_Rate = 0;
+            if(sizeof($request['items']) > 0){
+                foreach ($request['items'] as $item) {
+                    $itemDetails = Itemmasters::findOrfail($item['rr_Detail_Item_Id']);
+                    $discount_amount = 0;
+                    $vat_amount = 0;
+                    $total_amount = $item['rr_Detail_Item_ListCost'] * $item['rr_Detail_Item_Qty_Received'];
+
+                    if($item['rr_Detail_Item_TotalDiscount_Percent']){
+                        $discount_amount = $total_amount * ($item['rr_Detail_Item_TotalDiscount_Percent'] / 100);
+                    }
+                    if($item['rr_Detail_Item_Vat_Rate']){
+                        if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
+                            $vat_amount = ($total_amount - $discount_amount) * ($item['rr_Detail_Item_Vat_Rate'] / 100);
+                        }
+                    }
+                    
+                    $item_total_amount =($total_amount - $discount_amount);
+                    $rr_Document_TotalGrossAmount += round($total_amount, 4);
+                    $rr_Document_TotalDiscountAmount += round($discount_amount, 4);
+                    $rr_Document_TotalNetAmount += round($item_total_amount, 4);
+                    $rr_Document_Vat_Inclusive_Rate += round($vat_amount, 4);
+                   
+                }
+            }
+
             $delivery = Consignment::create([
                 'rr_Document_Number' => $number,
                 'rr_Document_Prefix' => $prefix,
@@ -53,14 +120,15 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Transaction_Date' => Carbon::now(),
                 'rr_Document_Vendor_Id' => $vendor->id,
                 'rr_Document_Delivery_Receipt_No' => $request['rr_Document_Delivery_Receipt_No'],
-                'rr_Document_Invoice_Date' => Carbon::now(),
+                'rr_Document_Invoice_Date' => $request['rr_Document_Invoice_Date'],
                 'rr_Document_Delivery_Date' => Carbon::now(),
                 'rr_Document_Terms_Id' => $vendor['term']['id'],
-                'rr_Document_TotalGrossAmount' => $request['rr_Document_TotalGrossAmount'],
-                'rr_Document_TotalDiscountAmount' => $request['rr_Document_TotalDiscountAmount'],
-                'rr_Document_TotalNetAmount' => $request['rr_Document_TotalNetAmount'],
+                'rr_Document_TotalGrossAmount' => $rr_Document_TotalGrossAmount,
+                'rr_Document_TotalDiscountAmount' => $rr_Document_TotalDiscountAmount,
+                'rr_Document_TotalNetAmount' => $rr_Document_TotalNetAmount,
+                'rr_Document_Vat_Inclusive_Rate' => $rr_Document_Vat_Inclusive_Rate,
                 'rr_Document_Remarks' => $request['rr_Document_Remarks'],
-
+                
                 'rr_Document_Branch_Id' => Auth::user()->branch_id,
                 'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
                 'rr_Document_Warehouse_Id' => Auth::user()->warehouse_id,
@@ -80,6 +148,24 @@ class ConsignmentDeliveryController extends Controller
 
             foreach ($request['items'] as $key => $detail) {
                 
+
+                $itemDetails = Itemmasters::findOrfail($item['rr_Detail_Item_Id']);
+                $discount_amount = 0;
+                $vat_amount = 0;
+                $total_amount = $item['rr_Detail_Item_ListCost'] * $item['rr_Detail_Item_Qty_Received'];
+
+                if($item['rr_Detail_Item_TotalDiscount_Percent']){
+                    $discount_amount = $total_amount * ($item['rr_Detail_Item_TotalDiscount_Percent'] / 100);
+                }
+                if($item['rr_Detail_Item_Vat_Rate']){
+                    if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
+                        $vat_amount = ($total_amount - $discount_amount) * ($item['rr_Detail_Item_Vat_Rate'] / 100);
+                    }
+                }
+                
+                $item_total_amount =($total_amount - $discount_amount);
+              
+
                 $delivery_item = ConsignmentItems::create([
                     'rr_Document_Number' => $number,
                     'rr_Document_Prefix' => $prefix,
@@ -91,13 +177,13 @@ class ConsignmentDeliveryController extends Controller
                     'rr_Detail_Item_UnitofMeasurement_Id_Received' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
                     'rr_Detail_Item_Qty_Convert' => $detail['rr_Detail_Item_Qty_Convert'] ?? NULL,
                     'rr_Detail_Item_UnitofMeasurement_Id_Convert' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Convert'] ?? NULL,
-                    'rr_Detail_Item_TotalGrossAmount' => $detail['rr_Detail_Item_TotalGrossAmount'],
+                    'rr_Detail_Item_TotalGrossAmount' => $total_amount,
                     'rr_Detail_Item_TotalDiscount_Percent' => $detail['rr_Detail_Item_TotalDiscount_Percent'],
-                    'rr_Detail_Item_TotalDiscount_Amount' => $detail['rr_Detail_Item_TotalDiscount_Amount'],
-                    'rr_Detail_Item_TotalNetAmount' => $detail['rr_Detail_Item_TotalNetAmount'],
+                    'rr_Detail_Item_TotalDiscount_Amount' => $discount_amount,
+                    'rr_Detail_Item_TotalNetAmount' => $item_total_amount,
                     'rr_Detail_Item_Per_Box' => $detail['rr_Detail_Item_Per_Box'] ?? NULL,
                     'rr_Detail_Item_Vat_Rate' => $detail['rr_Detail_Item_Vat_Rate'] ?? NULL,
-                    'rr_Detail_Item_Vat_Amount' => $detail['rr_Detail_Item_Vat_Amount'] ?? NULL,
+                    'rr_Detail_Item_Vat_Amount' => $vat_amount ?? NULL,
                     'createdBy' =>  Auth::user()->idnumber,
                 ]);
                 
@@ -138,7 +224,7 @@ class ConsignmentDeliveryController extends Controller
                     ]);
                     (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'in');
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
 
                     // return $detail['purchase_request_detail'];
                     InventoryTransaction::create([

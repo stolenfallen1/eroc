@@ -16,14 +16,15 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\MMIS\inventory\Consignment;
 use App\Http\Requests\Procurement\PRRequest;
 use App\Models\MMIS\procurement\CanvasMaster;
-use App\Models\MMIS\inventory\ConsignmentItem;
 use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Helpers\SearchFilter\inventory\Consignments;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\PurchaseRequestAttachment;
 use App\Helpers\SearchFilter\Procurements\PurchaseRequests;
+use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 
 class PurchaseRequestController extends Controller
 {
@@ -163,7 +164,17 @@ class PurchaseRequestController extends Controller
                 }
             }
             // return $request->items;
-    
+            if(isset($request->isconsignments) && $request->isconsignments == 1){
+              
+                $po_consignment = PurchaseOrderConsignment::create([
+                    'pr_request_id' => $pr['id'],
+                    'rr_id' => $request['consignmentid'],
+                    'item_group_id' => $request->invgroup_id,
+                    'category_id' =>$request->item_Category_Id,
+                    'vendor_id' => $request['Vendor_Id'] ?? 0,
+                    'createdby' => $user->idnumber,
+                ]);
+            }
             foreach ($request->items as $item) {
                 $filepath = [];
                 if (isset($item['attachment']) && $item['attachment'] != null) {
@@ -184,50 +195,62 @@ class PurchaseRequestController extends Controller
                 ]);
 
                 if(isset($request->isconsignments) && $request->isconsignments == 1){
-                    ConsignmentItem::create([
-                        'pr_request_id' => $pr['id'],
-                        'rr_id' => $request['consignmentid'],
-                        'item_group_id' => $request->invgroup_id,
-                        'category_id' =>$request->item_Category_Id,
-                        'request_item_id' => $item['item_Id'],
-                        'consignmen_item_id' => $item['item_Id'],
-                        'consignment_qty' => $item['rr_Detail_Item_Qty_Received'],
-                        'request_qty' => $item['item_Request_Qty'],
-                        'batch_id' => $item['batch_id'],
-                        'createdby' => $user->idnumber,
-                        'consignment_balance_qty' => $item['rr_Detail_Item_Qty_Received'] - $item['item_Request_Qty'],
-                    ]);
-
-                    $check = ConsignmentItems::where('rr_id', $request['consignmentid'])
-                        ->where('rr_Detail_Item_Id', $item['item_Id'])
-                        ->first();
-
-                    if ($check) {
-                        // Update the pr_item_qty
-                            ConsignmentItems::where('rr_id', $request['consignmentid'])
-                            ->where('rr_Detail_Item_Id', $item['item_Id'])
-                            ->update([
-                                'pr_item_qty' => $check->pr_item_qty + $item['item_Request_Qty'],
-                            ]);
-                            $check1 = ConsignmentItems::where('rr_id', $request['consignmentid'])
+                    if($item['item_Request_Qty'] > 0){
+                        // PurchaseOrderConsignment::create([
+                        //     'pr_request_id' => $pr['id'],
+                        //     'rr_id' => $request['consignmentid'],
+                        //     'item_group_id' => $request->invgroup_id,
+                        //     'category_id' =>$request->item_Category_Id,
+                        //     'vendor_id' => $item['prepared_supplier_id'] ?? 0,
+                        //     'createdby' => $user->idnumber,
+                        // ]);
+                        PurchaseOrderConsignmentItem::create([
+                            'pr_request_id' => $pr['id'],
+                            'po_consignment_id'=> $po_consignment['id'],
+                            'rr_id' => $request['consignmentid'],
+                            'item_group_id' => $request->invgroup_id,
+                            'category_id' =>$request->item_Category_Id,
+                            'request_item_id' => $item['item_Id'],
+                            'consignmen_item_id' => $item['item_Id'],
+                            'consignment_qty' => $item['rr_Detail_Item_Qty_Received'],
+                            'request_qty' => $item['item_Request_Qty'],
+                            'batch_id' => $item['batch_id'],
+                            'createdby' => $user->idnumber,
+                            'consignment_balance_qty' => $item['rr_Detail_Item_Qty_Received'] - $item['item_Request_Qty'],
+                        ]);
+    
+                        $check = ConsignmentItems::where('rr_id', $request['consignmentid'])
                             ->where('rr_Detail_Item_Id', $item['item_Id'])
                             ->first();
-                            ConsignmentItems::where('rr_id', $request['consignmentid'])
-                            ->where('rr_Detail_Item_Id', $item['item_Id'])
-                            ->update([
-                                'pr_back_qty' => $check1->rr_Detail_Item_Qty_Received - ($check->pr_item_qty + $item['item_Request_Qty']),
-                            ]);
-                        // Check if all items are received
-                        $allItemsReceived = ConsignmentItems::where('rr_id', $request['consignmentid'])
-                            ->where('pr_back_qty', '>', 0)
-                            ->exists();
-
-                        if (!$allItemsReceived) {
-                            Consignment::where('id', $request['consignmentid'])->update([
-                                'receivedstatus' => 1
-                            ]);
+    
+                        if ($check) {
+                            // Update the pr_item_qty
+                                ConsignmentItems::where('rr_id', $request['consignmentid'])
+                                ->where('rr_Detail_Item_Id', $item['item_Id'])
+                                ->update([
+                                    'pr_item_qty' => $check->pr_item_qty + $item['item_Request_Qty'],
+                                ]);
+                                $check1 = ConsignmentItems::where('rr_id', $request['consignmentid'])
+                                ->where('rr_Detail_Item_Id', $item['item_Id'])
+                                ->first();
+                                ConsignmentItems::where('rr_id', $request['consignmentid'])
+                                ->where('rr_Detail_Item_Id', $item['item_Id'])
+                                ->update([
+                                    'pr_back_qty' => $check1->rr_Detail_Item_Qty_Received - ($check->pr_item_qty + $item['item_Request_Qty']),
+                                ]);
+                            // Check if all items are received
+                            $allItemsReceived = ConsignmentItems::where('rr_id', $request['consignmentid'])
+                                ->where('pr_back_qty', '>', 0)
+                                ->exists();
+    
+                            if (!$allItemsReceived) {
+                                Consignment::where('id', $request['consignmentid'])->update([
+                                    'receivedstatus' => 1
+                                ]);
+                            }
                         }
                     }
+                   
                 }
             }
            

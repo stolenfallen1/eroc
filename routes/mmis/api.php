@@ -90,9 +90,13 @@ Route::controller(DeliveryController::class)->group(function () {
 
 Route::controller(ConsignmentDeliveryController::class)->group(function () {
   Route::get('consignments', 'index');
+  Route::get('audit-consignments', 'auditconsignment');
   Route::post('consignments', 'store');
   Route::get('get-consignment', 'list');
+  Route::get('get-purchase-order-consignment', 'consignment_puchase_order');
+  
   Route::put('consignments/{id}', 'update');
+  Route::post('update-po-consignments', 'updatePOconsignment');
   Route::post('consignment-pr', 'createConsignmentPr');
 });
 

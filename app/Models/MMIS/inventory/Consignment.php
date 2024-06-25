@@ -13,6 +13,7 @@ use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Models\MMIS\inventory\VwRRConsignmentItem;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 
 class Consignment extends Model
 {
@@ -36,6 +37,10 @@ class Consignment extends Model
         return $this->belongsTo(purchaseOrderMaster::class, 'po_id');
     }
 
+    public function ConsignmentPurchaseOrder(){
+        return $this->hasOne(PurchaseOrderConsignment::class, 'rr_id','id')->where('po_id',Request()->po_id);
+    }
+   
     public function warehouse(){
         return $this->belongsTo(Warehouses::class, 'rr_Document_Warehouse_Id');
     }

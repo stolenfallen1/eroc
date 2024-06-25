@@ -41,10 +41,11 @@ class OutpatientRegistrationController extends Controller
         try {
             $sequence = SystemSequence::where('code','MPID')->first();
             $registry_sequence = SystemSequence::where('code','MPRID')->first();
-            
-            $patient_id = $request->payload['patient_id'] ?? $sequence->seq_no;
-            $registry_id = $request->payload['registry_id'] ?? $registry_sequence->seq_no;
-            
+            if (!$sequence || !$registry_sequence) {
+                throw new \Exception('Sequence not found');
+            }
+
+            $registry_id = $registry_sequence->seq_no;
             $patientIdentifier = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis = ($patientIdentifier === "Hemo Patient") ? true : false;
             $isPeritoneal = ($patientIdentifier === "Peritoneal Patient") ? true : false;
@@ -57,6 +58,17 @@ class OutpatientRegistrationController extends Controller
             $isTBDots = ($patientIdentifier === "TB DOTS") ? true : false;
             $isPAD = ($patientIdentifier === "PAD Patient") ? true : false;
             $isRadioTherapy = ($patientIdentifier === "Radio Patient") ? true : false;
+
+            $existingPatient = Patient::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->first();
+            if ($existingPatient) {
+                $patient_id = $existingPatient->patient_id;
+            } else {
+                $patient_id = $sequence->seq_no;
+                $sequence->update([
+                    'seq_no' => $sequence->seq_no + 1,
+                    'recent_generated' => $sequence->seq_no,
+                ]);
+            }
 
             $patient = Patient::updateOrCreate(
                 [
@@ -116,7 +128,6 @@ class OutpatientRegistrationController extends Controller
                     'updated_at' => now(),
                 ]
             );
-            
             $patientRegistry = PatientRegistry::updateOrCreate(
                 [
                     'patient_id' => $patient_id,
@@ -228,30 +239,10 @@ class OutpatientRegistrationController extends Controller
                     'updated_at' => now(),
                 ]
             );
-            // if ($patient->wasRecentlyCreated) {
-            //     $sequence->update([
-            //         'seq_no' => $sequence->seq_no + 1,
-            //         'recent_generated' => $sequence->seq_no,
-            //     ]);
-            // }
-            // if ($patientRegistry->wasRecentlyCreated) {
-            //     $registry_sequence->update([
-            //         'seq_no' => $registry_sequence->seq_no + 1,
-            //         'recent_generated' => $registry_sequence->seq_no,
-            //     ]);
-            // }
-            if(!isset($request->payload['patient_id'])) {
-                $sequence->update([
-                    'seq_no' => $sequence->seq_no + 1,
-                    'recent_generated' => $sequence->seq_no,
-                ]);
-            }
-            if(!isset($request->payload['registry_id'])) {
-                $registry_sequence->update([
-                    'seq_no' => $registry_sequence->seq_no + 1,
-                    'recent_generated' => $registry_sequence->seq_no,
-                ]);
-            } 
+            $registry_sequence->update([
+                'seq_no' => $registry_sequence->seq_no + 1,
+                'recent_generated' => $registry_sequence->seq_no,
+            ]);
 
             DB::commit();
             return response()->json([

@@ -37,6 +37,10 @@ class ConsignmentDeliveryController extends Controller
     {
         return (new PurchaseOrderConsignments)->auditsearchable();
     }
+    public function auditedconsignment()
+    {
+        return (new PurchaseOrderConsignments)->auditedsearchable();
+    }
     
     public function updatePOconsignment()
     {

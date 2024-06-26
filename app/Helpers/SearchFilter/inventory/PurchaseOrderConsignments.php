@@ -29,6 +29,7 @@ class PurchaseOrderConsignments
   }
   
   public function auditsearchable(){
+    $this->model->whereNull('isaudit');
     $this->model->with('rr_consignment_master','purchaseRequest','purchaseOrder','vendor',
       'items','items.itemdetails','items.unit','items.batchs','receiver',
       'purchaseRequest.warehouse', 'purchaseRequest.status', 'purchaseRequest.category', 
@@ -47,6 +48,38 @@ class PurchaseOrderConsignments
       'consignmentPo.items',
       'consignmentPo.items.itemdetails',
       'consignmentPo.items.unit'
+    ); 
+    $this->byTab();
+    $this->searcColumns();
+    $per_page = Request()->per_page;
+    if ($per_page=='-1') return $this->model->paginate($this->model->count());
+    return $this->model->paginate($per_page);
+  }
+
+  public function auditedsearchable(){
+    $this->model->where('isaudit',1);
+    $this->model->with('rr_consignment_master','purchaseRequest','purchaseOrder','vendor',
+      'items','items.itemdetails','items.unit','items.batchs','receiver',
+      'purchaseRequest.warehouse', 'purchaseRequest.status', 'purchaseRequest.category', 
+      'purchaseRequest.subcategory', 
+      'purchaseRequest.purchaseRequestAttachments', 
+      'purchaseRequest.user', 
+      'rr_consignment_master.items', 
+      'rr_consignment_master.items.item', 
+      'rr_consignment_master.items.unit', 
+      'purchaseRequest.itemGroup',
+      'consignmentPr',
+      'consignmentPr.items',
+      'consignmentPr.items.itemdetails',
+      'consignmentPr.items.unit',
+      'consignmentPo',
+      'consignmentPo.items',
+      'consignmentPo.items.itemdetails',
+      'consignmentPo.items.unit',
+      'auditConsignment',
+      'auditConsignment.user',
+      'consignmentPo.auditConsignment',
+      'consignmentPo.auditConsignment.user',
     ); 
     $this->byTab();
     $this->searcColumns();
@@ -78,7 +111,9 @@ class PurchaseOrderConsignments
   }
   public function byTab()
   {
-    if(Request()->tab == 4){
+    if(Request()->tab == 3){
+      $this->model->whereNull('receivedstatus');
+    }else if( Request()->tab == 4){
       $this->model->whereNull('invoice_no');
     }else if( Request()->tab == 5){
       $this->model->whereNotNull('invoice_no');

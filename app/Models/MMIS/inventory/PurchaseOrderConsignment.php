@@ -8,6 +8,7 @@ use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
 use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Warehouses;
+use App\Models\MMIS\AuditConsignment;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\MMIS\inventory\Consignment;
 use App\Models\MMIS\inventory\ConsignmentItems;
@@ -40,7 +41,10 @@ class PurchaseOrderConsignment extends Model
     {
         return $this->hasMany(PurchaseOrderConsignment::class, 'rr_id', 'rr_id');
     }
-
+    public function auditConsignment(){
+        return $this->hasOne(AuditConsignment::class, 'po_consignment_id','id');
+    }
+    
     public function items()
     {
         return $this->hasMany(PurchaseOrderConsignmentItem::class, 'po_consignment_id', 'id');
@@ -58,6 +62,7 @@ class PurchaseOrderConsignment extends Model
     {
         return $this->belongsTo(User::class, 'createdby', 'idnumber');
     }
+
     public function getAuditCodeAttribute(){
         // Assuming 'code' is the attribute that holds the PO number in purchaseOrderMaster and PurchaseRequest models
         $poCode = $this->purchaseOrder ? $this->purchaseOrder->code : '';
@@ -65,4 +70,5 @@ class PurchaseOrderConsignment extends Model
         $rrCode = $this->rr_consignment_master ? $this->rr_consignment_master->code : '';
         return $rrCode.' - '.$poCode.'- Invoice Number- '.$this->invoice_no;
     }
+
 }

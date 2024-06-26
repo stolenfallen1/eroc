@@ -91,6 +91,7 @@ Route::controller(DeliveryController::class)->group(function () {
 Route::controller(ConsignmentDeliveryController::class)->group(function () {
   Route::get('consignments', 'index');
   Route::get('audit-consignments', 'auditconsignment');
+  Route::get('audited-consignments', 'auditedconsignment');
   Route::post('consignments', 'store');
   Route::get('get-consignment', 'list');
   Route::get('get-purchase-order-consignment', 'consignment_puchase_order');
@@ -127,8 +128,12 @@ Route::controller(StockRequisitionController::class)->group(function () {
 
 Route::controller(AuditController::class)->group(function () {
   Route::get('audits', 'index');
+  Route::get('get-audit', 'index');
   Route::post('audit', 'store');
   Route::put('audit/{audit}', 'update');
+  Route::put('audit-consignment/{audit}', 'updateConsignment');
+  Route::post('audit-consignment', 'storeConsignment');
+  
   // Route::post('stock-requisition', 'store');
 });
 

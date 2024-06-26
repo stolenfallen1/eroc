@@ -217,10 +217,10 @@
           <tr>
             <td class="left-width"></td>
             <td class="mid-width "></td>
-            <td class="right-width"> Invoice No.</td>
+            <td class="right-width"> INVOICE No.</td>
             <td class="underline">{{$pdf_data['delivery']['ConsignmentPurchaseOrder']['invoice_no']}}</td>
-            <td class="right-width"> Invoice Date.</td>
-            <td class="underline">{{date('m-d-Y',strtotime($pdf_data['delivery']['ConsignmentPurchaseOrder']['invoice_date']))}}</td>
+            <td class="right-width"> INVOICE Date.</td>
+            <td class="underline">{{$pdf_data['delivery']['ConsignmentPurchaseOrder']['invoice_no'] ? date('m-d-Y',strtotime($pdf_data['delivery']['ConsignmentPurchaseOrder']['invoice_date'])) : ''}}</td>
             {{-- <td class="underline">{{$pdf_data['po_date']}}</td> --}}
             <td ></td>
           </tr>

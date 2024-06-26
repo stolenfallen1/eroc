@@ -88,6 +88,7 @@ class Consignments
   {
     if(Request()->tab == 3){
       $this->model->where('isConsignment', 1);
+      $this->model->whereNull('receivedstatus');
     }else if( Request()->tab == 4){
       $this->model->where('isConsignment', 1);
     }

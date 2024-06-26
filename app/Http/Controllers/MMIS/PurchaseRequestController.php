@@ -135,7 +135,11 @@ class PurchaseRequestController extends Controller
             if(isset($request->isconsignments) && $request->isconsignments == 1){
                 $ismed = 1;
             }
-            $pr = PurchaseRequest::create([
+            $pr = PurchaseRequest::updateOrCreate(
+                [
+                    'pr_Document_Number' => $number
+                ],
+                [
                 'branch_Id' => (int)$user->branch_id,
                 'warehouse_Id' => (int)$user->warehouse_id,
                 'pr_Justication' => $request->pr_Justication,
@@ -166,33 +170,45 @@ class PurchaseRequestController extends Controller
             // return $request->items;
             if(isset($request->isconsignments) && $request->isconsignments == 1){
               
-                $po_consignment = PurchaseOrderConsignment::create([
-                    'pr_request_id' => $pr['id'],
-                    'rr_id' => $request['consignmentid'],
-                    'item_group_id' => $request->invgroup_id,
-                    'category_id' =>$request->item_Category_Id,
-                    'vendor_id' => $request['Vendor_Id'] ?? 0,
-                    'createdby' => $user->idnumber,
-                ]);
+                $po_consignment = PurchaseOrderConsignment::updateOrCreate(
+                    [
+                        'pr_request_id' => $pr['id'],
+                        'rr_id' => $request['consignmentid'],
+                    ],
+                    [
+                        'pr_request_id' => $pr['id'],
+                        'rr_id' => $request['consignmentid'],
+                        'item_group_id' => $request->invgroup_id,
+                        'category_id' =>$request->item_Category_Id,
+                        'vendor_id' => $request['Vendor_Id'] ?? 0,
+                        'createdby' => $user->idnumber,
+                    ]
+                );
             }
             foreach ($request->items as $item) {
                 $filepath = [];
                 if (isset($item['attachment']) && $item['attachment'] != null) {
                     $filepath = storeDocument($item['attachment'], "procurements/items");
                 }
-                $pr->purchaseRequestDetails()->create([
-                    'filepath' => $filepath[0] ?? null,
-                    'filename' => $filepath[2] ?? null,
-                    'item_Id' => $item['item_Id'],
-                    'item_ListCost' => $item['item_ListCost'] ?? 0,
-                    'discount' => $item['discount'] ?? 0,
-                    'item_Request_Qty' => $item['item_Request_Qty'],
-                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
-                    'lead_time' => $item['lead_time'] ?? 0,
-                    'vat_rate' => $item['vat_rate'] ?? 0,
-                    'vat_type' => $item['vat_type'] ?? 0,
-                    'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
-                ]);
+                $pr->purchaseRequestDetails()->updateOrCreate(
+                    [
+                        'pr_request_id' => $pr['id'],
+                        'item_Id' => $item['item_Id'],
+                    ],
+                    [
+                        'filepath' => $filepath[0] ?? null,
+                        'filename' => $filepath[2] ?? null,
+                        'item_Id' => $item['item_Id'],
+                        'item_ListCost' => $item['item_ListCost'] ?? 0,
+                        'discount' => $item['discount'] ?? 0,
+                        'item_Request_Qty' => $item['item_Request_Qty'],
+                        'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                        'lead_time' => $item['lead_time'] ?? 0,
+                        'vat_rate' => $item['vat_rate'] ?? 0,
+                        'vat_type' => $item['vat_type'] ?? 0,
+                        'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+                    ]
+                );
 
                 if(isset($request->isconsignments) && $request->isconsignments == 1){
                     if($item['item_Request_Qty'] > 0){
@@ -204,7 +220,13 @@ class PurchaseRequestController extends Controller
                         //     'vendor_id' => $item['prepared_supplier_id'] ?? 0,
                         //     'createdby' => $user->idnumber,
                         // ]);
-                        PurchaseOrderConsignmentItem::create([
+                        PurchaseOrderConsignmentItem::updateOrCreate(
+                            [
+                                'pr_request_id' => $pr['id'],
+                                'rr_id' => $request['consignmentid'],
+                                'request_item_id' => $item['item_Id'],
+                            ],
+                            [
                             'pr_request_id' => $pr['id'],
                             'po_consignment_id'=> $po_consignment['id'],
                             'rr_id' => $request['consignmentid'],

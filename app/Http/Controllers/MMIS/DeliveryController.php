@@ -50,7 +50,11 @@ class DeliveryController extends Controller
             $overall_discount_amount = 0;
             $overall_total_amount = 0;
 
-            $delivery = Delivery::create([
+            $delivery = Delivery::updateOrCreate(
+                [
+                    'rr_Document_Number' => $number
+                ],
+                [
                 'rr_Document_Number' => $number,
                 'rr_Document_Prefix' => $prefix,
                 'rr_Document_Suffix' => $suffix,
@@ -112,7 +116,12 @@ class DeliveryController extends Controller
                     $overall_total_amount += $total_amount;
                 }
                 
-                $delivery_item = DeliveryItems::create([
+                $delivery_item = DeliveryItems::updateOrCreate(
+                    [
+                        'rr_id' => $delivery->id,
+                        'rr_Detail_Item_Id' => $detail['item']['id'],
+                    ],
+                    [
                     'rr_id' => $delivery->id,
                     'rr_Detail_Item_Id' => $detail['item']['id'],
                     'rr_Detail_Item_ListCost' => $item_amount,

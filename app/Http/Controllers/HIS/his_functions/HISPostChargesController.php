@@ -14,20 +14,28 @@ class HISPostChargesController extends Controller
 {
     //
     public function chargehistory(Request $request) {
-        // try {
-        //     // Get all Charges in HISBillingOut base on patient_id
-        //     $charges = HISBillingOut::query();
-        //     $charges->where('pid', $request->patient_id);
-        //     $charges->where('case_no', $request->case_no);
-        // } catch (\Exception $e) {
-        //     return response()->json(['error' => $e->getMessage()], 500);
-        // }
+        try {
+            $payload = $request->json()->all();
+            $patient_id = $payload['patient_id'];
+            $case_no = $payload['case_no'];
+            $today = Carbon::now()->format('Y-m-d');
+
+            $charges = HISBillingOut::with('items')
+                ->where('pid', $patient_id)
+                ->where('case_no', $case_no)
+                ->whereDate('transDate', $today)
+                ->get();
+            return response()->json(['charges' => $charges], 200);
+        } catch(\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
+    
 
     public function charge(Request $request) {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first();
+            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first(); 
 
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');

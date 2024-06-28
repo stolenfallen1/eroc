@@ -25,7 +25,35 @@ class HISPostChargesController extends Controller
                 ->where('case_no', $case_no)
                 ->whereDate('transDate', $today)
                 ->get();
-            return response()->json(['charges' => $charges], 200);
+
+            $filteredCharges = $charges->filter(function ($charge) {
+                return in_array($charge->revenue_id, ['HD', 'LB', 'LX']); 
+            });
+
+            return response()->json(['charges' => $filteredCharges], 200);
+        } catch(\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function professionalfeehistory(Request $request) {
+        try {
+            $payload = $request->json()->all();
+            $patient_id = $payload['patient_id'];
+            $case_no = $payload['case_no'];
+            $today = Carbon::now()->format('Y-m-d');
+
+            $doctorcharges = HISBillingOut::with('doctor_details')
+                ->where('pid', $patient_id)
+                ->where('case_no', $case_no)
+                ->whereDate('transDate', $today)
+                ->get();
+
+            $filteredCharges = $doctorcharges->filter(function ($doctorcharges) {
+                return in_array($doctorcharges->revenue_id, ['MD']);
+            });
+
+            return response()->json(['doctorcharges' => $filteredCharges], 200);
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -36,7 +64,6 @@ class HISPostChargesController extends Controller
         DB::beginTransaction();
         try {
             $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first(); 
-
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
             }
@@ -51,32 +78,60 @@ class HISPostChargesController extends Controller
                     $revenue_id = $charge['transaction_code'];
                     $item_id = $charge['map_item_id'];
                     $quantity = $charge['quantity'];
-                    $amount = floatval(str_replace('₱', '', $charge['price']));
-                    $net_amount = floatval(str_replace('₱', '', $charge['price'])); 
+                    $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
+
 
                     HISBillingOut::create([
                         'pid' => $patient_id,
                         'case_no' => $case_no,
                         'transDate' => $transDate,
                         'revenue_id' => $revenue_id,
-                        'drcr' => 'D', // To be confirmed
+                        'drcr' => 'D', 
                         'item_id' => $item_id,
                         'quantity' => $quantity,
                         'refnum' => $sequence,
                         'amount' => $amount,
                         'userid' => Auth()->user()->idnumber,
-                        // 'room_id' => $room_id,
-                        'net_amount' => $net_amount,
+                        'net_amount' => $amount,
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $patient_id,
                         'auto_discount' => 0,
                         'patient_type' => 0,
                     ]);
                 }
-                $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
-                DB::commit();
-                return response()->json(['message' => 'Charges posted successfully']);
             }
+
+            if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
+                foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
+                    $revenue_id = $doctorcharges['transaction_code'];
+                    $item_id = $doctorcharges['doctor_code'];
+                    $quantity = 1;
+                    $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
+
+                    HISBillingOut::create([
+                        'pid' => $patient_id,
+                        'case_no' => $case_no,
+                        'transDate' => $transDate,
+                        'revenue_id' => $revenue_id,
+                        'drcr' => 'D', 
+                        'item_id' => $item_id,
+                        'quantity' => $quantity,
+                        'refnum' => $sequence,
+                        'amount' => $amount,
+                        'userid' => Auth()->user()->idnumber,
+                        'net_amount' => $amount,
+                        'HostName' => (new GetIP())->getHostname(),
+                        'accountnum' => $patient_id,
+                        'auto_discount' => 0,
+                        'patient_type' => 0,
+                    ]);
+                }
+            }
+
+            $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
+            DB::commit();
+            return response()->json(['message' => 'Charges posted successfully']);
+
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);

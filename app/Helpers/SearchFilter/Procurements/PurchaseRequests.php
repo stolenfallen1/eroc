@@ -249,7 +249,7 @@ class PurchaseRequests
             $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null);
           });
         })->where(['pr_Branch_Level2_ApprovedBy' => null, 'pr_Branch_Level2_CancelledBy' => null]);
-        $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])->where('pr_DepartmentHead_ApprovedBy', '!=', null);
+        $this->model->where('invgroup_id', 2)->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])->where('pr_DepartmentHead_ApprovedBy', '!=', null);
       }
       
         $this->model->with(['purchaseRequestDetails'=>function ($q){

@@ -183,15 +183,35 @@
           <th>Amount</th>
         </thead>
         <tbody>
-          @php $totalamount = 0; @endphp
+          @php 
+          $totalamount = 0; 
+          $currencycounter = 0; 
+          @endphp
           @foreach ($pdf_data['purchase_order']['details'] as $detail)
-              @php $totalamount += $detail['po_Detail_net_amount']; @endphp
+              @php 
+              $totalamount += $detail['po_Detail_net_amount']; 
+              if($detail['purchaseRequestDetail']['recommendedCanvas']['currency_id']== 2){
+                $currencycounter++; 
+              }
+              @endphp
               <tr>
                 <td class="item-td" >{{ $detail['item']['id'] ?? '' }}</td>
                 <td class="item-td ">{{ $detail['item']['item_name'] ?? '' }}</td>
                 <td class="item-td" >{{ (float)$detail['po_Detail_item_qty'] ?? 0 }}</td>
                 <td class="item-td" >{{ $detail['unit']?$detail['unit']['name']:'...' }}</td>
-                <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
+                <td class="item-td text-left" style="text-align: left;">
+                  <?php
+                    if($detail['purchaseRequestDetail']['recommendedCanvas']['currency_id']== 2){
+                      ?>
+                        <img src="./dollar.png" height="9px"></img>
+                      <?php
+                    }else{
+                      ?>
+                        <img src="./peso.png" height="9px"></img>
+                      <?php
+                    }
+                  ?>
+                  {{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
                 <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_percent'] ?? 0, 2) }}</td>
                 @if($detail['po_Detail_item_discount_percent'] > 0)
                   <td class="item-td" >{{ number_format($detail['po_Detail_item_discount_amount'], 2) }}</td>
@@ -199,7 +219,20 @@
                   <td class="item-td" >{{ number_format( 0, 2) }}</td>
                 @endif
                 <td class="item-td" >{{ number_format($detail['po_Detail_vat_amount'] ?? 0, 2) }}</td>
-                <td class="item-td" >{{ number_format($detail['po_Detail_net_amount'] ?? 0, 2) }}</td>
+                <td class="item-td" style="text-align: left;">
+                  <?php
+                  if($detail['purchaseRequestDetail']['recommendedCanvas']['currency_id']== 2){
+                    ?>
+                      <img src="./dollar.png" height="9px"></img>
+                    <?php
+                  }else{
+                    ?>
+                      <img src="./peso.png" height="9px"></img>
+                    <?php
+                  }
+                ?>
+                 {{ number_format($detail['po_Detail_net_amount'] ?? 0, 2) }}
+                </td>
 
 
                 {{-- <td class="item-td" >{{ number_format($detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_amount'] ?? 0, 2) }}</td>
@@ -215,7 +248,14 @@
           @endforeach
               <tr>
                 <td colspan="8" class="item-td-total" >Total amount</td>
-                <td class="item-td" >{{ number_format($totalamount ?? 0, 2) }}</td>
+                <td class="item-td" style="text-align: left;">
+                  @if($currencycounter>0)
+                  <img src="./dollar.png" height="9px"></img>
+                  @else
+                  <img src="./peso.png" height="9px"></img>
+                  @endif
+                  {{ number_format($totalamount ?? 0, 2) }}
+                </td>
               </tr>
         </tbody>
       </table>

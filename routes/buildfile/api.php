@@ -351,6 +351,8 @@ Route::controller(DoctorController::class)->group(function () {
     Route::get('get-doctors', 'list');
     Route::get('doctors', 'index');
     Route::get('get-his-doctors', 'his_list');
+    Route::get('get-his-professional-details', 'index');
+    Route::get('get-his-reader-details', 'index');
 });
 
 Route::controller(HospitalRoomsAccomodationController::class)->group(function () {
@@ -619,6 +621,7 @@ Route::resource('transaction-classifications', TransactionClassificationControll
 Route::resource('transaction-codes', TransactionCodesController::class);
 
 Route::controller(TransactionCodesController::class)->group(function () {
+    Route::get('get-transaction-codes', 'list');
     Route::get('revenue-code', 'revenuecode');
     Route::get('charge-code', 'chargingcode');
     Route::post('get-charges-code', 'chargingcode');

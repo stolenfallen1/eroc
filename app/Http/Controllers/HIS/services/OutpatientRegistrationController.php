@@ -9,6 +9,7 @@ use App\Models\HIS\services\PatientRegistry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\GetIP;
 
 class OutpatientRegistrationController extends Controller
 {
@@ -20,11 +21,12 @@ class OutpatientRegistrationController extends Controller
             
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_trans_types', 1); 
-                $query->whereDate('registry_date', $today)
-                    ->where(function($q) use ($today) {
-                        $q->whereNull('discharged_date')
-                            ->orWhereDate('discharged_date', '>=', $today);
-                    });
+                $query->where('isRevoked', 0);
+                // $query->whereDate('registry_date', $today)
+                //     ->where(function($q) use ($today) {
+                //         $q->whereNull('discharged_date')
+                //             ->orWhereDate('discharged_date', '>=', $today);
+                // });
 
                 if(Request()->keyword) {
                     $query->where(function($subQuery) {
@@ -34,7 +36,7 @@ class OutpatientRegistrationController extends Controller
                     });
                 }
             });
-            $data->orderBy('id', 'asc');
+            $data->orderBy('id', 'desc');
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);
 
@@ -356,20 +358,26 @@ class OutpatientRegistrationController extends Controller
                 'registry_date' => Carbon::now(),
                 'registry_status' => $request->payload['registry_status'] ?? $patientRegistry->registry_status,
                 'registry_department_id' => $request->payload['registry_department_id'] ?? $patientRegistry->registry_department_id,
+                'registry_hostname' => (new GetIP())->getHostname() ?? null,
                 'discharged_userid' => $request->payload['discharged_userid'] ?? $patientRegistry->discharged_userid,
                 'discharged_date' => $request->payload['discharged_date'] ?? $patientRegistry->discharged_date,
+                'discharged_hostname' => (new GetIP())->getHostname() ?? null,
                 'billed_userid' => $request->payload['billed_userid'] ?? $patientRegistry->billed_userid,
                 'billed_date' => $request->payload['billed_date'] ?? $patientRegistry->billed_date,
                 'billed_remarks' => $request->payload['billed_remarks'] ?? $patientRegistry->billed_remarks,
+                'billed_hostname' => (new GetIP())->getHostname() ?? null,
                 'mgh_userid' => $request->payload['mgh_userid'] ?? $patientRegistry->mgh_userid,
                 'mgh_datetime' => $request->payload['mgh_datetime'] ?? $patientRegistry->mgh_datetime,
+                'mgh_hostname' => (new GetIP())->getHostname() ?? null,
                 'untag_mgh_userid' => $request->payload['untag_mgh_userid'] ?? $patientRegistry->untag_mgh_userid,
                 'untag_mgh_datetime' => $request->payload['untag_mgh_datetime'] ?? $patientRegistry->untag_mgh_datetime,
+                'untag_mgh_hostname' => (new GetIP())->getHostname() ?? null,
                 'isHoldReg' => $request->payload['isHoldReg'] ?? $patientRegistry->isHoldReg,
                 'hold_userid' => $request->payload['hold_userid'] ?? $patientRegistry->hold_userid,
                 'hold_no' => $request->payload['hold_no'] ?? $patientRegistry->hold_no,
                 'hold_date' => $request->payload['hold_date'] ?? $patientRegistry->hold_date,
                 'hold_remarks' => $request->payload['hold_remarks'] ?? $patientRegistry->hold_remarks,
+                'hold_hostname' => (new GetIP())->getHostname() ?? null,
                 'isRevoked' => $request->payload['isRevoked'] ?? $patientRegistry->isRevoked,
                 'revokedBy' => $request->payload['revokedBy'] ?? $patientRegistry->revokedBy,
                 'revoked_date' => $request->payload['revoked_date'] ?? $patientRegistry->revoked_date,
@@ -450,6 +458,96 @@ class OutpatientRegistrationController extends Controller
             DB::rollBack();
             return response()->json([
                 'message' => 'Failed to update outpatient data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getrevokedoutpatient() {
+        try {
+            $data = Patient::query();
+            $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
+            $today = Carbon::now()->format('Y-m-d');
+
+            $data->whereHas('patientRegistry', function($query) use ($today) {
+                $query->where('mscAccount_trans_types', 1);
+                $query->where('isRevoked', 1);
+                // $query->whereDate('revoked_date', '>=', $today);
+
+                if(Request()->keyword) {
+                    $query->where(function($subQuery) {
+                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
+                                ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%')
+                                ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
+                    });
+                }
+            });
+            $data->orderBy('id', 'desc');
+            $page = Request()->per_page ?? '50';
+            return response()->json($data->paginate($page), 200);
+        } catch(\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to get revoked outpatient data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function revokepatient(Request $request, $id) {
+        DB::beginTransaction();
+        try {
+            $patientRegistry = PatientRegistry::where('patient_id', $id)->first();
+
+            $patientRegistry->update([
+                'isRevoked' => 1,
+                'revokedBy' => Auth()->user()->idnumber,
+                'revoked_date' => Carbon::now(),
+                'revoked_remarks' => $request->payload['revoked_remarks'] ?? null,
+                'revoked_hostname' => (new GetIP())->getHostname(),
+                'UpdatedBy' => Auth()->user()->idnumber,
+                'updated_at' => Carbon::now(),
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Patient revoked successfully',
+                'patientRegistry' => $patientRegistry
+            ], 200);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to revoke patient',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function unrevokepatient(Request $request, $id) {
+        DB::beginTransaction();
+        try {
+            $patientRegistry = PatientRegistry::where('patient_id', $id)->first();
+
+            $patientRegistry->update([
+                'isRevoked' => 0,
+                'revokedBy' => null,
+                'revoked_date' => null,
+                'revoked_remarks' => null,
+                'revoked_hostname' => null,
+                'UpdatedBy' => Auth()->user()->idnumber,
+                'updated_at' => Carbon::now(),
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Patient revoked successfully',
+                'patientRegistry' => $patientRegistry
+            ], 200);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to revoke patient',
                 'error' => $e->getMessage()
             ], 500);
         }

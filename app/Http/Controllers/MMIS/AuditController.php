@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers\MMIS;
 
+use App\Models\MMIS\Audit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Models\MMIS\Audit;
-use App\Models\MMIS\inventory\Delivery;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MMIS\AuditConsignment;
+use App\Models\MMIS\inventory\Delivery;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 
 class AuditController extends Controller
 {
     public function index(){
-        
+        $query = AuditConsignment::query();
+        $per_page = Request()->per_page;
+        return response()->json($query->paginate($per_page), 200);
     }
 
     public function store(Request $request){
@@ -46,7 +50,36 @@ class AuditController extends Controller
         return response()->json(["message" => 'success'], 200);
     }
 
-    public function destroy($id){
+    public function storeConsignment(Request $request){
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            $payload = Request()->payload;
+            $audit = AuditConsignment::create([
+                'pr_id' => $payload['pr_request_id'],
+                'po_id' => $payload['po_id'],
+                'delivery_id' => $payload['rr_id'],
+                'po_consignment_id' => $payload['id'],
+                'audit_by' => Auth::user()->idnumber,
+                'remarks' => $payload['remarks'],
+            ]);
+            PurchaseOrderConsignment::where('id', $payload['id'])->update([
+                'isaudit' => 1
+            ]);
+            // DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+            return response()->json(["audit" => $audit], 200);
+        } catch (\Exception $e) {
+            // DB::connection('sqlsrv')->rollback();
+            DB::connection('sqlsrv_mmis')->rollback();
+            return response()->json(["error" => $e->getMessage()], 200);
+        }
+    }
 
+    public function updateConsignment(Request $request, $id){
+        $payload = Request()->payload;
+        AuditConsignment::where('id',$id)->update([
+            'remarks' => $payload['remarks']
+        ]);
+        return response()->json(["message" => 'success'], 200);
     }
 }

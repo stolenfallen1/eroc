@@ -1,20 +1,22 @@
 <?php
 
-use App\Http\Controllers\ManualUpdateController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MMIS\UserController;
 use App\Http\Controllers\MMIS\AuditController;
 use App\Http\Controllers\MMIS\BatchController;
 use App\Http\Controllers\MMIS\CanvasController;
+use App\Http\Controllers\ManualUpdateController;
 use App\Http\Controllers\MMIS\ExpenseController;
 use App\Http\Controllers\MMIS\DeliveryController;
-use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\DashboardController;
+use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\StockTransferController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
+use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
+use App\Http\Controllers\MMIS\InventoryTransactionController;
 
 Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
@@ -71,15 +73,31 @@ Route::controller(BatchController::class)->group(function () {
   Route::put('batch', 'update');
   Route::get('check-batch', 'checkAvailability');
 });
+Route::controller(InventoryTransactionController::class)->group(function () {
+  Route::get('item-transaction', 'index');
+});
+
 
 Route::controller(DeliveryController::class)->group(function () {
   Route::get('deliveries', 'index');
   Route::post('deliveries', 'store');
-  Route::post('consignments', 'storeConsignment');
   Route::put('deliveries', 'update');
   Route::get('delivery/{id}', 'show');
   Route::get('delivery', 'show');
   Route::get('warehouse-deliveries/{id}', 'warehouseDelivery');
+
+});
+
+Route::controller(ConsignmentDeliveryController::class)->group(function () {
+  Route::get('consignments', 'index');
+  Route::get('audit-consignments', 'auditconsignment');
+  Route::get('audited-consignments', 'auditedconsignment');
+  Route::post('consignments', 'store');
+  Route::get('get-consignment', 'list');
+  Route::get('get-purchase-order-consignment', 'consignment_puchase_order');
+  
+  Route::put('consignments/{id}', 'update');
+  Route::post('update-po-consignments', 'updatePOconsignment');
   Route::post('consignment-pr', 'createConsignmentPr');
 });
 
@@ -110,8 +128,12 @@ Route::controller(StockRequisitionController::class)->group(function () {
 
 Route::controller(AuditController::class)->group(function () {
   Route::get('audits', 'index');
+  Route::get('get-audit', 'index');
   Route::post('audit', 'store');
   Route::put('audit/{audit}', 'update');
+  Route::put('audit-consignment/{audit}', 'updateConsignment');
+  Route::post('audit-consignment', 'storeConsignment');
+  
   // Route::post('stock-requisition', 'store');
 });
 

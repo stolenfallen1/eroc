@@ -8,12 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MMIS\inventory\Delivery;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
-use App\Models\MMIS\inventory\Delivery;
+use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 
 class PurchaseOrderController extends Controller
 {
@@ -198,19 +200,36 @@ class PurchaseOrderController extends Controller
                 if ($checkPO) {
                     $number = $checkPO->po_Document_number;
                 }
+                
+                // if(sizeof($purchase_order['items']) > 0){
+                //     foreach ($purchase_order['items'] as $item) {
+                //         $po_Document_discount_percent += round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
+                //         $po_Document_discount_amount += round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
+                //         $po_Document_vat_amount += round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
+                //         $po_Document_total_net_amount += round($item['recommended_canvas']['canvas_item_net_amount'], 4);
+                //     }
+                // }
                 $po_Document_discount_percent = 0;
                 $po_Document_discount_amount = 0;
                 $po_Document_vat_amount = 0;
                 $po_Document_total_net_amount = 0;
                 if(sizeof($purchase_order['items']) > 0){
-                    foreach ($purchase_order['items'] as $item) {
-                        $po_Document_discount_percent += round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
-                        $po_Document_discount_amount += round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
-                        $po_Document_vat_amount += round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
-                        $po_Document_total_net_amount += round($item['recommended_canvas']['canvas_item_net_amount'], 4);
-                    }
+                    $po_Document_discount_percent = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_discount_percent'], 4);
+                    }, $purchase_order['items']));
+                    
+                    $po_Document_discount_amount = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_discount_amount'], 4);
+                    }, $purchase_order['items']));
+                    
+                    $po_Document_vat_amount = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_vat_amount'], 4);
+                    }, $purchase_order['items']));
+                    
+                    $po_Document_total_net_amount = array_sum(array_map(function($item) {
+                        return round($item['recommended_canvas']['canvas_item_net_amount'], 4);
+                    }, $purchase_order['items']));
                 }
-
                 $po = purchaseOrderMaster::updateOrCreate(
                     [
                         'pr_request_id' => $purchase_order['pr_request_id'],
@@ -273,9 +292,45 @@ class PurchaseOrderController extends Controller
                             'canvas_id' => $item['recommended_canvas']['id'],
                             'isFreeGoods' => $item['recommended_canvas']['isFreeGoods'],
                         ]);
-                }
-            }
 
+                        $checkifconsignment = PurchaseOrderConsignment::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                        if($checkifconsignment){
+                           
+                            $checkifconsignmentItem = PurchaseOrderConsignmentItem::where('pr_request_id',$purchase_order['pr_request_id'])->where('request_item_id',$item['item_Id'])->first();
+                            $checkifconsignment->update([
+                                'po_id' => $po['id'],
+                                'canvas_id' => $item['recommended_canvas']['id'],
+                                'total_gross_amount' => $purchase_order['po_Document_total_gross_amount'],
+                                'discount_percent' =>  $po_Document_discount_percent,
+                                'discount_amount' =>  $po_Document_discount_amount,
+                                'isvat_inclusive' => $purchase_order['po_Document_isvat_inclusive'],
+                                'vat_percent' => $purchase_order['po_Document_vat_percent'],
+                                'vat_amount' => $po_Document_vat_amount,
+                                'total_net_amount' => $po_Document_total_net_amount,
+                                'updatedby' => $authUser->idnumber
+                            ]);
+
+                            $checkifconsignmentItem->update([
+                                'po_id' => $po['id'],
+                                'canvas_id' => $item['recommended_canvas']['id'],
+                                'item_listcost' => $item['recommended_canvas']['canvas_item_amount'],
+                                'item_qty' => $item['recommended_canvas']['canvas_Item_Qty'],
+                                'item_unitofmeasurement_id' => $item['recommended_canvas']['canvas_Item_UnitofMeasurement_Id'],
+                                'item_discount_percent' => $item['recommended_canvas']['canvas_item_discount_percent'],
+                                'item_discount_amount' => $item['recommended_canvas']['canvas_item_discount_amount'],
+                                'vat_percent' => $item['recommended_canvas']['canvas_item_vat_rate'],
+                                'vat_amount' => $item['recommended_canvas']['canvas_item_vat_amount'],
+                                'total_gross' => $item['recommended_canvas']['canvas_item_total_amount'],
+                                'net_amount' => round($item['recommended_canvas']['canvas_item_net_amount'], 4),
+                                'updatedby' => $authUser->idnumber
+                            ]);
+                        } 
+                        
+                     
+                }
+
+                
+            }
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
             return response()->json(['message' => 'success'], 200);

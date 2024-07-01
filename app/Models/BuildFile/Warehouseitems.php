@@ -3,6 +3,7 @@
 namespace App\Models\BuildFile;
 
 use App\Models\BuildFile\Brands;
+use App\Models\BuildFile\Branchs;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,6 +31,9 @@ class Warehouseitems extends Model
         return $this->belongsTo(Unitofmeasurement::class, 'item_UnitofMeasurement_Id', 'id');
     }
     
-    
+    public function branch()
+    {
+        return $this->belongsTo(Branchs::class, 'branch_id', 'id');
+    }
     
 }

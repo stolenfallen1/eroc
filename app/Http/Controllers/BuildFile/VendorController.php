@@ -15,7 +15,13 @@ class VendorController extends Controller
     }
 
     public function store(Request $request){
-        Vendors::create($request->all());
+        Vendors::updateOrCreate(
+            [
+                'vendor_Code'=>$request->vendor_Code,
+                'vendor_Name'=>$request->vendor_Name,
+            ],
+            $request->all()
+        );
     }
 
     public function update(Request $request, Vendors $vendor){

@@ -11,8 +11,11 @@ Route::resource('patient-master', MasterPatientController::class);
 
 Route::controller(OutpatientRegistrationController::class)->group(function () {
     Route::get('get-outpatient', 'index');
+    Route::get('get-revoked-outpatient', 'getrevokedoutpatient');
     Route::post('register-outpatient', 'register');
     Route::put('update-outpatient/{id}', 'update');
+    Route::put('revoke-patient/{id}', 'revokepatient');
+    Route::put('unrevoke-patient/{id}', 'unrevokepatient');
 }); 
 Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('get-emergency', 'index');
@@ -22,5 +25,5 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 Route::controller(InpatientRegistrationController::class)->group(function () {
     Route::get('get-inpatient', 'index');
     Route::post('register-inpatient', 'register');
-    Route::put('update-inpatient/{id}', 'update');
+    Route::put('update-inpatient/{id}', 'update'); 
 });

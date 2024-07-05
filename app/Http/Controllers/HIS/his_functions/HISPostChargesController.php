@@ -12,58 +12,48 @@ use Illuminate\Support\Facades\DB;
 
 class HISPostChargesController extends Controller
 {
-    //
-    public function chargehistory(Request $request) {
+    public function chargehistory(Request $request)
+    {
         try {
-            $payload = $request->json()->all();
-            $patient_id = $payload['patient_id'];
-            $case_no = $payload['case_no'];
-            $today = Carbon::now()->format('Y-m-d');
+            $patient_id = $request->patient_id;
+            $case_no = $request->case_no;
+            $transaction_code = $request->transaction_code;
+            $data = $this->history($patient_id, $case_no, $transaction_code);
+            return response()->json(['data' => $data]);
 
-            $charges = HISBillingOut::with('items')
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    public function history($patient_id, $case_no, $transaction_code, $refnum = [])
+    {
+        try {
+            $today = Carbon::now()->format('Y-m-d');
+            $query = HISBillingOut::with('items','doctor_details')
                 ->where('pid', $patient_id)
                 ->where('case_no', $case_no)
-                ->whereDate('transDate', $today)
-                ->get();
+                ->whereDate('transDate', $today);
 
-            $filteredCharges = $charges->filter(function ($charge) {
-                return in_array($charge->revenue_id, ['HD', 'LB', 'LX']); 
-            });
+            if ($transaction_code == 'MD') {
+                $query->whereIn('revenue_id', ['MD']);
+            } else if ($transaction_code == '') {
+                $query->whereNotIn('revenue_id', ['MD']);
+            }
+            if (count($refnum) > 0) {
+                $query->whereIn('refnum', $refnum);
+            }
 
-            return response()->json(['charges' => $filteredCharges], 200);
-        } catch(\Exception $e) {
+            return $query->get();
+        } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function professionalfeehistory(Request $request) {
-        try {
-            $payload = $request->json()->all();
-            $patient_id = $payload['patient_id'];
-            $case_no = $payload['case_no'];
-            $today = Carbon::now()->format('Y-m-d');
-
-            $doctorcharges = HISBillingOut::with('doctor_details')
-                ->where('pid', $patient_id)
-                ->where('case_no', $case_no)
-                ->whereDate('transDate', $today)
-                ->get();
-
-            $filteredCharges = $doctorcharges->filter(function ($doctorcharges) {
-                return in_array($doctorcharges->revenue_id, ['MD']);
-            });
-
-            return response()->json(['doctorcharges' => $filteredCharges], 200);
-        } catch(\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-    
-
-    public function charge(Request $request) {
+    public function charge(Request $request)
+    {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first(); 
+            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
             }
@@ -71,22 +61,21 @@ class HISPostChargesController extends Controller
             $patient_id = $request->payload['patient_id'];
             $case_no = $request->payload['case_no'];
             $transDate = Carbon::now();
-            $sequence = 'C' . $chargeslip_sequence->seq_no . 'K';
-
+            $refnum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
                     $revenue_id = $charge['transaction_code'];
                     $item_id = $charge['map_item_id'];
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
-
-
+                    $sequence = $revenue_id . $chargeslip_sequence->seq_no;
+                    $refnum[] = $sequence;
                     HISBillingOut::create([
                         'pid' => $patient_id,
                         'case_no' => $case_no,
                         'transDate' => $transDate,
                         'revenue_id' => $revenue_id,
-                        'drcr' => 'D', 
+                        'drcr' => 'D',
                         'item_id' => $item_id,
                         'quantity' => $quantity,
                         'refnum' => $sequence,
@@ -107,13 +96,14 @@ class HISPostChargesController extends Controller
                     $item_id = $doctorcharges['doctor_code'];
                     $quantity = 1;
                     $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-
+                    $sequence = $revenue_id . $chargeslip_sequence->seq_no;
+                    $refnum[] = $sequence;
                     HISBillingOut::create([
                         'pid' => $patient_id,
                         'case_no' => $case_no,
                         'transDate' => $transDate,
                         'revenue_id' => $revenue_id,
-                        'drcr' => 'D', 
+                        'drcr' => 'D',
                         'item_id' => $item_id,
                         'quantity' => $quantity,
                         'refnum' => $sequence,
@@ -130,7 +120,8 @@ class HISPostChargesController extends Controller
 
             $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
             DB::commit();
-            return response()->json(['message' => 'Charges posted successfully']);
+            $data['charges'] =  $this->history($patient_id, $case_no, 'all', $refnum);
+            return response()->json(['message' => 'Charges posted successfully', 'data' => $data]);
 
         } catch (\Exception $e) {
             DB::rollBack();

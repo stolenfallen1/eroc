@@ -32,6 +32,7 @@ class HISPostChargesController extends Controller
             $query = HISBillingOut::with('items','doctor_details')
                 ->where('pid', $patient_id)
                 ->where('case_no', $case_no)
+                ->where('quantity', '>', 0)
                 ->whereDate('transDate', $today);
 
             if ($transaction_code == 'MD') {
@@ -42,6 +43,16 @@ class HISPostChargesController extends Controller
             if (count($refnum) > 0) {
                 $query->whereIn('refnum', $refnum);
             }
+
+            $query->whereNotExists(function ($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('BillingOut as cancelled')
+                    ->whereColumn('cancelled.pid', 'BillingOut.pid')
+                    ->whereColumn('cancelled.case_no', 'BillingOut.case_no')
+                    ->whereColumn('cancelled.item_id', 'BillingOut.item_id')
+                    ->whereColumn('cancelled.refnum', 'BillingOut.refnum')
+                    ->where('cancelled.quantity', -1);
+            });
 
             return $query->get();
         } catch (\Exception $e) {
@@ -122,6 +133,53 @@ class HISPostChargesController extends Controller
             DB::commit();
             $data['charges'] =  $this->history($patient_id, $case_no, 'all', $refnum);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function revokecharge(Request $request) 
+    {
+        DB::beginTransaction();
+        try {
+            $items = $request->items;
+            foreach ($items as $item) {
+                $patient_id = $item['pid'];
+                $case_no = $item['case_no'];
+                $refnum = $item['refnum'];
+                $item_id = $item['item_id'];
+                
+                $existingData = HISBillingOut::where('pid', $patient_id)
+                    ->where('case_no', $case_no)
+                    ->where('refnum', $refnum)
+                    ->where('item_id', $item_id)
+                    ->first();
+
+                if ($existingData) {
+                    HISBillingOut::create([
+                        'pid' => $existingData->pid,
+                        'case_no' => $existingData->case_no,
+                        'transDate' => now(),
+                        'revenue_id' => $existingData->revenue_id,
+                        'drcr' => 'C',
+                        'item_id' => $existingData->item_id,
+                        'quantity' => -1,
+                        'refnum' => $existingData->refnum,
+                        'amount' => $existingData->amount * -1,
+                        'userid' => Auth()->user()->idnumber,
+                        'net_amount' => $existingData->net_amount * -1,
+                        'HostName' => (new GetIP())->getHostname(),
+                        'accountnum' => $existingData->pid,
+                        'auto_discount' => 0,
+                        'patient_type' => 0,
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Charges revoked successfully'], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();

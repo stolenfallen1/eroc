@@ -59,7 +59,6 @@ class HISPostChargesController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function charge(Request $request)
     {
         DB::beginTransaction();
@@ -132,14 +131,13 @@ class HISPostChargesController extends Controller
             $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
             DB::commit();
             $data['charges'] =  $this->history($patient_id, $case_no, 'all', $refnum);
-            return response()->json(['message' => 'Charges posted successfully', 'data' => $data]);
+            return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
     public function revokecharge(Request $request) 
     {
         DB::beginTransaction();
@@ -161,7 +159,7 @@ class HISPostChargesController extends Controller
                     HISBillingOut::create([
                         'pid' => $existingData->pid,
                         'case_no' => $existingData->case_no,
-                        'transDate' => now(),
+                        'transDate' => Carbon::now(),
                         'revenue_id' => $existingData->revenue_id,
                         'drcr' => 'C',
                         'item_id' => $existingData->item_id,

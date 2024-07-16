@@ -225,7 +225,7 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
 });
 
 
-Route::get('test-pdf', function () {
+Route::get('test-pdfx', function () {
     $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest', 'purchaseRequestDetail.recommendedCanvas.vendor')
         ->whereHas('purchaseOrder', function ($q1) {
             $q1->where('po_Document_branch_id', 1)->where('po_Document_warehouse_id', 47)->whereDoesntHave('delivery');

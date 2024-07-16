@@ -52,7 +52,8 @@ class DeliveryController extends Controller
 
             $delivery = Delivery::updateOrCreate(
                 [
-                    'rr_Document_Number' => $number
+                    'rr_Document_Number' => $number,
+                    'rr_Document_Branch_Id' => Auth::user()->branch_id
                 ],
                 [
                 'rr_Document_Number' => $number,

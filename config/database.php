@@ -91,6 +91,28 @@ return [
             'prefix_indexes' => true,
         ],
 
+            /*
+    DB_CONNECTION_SERVICE_RECORD=sqlsrv
+    DB_HOST_SERVICE_RECORD=10.4.15.101
+    DB_PORT_SERVICE_RECORD=1433
+    DB_DATABASE_SERVICE_RECORD=CDH_PAYROLL_temp
+    DB_USERNAME_SERVICE_RECORD=sa
+    DB_PASSWORD_SERVICE_RECORD=P@ssw0rd!
+    */
+
+        'sqlsrv_service_record' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_SERVICE_RECORD', 'localhost'),
+            'port' => env('DB_PORT_SERVICE_RECORD', '1433'),
+            'database' => env('DB_DATABASE_SERVICE_RECORD', 'forge'),
+            'username' => env('DB_USERNAME_SERVICE_RECORD', 'forge'),
+            'password' => env('DB_PASSWORD_SERVICE_RECORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_mmis' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

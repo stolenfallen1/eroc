@@ -38,7 +38,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('pos/refresh', [AuthPOSController::class, 'refreshToken']);
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);
-    
+
     require_once('pos/api.php');
     require_once('pos/v1/api.php');
     require_once('buildfile/api.php');
@@ -51,4 +51,5 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('his/api_settings.php');
     require_once('schedules/api.php');
     require_once('his/api_his_functions.php');
+    require_once('servicerecord/service_record_api.php');
 });

@@ -539,6 +539,9 @@ Route::controller(SuffixController::class)->group(function () {
     Route::get('get-titles', 'titles');
 });
 Route::resource('suffix', SuffixController::class);
+Route::controller(PaymentMethodController::class)->group(function () {
+    Route::get('get-payment-methods', 'list');
+});
 Route::resource('payment-methods', PaymentMethodController::class);
 Route::resource('refund-type', RefundTypeController::class);
 Route::resource('shift-schedules', ShiftSchedulesController::class);

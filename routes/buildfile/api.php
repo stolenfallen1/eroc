@@ -551,7 +551,13 @@ Route::controller(BanksController::class)->group(function () {
     Route::get('get-banks', 'list');
 });
 Route::resource('bank-accounts', BankAccountsController::class);
+Route::controller(CreditCardsController::class)->group(function () {
+    Route::get('get-credit-cards', 'list');
+});
 Route::resource('credit-cards', CreditCardsController::class);
+Route::controller(DebitCardsController::class)->group(function () {
+    Route::get('get-debit-cards', 'list');
+});
 Route::resource('debit-cards', DebitCardsController::class);
 
 

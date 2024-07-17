@@ -28,6 +28,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
             // return $this->sendLoginResponse($request);
         }
         return response()->json(["message" => 'Warning: Enter valid idnumber and password before proceeding!'], 401);
+        // echo "TEST";
     }
 
     public function checkTerminal()

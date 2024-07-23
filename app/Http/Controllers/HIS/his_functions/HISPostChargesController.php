@@ -95,7 +95,6 @@ class HISPostChargesController extends Controller
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $patient_id,
                         'auto_discount' => 0,
-                        'patient_type' => 0,
                     ]);
                 }
             }
@@ -123,7 +122,6 @@ class HISPostChargesController extends Controller
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $patient_id,
                         'auto_discount' => 0,
-                        'patient_type' => 0,
                     ]);
                 }
             }
@@ -171,7 +169,6 @@ class HISPostChargesController extends Controller
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $existingData->pid,
                         'auto_discount' => 0,
-                        'patient_type' => 0,
                     ]);
                 }
             }

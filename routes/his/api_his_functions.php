@@ -20,6 +20,8 @@ Route::controller(HISCashAssestmentController::class)->group(function () {
 });
 
 Route::controller(CashierController::class)->group(function () {
-    Route::get('get-charge-item', 'populate');
+    Route::get('get-charge-item', 'populatechargeitem');
     Route::post('save-payment', 'save');
+    Route::get('get-ornumber', 'getOR');
+    Route::put('cancel-ornumber', 'cancelOR');
 });

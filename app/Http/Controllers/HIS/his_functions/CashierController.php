@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\HIS\BillingOutModel;
 use App\Models\HIS\his_functions\CashAssessment;
+use App\Models\HIS\his_functions\CashORMaster;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class CashierController extends Controller
 {
     //
-    public function populate(Request $request) 
+    public function populatechargeitem(Request $request) 
     {
         DB::beginTransaction();
         try {
@@ -24,7 +25,7 @@ class CashierController extends Controller
                 ->get();
             
             DB::commit();
-            return response()->json(['data' => $data]);
+            return response()->json(['data' => $data], 200);
 
         } catch (\Exception $e) {
             DB::rollBack(); 
@@ -81,6 +82,34 @@ class CashierController extends Controller
             }
 
         } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    public function getOR(Request $request) 
+    {
+        DB::beginTransaction();
+        try {
+            $orNum = $request->query('RefNum'); 
+
+            $data = CashORMaster::where('RefNum', $orNum)->get();
+            DB::commit();
+            return response()->json(['data' => $data], 200);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function cancelOR(Request $request) 
+    {
+        DB::beginTransaction();
+        try {
+
+
+        } catch(\Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }

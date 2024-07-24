@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HIS\his_functions\CashierController;
 use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;

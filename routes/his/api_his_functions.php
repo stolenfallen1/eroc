@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\HIS\his_functions\CashierController;
 use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
@@ -17,9 +16,4 @@ Route::controller(HISCashAssestmentController::class)->group(function () {
     Route::post('cash-assessment-history', 'getcashassessment');
     Route::post('post-cash-assessment', 'cashassessment');
     Route::put('revoke-cash-assessment', 'revokecashassessment');
-});
-
-Route::controller(CashierController::class)->group(function () {
-    Route::get('get-charge-item', 'populate');
-    Route::post('save-payment', 'save');
 });

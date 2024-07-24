@@ -31,10 +31,14 @@ class EmployeeTbcMaster extends Controller
     }
 
 
-    public function getEmployeeServiceRecords() {
+    public function getEmployeeServiceRecords(Request $request) {
         try{
-            $userRequest = $this->getUserRequest();
-            $serviceRecords     =   DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $p_year             =   $request->input('year');
+            $p_monthName        =   $request->input('month');
+            $p_empnum           =   $request->input('empId');
+            $serviceRecords     =   DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeServiceRecord ?, ?, ?',
+                                        [$p_year, $p_monthName, $p_empnum]
+                                    );
             if (empty($serviceRecords)) {
                 return response()->json([], 200);
             }
@@ -44,11 +48,14 @@ class EmployeeTbcMaster extends Controller
         }
     }
 
-
-    public function getEmployeeLeaves() {
+    public function getEmployeeLeaves(Request $request) {
         try {
-            $userRequest = $this->getUserRequest();
-            $employeeLeaves     =   DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $year               =   $request->input('year');
+            $monthName          =   $request->input('month');
+            $empnum             =   $request->input('empId');
+            $employeeLeaves     =   DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?',
+                                        [$year, $monthName, $empnum]
+                                    );
             if (empty($employeeLeaves)) {
                 return response()->json([], 200);
             }
@@ -58,11 +65,14 @@ class EmployeeTbcMaster extends Controller
         }
     }
 
-
-    public function getEmployeeUnderTime() {
+    public function getEmployeeUnderTime(Request $request) {
         try {
-            $userRequest = $this->getUserRequest();
-            $employeeUdertimeSummary        =   DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $year                           =   $request->input('year');
+            $monthName                      =   $request->input('month');
+            $empnum                         =   $request->input('empId');
+            $employeeUdertimeSummary        =   DB::select('SET NOCOUNT ON; EXEC sp_EmployeeUndertimeSummary ?, ?, ?',
+                                                    [$year, $monthName, $empnum]
+                                                );
             if (empty($employeeUdertimeSummary)) {
                 return response()->json([], 200);
             }
@@ -72,11 +82,14 @@ class EmployeeTbcMaster extends Controller
         }
     }
 
-
-    public function getEmployeeTardiness() {
+    public function getEmployeeTardiness(Request $request) {
         try {
-            $userRequest = $this->getUserRequest();
-            $employeeTardySummary           =   DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $year                           =   $request->input('year');
+            $monthName                      =   $request->input('month');
+            $empnum                         =   $request->input('empId');
+            $employeeTardySummary           =   DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeTardySummary ?, ?, ?',
+                                                    [$year, $monthName, $empnum]
+                                                );
             if (empty($employeeTardySummary)) {
                 return response()->json([], 200);
             }
@@ -85,7 +98,6 @@ class EmployeeTbcMaster extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
 
     public function getPainLeaves() {
         try{
@@ -100,42 +112,38 @@ class EmployeeTbcMaster extends Controller
         }
     }
 
-
     public function getNonPaidLeave() {
         try{
+
             $nonPaidLeaves = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeWithoutPaidLeaves');
+
             if(empty($nonPaidLeaves)) {
                 return response()->json([], 200);
             }
+
             return response($nonPaidLeaves);
+
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-
-    public function getEmployeeOT() {
+    public function getEmployeeOT(Request $request) {
         try{
-            $userRequest = $this->getUserRequest();
-            $employeeOT = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $p_year             =   $request->input('year');
+            $p_monthName        =   $request->input('month');
+            $p_empnum           =   $request->input('empId');
+
+            $employeeOT = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+
             if(empty($employeeOT)) {
                 return response()->json([], 200);
             }
+
             return response()->json($employeeOT);
+
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-
-    public function getUserRequest() {
-        $request = request();
-        $requestParam = [
-            'year'  => $request->input('year'),
-            'month' => $request->input('month'),
-            'empnum' => $request->input('empId')
-        ];
-        return $requestParam;
-    }
-
 }

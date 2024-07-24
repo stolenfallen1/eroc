@@ -9,12 +9,12 @@ use Illuminate\Http\Request;
 class DepartmentTbcMaster extends Controller
 {
     //
-    public function getDeptEmployee(Request $request) {
+    public function getDeptEmployee(Request $request)
+    {
         $departmentCode = $request->input('department');
         $month          = $request->input('month');
         $year           = $request->input('year');
         $status         = $request->input('status');
-
         try {
             if($status === "1") {
                 $employeeList = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_employeeDepartmentListActive ?', [$departmentCode]);
@@ -24,15 +24,8 @@ class DepartmentTbcMaster extends Controller
             if(empty($employeeList)) {
                 return response()->json([], 200);
             }
-            $employeeList = collect($employeeList)->map(function ($item) {
-                $item->Lastname     = $this->strTransform($item->Lastname);
-                $item->Firstname    = $this->strTransform($item->Firstname);
-                $item->Middlename   = $this->strTransform($item->Middlename);
-                return $item;
-            });
 
             return response()->json($employeeList, 200);
-
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -42,8 +35,6 @@ class DepartmentTbcMaster extends Controller
         try{
             $departmentList = DB::connection('sqlsrv_service_record')->table('tbcDepartment')
                             ->select('Code', 'Description')
-                            ->where('Status', 1)
-                            ->orderBy('Description', 'ASC')
                             ->get();
 
             if(empty($departmentList)) {
@@ -53,23 +44,9 @@ class DepartmentTbcMaster extends Controller
                 $item->Description = ucwords(strtolower($item->Description));
                 return $item;
             });
-
             return response()->json($departmentList);
-
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
-    }
-
-    public function strTransform($string) {
-        $is_Found = strpos($string, 'Ñ');
-        if($is_Found) {
-            $temp = str_replace('Ñ', '165', $string);
-            $lowerCaseStr = ucwords(strtolower($temp));
-            $newString = str_replace('165', 'ñ', $lowerCaseStr);
-        } else {
-            $newString = ucwords(strtolower($string));
-        }
-        return $newString;
     }
 }

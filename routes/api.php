@@ -6,7 +6,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthPOSController;
 use App\Http\Controllers\POS\SettingController;
-use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\Schedules\SchedulingDashboard;
 
 /*
@@ -23,8 +22,6 @@ use App\Http\Controllers\Schedules\SchedulingDashboard;
 
 /*require_once('/schedules/api.php');*/
 // Route::resource('userss', UserController::class);
-Route::get('/service_record/pdf/generate-save-pdf',  [PdfController::class,          'generatePDF']);
-
 
 Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
 Route::post('login', [AuthController::class, 'login']);

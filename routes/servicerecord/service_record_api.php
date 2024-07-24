@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ServiceRecord\TbcMaster;
 use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\ServiceRecord\EmployeeTbcMaster;
 use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
@@ -22,7 +21,6 @@ use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
 //     return $request->user();
 // });
 
-Route::get('/dashboard',                                        [TbcMaster::class,              'dashboard']);
 Route::get('/employee-master',                                  [EmployeeTbcMaster::class,      'index']);
 Route::get('/employee-detail',                                  [EmployeeTbcMaster::class,      'getEmployeeDetail']);
 Route::get('/employee-leave',                                   [EmployeeTbcMaster::class,      'getEmployeeLeaves']);
@@ -34,4 +32,4 @@ Route::get('/non-paid-leave',                                   [EmployeeTbcMast
 Route::get('/employee-ot',                                      [EmployeeTbcMaster::class,      'getEmployeeOT']);
 Route::get('/department/department-list',                       [DepartmentTbcMaster::class,    'getDepartmentList']);
 Route::get('/department/department-employee',                   [DepartmentTbcMaster::class,    'getDeptEmployee']);
-
+Route::get('/generate-save-pdf',                                [PdfController::class,          'generatePDF']);

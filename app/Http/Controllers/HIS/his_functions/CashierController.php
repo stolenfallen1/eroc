@@ -23,6 +23,7 @@ class CashierController extends Controller
 
             $data = CashAssessment::with('items', 'doctor_details')
                 ->where('refNum', $refNum)
+                ->where('ORNumber', null)
                 ->get();
             
             DB::commit();
@@ -134,9 +135,12 @@ class CashierController extends Controller
     {
         DB::beginTransaction();
         try {
-            $orNum = $request->query('RefNum'); 
+            $ORNumber = $request->query('ORNumber');
 
-            $data = CashORMaster::where('RefNum', $orNum)->get();
+            $data = CashAssessment::with('items', 'doctor_details')
+                ->where('ORNumber', $ORNumber)
+                ->get();
+
             DB::commit();
             return response()->json(['data' => $data], 200);
 
@@ -150,7 +154,6 @@ class CashierController extends Controller
     {
         DB::beginTransaction();
         try {
-
 
         } catch(\Exception $e) {
             DB::rollBack();

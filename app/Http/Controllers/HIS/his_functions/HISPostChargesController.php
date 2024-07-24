@@ -71,7 +71,7 @@ class HISPostChargesController extends Controller
             $patient_id = $request->payload['patient_id'];
             $case_no = $request->payload['case_no'];
             $transDate = Carbon::now();
-            $msc_prices_scheme_id = $request->payload['msc_prices_scheme_id'];
+            $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
             $refnum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
@@ -85,7 +85,7 @@ class HISPostChargesController extends Controller
                         'pid' => $patient_id,
                         'case_no' => $case_no,
                         'transDate' => $transDate,
-                        'msc_prices_scheme_id' => $msc_prices_scheme_id,
+                        'msc_price_scheme_id' => $msc_price_scheme_id,
                         'revenue_id' => $revenue_id,
                         'drcr' => 'D',
                         'item_id' => $item_id,
@@ -113,7 +113,7 @@ class HISPostChargesController extends Controller
                         'pid' => $patient_id,
                         'case_no' => $case_no,
                         'transDate' => $transDate,
-                        'msc_prices_scheme_id' => $msc_prices_scheme_id,
+                        'msc_price_scheme_id' => $msc_price_scheme_id,
                         'revenue_id' => $revenue_id,
                         'drcr' => 'D',
                         'item_id' => $item_id,
@@ -161,7 +161,7 @@ class HISPostChargesController extends Controller
                         'pid' => $existingData->pid,
                         'case_no' => $existingData->case_no,
                         'transDate' => Carbon::now(),
-                        'msc_prices_scheme_id' => $existingData->msc_prices_scheme_id,
+                        'msc_price_scheme_id' => $existingData->msc_price_scheme_id,
                         'revenue_id' => $existingData->revenue_id,
                         'drcr' => 'C',
                         'item_id' => $existingData->item_id,

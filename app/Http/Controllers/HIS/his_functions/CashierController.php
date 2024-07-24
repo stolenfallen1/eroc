@@ -7,6 +7,7 @@ use App\Helpers\GetIP;
 use App\Models\HIS\BillingOutModel;
 use App\Models\HIS\his_functions\CashAssessment;
 use App\Models\HIS\his_functions\CashORMaster;
+use Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,45 +42,87 @@ class CashierController extends Controller
             $case_no = $request->payload['register_id_no'];
             $transDate = Carbon::now()->format('Y-m-d');
             $revenue_id = $request->payload['transaction_code'];
-            $item_id = $request->payload['itemID'];
             $refNum = $request->payload['refNum'];
             $ORNum = $request->payload['ORNumber'];
-            $amount = floatval(str_replace([',', '₱'], '', ['amount']));
+            $tin = $request->payload['tin'];
+            $business_style = $request->payload['business_style'];
+            $osca_pwd_id = $request->payload['osca_pwd_id'];
+            $shift = $request->payload['shift'];
 
             $update = CashAssessment::where('patient_id' , $patient_id)
-                ->where('register_id_no', $case_no)
-                ->where('revenueID', $revenue_id)
-                ->where('itemID', $item_id)
-                ->update([
-                    'ORNumber' => $ORNum, 
-                    'updatedBy' => Auth()->user()->idnumber, 
-                    'updated_at' => Carbon::now()
-                ]);
-            
-            if ($update) {
-                BillingOutModel::create([
-                    'pid' => $patient_id,
-                    'case_no' => 'CASH',
-                    'transDate' => $transDate,
-                    'revenue_id' => $revenue_id,
-                    'drcr' => 'D',
-                    'item_id' => $item_id,
-                    'quantity' => 1,
-                    'refnum' => $ORNum,
-                    'amount' => $amount,
-                    'userid' => Auth()->user()->idnumber,
-                    'net_amount' => $amount,
-                    'HostName' => (new GetIP())->getHostname(),
-                    'accountnum' => $patient_id,
-                    'ChargeSlip' => $refNum,
-                    'auto_discount' => 0,
-                    'patient_type' => 0,
-                ]);
-                DB::commit();
-                return response()->json(['message' => 'Payment saved successfully']);
+            ->where('register_id_no', $case_no)
+            ->where('revenueID', $revenue_id)
+            ->update([
+                'ORNumber' => $ORNum, 
+                'updatedBy' => Auth()->user()->idnumber, 
+                'updated_at' => Carbon::now()
+            ]);
+
+            if (!$update) {
+                throw new \Exception('Failed to update assessment');
             } else {
-                return response()->json(['message' => 'Failed to save payment'], 500);
+                if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
+                    foreach ($request->payload['Items'] as $item) {
+                        $item_id = $item['itemID'];
+                        $amount = floatval(str_replace([',', '₱'], '', ['amount']));
+                        BillingOutModel::create([
+                            'pid' => $patient_id,
+                            'case_no' => 'CASH',
+                            'transDate' => $transDate,
+                            'msc_price_scheme_id' => 1,
+                            'revenue_id' => $revenue_id,
+                            'drcr' => 'D',
+                            'item_id' => $item_id,
+                            'quantity' => 1,
+                            'refnum' => $ORNum,
+                            'ChargeSlip' => $refNum,
+                            'ornumber' => $ORNum,
+                            'amount' => $amount,
+                            'userid' => Auth()->user()->idnumber,
+                            'net_amount' => $amount,
+                            'HostName' => (new GetIP())->getHostname(),
+                            'accountnum' => $patient_id,
+                            'auto_discount' => 0,
+                        ]);
+                        CashORMaster::create([
+                            'RefNum' => $ORNum,
+                            'IDNum' => $case_no,
+                            'HospNum' => $patient_id,
+                            'TransDate' => $transDate,
+                            'TIN' => $tin,
+                            'BusinessStyle' => $business_style,
+                            'SCPWDId' => $osca_pwd_id,
+                            'Revenueid' => $revenue_id,
+                            // 'PaymentType' => "TEST",
+                            'PaymentFor' => $refNum,
+                            // 'Particulars' => "TEST",
+                            // 'PaymentFrom' => "TEST",
+                            // 'BankCheck' => "TEST",
+                            // 'Checknum' => "TEST",
+                            // 'CheckAmount' => "TEST",
+                            // 'CheckDate' => "TEST",
+                            // 'CardName' => "TEST",
+                            // 'CardAmount' => "TEST",
+                            // 'CardApprovalNum' => "TEST",
+                            // 'CardDate' => "TEST",
+                            // 'PMO' => "TEST",
+                            // 'PMOAmount' => "TEST",
+                            // 'NetAmount' => "TEST",
+                            // 'Vat' => "TEST",
+                            // 'Discount' => "TEST",
+                            // 'CashAmount' => "TEST",
+                            // 'CashTendered' => "TEST",
+                            'UserID' => Auth()->user()->idnumber,
+                            // 'Status' => "TEST",
+                            'Shift' => $shift,
+                            'EncoderID' => Auth()->user()->idnumber,
+                            'Hostname' => (new GetIP())->getHostname(),
+                        ]);
+                    }
+                }
             }
+            DB::commit();
+            return response()->json(['message' => 'Successfully saved'], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();

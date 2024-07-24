@@ -539,9 +539,6 @@ Route::controller(SuffixController::class)->group(function () {
     Route::get('get-titles', 'titles');
 });
 Route::resource('suffix', SuffixController::class);
-Route::controller(PaymentMethodController::class)->group(function () {
-    Route::get('get-payment-methods', 'list');
-});
 Route::resource('payment-methods', PaymentMethodController::class);
 Route::resource('refund-type', RefundTypeController::class);
 Route::resource('shift-schedules', ShiftSchedulesController::class);
@@ -554,13 +551,7 @@ Route::controller(BanksController::class)->group(function () {
     Route::get('get-banks', 'list');
 });
 Route::resource('bank-accounts', BankAccountsController::class);
-Route::controller(CreditCardsController::class)->group(function () {
-    Route::get('get-credit-cards', 'list');
-});
 Route::resource('credit-cards', CreditCardsController::class);
-Route::controller(DebitCardsController::class)->group(function () {
-    Route::get('get-debit-cards', 'list');
-});
 Route::resource('debit-cards', DebitCardsController::class);
 
 

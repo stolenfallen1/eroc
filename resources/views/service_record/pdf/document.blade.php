@@ -222,7 +222,7 @@
             }
 
             .employee-data {
-                height: 20%;
+                height: 15%;
             }
 
             .employee-data p {
@@ -289,7 +289,6 @@
                             <p><span>Employee No.</span> : {{ $employeeId }}</p>
                             <p><span>Employee Name</span> :  {{ $employeeName }}</p>
                             <p><span>Job Description</span> :  {{ $Position }}</p>
-                            <p><span>Section</span> : {{ $Section }}</p>
                             <p><span>Department</span> :  {{ $Department }}</p>
                         </div>
                     </div>

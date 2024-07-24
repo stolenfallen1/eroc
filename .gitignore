@@ -2,7 +2,6 @@
 /public/hot
 /storage/*.key
 /vendor/*
-/vendor/tcg
 .env
 .env.backup
 .phpunit.result.cache

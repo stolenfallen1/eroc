@@ -69,7 +69,7 @@ class CreditCardsController extends Controller
                     'description' => $request->payload['description'],
                     'payment_method_id' => '2',
                     'isactive' => $request->payload['isactive'],
-                 ]);
+                ]);
 
             $data['msg'] = 'Success';
             return Response()->json($data, 200);

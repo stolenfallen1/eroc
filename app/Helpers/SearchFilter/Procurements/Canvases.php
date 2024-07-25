@@ -35,7 +35,7 @@ class Canvases
   private function byBranch(){
     if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' ||  $this->authUser->role->name == 'consultant' || $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
     {
-      $this->model->where('branch_Id', $this->authUser->branch_id);
+      $this->model->where('canvas_Branch_Id', $this->authUser->branch_id);
     }
   }
 

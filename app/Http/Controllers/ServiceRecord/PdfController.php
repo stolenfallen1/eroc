@@ -17,12 +17,12 @@ class PdfController extends Controller
             $p_empnum = $request->input('empId');
 
             $employeeLeaves             = DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?', [$p_year, $p_monthName, $p_empnum]);
-            $serviceRecords             = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeServiceRecord ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeUdertimeSummary    = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeUndertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeTardySummary       = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeTardySummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeOT                 = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $paidLeaves                 = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeePaidLeaves');
-            $nonPaidLeaves              = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeWithoutPaidLeaves');
+            $serviceRecords             = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeServiceRecord ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeUdertimeSummary    = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeUndertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeTardySummary       = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeTardySummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeOT                 = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $paidLeaves                 = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeePaidLeaves');
+            $nonPaidLeaves              = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeWithoutPaidLeaves');
 
             if (
                     empty($serviceRecords) &&

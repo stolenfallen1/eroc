@@ -17,9 +17,9 @@ class DepartmentTbcMaster extends Controller
 
         try {
             if($status === "1") {
-                $employeeList = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_employeeDepartmentListActive ?', [$departmentCode]);
+                $employeeList = DB::connection('sqlsrv_service_record')->select(' EXEC sp_employeeDepartmentListActive ?', [$departmentCode]);
             } else {
-                $employeeList = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_employeeDepartmentListInActive ?, ?, ?', [$year, $month, $departmentCode]);
+                $employeeList = DB::connection('sqlsrv_service_record')->select(' EXEC sp_employeeDepartmentListInActive ?, ?, ?', [$year, $month, $departmentCode]);
             }
             if(empty($employeeList)) {
                 return response()->json([], 200);

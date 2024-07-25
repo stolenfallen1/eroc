@@ -25,7 +25,7 @@ class Permission extends Model
     {
         return $this->belongsTo(DataType::class, 'table_name', 'name');
     }
-    
+
     public function sidebarGroup()
     {
         return $this->hasOne(SidebarGroup::class, 'id', 'sidebar_group_id');

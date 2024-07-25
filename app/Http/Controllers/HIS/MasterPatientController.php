@@ -53,7 +53,7 @@ class MasterPatientController extends Controller
             } else {
                 $data = PatientMaster::query();
             }
-            
+
             if(!is_numeric(Request()->keyword)) {
                 $patientname = Request()->keyword ?? '';
                 $names = explode(',', $patientname); // Split the keyword into firstname and lastname

@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class DebitCardsController extends Controller
 {
+    public function list() {
+        try {
+            $data = DebitCards::where('isactive', '1')->get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
     public function index()
     {
         try {
@@ -55,7 +63,7 @@ class DebitCardsController extends Controller
                             'description' => $request->payload['description'],
                             'payment_method_id' => '2',
                             'isactive' => $request->payload['isactive'],
-                         ]);
+                        ]);
 
             $data['msg'] = 'Success';
             return Response()->json($data, 200);

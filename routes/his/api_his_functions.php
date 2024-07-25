@@ -11,7 +11,7 @@ Route::controller(HISPostChargesController::class)->group(function () {
     Route::post('post-charge-history', 'chargehistory');
     Route::post('post-his-charge', 'charge');
     Route::put('revoke-his-charge', 'revokecharge');
-}); 
+});
 // Charge for Cash Assessment
 Route::controller(HISCashAssestmentController::class)->group(function () {
     Route::post('cash-assessment-history', 'getcashassessment');

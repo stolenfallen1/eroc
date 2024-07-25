@@ -16,9 +16,12 @@ use App\Http\Controllers\POS\Report_ZController;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\inventory\StockTransferMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
+use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
+use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -54,11 +57,11 @@ Route::get('/print-purchase-order/{id}', function ($id) {
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
     $total_amount = 0;
 
-    
+
     foreach ($purchase_order['details'] as $key => $detail) {
         $total_amount += $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'];
     }
-    
+
     if($purchase_order->id == 6948){
         $sortKeys = [8805, 8798, 8803, 8804, 8800, 8801, 8796, 8797, 8802, 8795, 8799];
         $temp = [];
@@ -191,7 +194,7 @@ Route::get('/print-consignment-delivery/{id}', function ($id) {
     $dompdf = $pdf->getDomPDF();
     $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
     $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-    
+
     return $pdf->stream('consignment-delivery-' . $id . '.pdf');
 });
 
@@ -256,3 +259,5 @@ Route::group(['middleware' => 'admin.user'], function () {
 //     //     return view('layouts.main');
 //     // })->where('any', '.*');
 // });
+
+Route::get('/department/department-employee',                   [DepartmentTbcMaster::class,    'getDeptEmployee']);

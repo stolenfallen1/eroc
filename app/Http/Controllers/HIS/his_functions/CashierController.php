@@ -15,27 +15,27 @@ use Illuminate\Support\Facades\DB;
 class CashierController extends Controller
 {
     //
-    public function populatechargeitem(Request $request) 
+    public function populatechargeitem(Request $request)
     {
         DB::beginTransaction();
         try {
-            $refNum = $request->query('refNum'); 
+            $refNum = $request->query('refNum');
 
             $data = CashAssessment::with('items', 'doctor_details')
                 ->where('refNum', $refNum)
                 ->where('ORNumber', null)
                 ->get();
-            
+
             DB::commit();
             return response()->json(['data' => $data], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack(); 
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function save(Request $request) 
+    public function save(Request $request)
     {
         DB::beginTransaction();
         try {
@@ -54,8 +54,8 @@ class CashierController extends Controller
             ->where('register_id_no', $case_no)
             ->where('revenueID', $revenue_id)
             ->update([
-                'ORNumber' => $ORNum, 
-                'updatedBy' => Auth()->user()->idnumber, 
+                'ORNumber' => $ORNum,
+                'updatedBy' => Auth()->user()->idnumber,
                 'updated_at' => Carbon::now()
             ]);
 
@@ -130,8 +130,8 @@ class CashierController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
-    public function getOR(Request $request) 
+
+    public function getOR(Request $request)
     {
         DB::beginTransaction();
         try {
@@ -150,7 +150,7 @@ class CashierController extends Controller
         }
     }
 
-    public function cancelOR(Request $request) 
+    public function cancelOR(Request $request)
     {
         DB::beginTransaction();
         try {

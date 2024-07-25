@@ -16,13 +16,13 @@ class PdfController extends Controller
             $p_monthName = $request->input('month');
             $p_empnum = $request->input('empId');
 
-            $employeeLeaves             = DB::select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?', [$p_year, $p_monthName, $p_empnum]);
-            $serviceRecords             = DB::select('SET NOCOUNT ON; EXEC sp_EmployeeServiceRecord ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeUdertimeSummary    = DB::select('SET NOCOUNT ON; EXEC sp_EmployeeUndertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeTardySummary       = DB::select('SET NOCOUNT ON; EXEC sp_EmployeeTardySummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeOT                 = DB::select('SET NOCOUNT ON; EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $paidLeaves                 = DB::select('SET NOCOUNT ON; EXEC sp_EmployeePaidLeaves');
-            $nonPaidLeaves              = DB::select('SET NOCOUNT ON; EXEC sp_EmployeeWithoutPaidLeaves');
+            $employeeLeaves             = DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?', [$p_year, $p_monthName, $p_empnum]);
+            $serviceRecords             = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeServiceRecord ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeUdertimeSummary    = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeUndertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeTardySummary       = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeTardySummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeOT                 = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $paidLeaves                 = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeePaidLeaves');
+            $nonPaidLeaves              = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeWithoutPaidLeaves');
 
             if (
                     empty($serviceRecords) &&
@@ -36,6 +36,7 @@ class PdfController extends Controller
             }
 
             $employeeName           = $serviceRecords[0]->EmployeeName ?? '';
+            $section                = $serviceRecords[0]->Section ?? '';
             $dept                   = $serviceRecords[0]->Department ?? '';
             $pos                    = $serviceRecords[0]->Position ?? '';
             $dateEmployed           = isset($serviceRecords[0]->EmployedDate) ? date('F j, Y', strtotime($serviceRecords[0]->EmployedDate)) : '';
@@ -105,11 +106,12 @@ class PdfController extends Controller
                 'year'              => $p_year,
                 'employeeId'        => $p_empnum,
                 'employeeName'      => strtolower($employeeName),
+                'Section'           => ($section ? strtolower($section) : "N/A"),
                 'Department'        => strtolower($dept),
                 'Position'          => strtolower($pos),
                 'dateEmployed'      => $dateEmployed,
                 'Regularization'    => $regularizationDate,
-                'dateResigned'      => ($resignationYear === "1900" ? "NA" : $resignationDate),
+                'dateResigned'      => ($resignationYear === "1900" ? "N/A" : $resignationDate),
                 'EmployeeLeaves'    => $employeeLeaves,
                 'EmployeeOT'        => $employeeOT,
                 'EmployeeUndertime' => $employeeUdertimeSummary,
@@ -119,7 +121,7 @@ class PdfController extends Controller
             ];
 
             $filename   = str_replace([' ', ','], '-', $employeeName);
-            $html       = view('pdf.document', $data)->render();
+            $html       = view('service_record.pdf.document', $data)->render();
             $pdf        = PDF::loadHTML($html)->setPaper('letter', 'landscape');
 
             $pdf->render();
@@ -136,40 +138,10 @@ class PdfController extends Controller
         }
     }
 
-    private function formatTime($time, $label)
-    {
+    private function formatTime($time, $label) {
         $hours = floor(intval($time) / 60);
         $minutes = intval($time) % 60;
         $formattedTime = sprintf('%02d:%02d', $hours, $minutes);
         return $label . ':' . intval($time) . 'm' . (intval($time) > 60 ? "\n" . $formattedTime : '');
     }
-
-    private function formatTimeSample($time) {
-        preg_match('/(\d+\.?\d*) Hr[s]? (\d+\.?\d*) Min[s]?/', $time, $matches);
-        $hourValue = isset($matches[1]) ? floatval($matches[1]) : 0;
-        $minuteValue = isset($matches[2]) ? floatval($matches[2]) : 0;
-        if ($minuteValue > 0) {
-            return $hourValue > 0 ? "{$matches[1]} Hrs {$matches[2]} Mins" : "{$matches[2]} Mins";
-        } elseif ($hourValue > 0) {
-            return "{$matches[1]} Hrs";
-        } else {
-            return '0';
-        }
-    }
-
-
-    // private function formatTime($time) {
-    //     preg_match('/(\d+\.?\d*) Hrs (\d+\.?\d*) Min/', $time, $matches);
-    //     $hourValue = isset($matches[1]) ? floatval($matches[1]) : 0;
-    //     $minuteValue = isset($matches[2]) ? floatval($matches[2]) : 0;
-    //     if ($hourValue > 0 && $minuteValue > 0) {
-    //         return "{$matches[1]} Hrs {$matches[2]} Min";
-    //     } elseif ($hourValue > 0) {
-    //         return "{$matches[1]} Hrs";
-    //     } elseif ($minuteValue > 0) {
-    //         return "{$matches[2]} Min";
-    //     } else {
-    //         return '0';
-    //     }
-    // }
 }

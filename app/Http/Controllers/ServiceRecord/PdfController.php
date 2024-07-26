@@ -42,7 +42,7 @@ class PdfController extends Controller
             $dateEmployed           = isset($serviceRecords[0]->EmployedDate) ? date('F j, Y', strtotime($serviceRecords[0]->EmployedDate)) : '';
             $regularizationDate     = isset($serviceRecords[0]->RegularizationDate) ? date('F j, Y', strtotime($serviceRecords[0]->RegularizationDate)) : '';
             $resignationDate        = isset($serviceRecords[0]->ResignedDate) ? date('F j, Y', strtotime($serviceRecords[0]->ResignedDate)) : '';
-            $resignationYear        = isset($serviceRecords[0]->ResignedDate) ? date('Y', strtotime($serviceRecords[0]->ResignedDate)) : '';
+            $yearEntry              = isset($serviceRecords[0]->ResignedDate) ? date('Y', strtotime($serviceRecords[0]->ResignedDate)) : '';
 
             // Group the data by month
             $groupedData = collect($serviceRecords)->groupBy(function ($item) {
@@ -110,8 +110,8 @@ class PdfController extends Controller
                 'Department'        => strtolower($dept),
                 'Position'          => strtolower($pos),
                 'dateEmployed'      => $dateEmployed,
-                'Regularization'    => $regularizationDate,
-                'dateResigned'      => ($resignationYear === "1900" ? "N/A" : $resignationDate),
+                'Regularization'    => (intval($yearEntry) === 1900 ? "N/A" : $regularizationDate),
+                'dateResigned'      => (intval($yearEntry) === 1900 ? "N/A" : $resignationDate),
                 'EmployeeLeaves'    => $employeeLeaves,
                 'EmployeeOT'        => $employeeOT,
                 'EmployeeUndertime' => $employeeUdertimeSummary,

@@ -6,6 +6,7 @@ use App\Models\SystemReports;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Hospital\Setting\System;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\BuildFile\Hospital\Setting\SystemSidebar;
 
 class Module extends Model
 {
@@ -13,7 +14,7 @@ class Module extends Model
     protected $table = 'sysModules';
     protected $connection = "sqlsrv";
     protected $guarded = [];
-    protected $with = ['systems','reports'];
+    protected $with = ['systems','reports','sidebar'];
     
     public function systems()
     {
@@ -24,4 +25,10 @@ class Module extends Model
     {
         return $this->hasMany(SystemReports::class, 'module_id', 'id');
     }
+
+    public function sidebar()
+    {
+        return $this->belongsTo(SystemSidebar::class, 'sidebar_group_id', 'id');
+    }
+
 }

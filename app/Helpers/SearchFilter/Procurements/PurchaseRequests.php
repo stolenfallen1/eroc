@@ -207,7 +207,7 @@ class PurchaseRequests
 
       $this->model->with('purchaseRequestDetails.itemMaster');
 
-    }else if( $this->authUser->role->name == 'administrator' ){
+    }else if( $this->authUser->role->name == 'administrator' || $this->authUser->role->name == 'corporate admin' ){
       if($this->authUser->branch_id != '1'){
         $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null);
       }else{

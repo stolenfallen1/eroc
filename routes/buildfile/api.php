@@ -457,7 +457,9 @@ Route::controller(ModuleController::class)->group(function () {
     Route::get('module-list', 'list');
     Route::get('get-system-modules', 'systemModule');
     Route::get('systems-drivers', 'systemsdriver');
+    Route::get('systems-sidebar', 'getSidebar');
 });
+
 
 
 Route::resource('system-modules', ModuleController::class);

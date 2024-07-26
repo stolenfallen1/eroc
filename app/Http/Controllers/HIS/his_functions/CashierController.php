@@ -40,7 +40,7 @@ class CashierController extends Controller
         DB::beginTransaction();
         try {
             $patient_id = $request->payload['patient_id'];
-            $case_no = $request->payload['register_id_no'];
+            $case_no = $request->payload['case_no'];
             $transDate = Carbon::now()->format('Y-m-d');
             $revenue_id = $request->payload['transaction_code'];
             $refNum = $request->payload['refNum'];
@@ -51,12 +51,12 @@ class CashierController extends Controller
             $shift = $request->payload['shift'];
 
             $update = CashAssessment::where('patient_id' , $patient_id)
-            ->where('register_id_no', $case_no)
-            ->where('revenueID', $revenue_id)
-            ->update([
-                'ORNumber' => $ORNum,
-                'updatedBy' => Auth()->user()->idnumber,
-                'updated_at' => Carbon::now()
+                ->where('case_no', $case_no)
+                ->where('revenueID', $revenue_id)
+                ->update([
+                    'ORNumber' => $ORNum, 
+                    'updatedBy' => Auth()->user()->idnumber, 
+                    'updated_at' => Carbon::now()
             ]);
 
             if (!$update) {
@@ -114,7 +114,7 @@ class CashierController extends Controller
                             // 'CashAmount' => "TEST",
                             // 'CashTendered' => "TEST",
                             'UserID' => Auth()->user()->idnumber,
-                            // 'Status' => "TEST",
+                            'Status' => '', 
                             'Shift' => $shift,
                             'EncoderID' => Auth()->user()->idnumber,
                             'Hostname' => (new GetIP())->getHostname(),
@@ -154,6 +154,48 @@ class CashierController extends Controller
     {
         DB::beginTransaction();
         try {
+            $items = $request->items;
+            // foreach ($items as $item) {
+            //     $ORNumber = $item['ORNumber'];
+            //     $cancelDate = $item['CancelDate'];
+            //     $cancelReason = $item['CancelledReason'];
+            // }
+
+            return response()->json(['data' => $items], 200);
+
+            // $update = CashORMaster::where('RefNum', $ORNumber)
+            //     ->update([
+            //         'Status' => 'C',
+            //         'CancelDate' => $cancelDate,
+            //         'CancelledBy' => Auth()->user()->idnumber,
+            //         'CancelledReason' => $cancelReason,
+            // ]);
+
+            // if (!$update) {
+            //     throw new \Exception('Failed to cancel OR');
+            // } else {
+            //     $cashAssessment = CashAssessment::where('ORNumber', $ORNumber)->first();
+            //     if (!$cashAssessment) {
+            //         throw new \Exception('Cash Assessment not found');
+            //     }
+            //     $updateCashAssessment = CashAssessment::where('ORNumber', $ORNumber)
+            //         ->update([
+            //             'quantity' => -1,
+            //             'amount' => - $cashAssessment->amount * -1,
+            //             'recordStatus' => null,
+            //             'dateRevoked' => $cancelDate,
+            //             'revokedBy' => Auth()->user()->idnumber,
+            //     ]);
+
+            //     if (!$updateCashAssessment) {
+            //         throw new \Exception('Failed to update Cash Assessment');
+            //     } else {
+            //         // $insertBillingOut = BillingOutModel::create([
+            //         // ]);
+            //     }
+            //     DB::commit();
+            //     return response()->json(['message' => 'OR successfully cancelled'], 200);
+            // }
 
         } catch(\Exception $e) {
             DB::rollBack();

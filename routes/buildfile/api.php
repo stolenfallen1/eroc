@@ -646,6 +646,9 @@ Route::controller(TransactionCodesController::class)->group(function () {
     Route::post('add-revenue-access', 'add_revenue_access');
     Route::post('remove-revenue-access', 'remove_revenue_access');
 
+    // FOR HIS
+    Route::get('get-charges-specimen', 'chargespecimen');
+
 });
 Route::resource('database-drivers', DriverController::class);
 

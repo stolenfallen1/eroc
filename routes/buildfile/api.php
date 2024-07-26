@@ -432,6 +432,7 @@ Route::resource('save-user-information', UserController::class);
 
 Route::controller(RoleController::class)->group(function () {
     Route::get('get-role', 'list');
+    Route::get('get-inv-level', 'getlevel');
     Route::get('get-permissions', 'permission');
     Route::get('get-role-permission', 'role_permission');
 

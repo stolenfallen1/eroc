@@ -2,18 +2,21 @@
 
 namespace App\Helpers\SearchFilter\inventory;
 
-use App\Models\MMIS\Audit;
-use App\Models\MMIS\inventory\Consignment;
 use Carbon\Carbon;
+use App\Models\MMIS\Audit;
+use App\Helpers\ParentRole;
+use App\Models\MMIS\inventory\Consignment;
 
 class Consignments
 {
   protected $model;
   protected $authUser;
+  protected $role;
   public function __construct()
   {
     $this->model = Consignment::query();
     $this->authUser = auth()->user();
+    $this->role = new ParentRole();
   }
 
   public function searchable(){
@@ -27,7 +30,7 @@ class Consignments
   }
 
   public function byWarehouse(){
-    if($this->authUser->role->name == 'audit'){
+    if($this->role->audit()){
       $this->model->with(['warehouse', 'items', 'receiver', 'purchaseOrder' => function($q1){
         $q1->with(['deliveryItems' => function($q2){
           $q2->with('delivery.audit.user', 'item', 'unit')->whereHas('delivery', function($q3){

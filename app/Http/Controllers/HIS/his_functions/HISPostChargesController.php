@@ -4,8 +4,8 @@ namespace App\Http\Controllers\HIS\his_functions;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\HISBillingOut;
-use App\Models\BuildFile\HISChargeSequence;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +63,7 @@ class HISPostChargesController extends Controller
     {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first();
+            $chargeslip_sequence = SystemSequence::where('seq_prefix', 'gc')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
             }

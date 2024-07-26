@@ -12,5 +12,8 @@ class ExamSpecimenLaboratory extends Model
     protected $table = 'mscExamSpecimenLaboratory';
     protected $guarded = [];
     public $timestamps = false;
+    public function specimens() {
+        return $this->belongsTo(ExamSpecimens::class, 'specimen_id', 'id');
+    }
 }
 

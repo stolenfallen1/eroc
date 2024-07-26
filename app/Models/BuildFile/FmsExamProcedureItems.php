@@ -21,7 +21,7 @@ class FmsExamProcedureItems extends Model
     }
 
     public function prices(){
-        return $this->hasMany(FmsExamProcedureItemsPrice::class, 'med_item_id', 'map_item_id');
+        return $this->hasMany(FmsExamProcedureItemsPrice::class, 'map_item_id', 'map_item_id');
     }
 
     // FOR HIS

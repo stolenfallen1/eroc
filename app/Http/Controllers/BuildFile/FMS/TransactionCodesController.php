@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\BuildFile\FMS;
 
+use App\Models\HIS\his_functions\ExamSpecimenLaboratory;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\UserRevenueCodeAccess;
 use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\FmsExamProcedureItems;
+use Illuminate\Support\Facades\DB;
 
 class TransactionCodesController extends Controller
 {
@@ -163,5 +165,28 @@ class TransactionCodesController extends Controller
         $data['data'] = TransactionCodes::where('id', $id)->delete();
         $data['msg'] = 'Success';
         return Response()->json($data, 200);
+    }
+
+    /**
+     * FOR HIS CONTROLLERS
+     */
+
+    public function chargespecimen(Request $request) 
+    {
+        DB::beginTransaction();
+        try {
+            $exam_id = $request->query('map_item_id');
+            
+            $data = ExamSpecimenLaboratory::with('specimens')
+                ->where('exam_id', $exam_id)
+                ->get();
+
+            DB::commit();
+            return response()->json(['data' => $data], 200);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
     }
 }

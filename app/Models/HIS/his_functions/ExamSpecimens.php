@@ -13,6 +13,6 @@ class ExamSpecimens extends Model
     protected $guarded = [];
     public $timestamps = false;
     public function specimens() {
-        return $this->belongsTo(ExamSpecimenLaboratory::class, 'specimen_id', 'id');
+        return $this->belongsTo(ExamSpecimenLaboratory::class, 'id', 'specimen_id');
     }
 }

@@ -55,7 +55,8 @@ class User extends \TCG\Voyager\Models\User
         'createdby',
         'updatedby',
         'isonline',
-        'isactive'
+        'isactive',
+        'parent_role'
     ];
 
     /**
@@ -88,7 +89,7 @@ class User extends \TCG\Voyager\Models\User
 
     public function approvaldetail()
     {
-        return $this->hasOne(InvApprover::class, 'user_id', 'idnumber');
+        return $this->belongsTo(InvApprover::class, 'parent_role', 'id');
     }
     
     public function purchaseRequest()

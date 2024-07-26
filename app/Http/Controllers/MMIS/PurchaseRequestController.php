@@ -137,7 +137,8 @@ class PurchaseRequestController extends Controller
             }
             $pr = PurchaseRequest::updateOrCreate(
                 [
-                    'pr_Document_Number' => $number
+                    'pr_Document_Number' => $number,
+                    'branch_Id' => (int)$user->branch_id
                 ],
                 [
                 'branch_Id' => (int)$user->branch_id,

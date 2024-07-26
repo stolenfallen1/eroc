@@ -30,7 +30,7 @@ class ParentRole{
     }
 
     public function corp_admin(){
-        return $this->parent_role('COPORATE ADMINISTRATOR');
+        return $this->parent_role('CORPORATE ADMINISTRATOR');
     }
 
     public function president(){

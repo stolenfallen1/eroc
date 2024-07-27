@@ -90,7 +90,9 @@ class Deliveries
         });
       }
     }else{
-      $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
+
+      $warehouse_id = $this->authUser->departments ?? $this->authUser->warehouse_id;
+      $this->model->whereIn('rr_Document_Warehouse_Id', $warehouse_id)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
     }
   }
 

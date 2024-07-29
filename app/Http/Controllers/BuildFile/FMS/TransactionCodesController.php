@@ -171,6 +171,33 @@ class TransactionCodesController extends Controller
      * FOR HIS CONTROLLERS
      */
 
+    public function hischargeslist(Request $request) 
+    {
+        try {
+            $data = FmsExamProcedureItems::query();
+            $data->where('transaction_code', Request()->revenuecode);
+            if(Request()->chargecode){
+                $data->whereNotIn('map_item_id', Request()->chargecode);
+            }
+            if(Request()->keyword){
+                $data->where('exam_description','LIKE','%'.Request()->keyword.'%');
+            }
+            $data->with(['prices' => function ($q) {
+                $q->where('msc_price_scheme_id', Request()->patienttype);
+            }]);
+            $data->with(['sections' => function ($q) {
+                $q->where('transaction_code', Request()->revenuecode);
+                $q->where('barcodeid_prefix', '!=', null);
+            }]);
+
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500); 
+        }
+    }
+
     public function chargespecimen(Request $request) 
     {
         DB::beginTransaction();

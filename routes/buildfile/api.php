@@ -647,8 +647,8 @@ Route::controller(TransactionCodesController::class)->group(function () {
     Route::post('remove-revenue-access', 'remove_revenue_access');
 
     // FOR HIS
+    Route::post('get-his-charges', 'hischargeslist');
     Route::get('get-charges-specimen', 'chargespecimen');
-
 });
 Route::resource('database-drivers', DriverController::class);
 

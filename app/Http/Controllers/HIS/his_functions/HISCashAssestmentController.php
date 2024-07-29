@@ -77,6 +77,7 @@ class HISCashAssestmentController extends Controller
             $patient_name = $request->payload['patient_name'];
             $requesting_doctor_id = $request->payload['attending_doctor'];
             $requesting_doctor_name = $request->payload['attending_doctor_fullname'];
+            $barcode_prefix = $request->payload['barcode_prefix'];
             $transdate = Carbon::now();
             $refNum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
@@ -87,8 +88,37 @@ class HISCashAssestmentController extends Controller
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
                     $specimenId = $charge['specimen'];
                     $sequence = $revenueID . $chargeslip_sequence->seq_no;
+
+                    $barcode = $barcode_prefix . $sequence . $specimenId;
+                    $barcodeLength = strlen($barcode);
+                    switch ($barcodeLength) {
+                        case 4: 
+                            $barcode = 'XXXXXXXX' . $barcode;
+                            break;
+                        case 5:
+                            $barcode = 'XXXXXXX' . $barcode;
+                            break;
+                        case 6:
+                            $barcode = 'XXXXXX' . $barcode;
+                        case 7:
+                            $barcode = 'XXXXX' . $barcode;
+                            break;
+                        case 8:
+                            $barcode = 'XXXX' . $barcode;
+                            break;
+                        case 9: 
+                            $barcode = 'XXX' . $barcode;
+                        case 10: 
+                            $barcode = 'XX' . $barcode;
+                            break;
+                        case 11:
+                            $barcode = 'X' . $barcode;
+                            break;
+                    }
+
                     $refNum[] = $sequence;
                     CashAssessment::create([
+                        'branch_id' => 1,
                         'patient_id' => $patient_id,
                         'case_no' => $case_no,
                         'patient_name' => $patient_name,
@@ -105,6 +135,7 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorID' => $requesting_doctor_id,
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
+                        'Barcode' => $barcode,
                         'userId' => Auth()->user()->idnumber,
                         'hostname' => (new GetIP())->getHostname(),
                         'createdBy' => Auth()->user()->idnumber,
@@ -122,6 +153,7 @@ class HISCashAssestmentController extends Controller
                     $sequence = $revenueID . $chargeslip_sequence->seq_no;
                     $refNum[] = $sequence;
                     CashAssessment::create([
+                        'branch_id' => 1,
                         'patient_id' => $patient_id,
                         'case_no' => $case_no,
                         'patient_name' => $patient_name,

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\HIS\his_functions;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
-use App\Models\BuildFile\HISChargeSequence;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\CashAssessment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -63,10 +63,14 @@ class HISCashAssestmentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first();
+            $chargeslip_sequence = SystemSequence::where('code', 'GAN')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Charge Slip Sequence not found');
-            }
+            } 
+            $assessnum_sequence = SystemSequence::where('code', 'GRN')->first();
+            if (!$assessnum_sequence) {
+                throw new \Exception('Assessment Number Sequence not found');
+            } 
 
             $patient_id = $request->payload['patient_id'];
             $case_no = $request->payload['case_no'];
@@ -81,6 +85,7 @@ class HISCashAssestmentController extends Controller
                     $itemID = $charge['map_item_id'];
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
+                    $specimenId = $charge['specimen'];
                     $sequence = $revenueID . $chargeslip_sequence->seq_no;
                     $refNum[] = $sequence;
                     CashAssessment::create([
@@ -88,12 +93,14 @@ class HISCashAssestmentController extends Controller
                         'case_no' => $case_no,
                         'patient_name' => $patient_name,
                         'transdate' => $transdate,
+                        'assessnum' => $assessnum_sequence->seq_no,
                         'drcr' => 'C',
                         'revenueID' => $revenueID,
                         'itemID' => $itemID,
                         'quantity' => $quantity,
                         'refNum' => $sequence,
                         'amount' => $amount,
+                        'specimenId' => $specimenId,
                         'recordStatus' => 1,
                         'requestDoctorID' => $requesting_doctor_id,
                         'requestDoctorName' => $requesting_doctor_name,
@@ -119,6 +126,7 @@ class HISCashAssestmentController extends Controller
                         'case_no' => $case_no,
                         'patient_name' => $patient_name,
                         'transdate' => $transdate,
+                        'assessnum' => $assessnum_sequence->seq_no,
                         'drcr' => 'C',
                         'revenueID' => $revenueID,
                         'itemID' => $itemID,
@@ -137,7 +145,14 @@ class HISCashAssestmentController extends Controller
                 }
             }
 
-            $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
+            $chargeslip_sequence->update([
+                'seq_no' => $chargeslip_sequence->seq_no + 1,
+                'recent_generated' => $chargeslip_sequence->seq_no
+            ]);
+            $assessnum_sequence->update([
+                'seq_no' => $assessnum_sequence->seq_no + 1,
+                'recent_generated' => $assessnum_sequence->seq_no
+            ]);
             DB::commit();
             $data['charges'] = $this->history($patient_id, $case_no, 'all', $refNum);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
@@ -157,7 +172,7 @@ class HISCashAssestmentController extends Controller
                 $refNum = $item['refNum'];
                 $itemID = $item['itemID'];
 
-                $existingData = CashAssessment::where('patient_id', $patient_id)
+                $existingData = CashAssessment::where('patient_id', $patient_id) 
                     ->where('case_no', $case_no)
                     ->where('refNum', $refNum)
                     ->where('itemID', $itemID)

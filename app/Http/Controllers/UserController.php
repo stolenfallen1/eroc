@@ -42,6 +42,7 @@ class UserController extends Controller
                 'middlename' => 'nullable',
                 'birthdate' => 'required',
                 'role_id' => 'required',
+                'parent_role'=>'required',
                 'branch_id' => 'required',
             ]);
 
@@ -74,6 +75,7 @@ class UserController extends Controller
                     'idnumber' => $request->payload['idnumber'] ?? '',
                     'passcode' => $request->payload['passcode'] ?? '',
                     'isactive' => $request->payload['isactive'] ?? '',
+                    'parent_role' => $request->payload['parent_role'] ?? '',
                     'updatedby' => auth()->user()->idnumber,
                     'password' => bcrypt($request->payload['password']),
             ]);
@@ -141,6 +143,7 @@ class UserController extends Controller
                 'middlename' => 'nullable',
                 'birthdate' => 'required',
                 'role_id' => 'required',
+                'parent_role'=>'required',
                 'branch_id' => 'required',
             ]);
 
@@ -167,6 +170,7 @@ class UserController extends Controller
                     'idnumber' => $request->payload['idnumber'] ?? '',
                     'passcode' => $request->payload['passcode'] ?? '',
                     'isactive' => $request->payload['isactive'] ?? '',
+                    'parent_role' => $request->payload['parent_role'] ?? '',
                     'updatedby' => Auth()->user()->idnumber,
                     'password' => isset($request->payload['password']) ? bcrypt($request->payload['password']) : $user->password,
                 ]);

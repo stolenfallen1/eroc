@@ -76,7 +76,7 @@ class EmployeeTbcMaster extends Controller
     public function getEmployeeTardiness() {
         try {
             $userRequest = $this->getUserRequest();
-            $employeeTardySummary           =   DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $employeeTardySummary           =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($employeeTardySummary)) {
                 return response()->json([], 200);
             }

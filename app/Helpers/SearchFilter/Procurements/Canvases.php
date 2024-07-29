@@ -2,18 +2,22 @@
 
 namespace App\Helpers\SearchFilter\Procurements;
 
-use App\Models\MMIS\procurement\CanvasMaster;
 use Carbon\Carbon;
+use App\Helpers\ParentRole;
+use App\Models\MMIS\procurement\CanvasMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
 
 class Canvases
 {
   protected $model;
   protected $authUser;
+  protected $role;
+
   public function __construct()
   {
     $this->model = CanvasMaster::query();
     $this->authUser = auth()->user();
+    $this->role = new ParentRole();
   }
 
   public function searchable(){
@@ -33,9 +37,9 @@ class Canvases
   }
   
   private function byBranch(){
-    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' ||  $this->authUser->role->name == 'consultant' || $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
+    if($this->role->department_head() || $this->role->staff()  ||  $this->role->consultant() || $this->role->administrator() || $this->authUser->role->name == '')
     {
-      $this->model->where('branch_Id', $this->authUser->branch_id);
+      $this->model->where('canvas_Branch_Id', $this->authUser->branch_id);
     }
   }
 
@@ -95,14 +99,14 @@ class Canvases
   }
 
   private function forApproval(){
-    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff'){
+    if($this->role->department_head() || $this->role->staff() ){
 
       $this->model->where('warehouse_Id', $this->authUser->warehouse_id)
       ->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
 
       $this->model->with('purchaseRequestDetails.itemMaster');
 
-    }else if( $this->authUser->role->name == 'administrator' ){
+    }else if( $this->role->administrator() ){
       
       $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
       ->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('invgroup_id', '!=', 2);
@@ -111,7 +115,7 @@ class Canvases
         $q->with('itemMaster')->where('pr_DepartmentHead_ApprovedBy', '!=', null);
       }]);
 
-    }else if( $this->authUser->role->name == 'consultant' ){
+    }else if( $this->role->consultant() ){
 
       $this->model->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level1_CancelledBy' => null])
       ->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where('invgroup_id', 2);

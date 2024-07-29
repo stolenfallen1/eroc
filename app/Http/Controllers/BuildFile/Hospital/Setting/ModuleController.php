@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use TCG\Voyager\Models\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Hospital\Setting\Module;
+use App\Models\BuildFile\Hospital\Setting\SystemSidebar;
 use App\Models\Database\Database;
 
 class ModuleController extends Controller
@@ -30,6 +31,17 @@ class ModuleController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
+    public function getSidebar()
+    {
+        try {
+            $data = SystemSidebar::get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 200);
+        }
+    }
+
     public function list()
     {
         try {

@@ -8,6 +8,19 @@ use Illuminate\Http\Request;
 
 class StatusController extends Controller
 {
+    public function his_status() 
+    {
+        try {
+            $data = Status::query();
+            $data->where('isActive', 1);
+            $data->where('subsystem_id', 2);
+            
+            return response()->json($data->get(), 200);
+
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
     public function index()
     {
         try {

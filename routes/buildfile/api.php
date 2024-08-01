@@ -522,6 +522,9 @@ Route::controller(CivilStatusController::class)->group(function () {
 
 Route::resource('civil-status', CivilStatusController::class);
 Route::resource('statuses', StatusController::class);
+Route::controller(StatusController::class)->group(function () {
+    Route::get('get-his-status', 'his_status');
+});
 Route::resource('patient-relations', PatientRelationsController::class);
 
 

@@ -20,13 +20,13 @@ class OutpatientRegistrationController extends Controller
             $today = Carbon::now()->format('Y-m-d');
             
             $data->whereHas('patientRegistry', function($query) use ($today) {
-                $query->where('mscAccount_trans_types', 1); 
+                $query->where('mscAccount_trans_types', 2); 
                 $query->where('isRevoked', 0);
-                // $query->whereDate('registry_date', $today)
-                //     ->where(function($q) use ($today) {
-                //         $q->whereNull('discharged_date')
-                //             ->orWhereDate('discharged_date', '>=', $today);
-                // });
+                $query->whereDate('registry_date', $today)
+                    ->where(function($q) use ($today) {
+                        $q->whereNull('discharged_date')
+                            ->orWhereDate('discharged_date', '>=', $today);
+                });
 
                 if(Request()->keyword) {
                     $query->where(function($subQuery) {
@@ -143,14 +143,14 @@ class OutpatientRegistrationController extends Controller
             $patientRegistry = PatientRegistry::updateOrCreate(
                 [
                     'patient_id' => $patient_id,
-                    'register_id_no' => $registry_id,
+                    'case_no' => $registry_id,
                 ],
                 [
                     'branch_id' => $request->payload['mscBranches_id'] ?? 1,
-                    'register_id_no' =>  $registry_id ?? null,
+                    'case_no' =>  $registry_id ?? null,
                     'register_source' => $request->payload['register_source'] ?? null,
                     'register_type' => $request->payload['register_type'] ?? null, 
-                    'register_source_case_no' => $request->payload['register_source_case_no'] ?? null,
+                    'patient_age' => $request->payload['age'] ?? null,
                     'mscAccount_type' => $request->payload['mscAccount_type'] ?? 1,
                     'mscAccount_discount_id' => $request->payload['mscAccount_discount_id'] ?? null,
                     'mscAccount_trans_types' => $request->payload['mscAccount_trans_types'], 
@@ -222,7 +222,6 @@ class OutpatientRegistrationController extends Controller
                     'isRadioTherapy' => $isRadioTherapy,
                     'attending_doctor' => $request->payload['selectedConsultant'][0]['attending_doctor'] ?? null,
                     'attending_doctor_fullname' => $request->payload['selectedConsultant'][0]['attending_doctor_fullname'] ?? null,
-                    'mscAdmResults' => $request->payload['mscAdmResults'] ?? null,
                     'bmi' => $request->payload['bmi'] ?? null,
                     'weight' => $request->payload['weight'] ?? null,
                     'weightUnit' => $request->payload['weightUnit'] ?? null,

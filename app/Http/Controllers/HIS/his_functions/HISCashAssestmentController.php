@@ -77,6 +77,7 @@ class HISCashAssestmentController extends Controller
             $patient_name = $request->payload['patient_name'];
             $requesting_doctor_id = $request->payload['attending_doctor'];
             $requesting_doctor_name = $request->payload['attending_doctor_fullname'];
+            $record_status = $request->payload['status'];;
             $transdate = Carbon::now();
             $refNum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
@@ -135,7 +136,7 @@ class HISCashAssestmentController extends Controller
                         'refNum' => $sequence,
                         'amount' => $amount,
                         'specimenId' => $specimenId,
-                        'recordStatus' => 1,
+                        'recordStatus' => $record_status,
                         'requestDoctorID' => $requesting_doctor_id,
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
@@ -169,7 +170,7 @@ class HISCashAssestmentController extends Controller
                         'quantity' => $quantity,
                         'refNum' => $sequence,
                         'amount' => $amount,
-                        'recordStatus' => 1,
+                        'recordStatus' => $record_status,
                         'requestDoctorID' => $requesting_doctor_id,
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
@@ -226,7 +227,7 @@ class HISCashAssestmentController extends Controller
                         'quantity' => -1,
                         'refNum' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
-                        'recordStatus' => null,
+                        'recordStatus' => $existingData->recordStatus,
                         'requestDoctorID' => $existingData->requestDoctorID,
                         'requestDoctorName' => $existingData->requestDoctorName,
                         'departmentID' => $existingData->departmentID,

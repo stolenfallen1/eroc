@@ -2,6 +2,7 @@
 
 namespace App\Models\HIS\services;
 
+use App\Models\HIS\his_functions\HospitalPatientCategories;
 use App\Models\HIS\services\Patient;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\FMS\AccountType;
@@ -12,6 +13,7 @@ use App\Models\BuildFile\PriceGroup;
 use App\Models\BuildFile\PriceScheme;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PatientRegistry extends Model
 {
@@ -44,5 +46,8 @@ class PatientRegistry extends Model
     }
     public function doctor() {
         return $this->belongsTo(Doctor::class, 'attending_doctor', 'id');
+    }
+    public function patientCategory() {
+        return $this->belongsTo(HospitalPatientCategories::class, 'mscPatient_Category', 'id');
     }
 }

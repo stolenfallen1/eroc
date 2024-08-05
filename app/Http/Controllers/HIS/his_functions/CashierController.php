@@ -127,7 +127,7 @@ class CashierController extends Controller
                         $amount = floatval(str_replace([',', '₱'], '', $item['amount']));
                         BillingOutModel::create([
                             'pid' => $patient_id,
-                            'case_no' => 'CASH',
+                            'case_no' => $case_no,
                             'transDate' => $transDate,
                             'msc_price_scheme_id' => 1,
                             'revenue_id' => $revenue_id,
@@ -234,7 +234,11 @@ class CashierController extends Controller
                 if (!$cashAssessment) { 
                     throw new \Exception('Cash Assessment not found');
                 } else {
-                    $updateCashAssessment = CashAssessment::where('ORNumber', $ORNumber)->update(['recordStatus' => '']);
+                    $updateCashAssessment = CashAssessment::where('ORNumber', $ORNumber)
+                        ->update([
+                            'recordStatus' => '',
+                            'ORNumber' => '',
+                        ]);
                     if (!$updateCashAssessment) {
                         DB::connection('sqlsrv_billingOut')->rollBack();
                         throw new \Exception('Failed to update Cash Assessment');

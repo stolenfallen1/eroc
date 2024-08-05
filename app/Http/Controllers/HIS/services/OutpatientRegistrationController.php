@@ -51,8 +51,9 @@ class OutpatientRegistrationController extends Controller
     public function register(Request $request) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
+            $today = Carbon::now();
             $sequence = SystemSequence::where('code','MPID')->first();
-            $registry_sequence = SystemSequence::where('code','MPRID')->first();
+            $registry_sequence = SystemSequence::where('code','MOPD')->first();
             if (!$sequence || !$registry_sequence) {
                 throw new \Exception('Sequence not found');
             }
@@ -71,10 +72,12 @@ class OutpatientRegistrationController extends Controller
             $isPAD = ($patientIdentifier === "PAD Patient") ? true : false;
             $isRadioTherapy = ($patientIdentifier === "Radio Patient") ? true : false;
 
-            $existingPatient = Patient::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->first();
+            $existingPatient = Patient::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->where('birthdate', $request->payload['birthdate'])->first();
             if ($existingPatient) {
                 $patient_id = $existingPatient->patient_id;
+                $patient_category = 3;
             } else {
+                $patient_category = 2;
                 $patient_id = $sequence->seq_no;
                 $sequence->update([
                     'seq_no' => $sequence->seq_no + 1,
@@ -86,6 +89,7 @@ class OutpatientRegistrationController extends Controller
                 [
                     'lastname' => $request->payload['lastname'],
                     'firstname' => $request->payload['firstname'], 
+                    'birthdate' => $request->payload['birthdate'],
                 ],
                 [
                     'patient_id' => $patient_id,
@@ -140,21 +144,23 @@ class OutpatientRegistrationController extends Controller
                     'updated_at' => Carbon::now(),
                 ]
             );
-            $patientRegistry = PatientRegistry::updateOrCreate(
-                [
+
+            $existingRegistry = PatientRegistry::where('patient_id', $patient_id)
+                ->whereDate('created_at', $today)
+                ->exists();
+
+            if (!$existingRegistry) {
+                $patientRegistry = PatientRegistry::create([
                     'patient_id' => $patient_id,
                     'case_no' => $registry_id,
-                ],
-                [
                     'branch_id' => $request->payload['mscBranches_id'] ?? 1,
-                    'case_no' =>  $registry_id ?? null,
                     'register_source' => $request->payload['register_source'] ?? null,
                     'register_type' => $request->payload['register_type'] ?? null, 
                     'patient_age' => $request->payload['age'] ?? null,
                     'mscAccount_type' => $request->payload['mscAccount_type'] ?? 1,
                     'mscAccount_discount_id' => $request->payload['mscAccount_discount_id'] ?? null,
                     'mscAccount_trans_types' => $request->payload['mscAccount_trans_types'], 
-                    'mscPatient_category' => $request->payload['mscPatient_category'] ?? null,
+                    'mscPatient_category' => $patient_category,
                     'mscPrice_Groups' => $request->payload['mscPrice_Groups'],
                     'mscPrice_Schemes' => $request->payload['mscPrice_Schemes'],
                     'mscService_type' => $request->payload['mscService_type'] ?? null,
@@ -200,7 +206,7 @@ class OutpatientRegistrationController extends Controller
                     'Medical_Package_id' => $request->payload['Medical_Package_id'] ?? null,
                     'Medical_Package_name' => $request->payload['Medical_Package_name'] ?? null,
                     'Medical_Package_amount' => $request->payload['Medical_Package_amount'] ?? null,
-                    'clinical_chief_complaint' => $request->payload['clinical_chief_complaint'] ?? null,
+                    'chief_complaint_description' => $request->payload['chief_complaint_description'] ?? null,
                     'impression' => $request->payload['impression'] ?? null,
                     'isCriticallyIll' => $request->payload['isCriticallyIll'] ?? false,
                     'illness_type' => $request->payload['illness_type'] ?? null,
@@ -240,19 +246,18 @@ class OutpatientRegistrationController extends Controller
                     'registry_remarks' => $request->payload['registry_remarks'] ?? null, 
                     'CreatedBy' => Auth()->user()->idnumber,
                     'created_at' => Carbon::now(),
-                    'UpdatedBy' => Auth()->user()->idnumber,
-                    'updated_at' => Carbon::now(),
-                ]
-            );
+                ]);
+            } else {
+                throw new \Exception('Patient already registered today');
+            }
+
             if (!$patient || !$patientRegistry) {
-                DB::connection('sqlsrv_patient_data')->rollBack();
                 throw new \Exception('Failed to register outpatient data');
             } else {
                 $registry_sequence->update([
                     'seq_no' => $registry_sequence->seq_no + 1,
                     'recent_generated' => $registry_sequence->seq_no,
                 ]);
-    
                 DB::connection('sqlsrv_patient_data')->commit();
                 return response()->json([
                     'message' => 'Outpatient data registered successfully',
@@ -344,7 +349,6 @@ class OutpatientRegistrationController extends Controller
                 'mscAccount_type' => $request->payload['mscAccount_type'] ?? $patientRegistry->mscAccount_type,
                 'mscAccount_discount_id' => $request->payload['mscAccount_discount_id'] ?? $patientRegistry->mscAccount_discount_id,
                 'mscAccount_trans_types' => $request->payload['mscAccount_trans_types'] ?? $patientRegistry->mscAccount_trans_types,  
-                'mscPatient_category' => $request->payload['mscPatient_category'] ?? $patientRegistry->mscPatient_category,
                 'mscPrice_Groups' => $request->payload['mscPrice_Groups'] ?? $patientRegistry->mscPrice_Groups,
                 'mscPrice_Schemes' => $request->payload['mscPrice_Schemes'] ?? $patientRegistry->mscPrice_Schemes,
                 'mscService_type' => $request->payload['mscService_type'] ?? $patientRegistry->mscService_type,
@@ -396,7 +400,7 @@ class OutpatientRegistrationController extends Controller
                 'Medical_Package_id' => $request->payload['Medical_Package_id'] ?? $patientRegistry->Medical_Package_id,
                 'Medical_Package_name' => $request->payload['Medical_Package_name'] ?? $patientRegistry->Medical_Package_name,
                 'Medical_Package_amount' => $request->payload['Medical_Package_amount'] ?? $patientRegistry->Medical_Package_amount,
-                'clinical_chief_complaint' => $request->payload['clinical_chief_complaint'] ?? $patientRegistry->clinical_chief_complaint,
+                'chief_complaint_description' => $request->payload['chief_complaint_description'] ?? $patientRegistry->chief_complaint_description,
                 'impression' => $request->payload['impression'] ?? $patientRegistry->impression,
                 'isCriticallyIll' => $request->payload['isCriticallyIll'] ?? $patientRegistry->isCriticallyIll,
                 'illness_type' => $request->payload['illness_type'] ?? $patientRegistry->illness_type,

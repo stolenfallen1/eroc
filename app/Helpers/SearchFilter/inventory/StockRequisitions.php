@@ -2,19 +2,23 @@
 
 namespace App\Helpers\SearchFilter\inventory;
 
-use App\Models\MMIS\inventory\StockRequisition;
-use App\Models\MMIS\inventory\StockTransfer;
+use App\Helpers\ParentRole;
 use Illuminate\Support\Facades\Auth;
+use App\Models\MMIS\inventory\StockTransfer;
+use App\Models\MMIS\inventory\StockRequisition;
 
 class StockRequisitions
 {
   protected $model;
   protected $authUser;
+  protected $role;
+
 
   public function __construct()
   {
     $this->model = StockRequisition::query();
     $this->authUser = auth()->user();
+    $this->role = new ParentRole();
   }
 
   public function searchable()
@@ -62,16 +66,16 @@ class StockRequisitions
   }
 
   private function forApproval(){
-    if($this->authUser->role->name == 'department head'){
+    if($this->role->department_head()){
       $this->model->whereHas('items', function($q1){
         $q1->where(['department_head_declined_by' => null, 'department_head_approved_by' => null]);
       })->where(['sender_branch_id' => $this->authUser->branch_id])
       ->whereIn('sender_warehouse_id', $this->authUser->departments);
-    }elseif ($this->authUser->role->name == 'administrator') {
+    }elseif ($this->role->administrator()) {
       $this->model->whereHas('items', function($q1){
         $q1->whereNotNull('department_head_approved_by')->where(['administrator_approved_by' => null, 'administrator_declined_by' => null]);
       })->where('sender_branch_id', $this->authUser->branch_id);
-    }elseif ($this->authUser->role->name == 'corporate admin') {
+    }elseif ($this->role->corp_admin()) {
       $this->model->where('is_inter_branch', 1)
       ->whereHas('items', function($q1){
         $q1->whereNotNull('administrator_approved_by')->where(['corporate_admin_approved_by' => null, 'corporate_admin_declined_by' => null]);

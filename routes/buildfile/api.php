@@ -432,6 +432,7 @@ Route::resource('save-user-information', UserController::class);
 
 Route::controller(RoleController::class)->group(function () {
     Route::get('get-role', 'list');
+    Route::get('get-inv-level', 'getlevel');
     Route::get('get-permissions', 'permission');
     Route::get('get-role-permission', 'role_permission');
 
@@ -457,7 +458,9 @@ Route::controller(ModuleController::class)->group(function () {
     Route::get('module-list', 'list');
     Route::get('get-system-modules', 'systemModule');
     Route::get('systems-drivers', 'systemsdriver');
+    Route::get('systems-sidebar', 'getSidebar');
 });
+
 
 
 Route::resource('system-modules', ModuleController::class);
@@ -519,6 +522,9 @@ Route::controller(CivilStatusController::class)->group(function () {
 
 Route::resource('civil-status', CivilStatusController::class);
 Route::resource('statuses', StatusController::class);
+Route::controller(StatusController::class)->group(function () {
+    Route::get('get-his-status', 'his_status');
+});
 Route::resource('patient-relations', PatientRelationsController::class);
 
 
@@ -644,8 +650,8 @@ Route::controller(TransactionCodesController::class)->group(function () {
     Route::post('remove-revenue-access', 'remove_revenue_access');
 
     // FOR HIS
+    Route::post('get-his-charges', 'hischargeslist');
     Route::get('get-charges-specimen', 'chargespecimen');
-
 });
 Route::resource('database-drivers', DriverController::class);
 

@@ -3,18 +3,23 @@
 namespace App\Helpers\SearchFilter\Procurements;
 
 use Carbon\Carbon;
-use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Helpers\ParentRole;
 use Illuminate\Support\Facades\DB;
+use App\Models\MMIS\procurement\PurchaseRequest;
 
 class PurchaseRequests
 {
   protected $model;
   protected $authUser;
+  protected $role;
+
   public function __construct()
   {
     $this->model = PurchaseRequest::query();
     // $this->model = DB::connection('sqlsrv_mmis')->table('purchaseRequestMaster');
     $this->authUser = auth()->user();
+    $this->role = new ParentRole();
+  
   }
 
   public function searchable(){
@@ -57,11 +62,11 @@ class PurchaseRequests
   
   // $this->authUser->role->name == 'consultant' ||
   private function byBranch(){
-    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || $this->authUser->role->name == 'administrator' || $this->authUser->role->name == '')
+    if($this->role->department_head() || $this->role->staff())
     {
       $this->model->where('branch_Id', $this->authUser->branch_id);
     }
-    else if($this->authUser->role->name == 'consultant'){
+    else if($this->role->consultant()){
    
         $branch = Request()->branch == 1 ? $this->authUser->branch_id : Request()->branch;
         if(Request()->branch){
@@ -82,11 +87,16 @@ class PurchaseRequests
       $this->model->where('warehouse_Id',Request()->department);
     }else{
       if($this->authUser->branch_id != 1 && $this->authUser->isDepartmentHead && $this->authUser->isConsultant){
+        // $this->model->whereIn('warehouse_Id', $this->authUser->departments);
+      }
+
+      if($this->role->department_head() || $this->role->staff()){
         $this->model->whereIn('warehouse_Id', $this->authUser->departments);
       }
-      if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
-        $this->model->whereIn('warehouse_Id', $this->authUser->departments);
-      }
+      
+    }
+    if($this->role->department_head() || $this->role->staff()){
+      $this->model->whereIn('warehouse_Id', $this->authUser->departments);
     }
   }
 
@@ -149,7 +159,7 @@ class PurchaseRequests
   }
 
   private function byUser(){
-    if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+    if($this->role->staff() || $this->role->department_head()){
       $this->model->where('branch_Id', $this->authUser->branch_id)->whereIn('warehouse_Id', $this->authUser->departments);
     }
   }
@@ -199,7 +209,7 @@ class PurchaseRequests
   }
 
   private function forApproval(){
-    if($this->authUser->role->name == 'department head' || $this->authUser->role->name == 'staff' || $this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
+    if($this->role->department_head() || $this->role->staff()){
       $this->model->whereIn('warehouse_Id', $this->authUser->departments)
       ->whereHas('purchaseRequestDetails', function($q1){
         $q1->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
@@ -207,11 +217,10 @@ class PurchaseRequests
 
       $this->model->with('purchaseRequestDetails.itemMaster');
 
-    }else if( $this->authUser->role->name == 'administrator' ){
+    }else if( $this->role->administrator() || $this->role->corp_admin() ){
       if($this->authUser->branch_id != '1'){
         $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null);
       }else{
-
         $this->model->whereNull('pr_Branch_Level2_ApprovedBy');
         $this->model->whereNull('pr_Branch_Level1_CancelledBy');
         $this->model->whereNull('ismedicine');
@@ -224,7 +233,7 @@ class PurchaseRequests
         $q->with('itemMaster')->where('pr_DepartmentHead_ApprovedBy', '!=', null);
       }]);
 
-    }else if( $this->authUser->role->name == 'consultant'){
+    }else if( $this->role->consultant()){
       if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
         if(Request()->branch == '1'){
           $this->model->whereIn('warehouse_Id', $this->authUser->departments)
@@ -272,7 +281,7 @@ class PurchaseRequests
       });
     }]);
    
-    if($this->authUser->role->name == 'administrator'){
+    if($this->role->administrator()){
       $this->model->where('pr_DepartmentHead_ApprovedBy', '!=', null);
     }else{
       if($this->authUser->isDepartmentHead && $this->authUser->isConsultant){
@@ -354,7 +363,7 @@ class PurchaseRequests
       $this->model->where('branch_id', $this->authUser->branch_id);
     }
 
-    if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
+    if($this->role->staff() || $this->role->department_head()){
       $this->model->where('isPerishable', 1);
     }else{
       $this->model->where(function($q2){
@@ -443,7 +452,7 @@ class PurchaseRequests
       })->whereDoesntHave('purchaseOrderDetails');
     });
     if($this->authUser->branch_id != 1) $this->model->where('branch_id', $this->authUser->branch_id);
-    if($this->authUser->role->name == 'dietary' || $this->authUser->role->name == 'dietary head'){
+    if($this->role->staff() || $this->role->department_head()){
       $this->model->where('isPerishable', 1);
     }else{
       $this->model->where(function($q){
@@ -457,14 +466,14 @@ class PurchaseRequests
   }
 
   public function forDeclinedPr(){
-    if($this->authUser->role->name == 'administrator'){
+    if($this->role->administrator()){
       $this->model->with(['purchaseRequestDetails' => function($q1){
         $q1->with('itemMaster')->whereNotNull('pr_Branch_Level1_CancelledBy');
       }])->whereHas('purchaseRequestDetails', function($q){
         $q->where('pr_Branch_Level1_CancelledBy', $this->authUser->idnumber);
       });
     }
-    else if ($this->authUser->role->name == 'department head'){
+    else if ($this->role->department_head()){
       $this->model->with(['purchaseRequestDetails' => function($q1){
         $q1->with('itemMaster')->whereNotNull('pr_DepartmentHead_CancelledBy');
       }])->whereHas('purchaseRequestDetails', function($q){
@@ -472,14 +481,14 @@ class PurchaseRequests
         $q->whereNotNull('pr_DepartmentHead_CancelledBy');
       });
     }
-    else if ($this->authUser->role->name == 'consultant'){
+    else if ($this->role->consultant()){
       $this->model->with(['purchaseRequestDetails' => function($q1){
         $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy');
       }])->whereHas('purchaseRequestDetails', function($q){
         $q->where('pr_Branch_Level2_CancelledBy', $this->authUser->idnumber);
       });
     }else{
-      if($this->authUser->role->name == 'staff' || $this->authUser->role->name == 'department head'){
+      if($this->role->staff() || $this->role->department_head()){
         $this->model->with(['purchaseRequestDetails' => function($q1){
           $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy')
           ->orWhereNotNull('pr_DepartmentHead_CancelledBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy');

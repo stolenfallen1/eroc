@@ -34,7 +34,7 @@ class Permission extends Model
     public static function generateFor($table_name, $table_driver = null, $module_id = null, $sub_module_id = null, $module_name = null, $sidebar_group_id = null)
     {
 
-        $actions = ['browse_', 'read_', 'edit_', 'add_', 'delete_', 'print_', 'post_', 'approved_'];
+        $actions = ['browse_', 'read_', 'edit_', 'add_', 'delete_', 'print_', 'post_', 'approved_', 'consignment_', 'void_'];
         $permissions = self::where(['module_id' => $module_id, 'sub_module_id' => $sub_module_id])->get();
 
         foreach ($actions as $key => $action) {

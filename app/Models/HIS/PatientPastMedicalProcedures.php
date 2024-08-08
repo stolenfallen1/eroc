@@ -3,6 +3,7 @@
 namespace App\Models\HIS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\HIS\services\Patient;
 use Illuminate\Database\Eloquent\Model;
 
 class PatientPastMedicalProcedures extends Model
@@ -12,7 +13,4 @@ class PatientPastMedicalProcedures extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastMedicalProcedures';
     protected $guarded = [];
     // protected $with = [''];
-    public function patient_registry() {
-        return $this->belongsTo(PatientRegistry::class, 'patient_Id', 'patient_Id');
-    }
 }

@@ -15,6 +15,14 @@ use App\Models\BuildFile\Hospital\DeathType;
 use App\Models\BuildFile\Hospital\Nationalities;
 use App\Models\BuildFile\Hospital\Religions;
 use App\Models\BuildFile\Hospital\Sex;
+use App\Models\HIS\PatientAdministeredMedicines;
+use App\Models\HIS\PatientHistory;
+use App\Models\HIS\PatientImmunizations;
+use App\Models\HIS\PatientMedicalProcedures;
+use App\Models\HIS\PatientPastImmunizations;
+use App\Models\HIS\PatientPastMedicalHistory;
+use App\Models\HIS\PatientPastMedicalProcedures;
+use App\Models\HIS\PatientVitalSigns;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -67,5 +75,14 @@ class Patient extends Model
     }
     public function branch() {
         return $this->belongsTo(Branchs::class, 'branch_id', 'id');
+    }
+    public function past_immunization() {
+        return $this->belongsTo(PatientPastImmunizations::class, 'patient_Id', 'patient_Id');
+    }
+    public function past_medical_history() {
+        return $this->belongsTo(PatientPastMedicalHistory::class, 'patient_Id', 'patient_Id');
+    }
+    public function past_medical_procedures() {
+        return $this->belongsTo(PatientPastMedicalProcedures::class, 'patient_Id', 'patient_Id');
     }
 }

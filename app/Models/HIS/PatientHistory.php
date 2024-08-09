@@ -10,7 +10,7 @@ class PatientHistory extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'CDG_PATIENT_DATA.dbo.PatientImmunizations';
+    protected $table = 'CDG_PATIENT_DATA.dbo.PatientHistory';
     protected $guarded = [];
     // protected $with = [''];
 }

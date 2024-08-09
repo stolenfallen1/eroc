@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\HIS\BillingOutModel;
 use App\Models\HIS\his_functions\CashAssessment;
+use App\Models\HIS\his_functions\CashierPaymentCode;
 use App\Models\HIS\his_functions\CashORMaster;
 use App\Models\HIS\his_functions\CashReceiptTerminal;
 use Auth;
@@ -274,6 +275,16 @@ class CashierController extends Controller
 
         } catch(\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getpaymentcode() 
+    {
+        try {
+            $data = CashierPaymentCode::get();
+            return response()->json($data, 200);
+        } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

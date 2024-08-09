@@ -20,9 +20,10 @@ Route::controller(HISCashAssestmentController::class)->group(function () {
 });
 
 Route::controller(CashierController::class)->group(function () {
-    Route::post('cashier-settings', 'cashiersettings');
     Route::get('get-charge-item', 'populatechargeitem');
-    Route::post('save-payment', 'save');
     Route::get('get-ornumber', 'getOR');
+    Route::get('get-payment-codes', 'getpaymentcode');
+    Route::post('cashier-settings', 'cashiersettings');
+    Route::post('save-payment', 'save');
     Route::put('cancel-ornumber', 'cancelOR');
 });

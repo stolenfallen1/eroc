@@ -77,13 +77,16 @@ class PurchaseOrders
   private function byDepartment(){
     if(Request()->department){
       if($this->role->staff() || $this->role->department_head()){
-        $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
+        // $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
+        $this->model->whereIn('po_Document_warehouse_id', $this->authUser->departments);
       }else{
         $this->model->where('po_Document_warehouse_id', Request()->department);
       }
     }else{
       if($this->role->staff() || $this->role->department_head()){
-        $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
+        // $this->model->where('po_Document_warehouse_id',$this->authUser->warehouse_id);
+        
+        $this->model->whereIn('po_Document_warehouse_id', $this->authUser->departments);
       }
     }
     // $role_name = ['comptroller', 'administrator','president','corporate admin','purchaser'];

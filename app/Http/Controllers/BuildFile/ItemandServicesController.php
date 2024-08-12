@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\BuildFile;
 
+use App\Helpers\SearchFilter\ItemLocation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,11 +20,14 @@ use App\Models\MMIS\inventory\ItemBatchModelMaster;
 
 class ItemandServicesController extends Controller
 {
+    public function indexLocation()
+    {
+        return (new ItemLocation)->searchable();
+    }
     public function index()
     {
         return (new Items)->searchable();
     }
-
     
     public function checkNameDuplication(Request $request)
     {

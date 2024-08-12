@@ -18,7 +18,8 @@ use App\Models\MMIS\inventory\ItemBatchModelMaster;
 class BatchController extends Controller
 {
     public function getItemBatchs(){
-        $batchs = ItemBatchModelMaster::with('unit')->where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => Request()->item_id])
+        $warehouse_id = Request()->warehouse_Id ?? Auth::user()->warehouse_id;
+        $batchs = ItemBatchModelMaster::with('unit')->where(['warehouse_id' => $warehouse_id, 'item_Id' => Request()->item_id])
             ->where('isConsumed', '!=', 1)->get();
 
         return response()->json(["batchs" => $batchs], 200);

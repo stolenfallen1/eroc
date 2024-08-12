@@ -231,7 +231,7 @@ class PatientRegistrationController extends Controller
                 'mscPrice_Groups' => $request->patient_registry['registry_info']['mscPrice_Groups'] ?? '',
                 'mscAccount_trans_types' => $request->patient_registry['registry_info']['mscAccount_trans_types'] ?? '',
                 'register_type' => $request->patient_registry['registry_info']['register_type'] ?? '',
-                'mscAccount_Type' => $request->patient_registry['registry_info']['mscAccount_type'] ?? '',
+                'mscAccount_type' => $request->patient_registry['registry_info']['mscAccount_type'] ?? '',
                 'guarantor_id' => $account,
                 'guarantor_name' => $guarantor_name,
                 'guarantor_approval_code' => $guarantor_code,

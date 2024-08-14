@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\HIS\mscPatientBroughtBy;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\OldMMIS\Branch;
@@ -21,6 +22,7 @@ use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
+use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 
 
 /*
@@ -260,4 +262,4 @@ Route::group(['middleware' => 'admin.user'], function () {
 //     // })->where('any', '.*');
 // });
 
-Route::get('/department/department-employee',                   [DepartmentTbcMaster::class,    'getDeptEmployee']);
+Route::get('/get-msc-complaint',                   [EmergencyRegistrationController::class,    'getComplaintList']);

@@ -196,7 +196,7 @@ class PurchaseOrderController extends Controller
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;
                 
-                $checkPO = purchaseOrderMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('po_Document_vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                $checkPO = purchaseOrderMaster::whereNull('comptroller_approved_by')->where('pr_request_id',$purchase_order['pr_request_id'])->where('po_Document_vendor_id',$purchase_order['po_Document_vendor_id'])->first();
                 if ($checkPO) {
                     $number = $checkPO->po_Document_number;
                 }
@@ -230,7 +230,7 @@ class PurchaseOrderController extends Controller
                         return round($item['recommended_canvas']['canvas_item_net_amount'], 4);
                     }, $purchase_order['items']));
                 }
-                $po = purchaseOrderMaster::updateOrCreate(
+                $po = purchaseOrderMaster::whereNull('comptroller_approved_by')->updateOrCreate(
                     [
                         'pr_request_id' => $purchase_order['pr_request_id'],
                         'po_Document_vendor_id' => $purchase_order['po_Document_vendor_id'],

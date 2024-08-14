@@ -2,37 +2,38 @@
 
 namespace App\Helpers\SearchFilter;
 
-use App\Models\BuildFile\Itemcategories;
+use App\Models\BuildFile\Warehouses;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
+use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\Warehouseitems;
-use App\Models\BuildFile\Warehouses;
+use App\Models\BuildFile\ItemMasterByLocation;
 
-class Items
+class ItemLocation
 {
   protected $model;
   public function __construct()
   {
-    $this->model = Itemmasters::query();
+    $this->model = ItemMasterByLocation::query();
   }
 
   public function searchable()
   {
-    $this->model->with('itemGroup', 'itemCategory', 'unit','wareHouseItem');
-    $this->byBranch();
-    $this->byCategory();
-    $this->bySubCategory();
-    $this->byInventoryGroup();
-    $this->byTab();
-    $this->searchColumns();
-    $this->withWareHouseItems();
-    $this->withWareHouseItem();
+    // $this->model->with('itemGroup', 'itemCategory', 'unit','wareHouseItem');
+    // $this->byBranch();
+    // $this->byCategory();
+    // $this->bySubCategory();
+    // $this->byInventoryGroup();
+    // $this->byTab();
+    // $this->searchColumns();
+    // $this->withWareHouseItems();
+    // $this->withWareHouseItem();
     $this->byWarehouse();
-    $this->forLocation();
-    $this->forStockRequisition();
-    $this->forConsignment();
+    // $this->forLocation();
+    // $this->forStockRequisition();
+    // $this->forConsignment();
     $per_page = Request()->per_page;
-    if ($per_page == '-1') return $this->model->paginate($this->model->count());
+    // if ($per_page == '-1') return $this->model->paginate($per_page);
     return $this->model->paginate($per_page);
   }
 
@@ -46,6 +47,15 @@ class Items
           $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
         }
       });
+    }
+  }
+
+
+  private function byWarehouse()
+  {
+    $warehouse = Request()->warehouse_idd;
+    if ($warehouse) {
+       $this->model->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id);
     }
   }
 
@@ -111,16 +121,7 @@ class Items
     }
   }
 
-  private function byWarehouse()
-  {
-    $warehouse = Request()->warehouse_idd;
-    if ($warehouse) {
-      $this->model->with('wareHouseItems')->whereHas('wareHouseItems', function ($query) use ($warehouse) {
-        // $query->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id); 
-        $query->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id); 
-      });
-    }
-  }
+  
 
   private function byBranch()
   {

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::controller(ItemandServicesController::class)->group(function () {
   Route::get('items-and-services', 'index');
+  Route::get('item-by-location', 'indexLocation');
   Route::post('items-and-services', 'store');
   Route::post('items-and-services/list-cost', 'updateListCost');
   Route::post('items-and-services/{id}', 'update');

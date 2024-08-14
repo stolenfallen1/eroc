@@ -56,15 +56,6 @@ class Permission extends Model
                 self::where(['id' => $permissions[$key]->id])->update($attributes);
             }
         }
-
-        // self::firstOrCreate(['key' => 'browse_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'read_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'edit_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'add_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'delete_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'print_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'post_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
-        // self::firstOrCreate(['key' => 'approved_'.$table_name, 'table_name' => $table_name,'driver' => $table_driver,'module' => $module_name,'module_id' => $module_id,'sub_module_id' => $sub_module_id]);
     }
 
     public static function removeFrom($table_name)

@@ -199,8 +199,8 @@
       </div>
       <table class="signatory-section1">
         <tbody>
-          <tr><td class="underline item-td">{{$pdf_data['delivery']['receiver']['name']}}</td></tr>
-          <tr><td class="item-td">Received by</td></tr>
+          <tr><td class="item-td">Received by : {{ucwords($pdf_data['delivery']['receiver']['name'])}}</td></tr>
+          <tr><td class="item-td">Printed Date : {{date('m-d-Y, h:i:s A')}}</td></tr>
           {{-- <tr><td class=" comptroller underline item-td">{{$pdf_data['delivery']['comptroller']['name']}}</td></tr> --}}
           {{-- <tr><td class="item-td">Purchasing Comptroller</td></tr> --}}
         </tbody>

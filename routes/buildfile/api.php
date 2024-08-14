@@ -7,6 +7,7 @@ use App\Http\Controllers\BuildFile\Hospital\DietSubTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DispositionController;
 use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
+use App\Http\Controllers\HIS\AllergyTypeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -670,6 +671,10 @@ Route::controller(SystemReportsController::class)->group(function () {
     Route::post('add-report', 'addreport');
     Route::post('remove-report-access', 'remove_report_access');
     Route::get('get-reports', 'mscReportlist');
+});
+
+Route::controller(AllergyTypeController::class)->group(function () {
+    Route::get('get-allergy-type', 'index');
 });
 
 Route::resource('system-reports', SystemReportsController::class);

@@ -675,6 +675,11 @@ Route::controller(SystemReportsController::class)->group(function () {
 
 Route::controller(AllergyTypeController::class)->group(function () {
     Route::get('get-allergy-type', 'index');
+    Route::get('get-allergy-symptoms', 'getAllergySymptoms');
+
+    Route::post('create-allergy-type', 'store');
+    Route::put('update-allergy-type/{id}', 'update');
+    Route::put('archive-allergy-type/{id}', 'archive');
 });
 
 Route::resource('system-reports', SystemReportsController::class);

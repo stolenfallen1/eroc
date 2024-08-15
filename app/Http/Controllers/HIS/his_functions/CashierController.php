@@ -23,13 +23,13 @@ class CashierController extends Controller
         try {
             $data = CashReceiptTerminal::updateOrCreate(
                 [
-                    'user_id' => $request->payload['user_id'],
+                    'user_id' => Auth()->user()->idnumber,
                     'cashier_name' => $request->payload['cashier_name'],
                 ],
                 [
                     'branch_id' => 1,
                     'terminal_id' => (new GetIP())->getHostname(),
-                    'user_id' => $request->payload['user_id'],
+                    'user_id' => Auth()->user()->idnumber,
                     'cashier_name' => $request->payload['cashier_name'],
                     'ORSuffix' => strtoupper($request->payload['ORSuffix'] ?? ''),
                     'LastORnumber' => $request->payload['LastORnumber'],
@@ -51,7 +51,7 @@ class CashierController extends Controller
                 throw new \Exception('Failed to save settings');
             } else {
                 DB::connection('sqlsrv_billingOut')->commit();
-                $cash_receipt = CashReceiptTerminal::with('shift')->where('user_id', $request->payload['user_id'])->get();
+                $cash_receipt = CashReceiptTerminal::with('shift')->where('user_id', Auth()->user()->idnumber)->get();
                 return response()->json(['data' => $cash_receipt], 200);
             }
 
@@ -284,6 +284,21 @@ class CashierController extends Controller
         try {
             $data = CashierPaymentCode::get();
             return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getORSequence(Request $request)
+    {
+        try {
+            $user = CashReceiptTerminal::where('user_id', '!=', null)->first();
+            if ($user->user_id == Auth()->user()->idnumber) {
+                $data = CashReceiptTerminal::where('user_id', Auth()->user()->idnumber)->get();
+                return response()->json(['data' => $data], 200);
+            } else {
+                return response()->json(['error' => 'User not found'], 404);
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

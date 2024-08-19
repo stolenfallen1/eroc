@@ -153,10 +153,6 @@ class OutpatientRegistrationController extends Controller
                 ]
             );
 
-            $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
-                ->whereDate('created_at', $today)
-                ->exists();
-
             PatientVitalSigns::create([
                 'branch_Id'                 => 1,
                 'patient_Id'                => $patient_id,
@@ -172,7 +168,6 @@ class OutpatientRegistrationController extends Controller
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
             ]);
-
             PatientMedicalProcedures::create([
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
@@ -185,9 +180,58 @@ class OutpatientRegistrationController extends Controller
                 'updatedby'                     => Auth()->user()->idnumber,
                 'updated_at'                    => Carbon::now(),
             ]);
+            PatientMedicalProcedures::create([
+                'patient_Id'                    => $patient_id,
+                // 'case_No'                       => $registry_id,
+                'case_No'                       => '123',
+                'description'                   => '',
+                'date_Of_Procedure'             => '',
+                'performing_Doctor_id'          => '',
+                'performing_Doctor_Fullname'    => '',
+                'createdby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+                'updatedby'                     => Auth()->user()->idnumber,
+                'updated_at'                    => Carbon::now(),
+            ]);
+            PatientHistory::create([
+                'branch_Id'                                 => 1,
+                'patient_Id'                                => $patient_id,
+                'case_No'                                   => $registry_id,
+                'brief_History'                             => '',
+                'pastMedical_History'                       => '',
+                'family_History'                            => '',
+                'personalSocial_History'                    => '',
+                'chief_Complaint_Description'               => '',
+                'impression'                                => '',
+                'admitting_Diagnosis'                       => '',
+                'discharge_Diagnosis'                       => '',
+                'preOperative_Diagnosis'                    => '',
+                'postOperative_Diagnosis'                   => '',
+                'surgical_Procedure'                        => '',
+                'physicalExamination_Skin'                  => '',
+                'physicalExamination_HeadEyesEarsNeck'      => '',
+                'physicalExamination_Neck'                  => '',
+                'physicalExamination_ChestLungs'            => '',
+                'physicalExamination_CardioVascularSystem'  => '',
+                'physicalExamination_Abdomen'               => '',
+                'physicalExamination_GenitourinaryTract'    => '',
+                'physicalExamination_Rectal'                => '',
+                'physicalExamination_Musculoskeletal'       => '',
+                'physicalExamination_LympNodes'             => '',
+                'physicalExamination_Extremities'           => '',
+                'physicalExamination_Neurological'          => '',
+                'createdby'                                 => Auth()->user()->idnumber,
+                'created_at'                                => Carbon::now(),
+                'updatedby'                                 => Auth()->user()->idnumber,
+                'updated_at'                                => Carbon::now(),
+            ]);
+
+            $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
+                ->whereDate('created_at', $today)
+                ->exists();
 
             if (!$existingRegistry) {
-                $patient->patientRegistry()->whereDate('created_at', $today)->updateOrCreate([
+                $patientRegistry = PatientRegistry::updateOrCreate([
                     'patient_Id'                    => $patient_id,
                     'case_No'                       => $registry_id,
                     'branch_id'                     => $request->payload['mscBranches_id'] ?? 1,
@@ -289,50 +333,25 @@ class OutpatientRegistrationController extends Controller
                 throw new \Exception('Patient already registered today');
             }
 
-            if (!$patient) {
-                throw new \Exception('TEST');
+            if (!$patient || !$patientRegistry) {
+                throw new \Exception('Registration failed, rollback transaction');
             } else {
-                // $patient->patientRegistry()->vitals()->create([
-                //         'branch_Id'                 => 1,
-                //         'case_No'                   => $registry_id,
-                //         'transDate'                 => Carbon::now(),
-                //         'bloodPressureSystolic'     => $bloodPressureSystolic,
-                //         'bloodPressureDiastolic'    => $bloodPressureDiastolic,
-                //         'temperature'               => $request->payload['temperature'] ?? null,
-                //         'pulseRate'                 => $request->payload['pulseRate'] ?? null,
-                //         'oxygenSaturation'          => $request->payload['oxygenSaturation'] ?? null,
-                //         'createdby'                 => Auth()->user()->idnumber,
-                //         'created_at'                => Carbon::now(),
-                //         'updatedby'                 => Auth()->user()->idnumber,
-                //         'updated_at'                => Carbon::now(),
-                // ]);
-                // $patient->patientRegistry()->immunizations()->create([
-                //     'branch_Id'                 => 1,
-                //     'patient_Id'                => $patient_id,
-                //     'case_No'                   => $registry_id,
-                //     'administration_Date'       => '',
-                //     'dose'                      => '',
-                //     'site'                      => '',
-                //     'administrator_Name'        => '',
-                //     'Notes'                     => '',
-                //     'createdby'                 => Auth()->user()->idnumber,
-                //     'created_at'                => Carbon::now(),
-                //     'updatedby'                 => Auth()->user()->idnumber,
-                //     'updated_at'                => Carbon::now(),
-                // ]);
-                // $patient->patientRegistry()->medical_procedures()->create([
-                //     'patient_Id'                    => $patient_id,
-                //     'case_No'                       => $registry_id,
-                //     'description'                   => '',
-                //     'date_Of_Procedure'             => '',
-                //     'performing_Doctor_id'          => '',
-                //     'performing_Doctor_Fullname'    => '',
-                //     'createdby'                     => Auth()->user()->idnumber,
-                //     'created_at'                    => Carbon::now(),
-                //     'updatedby'                     => Auth()->user()->idnumber,
-                //     'updated_at'                    => Carbon::now(),
-                // ]);
-                $patient->patientRegistry()->administered_medicines()->create([
+                PatientImmunizations::create([
+                    'branch_Id'                 => 1,
+                    'patient_Id'                => $patient_id,
+                    'case_No'                   => $registry_id,
+                    'vaccine_Id'                => '',  
+                    'administration_Date'       => '',
+                    'dose'                      => '',
+                    'site'                      => '',
+                    'administrator_Name'        => '',
+                    'Notes'                     => '',
+                    'createdby'                 => Auth()->user()->idnumber,
+                    'created_at'                => Carbon::now(),
+                    'updatedby'                 => Auth()->user()->idnumber,
+                    'updated_at'                => Carbon::now(),
+                ]);
+                PatientAdministeredMedicines::create([
                     'patient_Id'                    => $patient_id,
                     'case_No'                       => $registry_id,
                     'transactDate'                  => '',
@@ -346,38 +365,6 @@ class OutpatientRegistrationController extends Controller
                     'updatedby'                     => Auth()->user()->idnumber,
                     'updated_at'                    => Carbon::now(),
                 ]);
-                $patient->patientRegistry()->history()->create([
-                    'branch_Id'                                 => 1,
-                    'patient_Id'                                => $patient_id,
-                    'case_No'                                   => $registry_id,
-                    'brief_History'                             => '',
-                    'pastMedical_History'                       => '',
-                    'family_History'                            => '',
-                    'personalSocial_History'                    => '',
-                    'chief_Complaint_Description'               => '',
-                    'impression'                                => '',
-                    'admitting_Diagnosis'                       => '',
-                    'discharge_Diagnosis'                       => '',
-                    'preOperative_Diagnosis'                    => '',
-                    'postOperative_Diagnosis'                   => '',
-                    'surgical_Procedure'                        => '',
-                    'physicalExamination_Skin'                  => '',
-                    'physicalExamination_HeadEyesEarsNeck'      => '',
-                    'physicalExamination_Neck'                  => '',
-                    'physicalExamination_ChestLungs'            => '',
-                    'physicalExamination_CardioVascularSystem'  => '',
-                    'physicalExamination_Abdomen'               => '',
-                    'physicalExamination_GenitourinaryTract'    => '',
-                    'physicalExamniation_Rectal'                => '',
-                    'physicalExamination_Muscoloskeletal'       => '',
-                    'physicalExamination_LympNodes'             => '',
-                    'physicalExamination_Extremities'           => '',
-                    'physicalExamination_Neurologic'            => '',
-                    'createdby'                                 => Auth()->user()->idnumber,
-                    'created_at'                                => Carbon::now(),
-                    'updatedby'                                 => Auth()->user()->idnumber,
-                    'updated_at'                                => Carbon::now(),
-                ]);
 
                 $registry_sequence->update([
                     'seq_no' => $registry_sequence->seq_no + 1,
@@ -387,7 +374,7 @@ class OutpatientRegistrationController extends Controller
                 return response()->json([
                     'message' => 'Outpatient data registered successfully',
                     'patient' => $patient,
-                    // 'patientRegistry' => $patientRegistry
+                    'patientRegistry' => $patientRegistry
                 ], 200);
             }
 
@@ -545,7 +532,6 @@ class OutpatientRegistrationController extends Controller
                 'isRadioTherapy' => $isRadioTherapy ?? $patientRegistry->isRadioTherapy,
                 'attending_doctor' => $request->payload['selectedConsultant'][0]['doctor_code'] ?? $patientRegistry->attending_doctor,
                 'attending_doctor_fullname' => $request->payload['selectedConsultant'][0]['doctor_name'] ?? $patientRegistry->attending_doctor_fullname,
-                'mscAdmResults' => $request->payload['mscAdmResults'] ?? $patientRegistry->mscAdmResults,
                 'bmi' => $request->payload['bmi'] ?? $patientRegistry->bmi,
                 'weight' => $request->payload['weight'] ?? $patientRegistry->weight,
                 'weightUnit' => $request->payload['weightUnit'] ?? $patientRegistry->weightUnit,

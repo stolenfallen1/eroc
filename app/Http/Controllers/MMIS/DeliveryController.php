@@ -105,10 +105,10 @@ class DeliveryController extends Controller
                     $item_amount = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
                     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
                     if($vat_rate){
-                        if($request['vendor']['isVATInclusive'] == 0){
+                        // if($request['vendor']['isVATInclusive'] == 0){
                             $vat_amount = $total_amount * ($vat_rate / 100);
                             $total_amount += $vat_amount;
-                        }
+                        // }
                     }
                     if($discount_percent){
                         $discount_amount = $total_amount * ($discount_percent / 100);

@@ -23,6 +23,7 @@ Route::controller(CashierController::class)->group(function () {
     Route::get('get-charge-item', 'populatechargeitem');
     Route::get('get-ornumber', 'getOR');
     Route::get('get-payment-codes', 'getpaymentcode');
+    Route::get('get-or-sequence', 'getORSequence');
     Route::post('cashier-settings', 'cashiersettings');
     Route::post('save-payment', 'save');
     Route::put('cancel-ornumber', 'cancelOR');

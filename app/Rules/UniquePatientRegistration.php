@@ -28,9 +28,13 @@ class UniquePatientRegistration implements Rule
      */
     public function passes($attribute, $value)
     {
-        return !PatientRegistry::where('patient_id', $this->patientId)
-        ->whereDate('created_at', Carbon::today())
-        ->exists();
+        if($value) {
+            return !PatientRegistry::where('patient_id', $this->patientId)
+            ->whereDate('created_at', Carbon::now())
+            ->exists();
+        } else {
+            return response()->json(['message' => 'Failed to establish rule, the value passed is null'], 500);
+        }
     }
 
     /**

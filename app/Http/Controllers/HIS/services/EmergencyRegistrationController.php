@@ -10,8 +10,14 @@ use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 // use APP\Models\HIS\PatientAdministeredMedicines;
 use App\Models\HIS\PatientHistory;
+use App\Models\HIS\PatientPastMedicalHistory;
+use App\Models\HIS\PatientPastAllergyHistory;
+use App\Models\HIS\PatientBadHabits;
+use App\Models\HIS\PatientPastBadHabits;
 use App\Models\HIS\PatientImmunizations;
+use App\Models\HIS\PatientPastImmunizations;
 use App\Models\HIS\PatientMedicalProcedures;
+use App\Models\HIS\PatientPastMedicalProcedures;
 use App\Models\HIS\PatientVitalSigns;
 use App\Models\HIS\mscComplaint;
 use App\Rules\UniquePatientRegistration;
@@ -83,8 +89,6 @@ class EmergencyRegistrationController extends Controller
             return response()->json(['msg' => $e->getMessage()], 500);
         }
     }
-
-
     public function getComplaintList() {
         try {
             $data = mscComplaint::select('id', 'description')
@@ -110,7 +114,7 @@ class EmergencyRegistrationController extends Controller
         try {
             $sequence = SystemSequence::where('code','MPID')->first();
             $registry_sequence = SystemSequence::where('code','MERN')->first();
-
+            
             $patient_id             = $request->payload['patient_id'] ?? $sequence->seq_no;
             $registry_id            = $request->payload['registry_id'] ?? $registry_sequence->seq_no;
             $patientIdentifier      = $request->payload['patientIdentifier'] ?? null;
@@ -132,7 +136,7 @@ class EmergencyRegistrationController extends Controller
                 ->first();
 
             if ($existingPatient):
-                $patient_id = $existingPatient->patient_id;
+                $patient_id = $existingPatient->patient_Id;
             else:
                 $patient_id = $sequence->seq_no;
                 $sequence->update([
@@ -148,7 +152,7 @@ class EmergencyRegistrationController extends Controller
             ];
 
             $patientData = [
-                'patient_id'                => $patient_id,
+                'patient_Id'                => $patient_id,
                 'title_id'                  => $request->payload['title_id'] ?? null,
                 'lastname'                  => ucwords($request->payload['lastname'] ?? null),
                 'firstname'                 => ucwords($request->payload['firstname'] ?? null),
@@ -220,6 +224,99 @@ class EmergencyRegistrationController extends Controller
                 'updated_at'                => Carbon::now(),
             ];
 
+            $patientPastImmunizationData = [
+                'branch_Id'             => 1,
+                'patient_Id'            => $patient_id,
+                'vaccine_Id'            => '',
+                'administration_Date'   => '',
+                'dose'                  => '',
+                'site'                  => '',
+                'administrator_Name'    => '',
+                'notes'                 => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updatedby'             => Auth()->user()->idnumber,
+                'updated_at'            => '',   
+            ];
+
+            $patientPastMedicalHistoryData = [
+                'patient_Id'                => $patient_id,
+                'diagnose_Description'      => '',
+                'diagnosis_Date'            => '',
+                'treament'                  => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+                'updatedby'                 => '',
+                'updated_at'                => '',   
+            ];
+
+            $pastientPastMedicalProcedureData =[
+                'patient_Id'                => $patient_id,
+                'description'               => '',
+                'date_Of_Procedure'         => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+                'updatedby'                 => '',
+                'updated_at'                => '',  
+            ];
+
+            $pastientPastAllergyHistoryData =[
+                'patient_Id'                => $patient_id,
+                'family_History'            => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+                'updatedby'                 => '',
+                'updated_at'                => '',  
+            ];
+
+            $pastientPastCauseOfAllergyData =[
+                'history_Id'            => '',
+                'allergy_Type_Id'       => '',
+                'duration'              => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updatedby'             => '',
+                'updated_at'            => '',  
+            ];
+
+            $pastientPastSymptomsOfAllergyData =[
+                'history_Id'            => '',
+                'symptom_Description'   => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updatedby'             => '',
+                'updated_at'            => '',  
+            ];
+
+            $patientAllergyData = [
+                'patient_Id'        => $patient_id,
+                'case_No'           => $registry_id,
+                'family_History'    => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+                'updatedby'         => '',
+                'updated_at'        => '',  
+            ];
+
+            $patientCauseAllergyData = [
+                'history_Id'        => $patient_id,
+                'allergy_Type_Id'   => $registry_id,
+                'duration'          => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+                'updatedby'         => '',
+                'updated_at'        => '',  
+            ];
+
+            $patientSymptomsOfAllergy = [
+                'history_Id'            => $patient_id,
+                'symptom_Description'   => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updatedby'             => '',
+                'updated_at'            => '',  
+            ];
+
             $patientAdministeredMedicineData = [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
@@ -270,7 +367,7 @@ class EmergencyRegistrationController extends Controller
 
             $patientImmunizationsData = [
                 'branch_id'             => 1,
-                'patient_Id'            => $patient_id,
+                'patient_id'            => $patient_id,
                 'case_No'               => $registry_id,
                 'vaccine_Id'            => '',
                 'administration_Date'   => null,
@@ -412,22 +509,287 @@ class EmergencyRegistrationController extends Controller
                 'created_at'                    => Carbon::now(),
                 'UpdatedBy'                     => Auth()->user()->idnumber,
                 'updated_at'                    => Carbon::now(),
+            ];    
+
+            $patientBadHabitsData = [
+                'patient_Id' => $patient_id,
+                'case_No'   => $registry_id,
+                'description' => '',
+                'createdby'                     => Auth()->user()->idnumber,
+                'updatedby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+                'updated_at'                    => ''
             ];
 
-        
+            $patientPastBadHabits = [
+                'patient_Id' => $patient_id,
+                'description' => '',
+                'createdby'                     => Auth()->user()->idnumber,
+                'updatedby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+                'updated_at'                    => ''
+            ];
+
+            $patientDoctorsData = [
+                'patient_Id'        => $patient_id,
+                'case_No'           => $registry_id,
+                'doctors_Id'        => '',
+                'doctors_Fullname'  => '',
+                'role_Id'           => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'updatedby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+                'updated_at'        => ''
+            ];
+
+            $patientPhysicalAbdomenData = [
+                'patient_Id'                => $patient_id,
+                'case_No'                   => $registry_id,
+                'essentially_Normal'        => '',
+                'palpable_Masses'           => '',
+                'abdominal_Rigidity'        => '',
+                'uterine_Contraction'       => '',
+                'hyperactive_Bowel_Sounds'  => '',
+                'others_Description'        => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'updatedby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+                'updated_at'                => ''
+            ];
+
+            $patientPertinentSignAndSymptomsData = [
+                'patient_Id'                        => $patient_id,
+                'case_No'                           => $registry_id,
+                'altered_Mental_Sensorium'          => '',
+                'abdominal_CrampPain'               => '',
+                'anorexia'                          => '',
+                'bleeding_Gums'                     => '',
+                'body_Weakness'                     => '',
+                'blurring_Of_Vision'                => '',
+                'chest_PainDiscomfort'              => '',
+                'constipation'                      => '',
+                'cough'                             => '',
+                'diarrhea'                          => '',
+                'dizziness'                         => '',
+                'dysphagia'                         => '',
+                'dysuria'                           => '',
+                'epistaxis'                         => '',
+                'fever'                             => '',
+                'frequency_Of_Urination'            => '',
+                'headache'                          => '',
+                'hematemesis'                       => '',
+                'hematuria'                         => '',
+                'hemoptysis'                        => '',
+                'irritability'                      => '',
+                'jaundice'                          => '',
+                'lower_Extremity_Edema'             => '',
+                'myalgia'                           => '',
+                'orthopnea'                         => '',
+                'pain'                              => '',
+                'pain_Description'                  => '',
+                'palpitations'                      => '',
+                'seizures'                          => '',
+                'skin_rashes'                       => '',
+                'stool_BloodyBlackTarry_Mucoid'     => '',
+                'sweating'                          => '',
+                'urgency'                           => '',
+                'vomitting'                         => '',
+                'weightloss'                        => '',
+                'others'                            => '',
+                'others_Description'                => '',
+                'createdby'                         => Auth()->user()->idnumber,
+                'updatedby'                         => Auth()->user()->idnumber,
+                'created_at'                        => Carbon::now(),
+                'updated_at'                        => ''
+            ];
+
+            $patientPhysicalExamtionChestLungsData = [
+                'patient_Id'                            => $patient_id,
+                'case_No'                               => $registry_id,
+                'essentially_Normal'                    => '',
+                'lumps_Over_Breasts'                    => '',
+                'asymmetrical_Chest_Expansion'          => '',
+                'rales_Crackles_Rhonchi'                => '',
+                'decreased_Breath_Sounds'               => '',
+                'intercostalrib_Clavicular_Retraction'  => '',
+                'wheezes'                               => '',
+                'others_Description'                    => '',
+                'createdby'                             => Auth()->user()->idnumber,
+                'updatedby'                             => Auth()->user()->idnumber,
+                'created_at'                            => Carbon::now(),
+                'updated_at'                            => ''
+            ];
+
+            $patientCourseInTheWardData = [
+                'patient_Id'                            => $patient_id,
+                'case_No'                               => $registry_id,
+                'doctors_OrdersAction'                   => '',
+                'createdby'                             => Auth()->user()->idnumber,
+                'updatedby'                             => Auth()->user()->idnumber,
+                'created_at'                            => Carbon::now(),
+                'updated_at'                            => ''
+            ];
+
+            $patientPhysicalExamtionCVSData = [
+                'patient_Id'                => $patient_id,
+                'case_No'                   => $registry_id,
+                'essentially_Normal'        => '',
+                'irregular_Rhythm'          => '',
+                'displaced_Apex_Beat'       => '',
+                'muffled_Heart_Sounds'      => '',
+                'heaves_AndOR_Thrills'      => '',
+                'murmurs'                   => '',
+                'pericardial_Bulge'         => '',
+                'others_Description'        => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'updatedby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+                'updated_at'                => ''
+            ];
+
+            $patientPhysicalExamtionGeneralSurveyData = [
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'awake_And_Alert'       => '',
+                'altered_Sensorium'     => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'updatedby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updated_at'            => ''
+            ];
+
+            $patientPhysicalExamtionHEENTData = [
+                'patient_Id'                    => $patient_id,
+                'case_No'                       => $registry_id,
+                'essentially_Normal'            => '',
+                'icteric_Sclerae'               => '',
+                'abnormal_Pupillary_Reaction'   => '',
+                'pale_Conjunctive'              => '',
+                'cervical_Lympadenopathy'       => '',
+                'sunken_Eyeballs'               => '',
+                'dry_Mucous_Membrane'           => '',
+                'sunken_Fontanelle'             => '',
+                'others_description'            => '',
+                'createdby'                     => Auth()->user()->idnumber,
+                'updatedby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+                'updated_at'                    => ''
+            ];
+
+            $patientPhysicalGUIEData = [
+                'patient_Id'                        => $patient_id,
+                'case_No'                           => $registry_id,
+                'essentially_Normal'                => '',
+                'blood_StainedIn_Exam_Finger'       => '',
+                'cervical_Dilatation'               => '',
+                'presence_Of_AbnormalDischarge'     => '',
+                'others_Description'                => '',
+                'createdby'                         => Auth()->user()->idnumber,
+                'updatedby'                         => Auth()->user()->idnumber,
+                'created_at'                        => Carbon::now(),
+                'updated_at'                        => ''
+            ];
+
+            $patientPhysicalNeuroExamData = [
+                'patient_Id'                    => $patient_id,
+                'case_No'                       => $registry_id,
+                'essentially_Normal'            => '',
+                'abnormal_Reflexes'             => '',
+                'abormal_Gait'                  => '',
+                'poor_Altered_Memory'           => '',
+                'abnormal_Position_Sense'       => '',
+                'poor_Muscle_Tone_Strength'     => '',
+                'abnormal_Decreased_Sensation'  => '',
+                'poor_Coordination'             => '',
+                'createdby'                     => Auth()->user()->idnumber,
+                'updatedby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+                'updated_at'                    => ''
+            ];
+
+            $patientPhysicalSkinExtremitiesData = [
+                'patient_Id'                => $patient_id,
+                'case_No'                   => $registry_id,
+                'essentially_Normal'        => '',
+                'edema_Swelling'            => '',
+                'rashes_Petechiae'          => '',
+                'clubbing'                  => '',
+                'decreased_Mobility'        => '',
+                'weak_Pulses'               => '',
+                'cold_Clammy_Skin'          => '',
+                'pale_Nailbeds'             => '',
+                'cyanosis_Mottled_Skin'     => '',
+                'poor_Skin_Turgor'          => '',
+                'others_Description'        => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'updatedby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+                'updated_at'                => ''
+            ];
+
+            $patientPregnancyHistoryData = [
+                'OBGYNHistoryID'    => $patient_id,
+                'pregnancyNumber'   => $registry_id,
+                'outcome'           => '',
+                'deliveryDate'      => '',
+                'complications'     => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'updatedby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+                'updated_at'        => ''
+            ];
+
+            $patientMedicationsData = [
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'item_Id'               => '',
+                'drug_Description'      => '',
+                'dosage'                => '',
+                'reason_For_Use'        => '',
+                'adverse_Side_Effect'   => '',
+                'hospital'              => '',
+                'isPrescribed'          => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'updatedby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updated_at'            => ''
+                
+            ];
+
             $today = Carbon::now()->format('Y-m-d');
             $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
                 ->whereDate('created_at', $today)
                 ->exists();
-   
+
             $patient = Patient::updateOrCreate($patientRule, $patientData);
-            PatientHistory::create($patientHistoryData);
-            PatientMedicalProcedures::create($patientMedicalProcedureData);
-            PatientVitalSigns::create($patientVitalSignsData);
+            $patient->past_medical_procedures()->create($pastientPastMedicalProcedureData);
+            $patient->past_medical_history()->create($patientPastMedicalHistoryData);
+            $patient->past_immunization()->create($patientPastImmunizationData);
+            $patient->past_bad_habits()->create($patientPastBadHabits);
+
+            $patientPastAllergyHistory = $patient->$this->past_allergy_history()->create($pastientPastAllergyHistoryData);
+            $patientPastAllergyHistory->$this->pastCauseOfAllergy()->create($pastientPastCauseOfAllergyData);
+            $patientPastAllergyHistory->$this->pastSymptomsOfAllergy()->create($pastientPastSymptomsOfAllergyData);
+            
             if(!$existingRegistry):
                 $patientRegistry = $patient->patientRegistry()->updateOrCreate($patientRegistryData);
-                PatientImmunizations::create($patientImmunizationsData);
-                PatientAdministeredMedicines::create($patientAdministeredMedicineData);
+                $patientRegistry->history()->create($patientHistoryData);
+                $patientRegistry->immunizations()->create($patientImmunizationsData );
+                $patientRegistry->vitals()->create($patientVitalSignsData);
+                $patientRegistry->medical_procedures()->create($patientMedicalProcedureData);
+                $patientRegistry->administered_medicines()->create($patientAdministeredMedicineData);
+                $patientRegistry->bad_habits()->create($patientBadHabitsData);
+                $patientRegistry->patientDoctors()->create($patientDoctorsData);
+                $patientRegistry->pertinentSignAndSymptoms()->create($patientPertinentSignAndSymptomsData);
+                $patientRegistry->physicalExamtionChestLungs()->create($patientPhysicalExamtionChestLungsData);
+                $patientRegistry->courseInTheWard()->create($patientCourseInTheWardData);
+                $patientRegistry->physicalExamtionCVS()->create($patientPhysicalExamtionCVSData);
+                $patientRegistry->medications()->create($patientMedicationsData);
+
+                $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
+                $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
+                $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
+
             else:
                 throw new \Exception('Patient already registered today');
             endif;
@@ -467,10 +829,10 @@ class EmergencyRegistrationController extends Controller
     }
 
     public function update(Request $request, $id) {
-
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
             $patient    = Patient::findOrFail($id);
+            var_dump( $patient);
             $patient_id = $patient->patient_id;
 
             $today = Carbon::now()->format('Y-m-d');
@@ -485,12 +847,12 @@ class EmergencyRegistrationController extends Controller
             $checkPatient = ['patient_Id' =>  $patient_id];
             $checkPatientImmunization = ['patient_id' => $patient_id];
 
-            $patientRegistry = PatientRegistry::where($checkPatient)->first();
-            $patientHistory = PatientHistory::where($checkPatient)->first();
-            $patientMedicalProcedure = PatientMedicalProcedures::where($checkPatient)->first();
-            $patientVitalSign = PatientVitalSigns::where($checkPatient)->first();
-            $patientImmunization = PatientImmunizations::where( $checkPatientImmunization)->first();
-            $patientAdministeredMedicine = PatientAdministeredMedicines::where($checkPatient)->first();
+            $patientRegistry                = PatientRegistry::where($checkPatient)->first();
+            $patientHistory                 = PatientHistory::where($checkPatient)->first();
+            $patientMedicalProcedure        = PatientMedicalProcedures::where($checkPatient)->first();
+            $patientVitalSign               = PatientVitalSigns::where($checkPatient)->first();
+            $patientImmunization            = PatientImmunizations::where( $checkPatientImmunization)->first();
+            $patientAdministeredMedicine    = PatientAdministeredMedicines::where($checkPatient)->first();
 
             $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis     = ($patientIdentifier === "Hemo Patient") ? true : false;
@@ -604,7 +966,7 @@ class EmergencyRegistrationController extends Controller
                 'physicalExamination_Extremities'           => $request->payload['physicalExamination_Extremities'] ?? $patientHistory->physicalExamination_Extremities,
                 'physicalExamination_Neurological'          => $request->payload['physicalExamination_Neurological'] ?? $patientHistory->physicalExamination_Neurological,
                 'updatedby'                                 => Auth()->user()->idnumber,
-                'updated_at'                                => now()
+                'updated_at'                                => Carbon::now()
             ];
 
             $patientMedicalProcedureData = [
@@ -761,19 +1123,20 @@ class EmergencyRegistrationController extends Controller
 
             $patient->update( $patientData);
             if($existingRegistry) {
+                $patientRegistry->whereDate('created_at', $today)->update($checkPatient, $patientRegistryData);
                 $patientHistory->whereDate('created_at', $today)->update($checkPatient, $patientHistoryData);
                 $patientMedicalProcedure->whereDate('created_at', $today)->update($checkPatient, $patientMedicalProcedureData);
                 $patientVitalSign->whereDate('created_at', $today)->update($checkPatient, $patientVitalSignsData);
-                $patientRegistry->whereDate('created_at', $today)->update($checkPatient, $patientRegistryData);
                 $patientImmunization->whereDate('created_at', $today)->update($checkPatientImmunization, $patientImmunizationsData);
                 $patientAdministeredMedicine->whereDate('created_at', $today)->update($checkPatient, $patientAdministeredMedicineData);
             } else {
+                $patientRegistry->create($patientRegistryData);
                 $patientHistory->create($patientHistoryData);
                 $patientMedicalProcedure->create($patientMedicalProcedureData);
                 $patientVitalSign->create($patientVitalSignsData);
-                $patientRegistry->create($patientRegistryData);
                 $patientImmunization->create($patientImmunizationsData);
                 $patientAdministeredMedicine->create($patientAdministeredMedicineData);
+                
             }
 
             DB::connection('sqlsrv_patient_data')->commit();

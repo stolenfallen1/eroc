@@ -262,4 +262,4 @@ Route::group(['middleware' => 'admin.user'], function () {
 //     // })->where('any', '.*');
 // });
 
-Route::get('/get-msc-complaint',                   [EmergencyRegistrationController::class,    'getComplaintList']);
+Route::get('/fetch-data', [EmergencyRegistrationController::class, 'fetchData'])->where('id', '[0-9]+');

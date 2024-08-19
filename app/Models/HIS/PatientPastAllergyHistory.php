@@ -4,6 +4,7 @@ namespace App\Models\HIS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\HIS\PatientPastCauseofAllergy;
 
 class PatientPastAllergyHistory extends Model
 {
@@ -13,4 +14,13 @@ class PatientPastAllergyHistory extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastAllergyHistory';
     protected $guarded = [];
 
+    protected function pastCauseOfAllergy() {
+        return $this->hasMany(PatientPastCauseofAllergy::class,'history_Id','pastient_Id');
+    }
+
+    protected function pastSymptomsOfAllergy() {
+        return $this->hasMany(PatientPastSymptomsofAllergy::class,'history_Id','patient_Id');
+    }
+
 }
+

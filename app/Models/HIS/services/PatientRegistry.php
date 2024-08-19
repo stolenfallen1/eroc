@@ -4,13 +4,26 @@ namespace App\Models\HIS\services;
 
 use App\Models\HIS\his_functions\HospitalPatientCategories;
 use App\Models\HIS\PatientAdministeredMedicines;
+use App\Models\HIS\PatientAllergies;
 use App\Models\HIS\PatientHistory;
 use App\Models\HIS\PatientImmunizations;
 use App\Models\HIS\PatientMedicalProcedures;
-use App\Models\HIS\PatientPastImmunizations;
-use App\Models\HIS\PatientPastMedicalHistory;
-use App\Models\HIS\PatientPastMedicalProcedures;
+use App\Models\HIS\PatientBadHabits;
 use App\Models\HIS\PatientVitalSigns;
+use App\Models\HIS\PatientPhysicalExamtionGeneralSurvey;
+use App\Models\HIS\PatientPhysicalSkinExtremities;
+use App\Models\HIS\PatientPhysicalAbdomen;
+use App\Models\HIS\PatientPhysicalGUIE;
+use App\Models\HIS\PatientDoctors;
+use App\Models\HIS\PatientPertinentSignAndSymptoms;
+use App\Models\HIS\PatientPhysicalExamtionChestLungs;
+use App\Models\HIS\PatientCourseInTheWard;
+use App\Models\HIS\PatientPhysicalExamtionHEENT;
+use App\Models\HIS\PatientPhysicalNeuroExam;
+use App\Models\HIS\PatientPhysicalExamtionCVS;
+use App\Models\HIS\PatientOBGYNHistory;
+use App\Models\HIS\PatientMedications;
+use App\Models\HIS\PatientGynecologicalConditions;
 use App\Models\HIS\services\Patient;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\FMS\AccountType;
@@ -73,4 +86,59 @@ class PatientRegistry extends Model
     public function administered_medicines() {
         return $this->belongsTo(PatientAdministeredMedicines::class, 'case_No', 'case_No');
     }
+    public function bad_habits() {
+        return $this->belongsTo(PatientBadHabits::class,'case_No', 'case_No');
+    }
+
+    public function allergies() {
+        return $this->belongsTo(PatientAllergies::class,'case_No', 'case_No');
+    }
+
+    public function PhysicalExamtionGeneralSurvey() {
+        return $this->belongsTo(PatientPhysicalExamtionGeneralSurvey::class, 'case_No', 'case_No');
+    }
+
+    public function physicalSkinExtremities() {
+        return $this->belongsTo(PatientPhysicalSkinExtremities::class, 'case_No', 'case_No');
+    }
+
+    public function physicalAbdomen() {
+        return $this->belongsTo(PatientPhysicalAbdomen::class, 'case_No', 'case_No');
+    }
+
+    public function physicalGUIE() {
+        return $this->belongsTo(PatientPhysicalGUIE::class,'case_No','case_No');
+    }
+
+    public function patientDoctors() {
+        return $this->hasMany(PatientDoctors::class,'case_No','case_No');
+    }
+
+    public function pertinentSignAndSymptoms() {
+        return $this->belongsTo(PatientPertinentSignAndSymptoms::class, 'case_No', 'case_No');
+    }
+    public function physicalExamtionChestLungs() {
+        return $this->belongsTo(PatientPhysicalExamtionChestLungs::class,'case_No','case_No');
+    }
+    public function courseInTheWard() {
+        return $this->belongsTo(PatientCourseInTheWard::class, 'case_No', 'case_No');
+    }
+
+    public function physicalExamtionHEENT() {
+        return $this->belongsTo(PatientPhysicalExamtionHEENT::class, 'case_No', 'case_No');
+    }
+    public function physicalNeuroExam() {
+        return $this->belongsTo(PatientPhysicalNeuroExam::class,'case_No','case_No');
+    }
+    
+    public function physicalExamtionCVS() {
+        return $this->belongsTo(PatientPhysicalExamtionCVS::class, 'case_No', 'case_No');
+    }
+    public function oBGYNHistory() {
+        return $this->belongsTo(PatientOBGYNHistory::class, 'case_No','case_No');
+    }
+    public function medications() {
+        return $this->belongsTo(PatientMedications::class, 'case_No','case_No');
+    }
+
 }

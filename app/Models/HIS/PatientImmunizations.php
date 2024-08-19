@@ -11,6 +11,8 @@ class PatientImmunizations extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientImmunizations';
+
+    protected $primaryKey = 'patient_id';
     protected $guarded = [];
     // protected $with = [''];
 }

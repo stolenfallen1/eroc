@@ -14,12 +14,12 @@ class PatientPastAllergyHistory extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastAllergyHistory';
     protected $guarded = [];
 
-    protected function pastCauseOfAllergy() {
-        return $this->hasMany(PatientPastCauseofAllergy::class,'history_Id','pastient_Id');
+    public function pastCauseOfAllergy() {
+        return $this->hasMany(PatientPastCauseofAllergy::class,'history_Id','id');
     }
 
-    protected function pastSymptomsOfAllergy() {
-        return $this->hasMany(PatientPastSymptomsofAllergy::class,'history_Id','patient_Id');
+    public function pastSymptomsOfAllergy() {
+        return $this->hasMany(PatientPastSymptomsofAllergy::class,'history_Id','id');
     }
 
 }

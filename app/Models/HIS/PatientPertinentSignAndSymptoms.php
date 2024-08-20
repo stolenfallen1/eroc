@@ -9,6 +9,6 @@ class PatientPertinentSignAndSymptoms extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'CDG.PATIENT_DATA.dbo.PatientPertinentSignAndSymptoms';
+    protected $table = 'CDG_PATIENT_DATA.dbo.PatientPertinentSignAndSymptoms';
     protected $guarded = [];
 }

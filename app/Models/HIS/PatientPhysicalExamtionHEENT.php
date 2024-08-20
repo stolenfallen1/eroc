@@ -9,6 +9,6 @@ class PatientPhysicalExamtionHEENT extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'CDH_PATIENT_DATA.dbo.PatientPhysicalExamtionHEENT';
+    protected $table = 'CDG_PATIENT_DATA.dbo.PatientPhysicalExamtionHEENT';
     protected $guarded = [];
 }

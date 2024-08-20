@@ -12,12 +12,12 @@ class PatientAllergies extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientAllergies';
-    protected $guard = [];
+    protected $guarded = [];
 
     public function symptoms_allergy() {
-        return $this->hasMany(PatientSymptomsofAllergy::class,'history_Id','patient_Id');
+        return $this->belongsTo(PatientSymptomsofAllergy::class,'history_Id','id');
     }
     public function cause_of_allergy() {
-        return $this->hasMany(PatientCauseofAllergy::class,'history_Id','patient_Id');
+        return $this->belongsTo(PatientCauseofAllergy::class,'history_Id','id');
     }
 }

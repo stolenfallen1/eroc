@@ -17,6 +17,8 @@ use App\Models\HIS\PatientPastBadHabits;
 use App\Models\HIS\PatientImmunizations;
 use App\Models\HIS\PatientPastImmunizations;
 use App\Models\HIS\PatientMedicalProcedures;
+use App\Models\HIS\PatientPastCauseofAllergy;
+use App\Models\HIS\PatientPastSymptomsofAllergy;
 use App\Models\HIS\PatientPastMedicalProcedures;
 use App\Models\HIS\PatientVitalSigns;
 use App\Models\HIS\mscComplaint;
@@ -25,7 +27,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\GetIP;
-
+use Illuminate\Support\Facades\Log;
 class EmergencyRegistrationController extends Controller
 {
     //
@@ -299,8 +301,8 @@ class EmergencyRegistrationController extends Controller
             ];
 
             $patientCauseAllergyData = [
-                'history_Id'        => $patient_id,
-                'allergy_Type_Id'   => $registry_id,
+                'history_Id'        => '',
+                'allergy_Type_Id'   => '',
                 'duration'          => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
@@ -309,7 +311,7 @@ class EmergencyRegistrationController extends Controller
             ];
 
             $patientSymptomsOfAllergy = [
-                'history_Id'            => $patient_id,
+                'history_Id'            => '',
                 'symptom_Description'   => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
@@ -463,7 +465,7 @@ class EmergencyRegistrationController extends Controller
                 'Medical_Package_id'            => $request->payload['Medical_Package_id'] ?? null,
                 'Medical_Package_name'          => $request->payload['Medical_Package_name'] ?? null,
                 'Medical_Package_amount'        => $request->payload['Medical_Package_amount'] ?? null,
-                'chief_complaint_description'   => $request->payload['clinical_chief_complaint'] ?? null,
+                // 'chief_complaint_description'   => $request->payload['clinical_chief_complaint'] ?? null,
                 'impression'                    => $request->payload['impression'] ?? null,
                 'isCriticallyIll'               => $request->payload['isCriticallyIll'] ?? false,
                 'illness_type'                  => $request->payload['illness_type'] ?? null,
@@ -521,7 +523,7 @@ class EmergencyRegistrationController extends Controller
                 'updated_at'                    => ''
             ];
 
-            $patientPastBadHabits = [
+            $patientPastBadHabitsData = [
                 'patient_Id' => $patient_id,
                 'description' => '',
                 'createdby'                     => Auth()->user()->idnumber,
@@ -530,10 +532,20 @@ class EmergencyRegistrationController extends Controller
                 'updated_at'                    => ''
             ];
 
+            $patientDrugUsedForAllergyData = [
+                'patient_Id'        => $patient_id,
+                'drug_Description'  => '',
+                'hospital'          => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'updatedby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+                'updated_at'        => ''
+            ];
+
             $patientDoctorsData = [
                 'patient_Id'        => $patient_id,
                 'case_No'           => $registry_id,
-                'doctors_Id'        => '',
+                'doctor_Id'         => '',
                 'doctors_Fullname'  => '',
                 'role_Id'           => '',
                 'createdby'         => Auth()->user()->idnumber,
@@ -727,12 +739,39 @@ class EmergencyRegistrationController extends Controller
                 'updated_at'                => ''
             ];
 
+            $patientOBGYNHistory = [
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'obsteric_Code'         => '',
+                'MenarchAge'            => '',
+                'MenopauseAge'          => '',
+                'cycleLength'          => '',
+                'CycleRegularity'       => '',
+                'LastMenstrualPeriod'   => '',
+                'ContraceptiveUse'      => '',
+                'LastPapSmearDate'      => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'updatedby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+                'updated_at'            => ''
+            ];
+
             $patientPregnancyHistoryData = [
                 'OBGYNHistoryID'    => $patient_id,
                 'pregnancyNumber'   => $registry_id,
                 'outcome'           => '',
                 'deliveryDate'      => '',
                 'complications'     => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'updatedby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+                'updated_at'        => ''
+            ];
+
+            $patientGynecologicalConditions = [
+                'OBGYNHistoryID'    => $patient_id,
+                'conditionName'     => $registry_id,
+                'diagnosisDate'     => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'updatedby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
@@ -765,12 +804,16 @@ class EmergencyRegistrationController extends Controller
             $patient->past_medical_procedures()->create($pastientPastMedicalProcedureData);
             $patient->past_medical_history()->create($patientPastMedicalHistoryData);
             $patient->past_immunization()->create($patientPastImmunizationData);
-            $patient->past_bad_habits()->create($patientPastBadHabits);
+            $patient->past_bad_habits()->create($patientPastBadHabitsData);
+            $patient->drug_used_for_allergy()->create($patientDrugUsedForAllergyData);
 
-            $patientPastAllergyHistory = $patient->$this->past_allergy_history()->create($pastientPastAllergyHistoryData);
-            $patientPastAllergyHistory->$this->pastCauseOfAllergy()->create($pastientPastCauseOfAllergyData);
-            $patientPastAllergyHistory->$this->pastSymptomsOfAllergy()->create($pastientPastSymptomsOfAllergyData);
-            
+            $pastHistory = $patient->past_allergy_history()->create($pastientPastAllergyHistoryData);
+            $pastientPastCauseOfAllergyData['history_Id'] =   $pastHistory->id;
+            $pastientPastSymptomsOfAllergyData['history_Id'] =   $pastHistory->id;
+            $pastHistory->pastCauseOfAllergy()->create($pastientPastCauseOfAllergyData);
+            $pastHistory->pastSymptomsOfAllergy()->create($pastientPastSymptomsOfAllergyData);
+            $patient->past_allergy_history()->create($pastientPastAllergyHistoryData);
+
             if(!$existingRegistry):
                 $patientRegistry = $patient->patientRegistry()->updateOrCreate($patientRegistryData);
                 $patientRegistry->history()->create($patientHistoryData);
@@ -785,8 +828,24 @@ class EmergencyRegistrationController extends Controller
                 $patientRegistry->courseInTheWard()->create($patientCourseInTheWardData);
                 $patientRegistry->physicalExamtionCVS()->create($patientPhysicalExamtionCVSData);
                 $patientRegistry->medications()->create($patientMedicationsData);
+                $patientRegistry->physicalExamtionHEENT()->create($patientPhysicalExamtionHEENTData);
+                $patientRegistry->physicalSkinExtremities()->create($patientPhysicalSkinExtremitiesData);
+                $patientRegistry->physicalAbdomen()->create($patientPhysicalAbdomenData);
+                $patientRegistry->physicalNeuroExam()->create($patientPhysicalNeuroExamData);
+                $patientRegistry->physicalGUIE()->create($patientPhysicalGUIEData);
+                $patientRegistry->PhysicalExamtionGeneralSurvey()->create($patientPhysicalExamtionGeneralSurveyData);
+
+
+                $OBG = $patientRegistry->oBGYNHistory()->create($patientOBGYNHistory);
+                $patientPregnancyHistoryData['OBGYNHistoryID'] = $OBG->id;
+                $patientGynecologicalConditions['OBGYNHistoryID'] = $OBG->id;
+                $OBG->PatientPregnancyHistory()->create($patientPregnancyHistoryData);
+                $OBG->gynecologicalConditions()->create($patientGynecologicalConditions);
 
                 $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
+                $last_inserted_id = $patientAllergy->id;
+                $patientCauseAllergyData['history_Id'] = $last_inserted_id;
+                $patientSymptomsOfAllergy['history_Id'] = $last_inserted_id;
                 $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
                 $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
 

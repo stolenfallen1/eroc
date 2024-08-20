@@ -19,6 +19,7 @@ Route::controller(OutpatientRegistrationController::class)->group(function () {
 }); 
 Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('get-emergency', 'index');
+    Route::get('get-revoked-emergency-patient', 'getrevokedemergencypatient');
     Route::get('/patient-brought-by', 'getPatientBroughtBy');
     Route::get('/get-msc-complaint', 'getComplaintList');
     Route::get('disposition', 'getDisposition');

@@ -45,7 +45,7 @@ class PatientRegistry extends Model
 
     // Relationships
     public function patient_details(){
-        return $this->belongsTo(Patient::class, 'patient_Id', 'patient_id');
+        return $this->belongsTo(Patient::class, 'patient_Id', 'patient_Id');
     }    
     public function branch() {
         return $this->belongsTo(Branchs::class, 'branch_id', 'id');

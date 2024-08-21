@@ -52,7 +52,7 @@ class Patient extends Model
 
     // Relationships
     public function patientRegistry(){
-        return $this->belongsTo(PatientRegistry::class, 'patient_id', 'patient_Id');
+        return $this->belongsTo(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
     public function sex() {
         return $this->belongsTo(Sex::class, 'sex_id', 'id');

@@ -8,6 +8,8 @@ use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DispositionController;
 use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
 use App\Http\Controllers\HIS\AllergyTypeController;
+use App\Http\Controllers\HIS\CaseIndicatorController;
+use App\Http\Controllers\HIS\HISHospitalRoomsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -586,6 +588,11 @@ Route::controller(HospitalRoomsController::class)->group(function () {
     Route::get('rooms-and-beds', 'index');
 });
 
+Route::controller(HISHospitalRoomsController::class)->group(function () {
+    Route::get('get-station-list', 'getStation');
+    Route::get('get-ipd-rooms', 'index');
+});
+
 
 Route::resource('item-and-services', HospitalServicesController::class);
 Route::controller(HospitalServicesController::class)->group(function () {
@@ -680,6 +687,10 @@ Route::controller(AllergyTypeController::class)->group(function () {
     Route::post('create-allergy-type', 'store');
     Route::put('update-allergy-type/{id}', 'update');
     Route::put('archive-allergy-type/{id}', 'archive');
+});
+
+Route::controller(CaseIndicatorController::class)->group(function () {
+    Route::get('get-case-indicators', 'list');
 });
 
 Route::resource('system-reports', SystemReportsController::class);

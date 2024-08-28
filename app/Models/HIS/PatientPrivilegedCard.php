@@ -13,11 +13,11 @@ class PatientPrivilegedCard extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPrivilegedCard';
     protected $guarded = [];
 
-    public function privilegedPointTransfers() {
-        return $this->hasOne(PrivilegedPointTransfers::class, 'formCard_Id', 'id');
+    public function pointTransfers() {
+        return $this->hasOne(PrivilegedPointTransfers::class, 'fromCard_Id', 'id');
     }
 
-    public function privilegedPointTransactions() {
+    public function pointTransactions() {
         return $this->hasOne(PrivilegedPointTransactions::class, 'card_Id', 'id');
     }
 }

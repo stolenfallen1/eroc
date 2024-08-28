@@ -23,7 +23,9 @@ use App\Models\HIS\PatientPhysicalNeuroExam;
 use App\Models\HIS\PatientPhysicalExamtionCVS;
 use App\Models\HIS\PatientOBGYNHistory;
 use App\Models\HIS\PatientMedications;
+use App\Models\HIS\PatientDischargeInstructions;
 use App\Models\HIS\PatientGynecologicalConditions;
+use App\Models\HIS\PatientAppointments;
 use App\Models\HIS\services\Patient;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\FMS\AccountType;
@@ -81,7 +83,7 @@ class PatientRegistry extends Model
         return $this->belongsTo(PatientImmunizations::class, 'case_No', 'case_No');
     }
     public function history() {
-        return $this->belongsTo(PatientHistory::class, 'case_No', 'case_No');
+        return $this->hasOne(PatientHistory::class, 'case_No', 'case_No');
     }
     public function administered_medicines() {
         return $this->belongsTo(PatientAdministeredMedicines::class, 'case_No', 'case_No');
@@ -111,7 +113,7 @@ class PatientRegistry extends Model
     }
 
     public function patientDoctors() {
-        return $this->hasMany(PatientDoctors::class,'case_No','case_No');
+        return $this->hasOne(PatientDoctors::class,'case_No','case_No');
     }
 
     public function pertinentSignAndSymptoms() {
@@ -139,6 +141,13 @@ class PatientRegistry extends Model
     }
     public function medications() {
         return $this->belongsTo(PatientMedications::class, 'case_No','case_No');
+    }
+    public function dischargeInstructions() {
+        return $this->hasOne(PatientDischargeInstructions::class, 'case_No', 'case_No');
+    }
+
+    public function appointments() {
+        return $this->belongsTo(PatientAppointments::class, 'case_No','case_No');
     }
 
 }

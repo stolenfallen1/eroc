@@ -11,6 +11,7 @@ class PrivilegedPointTransfers extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PrivilegedPointTransfers';
+    protected $primaryKey = 'fromCard_Id';
     protected $guarded = [];
 
     public function privilegedCard() {

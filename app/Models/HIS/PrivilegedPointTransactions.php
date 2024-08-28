@@ -13,7 +13,7 @@ class PrivilegedPointTransactions extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PrivilegedPointTransactions';
     protected $guarded = [];
 
-    public function privilegedCard() {
-        return $this->belongsTo(PatientPrivilegedCard::class,'id','card_Id');
-    }
+    // public function privilegedCard() {
+    //     return $this->belongsTo(PatientPrivilegedCard::class,'id','card_Id');
+    // }
 }

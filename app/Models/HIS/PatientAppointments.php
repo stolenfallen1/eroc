@@ -13,6 +13,7 @@ class PatientAppointments extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientAppointments';
+    protected $primaryKey = 'appointment_ReferenceNumber';
     protected $guarded = [];
 
     public function appointmentsTemporary() {
@@ -22,8 +23,7 @@ class PatientAppointments extends Model
     public function appointmentTransactions() {
         return $this->belongsTo(PatientAppointmentTransactions::class, 'appointment_ReferenceNumber', 'appointment_ReferenceNumber');
     }
-
-    public function appointments() {
+    public function appointmentPayments() {
         return $this->belongsTo(PatientAppointmentPayments::class, 'appointment_ReferenceNumber', 'appointment_ReferenceNumber');
     }
 }

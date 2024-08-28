@@ -23,6 +23,7 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('/patient-brought-by', 'getPatientBroughtBy');
     Route::get('/get-msc-complaint', 'getComplaintList');
     Route::get('disposition', 'getDisposition');
+    Route::get('service-type', 'getServiceType');
     Route::post('register-emergency', 'register');
     Route::put('update-emergency/{id}', 'update');
 });

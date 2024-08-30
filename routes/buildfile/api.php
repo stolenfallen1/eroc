@@ -10,6 +10,7 @@ use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
 use App\Http\Controllers\HIS\AllergyTypeController;
 use App\Http\Controllers\HIS\CaseIndicatorController;
 use App\Http\Controllers\HIS\HISHospitalRoomsController;
+use App\Http\Controllers\HIS\MedicalPackageMasterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -691,6 +692,10 @@ Route::controller(AllergyTypeController::class)->group(function () {
 
 Route::controller(CaseIndicatorController::class)->group(function () {
     Route::get('get-case-indicators', 'list');
+});
+
+Route::controller(MedicalPackageMasterController::class)->group(function () {
+    Route::get('get-medical-package', 'index');
 });
 
 Route::resource('system-reports', SystemReportsController::class);

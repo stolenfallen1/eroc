@@ -13,7 +13,6 @@ class PatientAppointments extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientAppointments';
-    protected $primaryKey = 'appointment_ReferenceNumber';
     protected $guarded = [];
 
     public function appointmentsTemporary() {

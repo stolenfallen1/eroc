@@ -25,6 +25,7 @@ use App\Models\HIS\PatientPastMedicalProcedures;
 use App\Models\HIS\PatientVitalSigns;
 use App\Models\HIS\mscComplaint;
 use App\Models\HIS\mscServiceType;
+use App\Models\HIS\PatientAllergies;
 use App\Models\HIS\PatientPrivilegedCard;
 use App\Models\HIS\PatientAppointmentsTemporary;
 use App\Models\HIS\PatientOBGYNHistory;
@@ -46,11 +47,11 @@ class EmergencyRegistrationController extends Controller
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 5); 
                 $query->where('isRevoked', 0);
-                $query->whereDate('registry_Date', $today)
-                    ->where(function($q) use ($today) {
-                        $q->whereNull('discharged_Date')
-                            ->orWhereDate('discharged_Date', '>=', $today);
-                });
+                // $query->whereDate('registry_Date', $today)
+                //     ->where(function($q) use ($today) {
+                //         $q->whereNull('discharged_Date')
+                //             ->orWhereDate('discharged_Date', '>=', $today);
+                // });
                 if(Request()->keyword) {
                     $query->where(function($subQuery) {
                         $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
@@ -210,13 +211,13 @@ class EmergencyRegistrationController extends Controller
                 'civilstatus_id'            => $request->payload['civilstatus_id'] ?? null,
                 'bloodtype_id'              => $request->payload['bloodtype_id'] ?? null,
                 'dialect_spoken'            => $request->payload['dialect_spoken'] ?? null,
-                'bldgstreet'                => $request->payload['bldgstreet'] ?? null,
-                'region_id'                 => $request->payload['region_id'] ?? null,
-                'province_id'               => $request->payload['province_id'] ?? null,
-                'municipality_id'           => $request->payload['municipality_id'] ?? null,
-                'barangay_id'               => $request->payload['barangay_id'] ?? null,
+                'bldgstreet'                => $request->payload['address']['bldgstreet'] ?? null,
+                'region_id'                 => $request->payload['address']['region_id'] ?? null,
+                'province_id'               => $request->payload['address']['province_id'] ?? null,
+                'municipality_id'           => $request->payload['address']['municipality_id'] ?? null,
+                'barangay_id'               => $request->payload['address']['barangay_id'] ?? null,
+                'country_id'                => $request->payload['address']['country_id'] ?? null,
                 'zipcode_id'                => $request->payload['zipcode_id'] ?? null,
-                'country_id'                => $request->payload['country_id'] ?? null,
                 'occupation'                => $request->payload['occupation'] ?? null,
                 'dependents'                => $request->payload['dependents'] ?? null,
                 'telephone_number'          => $request->payload['telephone_number'] ?? null,
@@ -373,6 +374,7 @@ class EmergencyRegistrationController extends Controller
             $patientAdministeredMedicineData = [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
+                'transactionDate'       => Carbon::now(),
                 'item_Id'               => $request->payload['item_Id'] ?? null,
                 'quantity'              => $request->payload['quantity'] ?? null,
                 'administered_Date'     => $request->payload['administered_Date'] ?? null,
@@ -391,7 +393,7 @@ class EmergencyRegistrationController extends Controller
                 'pastMedical_History'                       => $request->payload['pastMedical_History'] ?? null,
                 'family_History'                            => $request->payload['family_History'] ?? null,
                 'personalSocial_History'                    => $request->payload['personalSocial_History'] ?? null,
-                'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description'] ?? null,
+                'chief_Complaint_Description'               => $complaint ?? null,
                 'impression'                                => $request->payload['impression'] ?? null,
                 'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis'] ?? null,
                 'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis'] ?? null,
@@ -463,7 +465,7 @@ class EmergencyRegistrationController extends Controller
                 'register_Casetype'                         => $request->payload['register_Casetype'] ?? null,
                 'register_Link_Case_No'                     => $request->payload['register_Link_Case_No'] ?? null,
                 'register_Case_No_Consolidate'              => $request->payload['register_Case_No_Consolidate'] ?? null,
-                'patient_Age'                               => $request->payload['patient_Age'] ?? null,
+                'patient_Age'                               => $request->payload['age'] ?? null,
                 'er_Bedno'                                  => $request->payload['er_Bedno'] ?? null,
                 'room_Code'                                 => $request->payload['room_Code'] ?? null,
                 'room_Rate'                                 => $request->payload['room_Rate'] ?? null,
@@ -484,10 +486,10 @@ class EmergencyRegistrationController extends Controller
                 'mscPrivileged_Card_Id'                     => $request->payload['mscPrivileged_Card_Id'] ?? null,
                 'mscBroughtBy_Relationship_Id'              => $request->payload['mscBroughtBy_Relationship_Id'] ?? null,
                 'queue_Number'                              => $request->payload['queue_Number'] ?? null,
-                'arrived_Date'                              => $request->payload['arrived_Date'] ?? null,
+                'arrived_Date'                              => Carbon::now(),
                 'registry_Userid'                           => Auth()->user()->idnumber,
                 'registry_Date'                             => Carbon::now(),
-                'registry_Status'                           => $request->payload['registry_Status'] ?? null,
+                'registry_Status'                           => $request->payload['registry_Status'] ?? 1,
                 'registry_Hostname'                         => $request->payload['registry_Hostname'] ?? null,
                 'discharged_Userid'                         => $request->payload['discharged_Userid'] ?? null,
                 'discharged_Date'                           => $request->payload['discharged_Date'] ?? null,
@@ -536,14 +538,14 @@ class EmergencyRegistrationController extends Controller
                 'guarantor_Credit_Limit'                    => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null,
                 'isWithMultiple_Gurantor'                   => $request->payload['isWithMultiple_Gurantor'] ?? false,
                 'gurantor_Mutiple_TotalCreditLimit'         => $request->payload['gurantor_Mutiple_TotalCreditLimit'] ?? false,
-                'isWithPhilHealth'                          => $request->payload['isWithPhilHealth'] ?? null,
+                'isWithPhilHealth'                          => $request->payload['isWithPhilHealth'] ?? false,
                 'mscPHIC_Membership_Type_id'                => $request->payload['mscPHIC_Membership_Type_id'] ?? null,
                 'philhealth_Number'                         => $request->payload['philhealth_Number'] ?? null,
                 'isWithMedicalPackage'                      => $request->payload['isWithMedicalPackage'] ?? false,
                 'medical_Package_Id'                        => $request->payload['medical_Package_Id'] ?? null,
                 'medical_Package_Name'                      => $request->payload['medical_Package_Name'] ?? null,
                 'medical_Package_Amount'                    => $request->payload['medical_Package_Amount'] ?? null,
-                // 'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description'] ?? null,
+                'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description'] ?? null,
                 'impression'                                => $request->payload['impression'] ?? null,
                 'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis'] ?? null,
                 'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis'] ?? null,
@@ -554,8 +556,8 @@ class EmergencyRegistrationController extends Controller
                 'triageDate'                                => $request->payload['triageDate'] ?? null,
                 'isCriticallyIll'                           => $request->payload['isCriticallyIll'] ?? false,
                 'illness_Type'                              => $request->payload['illness_Type'] ?? null,
-                'attending_Doctor'                          => $request->payload['attending_Doctor'] ?? null,
-                'attending_Doctor_fullname'                 => $request->payload['attending_Doctor_fullname'] ?? null,
+                'attending_Doctor'                          => $request->payload['selectedConsultant']['attending_Doctor'] ?? null,
+                'attending_Doctor_fullname'                 => $request->payload['selectedConsultant']['attending_Doctor_fullname'] ?? null,
                 'bmi'                                       => $request->payload['bmi'] ?? null,
                 'weight'                                    => $request->payload['weight'] ?? null,
                 'weightUnit'                                => $request->payload['weightUnit'] ?? null,
@@ -596,10 +598,11 @@ class EmergencyRegistrationController extends Controller
                 'barcode_Code_String'                       => $request->payload['barcode_Code_String'] ?? null,
                 'isreferredFrom'                            => $request->payload['isreferredFrom'] ?? false,
                 'referred_From_HCI'                         => $request->payload['referred_From_HCI'] ?? null,
-                'referred_From_HCI_address'                 => $request->payload['referred_From_HCI_address'] ?? null,
+                'referred_From_HCI_address'                 => $request->payload['FromHCIAddress'] ?? null,
                 'referred_From_HCI_code'                    => $request->payload['referred_From_HCI_code'] ?? null,
                 'referred_To_HCI'                           => $request->payload['referred_To_HCI'] ?? null,
-                'referred_To_HCI_address'                   => $request->payload['referred_To_HCI_address'] ?? null,
+                'referred_To_HCI_code'                      => $request->payload['referred_To_HCI_code'] ?? null,
+                'referred_To_HCI_address'                   => $request->payload['ToHCIAddress'] ?? null,
                 'referring_Doctor'                          => $request->payload['referring_Doctor'] ?? null,
                 'referral_Reason'                           => $request->payload['referral_Reason'] ?? null,
                 'isWithConsent_DPA'                         => $request->payload['isWithConsent_DPA'] ?? null,
@@ -630,10 +633,10 @@ class EmergencyRegistrationController extends Controller
             ];
 
             $patientPastBadHabitsData = [
-                'patient_Id' => $patient_id,
-                'description' => '',
-                'createdby'                     => Auth()->user()->idnumber,
-                'created_at'                    => Carbon::now(),
+                'patient_Id'    => $patient_id,
+                'description'   => '',
+                'createdby'     => Auth()->user()->idnumber,
+                'created_at'    => Carbon::now(),
             ];
 
             $patientDrugUsedForAllergyData = [
@@ -988,90 +991,6 @@ class EmergencyRegistrationController extends Controller
                 'created_at'            => Carbon::now(),
             ];
 
-            $patientAppointmentsTemporary = [
-                'branch_Id'         => $request->payload['branch_Id'] ?? null,
-                'lastname'          => $request->payload['branch_Id'] ?? null,
-                'firstname'         => $request->payload['firstname'] ?? null,
-                'middlename'        => $request->payload['middlename'] ?? null,
-                'suffix'            => $request->payload['suffix'] ?? null,
-                'sex_Id'            => $request->payload['sex_Id'] ?? null,
-                'birthdate'         => $request->payload['birthdate'] ?? null,
-                'birthplace'        => $request->payload['birthplace'] ?? null,
-                'age'               => $request->payload['age'] ?? null,
-                'region_Id'         => $request->payload['region_Id'] ?? null,
-                'bldgstreet'        => $request->payload['bldgstreet'] ?? null,
-                'province_Id'       => $request->payload['province_Id'] ?? null,
-                'municiplaity_Id'   => $request->payload['municiplaity_Id'] ?? null,
-                'barangay_Id'       => $request->payload['barangay_Id'] ?? null,
-                'zipcode_Id'        => $request->payload['zipcode_Id'] ?? null,
-                'mobile_Number'     => $request->payload['mobile_Number'] ?? null,
-                'telephone_Number'  => $request->payload['telephone_Number'] ?? null,
-                'civil_Status_Id'   => $request->payload['civil_Status_Id'] ?? null,
-                'religion_Id'       => $request->payload['religion_Id'] ?? null,
-                'nationality_Id'    => $request->payload['nationality_Id'] ?? null,
-                'email_Address'     => $request->payload['email_Address'] ?? null,
-                'portal_UID'        => $request->payload['portal_UID'] ?? null,
-                'portal_PWD'        => $request->payload['portal_PWD'] ?? null,
-                'isPWD'             => $request->payload['isPWD'] ?? null,
-                'isSeniorCitizen'   => $request->payload['isSeniorCitizen'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now(),
-            ];
-
-            $patientAppointments = [
-                'patient_Id'                        => $patient_id,
-                'temporary_Patient_Id'              => $request->payload['temporary_Patient_Id'] ?? null,
-                'case_No'                           => $registry_id,
-                'appointment_Type_Id'               => $request->payload['appointment_Type_Id'] ?? null,
-                'appointment_ReferenceNumber'       => $request->payload['appointment_ReferenceNumber'] ?? '',
-                'doctor_Id'                         => $request->payload['doctor_Id'] ?? null,
-                'doctors_Request_Path'              => $request->payload['doctors_Request_Path'] ?? null,
-                'appointment_Date'                  => $request->payload['appointment_Date'] ?? null,
-                'appointment_Time'                  => $request->payload['appointment_Time'] ?? null,
-                'slot_Number'                       => $request->payload['slot_Number'] ?? null,
-                'total_Amount'                      => $request->payload['total_Amount'] ?? null,
-                'isOnline'                          => $request->payload['isOnline'] ?? null,
-                'isSmsSend'                         => $request->payload['isSmsSend'] ?? null,
-                'isEmailed'                         => $request->payload['isEmailed'] ?? null,
-                'reason_for_Visit'                  => $request->payload['reason_for_Visit'] ?? null,
-                'confirmation_Date'                 => $request->payload['confirmation_Date'] ?? null,
-                'cancellation_Date'                 => $request->payload['cancellation_Date'] ?? null,
-                'status_Id'                         => $request->payload['status_Id'] ?? null,
-                'createdby'                         => Auth()->user()->idnumber,
-                'created_at'                        => Carbon::now(),
-            ];
-
-            $patientAppointmentTransactions = [
-                'appointment_ReferenceNumber'   => '',
-                'transDate'                     => $request->payload['transDate'] ?? null,
-                'transaction_Code'              => $request->payload['transaction_Code'] ?? null,
-                'refnum'                        => $request->payload['refnum'] ?? null,
-                'item_Id'                       => $request->payload['item_Id'] ?? null,
-                'quantity'                      => $request->payload['quantity'] ?? null,
-                'amount'                        => $request->payload['amount'] ?? null,
-                'discount_TypeId'               => $request->payload['discount_TypeId'] ?? null,
-                'discount_Name'                 => $request->payload['discount_Name'] ?? null,
-                'discount_Amount'               => $request->payload['discount_Amount'] ?? null,
-                'isVatable'                     => $request->payload['isVatable'] ?? null,
-                'vat_Amount'                    => $request->payload['vat_Amount'] ?? null,
-                'net_Amount'                    => $request->payload['net_Amount'] ?? null,
-                'total_Amount'                  => $request->payload['total_Amount'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
-                'created_at'                    => Carbon::now()
-            ];
-
-            $patientAppointmentPayments = [
-                'appointment_ReferenceNumber'   => '',
-                'payment_Method_Id'             => $request->payload['payment_Method_Id'] ?? null,
-                'payment_Reference_Number'      => $request->payload['payment_Reference_Number'] ?? null,
-                'payment_UploadPath'            => $request->payload['payment_UploadPath'] ?? null,
-                'payment_Date'                  => $request->payload['payment_Date'] ?? null,
-                'payment_TotalAmount'           => $request->payload['payment_TotalAmount'] ?? null,
-                'status_Id'                     => $request->payload['status_Id'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
-                'created_at'                    => Carbon::now()
-            ];
-
             $patientPrivilegedCard = [
                 'patient_Id'            => $patient_id,
                 'card_number'           => $request->payload['card_number'] ?? '374245455400126',
@@ -1168,6 +1087,7 @@ class EmergencyRegistrationController extends Controller
             $patientDischargeDoctorsFollowUp = [
                 'instruction_Id'        => '',
                 'doctor_Id'             => $request->payload['doctor_Id'] ?? null,
+                'doctor_Name'           => $request->payload['doctor_Name'] ?? null,
                 'doctor_Specialization' => $request->payload['doctor_Specialization'] ?? null,
                 'schedule_Date'         => $request->payload['schedule_Date'] ?? null,
                 'createdby'             => Auth()->user()->idnumber,
@@ -1200,18 +1120,9 @@ class EmergencyRegistrationController extends Controller
             $pastientPastSymptomsOfAllergyData['history_Id'] =   $pastHistory->id;
             $pastHistory->pastCauseOfAllergy()->create($pastientPastCauseOfAllergyData);
             $pastHistory->pastSymptomsOfAllergy()->create($pastientPastSymptomsOfAllergyData);
-            
-            $appointmentTemp = PatientAppointmentsTemporary::create($patientAppointmentsTemporary);
-            $patientAppointments['temporary_Patient_Id'] = $appointmentTemp->id;
-            $patientAppointments['appointment_ReferenceNumber'] = $appointmentTemp->id;
-            $appointment = $patient->appointments()->create($patientAppointments);
-            $patientAppointmentPayments['appointment_ReferenceNumber'] = $appointmentTemp->id;
-            $patientAppointmentTransactions['appointment_ReferenceNumber'] = $appointmentTemp->id;
-            $appointment->appointmentTransactions()->create($patientAppointmentTransactions);
-            $appointment->appointmentPayments()->create($patientAppointmentPayments);
-
+    
             if(!$existingRegistry):
-                $patientRegistry = $patient->patientRegistry()->updateOrCreate($patientRegistryData);
+                $patientRegistry = $patient->patientRegistry()->create($patientRegistryData);
                 $patientRegistry->history()->create($patientHistoryData);
                 $patientRegistry->immunizations()->create($patientImmunizationsData );
                 $patientRegistry->vitals()->create($patientVitalSignsData);
@@ -1296,9 +1207,7 @@ class EmergencyRegistrationController extends Controller
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
             $patient    = Patient::findOrFail($id);
-            var_dump( $patient);
-            $patient_id = $patient->patient_id;
-
+            $patient_id = $patient->patient_Id;
             $today = Carbon::now()->format('Y-m-d');
             $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
             ->whereDate('created_at', $today)
@@ -1310,22 +1219,49 @@ class EmergencyRegistrationController extends Controller
 
             $checkPatient = ['patient_Id' =>  $patient_id];
 
-            $patientRegistry                = PatientRegistry::where($checkPatient)->first();
-            $patientHistory                 = PatientHistory::where($checkPatient)->first();
-            $patientMedicalProcedure        = PatientMedicalProcedures::where($checkPatient)->first();
-            $patientVitalSign               = PatientVitalSigns::where($checkPatient)->first();
-            $patientImmunization            = PatientImmunizations::where($checkPatient)->first();
-            $patientAdministeredMedicine    = PatientAdministeredMedicines::where($checkPatient)->first();
-            $pastImmunization               = PatientPastImmunizations::where($checkPatient)->first();
-            $pastMedicalHistory             = PatientPastMedicalHistory::where($checkPatient)->first();
-            $pastMedicalProcedure           = PatientPastMedicalProcedures::where($checkPatient)->first();
-            $pastAllergyHistory             = PatientPastAllergyHistory::where($checkPatient)->first();
-            $pastCauseOfAllergy             = PatientPastCauseofAllergy::where($checkPatient)->first();
-            $pastSymtomsOfAllergy           = PatientPastSymptomsofAllergy::where($checkPatient)->first();
-            $OBGYNHistory                   = PatientOBGYNHistory::where($checkPatient)->first();
-            //Appointments
-            $appointment                    = PatientAppointments::where($checkPatient)->first();
-            // $ppointmentTransactions         = PatientAppointmentTransactions::where(['appointment_ReferenceNumber'])
+            $pastImmunization               = $patient->past_immunization()->first();
+            $pastMedicalHistory             = $patient->past_medical_history()->first();
+            $pastMedicalProcedure           = $patient->past_medical_procedures()->first();
+            $pastAllergyHistory             = $patient->past_allergy_history()->first();  
+            $patientRegistry                = $patient->patientRegistry()->first();
+            
+            $patientHistory                 = $patientRegistry->history()->first();
+            $patientMedicalProcedure        = $patientRegistry->medical_procedures()->first();
+            $patientVitalSign               = $patientRegistry->vitals()->first();
+            $patientImmunization            = $patientRegistry->immunizations()->first();
+            $patientAdministeredMedicine    = $patientRegistry->administered_medicines()->first();
+            $pastCauseOfAllergy             = $pastAllergyHistory->pastCauseOfAllergy()->first();
+            $pastSymtomsOfAllergy           = $pastAllergyHistory->pastSymptomsOfAllergy()->first();
+
+            $OBGYNHistory                   = $patientRegistry->oBGYNHistory()->first();
+            $pregnancyHistory               = $OBGYNHistory->PatientPregnancyHistory()->first();
+            $gynecologicalConditions        = $OBGYNHistory->gynecologicalConditions()->first();
+
+            $allergy                        = $patientRegistry->allergies()->first();
+            $causeOfAllergy                 = $allergy->cause_of_allergy()->first();
+            $symptomsOfAllergy              = $allergy->symptoms_allergy()->first();
+
+            $badHabits                      = $patientRegistry->bad_habits()->first();
+            $pastBadHabits                  = $patient->past_bad_habits()->first();
+            $drugUsedForAllergy             = $patient->drug_used_for_allergy()->first();
+            $patientDoctors                 = $patientRegistry->patientDoctors()->first();
+            $physicalAbdomen                = $patientRegistry->physicalAbdomen()->first();
+            $pertinentSignAndSymptoms       = $patientRegistry->pertinentSignAndSymptoms()->first();
+            $physicalExamtionChestLungs     = $patientRegistry->physicalExamtionChestLungs()->first();
+            $courseInTheWard                = $patientRegistry->courseInTheWard()->first();
+            $physicalExamtionCVS            = $patientRegistry->physicalExamtionCVS()->first();
+            $physicalExamtionGeneralSurvey  = $patientRegistry->PhysicalExamtionGeneralSurvey()->first();
+            $physicalExamtionHEENT          = $patientRegistry->physicalExamtionHEENT()->first();
+            $physicalGUIE                   = $patientRegistry->physicalGUIE()->first();
+            $physicalNeuroExam              = $patientRegistry->physicalNeuroExam()->first();
+            $physicalSkinExtremities        = $patientRegistry->physicalSkinExtremities()->first();
+
+            $medications                    = $patientRegistry->medications()->first();
+            $dischargeInstructions          = $patient->dischargeInstructions()->first();
+            $dischargeMedications           = $dischargeInstructions->dischargeMedications()->first();
+            $dischargeFollowUpTreatment     = $dischargeInstructions->dischargeFollowUpTreatment()->first();
+            $dischargeFollowUpLaboratories  = $dischargeInstructions->dischargeFollowUpLaboratories()->first();
+            $dischargeDoctorsFollowUp       = $dischargeInstructions->dischargeDoctorsFollowUp()->first();
 
             $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis     = ($patientIdentifier === "Hemo Patient") ? true : false;
@@ -1463,6 +1399,227 @@ class EmergencyRegistrationController extends Controller
                 'created_at'            => Carbon::now(),
             ];
 
+            $patientAllergyData = [
+                'patient_Id'        => $patient_id,
+                'case_No'           => $registry_id,
+                'family_History'    => $request->payload['family_History'] ?? $allergy->family_History,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ];
+
+            $patientCauseAllergyData = [
+                'allergies_Id'        => '',
+                'allergy_Type_Id'   => $request->payload['allergy_Type_Id'] ?? $causeOfAllergy->allergy_Type_Id,
+                'duration'          => $request->payload['duration'] ?? $causeOfAllergy->duration,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ];
+
+            $patientSymptomsOfAllergy = [
+                'allergies_Id'            => '',
+                'symptom_Description'   => $request->payload['symptom_Description'] ?? $symptomsOfAllergy->symptom_Description,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+            ];
+
+            $patientBadHabitsData = [
+                'patient_Id'    => $patient_id,
+                'case_No'       => $registry_id,
+                'description'   => $request->payload['description'] ?? $badHabits->description,
+                'createdby'     => Auth()->user()->idnumber,
+                'created_at'    => Carbon::now(),
+            ];
+
+            $patientPastBadHabitsData = [
+                'patient_Id'    => $patient_id,
+                'description'   => $request->payload['description']->$pastBadHabits->description,
+                'createdby'     => Auth()->user()->idnumber,
+                'created_at'    => Carbon::now(),
+            ];
+
+            $patientDrugUsedForAllergyData = [
+                'patient_Id'        => $patient_id,
+                'drug_Description'  => $request->payload['drug_Description'] ?? $drugUsedForAllergy->drug_Description,
+                'hospital'          => $request->payload['hospital'] ?? $drugUsedForAllergy->hospital,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ];
+
+            $patientDoctorsData = [
+                'patient_Id'        => $patient_id,
+                'case_No'           => $registry_id,
+                'doctor_Id'         => $request->payload['doctor_Id'] ?? $patientDoctors->doctor_Id,
+                'doctors_Fullname'  => $request->payload['doctors_Fullname'] ?? $patientDoctors->doctors_Fullname,
+                'role_Id'           => $request->payload['role_Id'] ?? $patientDoctors->role_Id,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ];
+
+            $patientPhysicalAbdomenData = [
+                'patient_Id'                => $patient_id,
+                'case_No'                   => $registry_id,
+                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? $physicalAbdomen->essentially_Normal,
+                'palpable_Masses'           => $request->payload['palpable_Masses'] ?? $physicalAbdomen->palpable_Masses,
+                'abdominal_Rigidity'        => $request->payload['abdominal_Rigidity'] ?? $physicalAbdomen->abdominal_Rigidity,
+                'uterine_Contraction'       => $request->payload['uterine_Contraction'] ?? $physicalAbdomen->uterine_Contraction,
+                'hyperactive_Bowel_Sounds'  => $request->payload['hyperactive_Bowel_Sounds'] ?? $physicalAbdomen->hyperactive_Bowel_Sounds,
+                'others_Description'        => $request->payload['others_Description'] ?? $physicalAbdomen->others_Description,
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+            ];
+
+            $patientPertinentSignAndSymptomsData = [
+                'patient_Id'                        => $patient_id,
+                'case_No'                           => $registry_id,
+                'altered_Mental_Sensorium'          => $request->payload['altered_Mental_Sensorium'] ?? $pertinentSignAndSymptoms->altered_Mental_Sensorium,
+                'abdominal_CrampPain'               => $request->payload['abdominal_CrampPain'] ?? $pertinentSignAndSymptoms->abdominal_CrampPain,
+                'anorexia'                          => $request->payload['anorexia'] ?? $pertinentSignAndSymptoms->anorexia,
+                'bleeding_Gums'                     => $request->payload['bleeding_Gums'] ?? $pertinentSignAndSymptoms->bleeding_Gums,
+                'body_Weakness'                     => $request->payload['body_Weakness'] ?? $pertinentSignAndSymptoms->body_Weakness,
+                'blurring_Of_Vision'                => $request->payload['blurring_Of_Vision'] ?? $pertinentSignAndSymptoms->blurring_Of_Vision,
+                'chest_PainDiscomfort'              => $request->payload['chest_PainDiscomfort'] ?? $pertinentSignAndSymptoms->chest_PainDiscomfort,
+                'constipation'                      => $request->payload['constipation'] ?? $pertinentSignAndSymptoms->constipation,
+                'cough'                             => $request->payload['cough'] ?? $pertinentSignAndSymptoms->cough,
+                'diarrhea'                          => $request->payload['diarrhea'] ?? $pertinentSignAndSymptoms->diarrhea,
+                'dizziness'                         => $request->payload['dizziness'] ?? $pertinentSignAndSymptoms->dizziness,
+                'dysphagia'                         => $request->payload['dysphagia'] ?? $pertinentSignAndSymptoms->dysphagia,
+                'dysuria'                           => $request->payload['dysuria'] ?? $pertinentSignAndSymptoms->dysuria,
+                'epistaxis'                         => $request->payload['epistaxis'] ?? $pertinentSignAndSymptoms->epistaxis,
+                'fever'                             => $request->payload['fever'] ?? $pertinentSignAndSymptoms->fever,
+                'frequency_Of_Urination'            => $request->payload['frequency_Of_Urination'] ?? $pertinentSignAndSymptoms->frequency_Of_Urination,
+                'headache'                          => $request->payload['headache'] ?? $pertinentSignAndSymptoms->headache,
+                'hematemesis'                       => $request->payload['hematemesis'] ?? $pertinentSignAndSymptoms->hematemesis,
+                'hematuria'                         => $request->payload['hematuria'] ?? $pertinentSignAndSymptoms->hematuria,
+                'hemoptysis'                        => $request->payload['hemoptysis'] ?? $pertinentSignAndSymptoms->hemoptysis,
+                'irritability'                      => $request->payload['irritability'] ?? $pertinentSignAndSymptoms->irritability,
+                'jaundice'                          => $request->payload['jaundice'] ?? $pertinentSignAndSymptoms->jaundice,
+                'lower_Extremity_Edema'             => $request->payload['lower_Extremity_Edema'] ?? $pertinentSignAndSymptoms->lower_Extremity_Edema,
+                'myalgia'                           => $request->payload['myalgia'] ?? $pertinentSignAndSymptoms->myalgia,
+                'orthopnea'                         => $request->payload['orthopnea'] ?? $pertinentSignAndSymptoms->orthopnea,
+                'pain'                              => $request->payload['pain'] ?? $pertinentSignAndSymptoms->pain,
+                'pain_Description'                  => $request->payload['pain_Description'] ?? $pertinentSignAndSymptoms->pain_Description,
+                'palpitations'                      => $request->payload['palpitations'] ?? $pertinentSignAndSymptoms->palpitations,
+                'seizures'                          => $request->payload['seizures'] ?? $pertinentSignAndSymptoms->seizures,
+                'skin_rashes'                       => $request->payload['skin_rashes'] ?? $pertinentSignAndSymptoms->skin_rashes,
+                'stool_BloodyBlackTarry_Mucoid'     => $request->payload['stool_BloodyBlackTarry_Mucoid'] ?? $pertinentSignAndSymptoms->stool_BloodyBlackTarry_Mucoid,
+                'sweating'                          => $request->payload['sweating'] ?? $pertinentSignAndSymptoms->sweating,
+                'urgency'                           => $request->payload['urgency'] ?? $pertinentSignAndSymptoms->urgency,
+                'vomitting'                         => $request->payload['vomitting'] ?? $pertinentSignAndSymptoms->vomitting,
+                'weightloss'                        => $request->payload['weightloss'] ?? $pertinentSignAndSymptoms->weightloss,
+                'others'                            => $request->payload['others'] ?? $pertinentSignAndSymptoms->others,
+                'others_Description'                => $request->payload['others_Description'] ?? $pertinentSignAndSymptoms->others_Description,
+                'createdby'                         => Auth()->user()->idnumber,
+                'created_at'                        => Carbon::now(),
+            ];
+
+            $patientPhysicalExamtionChestLungsData = [
+                'patient_Id'                            => $patient_id,
+                'case_No'                               => $registry_id,
+                'essentially_Normal'                    => $request->payload['essentially_Normal'] ?? $physicalExamtionChestLungs->essentially_Normal,
+                'lumps_Over_Breasts'                    => $request->payload['lumps_Over_Breasts'] ?? $physicalExamtionChestLungs->lumps_Over_Breasts,
+                'asymmetrical_Chest_Expansion'          => $request->payload['asymmetrical_Chest_Expansion'] ?? $physicalExamtionChestLungs->asymmetrical_Chest_Expansion,
+                'rales_Crackles_Rhonchi'                => $request->payload['rales_Crackles_Rhonchi'] ?? $physicalExamtionChestLungs->rales_Crackles_Rhonchi,
+                'decreased_Breath_Sounds'               => $request->payload['decreased_Breath_Sounds'] ?? $physicalExamtionChestLungs->decreased_Breath_Sounds,
+                'intercostalrib_Clavicular_Retraction'  => $request->payload['intercostalrib_Clavicular_Retraction'] ?? $physicalExamtionChestLungs->intercostalrib_Clavicular_Retraction,
+                'wheezes'                               => $request->payload['wheezes'] ?? $physicalExamtionChestLungs->wheezes,
+                'others_Description'                    => $request->payload['others_Description'] ?? $physicalExamtionChestLungs->others_Description,
+                'createdby'                             => Auth()->user()->idnumber,
+                'created_at'                            => Carbon::now(),
+            ];
+
+            $patientCourseInTheWardData = [
+                'patient_Id'                            => $patient_id,
+                'case_No'                               => $registry_id,
+                'doctors_OrdersAction'                  => $request->payload['doctors_OrdersAction'] ?? $courseInTheWard->doctors_OrdersAction,
+                'createdby'                             => Auth()->user()->idnumber,
+                'created_at'                            => Carbon::now(),
+            ];
+
+            $patientPhysicalExamtionCVSData = [
+                'patient_Id'                => $patient_id,
+                'case_No'                   => $registry_id,
+                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? $physicalExamtionCVS->essentially_Normal,
+                'irregular_Rhythm'          => $request->payload['irregular_Rhythm'] ?? $physicalExamtionCVS->irregular_Rhythm,
+                'displaced_Apex_Beat'       => $request->payload['displaced_Apex_Beat'] ?? $physicalExamtionCVS->displaced_Apex_Beat,
+                'muffled_Heart_Sounds'      => $request->payload['muffled_Heart_Sounds'] ?? $physicalExamtionCVS->muffled_Heart_Sounds,
+                'heaves_AndOR_Thrills'      => $request->payload['heaves_AndOR_Thrills'] ?? $physicalExamtionCVS->heaves_AndOR_Thrills,
+                'murmurs'                   => $request->payload['murmurs'] ?? $physicalExamtionCVS->murmurs,
+                'pericardial_Bulge'         => $request->payload['pericardial_Bulge'] ?? $physicalExamtionCVS->pericardial_Bulge,
+                'others_Description'        => $request->payload['others_Description'] ?? $physicalExamtionCVS->others_Description,
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+            ];
+
+            $patientPhysicalExamtionGeneralSurveyData = [
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'awake_And_Alert'       => $request->payload['awake_And_Alert'] ?? $physicalExamtionGeneralSurvey->awake_And_Alert,
+                'altered_Sensorium'     => $request->payload['altered_Sensorium'] ?? $physicalExamtionGeneralSurvey->altered_Sensorium,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+            ];
+
+            $patientPhysicalExamtionHEENTData = [
+                'patient_Id'                    => $patient_id,
+                'case_No'                       => $registry_id,
+                'essentially_Normal'            => $request->payload['essentially_Normal'] ?? $physicalExamtionHEENT->essentially_Normal,
+                'icteric_Sclerae'               => $request->payload['icteric_Sclerae'] ?? $physicalExamtionHEENT->icteric_Sclerae,
+                'abnormal_Pupillary_Reaction'   => $request->payload['abnormal_Pupillary_Reaction'] ?? $physicalExamtionHEENT->abnormal_Pupillary_Reaction,
+                'pale_Conjunctive'              => $request->payload['pale_Conjunctive'] ?? $physicalExamtionHEENT->pale_Conjunctive,
+                'cervical_Lympadenopathy'       => $request->payload['cervical_Lympadenopathy'] ?? $physicalExamtionHEENT->cervical_Lympadenopathy,
+                'sunken_Eyeballs'               => $request->payload['sunken_Eyeballs'] ?? $physicalExamtionHEENT->sunken_Eyeballs,
+                'dry_Mucous_Membrane'           => $request->payload['dry_Mucous_Membrane'] ?? $physicalExamtionHEENT->dry_Mucous_Membrane,
+                'sunken_Fontanelle'             => $request->payload['sunken_Fontanelle'] ?? $physicalExamtionHEENT->sunken_Fontanelle,
+                'others_description'            => $request->payload['others_description'] ?? $physicalExamtionHEENT->others_description,
+                'createdby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+            ];
+
+            $patientPhysicalGUIEData = [
+                'patient_Id'                        => $patient_id,
+                'case_No'                           => $registry_id,
+                'essentially_Normal'                => $request->payload['essentially_Normal'] ?? $physicalGUIE->essentially_Normal,
+                'blood_StainedIn_Exam_Finger'       => $request->payload['blood_StainedIn_Exam_Finger'] ?? $physicalGUIE->blood_StainedIn_Exam_Finger,
+                'cervical_Dilatation'               => $request->payload['cervical_Dilatation'] ?? $physicalGUIE->cervical_Dilatation,
+                'presence_Of_AbnormalDischarge'     => $request->payload['presence_Of_AbnormalDischarge'] ?? $physicalGUIE->presence_Of_AbnormalDischarge,
+                'others_Description'                => $request->payload['others_Description'] ?? $physicalGUIE->others_Description,
+                'createdby'                         => Auth()->user()->idnumber,
+                'created_at'                        => Carbon::now(),
+            ];
+
+            $patientPhysicalNeuroExamData = [
+                'patient_Id'                    => $patient_id,
+                'case_No'                       => $registry_id,
+                'essentially_Normal'            => $request->payload['essentially_Normal'] ?? $physicalNeuroExam->essentially_Normal,
+                'abnormal_Reflexes'             => $request->payload['abnormal_Reflexes'] ?? $physicalNeuroExam->abnormal_Reflexes,
+                'abormal_Gait'                  => $request->payload['abormal_Gait'] ?? $physicalNeuroExam->abormal_Gait,
+                'poor_Altered_Memory'           => $request->payload['poor_Altered_Memory'] ?? $physicalNeuroExam->poor_Altered_Memory,
+                'abnormal_Position_Sense'       => $request->payload['abnormal_Position_Sense'] ?? $physicalNeuroExam->abnormal_Position_Sense,
+                'poor_Muscle_Tone_Strength'     => $request->payload['poor_Muscle_Tone_Strength'] ?? $physicalNeuroExam->poor_Muscle_Tone_Strength,
+                'abnormal_Decreased_Sensation'  => $request->payload['abnormal_Decreased_Sensation'] ?? $physicalNeuroExam->abnormal_Decreased_Sensation,
+                'poor_Coordination'             => $request->payload['poor_Coordination'] ?? $physicalNeuroExam->poor_Coordination,
+                'createdby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+            ];
+
+            $patientPhysicalSkinExtremitiesData = [
+                'patient_Id'                => $patient_id,
+                'case_No'                   => $registry_id,
+                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? $physicalSkinExtremities->essentially_Normal,
+                'edema_Swelling'            => $request->payload['edema_Swelling'] ?? $physicalSkinExtremities->edema_Swelling,
+                'rashes_Petechiae'          => $request->payload['rashes_Petechiae'] ?? $physicalSkinExtremities->rashes_Petechiae,
+                'clubbing'                  => $request->payload['clubbing'] ?? $physicalSkinExtremities->clubbing,
+                'decreased_Mobility'        => $request->payload['decreased_Mobility'] ?? $physicalSkinExtremities->decreased_Mobility,
+                'weak_Pulses'               => $request->payload['weak_Pulses'] ?? $physicalSkinExtremities->weak_Pulses,
+                'cold_Clammy_Skin'          => $request->payload['cold_Clammy_Skin'] ?? $physicalSkinExtremities->cold_Clammy_Skin,
+                'pale_Nailbeds'             => $request->payload['pale_Nailbeds'] ?? $physicalSkinExtremities->pale_Nailbeds,
+                'cyanosis_Mottled_Skin'     => $request->payload['cyanosis_Mottled_Skin'] ?? $physicalSkinExtremities->cyanosis_Mottled_Skin,
+                'poor_Skin_Turgor'          => $request->payload['poor_Skin_Turgor'] ?? $physicalSkinExtremities->poor_Skin_Turgor,
+                'others_Description'        => $request->payload['others_Description'] ?? $physicalSkinExtremities->others_Description,
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+            ];
+            
             $patientOBGYNHistory = [
                 'patient_Id'                                            => $patient_id,
                 'case_No'                                               => $registry_id,
@@ -1600,6 +1757,120 @@ class EmergencyRegistrationController extends Controller
                 'created_at'                                            => Carbon::now(),
             ];
 
+            $patientPregnancyHistoryData = [
+                'OBGYNHistoryID'    => $patient_id,
+                'pregnancyNumber'   => $registry_id,
+                'outcome'           => $request->payload['outcome'] ?? $pregnancyHistory->outcome,
+                'deliveryDate'      => $request->payload['deliveryDate'] ?? $pregnancyHistory->deliveryDate,
+                'complications'     => $request->payload['complications'] ?? $pregnancyHistory->complications,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ];
+
+            $patientGynecologicalConditions = [
+                'OBGYNHistoryID'    => $patient_id,
+                'conditionName'     => $registry_id,
+                'diagnosisDate'     => $request->payload['diagnosisDate'] ?? $gynecologicalConditions->diagnosisDate,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ];
+
+            $patientMedicationsData = [
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'item_Id'               => $request->payload['item_Id'] ?? $medications->item_Id,
+                'drug_Description'      => $request->payload['drug_Description'] ?? $medications->drug_Description,
+                'dosage'                => $request->payload['dosage'] ?? $medications->dosage,
+                'reason_For_Use'        => $request->payload['reason_For_Use'] ?? $medications->reason_For_Use,
+                'adverse_Side_Effect'   => $request->payload['adverse_Side_Effect'] ?? $medications->adverse_Side_Effect,
+                'hospital'              => $request->payload['hospital'] ?? $medications->hospital,
+                'isPrescribed'          => $request->payload['isPrescribed'] ?? $medications->isPrescribed,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+            ];
+
+            $patientPrivilegedCard = [
+                'patient_Id'            => $patient_id,
+                'card_number'           => $request->payload['card_number'] ?? $privilegedCard->card_number,
+                'card_Type_Id'          => $request->payload['card_Type_Id'] ?? $privilegedCard->card_Type_Id,
+                'card_BenefitLevel'     => $request->payload['card_BenefitLevel'] ?? $privilegedCard->card_BenefitLevel,
+                'card_PIN'              => $request->payload['card_PIN'] ?? $privilegedCard->card_PIN,
+                'card_Bardcode'         => $request->payload['card_Bardcode'] ?? $privilegedCard->card_Bardcode,
+                'card_RFID'             => $request->payload['card_RFID'] ?? $privilegedCard->card_RFID,
+                'card_Balance'          => $request->payload['card_Balance'] ?? $privilegedCard->card_Balance,
+                'issued_Date'           => $request->payload['issued_Date'] ?? $privilegedCard->issued_Date,
+                'expiry_Date'           => $request->payload['expiry_Date'] ?? $privilegedCard->expiry_Date,
+                'points_Earned'         => $request->payload['points_Earned'] ?? $privilegedCard->points_Earned,
+                'points_Transferred'    => $request->payload['points_Transferred'] ?? $privilegedCard->points_Transferred,
+                'points_Redeemed'       => $request->payload['points_Redeemed'] ?? $privilegedCard->points_Redeemed,
+                'points_Forfeited'      => $request->payload['points_Forfeited'] ?? $privilegedCard->points_Forfeited,
+                'card_Status'           => $request->payload['card_Status'] ?? $privilegedCard->card_Status,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now()
+            ];
+
+            $patientDischargeInstructions = [
+                'branch_Id'                         => $request->payload['branch_Id'] ?? $dischargeInstructions->branch_Id,
+                'patient_Id'                        => $patient_id,
+                'case_No'                           => $registry_id,
+                'general_Instructions'              => $request->payload['general_Intructions'] ?? $dischargeInstructions->general_Instructions,
+                'dietary_Instructions'              => $request->payload['dietary_Intructions'] ?? $dischargeInstructions->dietary_Instructions,
+                'medications_Instructions'          => $request->payload['medications_Intructions'] ?? $dischargeInstructions->medications_Instructions,
+                'activity_Restriction'              => $request->payload['activity_Restriction'] ?? $dischargeInstructions->activity_Restriction,
+                'dietary_Restriction'               => $request->payload['dietary_Restriction'] ?? $dischargeInstructions->dietary_Restriction,
+                'addtional_Notes'                   => $request->payload['addtional_Notes'] ?? $dischargeInstructions->addtional_Notes,
+                'clinicalPharmacist_OnDuty'         => $request->payload['clinicalPharmacist_OnDuty'] ?? $dischargeInstructions->clinicalPharmacist_OnDuty,
+                'clinicalPharmacist_CheckTime'      => $request->payload['clinicalPharmacist_CheckTime'] ?? $dischargeInstructions->clinicalPharmacist_CheckTime,
+                'nurse_OnDuty'                      => $request->payload['nurse_OnDuty'] ?? $dischargeInstructions->nurse_OnDuty,
+                'intructedBy_clinicalPharmacist'    => $request->payload['intructedBy_clinicalPharmacist'] ?? $dischargeInstructions->intructedBy_clinicalPharmacist,
+                'intructedBy_Dietitians'            => $request->payload['intructedBy_Dietitians'] ?? $dischargeInstructions->intructedBy_Dietitians,
+                'intructedBy_Nurse'                 => $request->payload['intructedBy_Nurse'] ?? $dischargeInstructions->intructedBy_Nurse,
+                'createdby'                         => Auth()->user()->idnumber,
+                'created_at'                        => Carbon::now()
+            ];
+
+            $patientDischargeMedications = [
+                'instruction_Id'        => $dischargeMedications->instruction_Id,
+                'Item_Id'               => $request->payload['Item_Id'] ?? $dischargeMedications->Item_Id,
+                'medication_Name'       => $request->payload['medication_Name'] ?? $dischargeMedications->medication_Name,
+                'medication_Type'       => $request->payload['medication_Type'] ?? $dischargeMedications->medication_Type,
+                'dosage'                => $request->payload['dosage'] ?? $dischargeMedications->dosage,
+                'frequency'             => $request->payload['frequency'] ?? $dischargeMedications->frequency,
+                'purpose'               => $request->payload['purpose'] ?? $dischargeMedications->purpose,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now()
+            ];
+
+            $patientDischargeFollowUpTreatment = [
+                'instruction_Id'        => $dischargeFollowUpTreatment->instruction_Id,
+                'treatment_Description' => $request->payload['treatment_Description'] ?? $dischargeFollowUpTreatment->treatment_Description,
+                'treatment_Date'        => $request->payload['treatment_Date'] ?? $dischargeFollowUpTreatment->treatment_Date,
+                'doctor_Id'             => $request->payload['doctor_Id'] ?? $dischargeFollowUpTreatment->doctor_Id,
+                'doctor_Name'           => $request->payload['doctor_Name'] ?? $dischargeFollowUpTreatment->doctor_Name,
+                'notes'                 => $request->payload['notes'] ?? $dischargeFollowUpTreatment->notes,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now()
+            ];
+
+            $patientDischargeFollowUpLaboratories = [
+                'instruction_Id'    => $dischargeFollowUpLaboratories->instruction_Id,
+                'item_Id'           => $request->payload['item_Id'] ?? $dischargeFollowUpLaboratories->item_Id,
+                'test_Name'         => $request->payload['test_Name'] ?? $dischargeFollowUpLaboratories->test_Name,
+                'test_DateTime'     => $request->payload['test_DateTime'] ?? $dischargeFollowUpLaboratories->test_DateTime,
+                'notes'             => $request->payload['notes'] ?? $dischargeFollowUpLaboratories->notes,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now()
+            ];
+
+            $patientDischargeDoctorsFollowUp = [
+                'instruction_Id'        => $dischargeDoctorsFollowUp->instruction_Id,
+                'doctor_Id'             => $request->payload['doctor_Id'] ?? $dischargeDoctorsFollowUp->doctor_Id,
+                'doctor_Name'           => $request->payload['doctor_Name'] ?? $dischargeDoctorsFollowUp->doctor_Name,
+                'doctor_Specialization' => $request->payload['doctor_Specialization'] ?? $dischargeDoctorsFollowUp->doctor_Specialization,
+                'schedule_Date'         => $request->payload['schedule_Date'] ?? $dischargeDoctorsFollowUp->schedule_Date,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now()
+            ];
 
             $patientHistoryData = [
                 'branch_Id'                                 => $request->payload['branch_Id'] ?? 1,
@@ -1783,105 +2054,30 @@ class EmergencyRegistrationController extends Controller
                 'updated_at'            => $today,
             ];
 
-            $patientAppointmentsTemporary = [
-                'branch_Id'         => $request->payload['branch_Id'] ?? null,
-                'lastname'          => $request->payload['branch_Id'] ?? null,
-                'firstname'         => $request->payload['firstname'] ?? null,
-                'middlename'        => $request->payload['middlename'] ?? null,
-                'suffix'            => $request->payload['suffix'] ?? null,
-                'sex_Id'            => $request->payload['sex_Id'] ?? null,
-                'birthdate'         => $request->payload['birthdate'] ?? null,
-                'birthplace'        => $request->payload['birthplace'] ?? null,
-                'age'               => $request->payload['age'] ?? null,
-                'region_Id'         => $request->payload['region_Id'] ?? null,
-                'bldgstreet'        => $request->payload['bldgstreet'] ?? null,
-                'province_Id'       => $request->payload['province_Id'] ?? null,
-                'municiplaity_Id'   => $request->payload['municiplaity_Id'] ?? null,
-                'barangay_Id'       => $request->payload['barangay_Id'] ?? null,
-                'zipcode_Id'        => $request->payload['zipcode_Id'] ?? null,
-                'mobile_Number'     => $request->payload['mobile_Number'] ?? null,
-                'telephone_Number'  => $request->payload['telephone_Number'] ?? null,
-                'civil_Status_Id'   => $request->payload['civil_Status_Id'] ?? null,
-                'religion_Id'       => $request->payload['religion_Id'] ?? null,
-                'nationality_Id'    => $request->payload['nationality_Id'] ?? null,
-                'email_Address'     => $request->payload['email_Address'] ?? null,
-                'portal_UID'        => $request->payload['portal_UID'] ?? null,
-                'portal_PWD'        => $request->payload['portal_PWD'] ?? null,
-                'isPWD'             => $request->payload['isPWD'] ?? null,
-                'isSeniorCitizen'   => $request->payload['isSeniorCitizen'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now(),
-            ];
-
-            $patientAppointments = [
-                'patient_Id'                        => $patient_id,
-                'temporary_Patient_Id'              => $request->payload['temporary_Patient_Id'] ??  $appointment->temporary_Patient_Id,
-                'case_No'                           => $registry_id,
-                'appointment_Type_Id'               => $request->payload['appointment_Type_Id'] ??  $appointment->appointment_Type_Id,
-                'appointment_ReferenceNumber'       => $request->payload['appointment_ReferenceNumber'] ?? $appointment->appointment_ReferenceNumber,
-                'doctor_Id'                         => $request->payload['doctor_Id'] ??  $appointment->doctor_Id,
-                'doctors_Request_Path'              => $request->payload['doctors_Request_Path'] ??  $appointment->doctors_Request_Path,
-                'appointment_Date'                  => $request->payload['appointment_Date'] ??  $appointment->appointment_Date,
-                'appointment_Time'                  => $request->payload['appointment_Time'] ??  $appointment->appointment_Time,
-                'slot_Number'                       => $request->payload['slot_Number'] ??  $appointment->slot_Number,
-                'total_Amount'                      => $request->payload['total_Amount'] ??  $appointment->total_Amount,
-                'isOnline'                          => $request->payload['isOnline'] ??  $appointment->isOnline,
-                'isSmsSend'                         => $request->payload['isSmsSend'] ??  $appointment->isSmsSend,
-                'isEmailed'                         => $request->payload['isEmailed'] ??  $appointment->isEmailed,
-                'reason_for_Visit'                  => $request->payload['reason_for_Visit'] ??  $appointment->reason_for_Visit,
-                'confirmation_Date'                 => $request->payload['confirmation_Date'] ??  $appointment->confirmation_Date,
-                'cancellation_Date'                 => $request->payload['cancellation_Date'] ??  $appointment->cancellation_Date,
-                'status_Id'                         => $request->payload['status_Id'] ??  $appointment->status_Id,
-                'createdby'                         => Auth()->user()->idnumber,
-                'created_at'                        => Carbon::now(),
-            ];
-
-            $patientAppointmentTransactions = [
-                'appointment_ReferenceNumber'   => '',
-                'transDate'                     => $request->payload['transDate'] ?? null,
-                'transaction_Code'              => $request->payload['transaction_Code'] ?? null,
-                'refnum'                        => $request->payload['refnum'] ?? null,
-                'item_Id'                       => $request->payload['item_Id'] ?? null,
-                'quantity'                      => $request->payload['quantity'] ?? null,
-                'amount'                        => $request->payload['amount'] ?? null,
-                'discount_TypeId'               => $request->payload['discount_TypeId'] ?? null,
-                'discount_Name'                 => $request->payload['discount_Name'] ?? null,
-                'discount_Amount'               => $request->payload['discount_Amount'] ?? null,
-                'isVatable'                     => $request->payload['isVatable'] ?? null,
-                'vat_Amount'                    => $request->payload['vat_Amount'] ?? null,
-                'net_Amount'                    => $request->payload['net_Amount'] ?? null,
-                'total_Amount'                  => $request->payload['total_Amount'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
-                'created_at'                    => Carbon::now()
-            ];
-
-            $patientAppointmentPayments = [
-                'appointment_ReferenceNumber'   => '',
-                'payment_Method_Id'             => $request->payload['payment_Method_Id'] ?? null,
-                'payment_Reference_Number'      => $request->payload['payment_Reference_Number'] ?? null,
-                'payment_UploadPath'            => $request->payload['payment_UploadPath'] ?? null,
-                'payment_Date'                  => $request->payload['payment_Date'] ?? null,
-                'payment_TotalAmount'           => $request->payload['payment_TotalAmount'] ?? null,
-                'status_Id'                     => $request->payload['status_Id'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
-                'created_at'                    => Carbon::now()
-            ];
-
-            $patient->update( $patientData);
+            $patient->update($patientData);
             if($existingRegistry) {
-                $patientRegistry->whereDate('created_at', $today)->update($checkPatient, $patientRegistryData);
-                $patientHistory->whereDate('created_at', $today)->update($checkPatient, $patientHistoryData);
-                $patientMedicalProcedure->whereDate('created_at', $today)->update($checkPatient, $patientMedicalProcedureData);
-                $patientVitalSign->whereDate('created_at', $today)->update($checkPatient, $patientVitalSignsData);
-                $patientImmunization->whereDate('created_at', $today)->update($checkPatient, $patientImmunizationsData);
-                $patientAdministeredMedicine->whereDate('created_at', $today)->update($checkPatient, $patientAdministeredMedicineData);
+                $patientRegistry->whereDate('created_at', $today)->update($patientRegistryData);
+                $patientHistory->whereDate('created_at', $today)->update($patientHistoryData);
+                $patientMedicalProcedure->whereDate('created_at', $today)->update($patientMedicalProcedureData);
+                $patientVitalSign->whereDate('created_at', $today)->update($patientVitalSignsData);
+                $patientImmunization->whereDate('created_at', $today)->update($patientImmunizationsData);
+                $patientAdministeredMedicine->whereDate('created_at', $today)->update($patientAdministeredMedicineData);
             } else {
-                $patientRegistry->create($patientRegistryData);
-                $patientHistory->create($patientHistoryData);
                 $patientMedicalProcedure->create($patientMedicalProcedureData);
                 $patientVitalSign->create($patientVitalSignsData);
                 $patientImmunization->create($patientImmunizationsData);
                 $patientAdministeredMedicine->create($patientAdministeredMedicineData);
+                $pastImmunization->create($patientPastImmunizationData);
+                $pastMedicalHistory->create($patientPastMedicalHistoryData);
+                $pastMedicalProcedure->create($pastientPastMedicalProcedureData);
+                $pastAllergyHistory->create($pastientPastAllergyHistoryData);
+
+                $patientRegistry->create($patientRegistryData);
+                $patientHistory->create($patientHistoryData);
+                
+
+
+
                 
             }
 

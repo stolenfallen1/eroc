@@ -1913,9 +1913,9 @@ class OutpatientRegistrationController extends Controller
                 $gynecologicalConditions->update($patientGynecologicalConditionsData);
                 $allergy->update($patientAllergyData);
                 // $causeOfAllergy->update($patientCauseOfAllergyData);
-                updateIfNotNull($causeOfAllergy, $patientCauseOfAllergyData);
+                // updateIfNotNull($causeOfAllergy, $patientCauseOfAllergyData);
                 // $symptomsOfAllergy->update($patientSymptomsOfAllergyData);
-                updateIfNotNull($symptomsOfAllergy, $patientSymptomsOfAllergyData);
+                // updateIfNotNull($symptomsOfAllergy, $patientSymptomsOfAllergyData);
                 $badHabits->update($patientBadHabitsData);
                 $patientDoctors->update($patientDoctorsData);
                 $physicalAbdomen->update($patientPhysicalAbdomenData);

@@ -4,7 +4,7 @@ namespace App\Models\HIS;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\HIS\PatientAllergies;
 class PatientSymptomsofAllergy extends Model
 {
     use HasFactory;
@@ -14,6 +14,6 @@ class PatientSymptomsofAllergy extends Model
     protected $guarded = [];
 
     public function allergies() {
-        return $this->belongsTo(PatientAllergies::class, 'id','allergies_Id');
+        return $this->belongsTo(PatientAllergies::class, 'allergies_Id','id');
     }
 }

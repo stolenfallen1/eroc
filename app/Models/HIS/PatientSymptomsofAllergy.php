@@ -10,5 +10,10 @@ class PatientSymptomsofAllergy extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientSymptomsofAllergy';
+    protected $primaryKey = 'allergies_Id';
     protected $guarded = [];
+
+    public function allergies() {
+        return $this->belongsTo(PatientAllergies::class, 'id','allergies_Id');
+    }
 }

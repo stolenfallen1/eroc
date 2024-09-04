@@ -12,9 +12,10 @@ class PatientPastMedicalHistory extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastMedicalHistory';
-    protected $primaryKey = 'id';
     protected $guarded = [];
-
+    public $incrementing = false;
+    protected $primaryKey = 'patient_Id';
+    
     public function patientMaster() {
         return $this->belongsTo(PatientMaster::class, 'patient_Id', 'patient_Id');
     }

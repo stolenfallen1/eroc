@@ -13,6 +13,9 @@ class PatientPastImmunizations extends Model
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastImmunizations';
     protected $guarded = [];
+    public $incrementing = false;
+
+    public $primaryKey = 'patient_Id';
 
     public function patientMaster() {
         return $this->belongsTo(PatientMaster::class, 'patient_Id', 'patient_Id');

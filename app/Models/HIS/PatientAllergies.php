@@ -14,6 +14,7 @@ class PatientAllergies extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientAllergies';
+    protected $primaryKey = 'id';
     protected $guarded = [];
 
     public function patientMaster() {
@@ -24,9 +25,9 @@ class PatientAllergies extends Model
         return $this->belongsTo(PatientRegistry::class, 'case_No', 'case_No');
     }
     public function symptoms_allergy() {
-        return $this->belongsTo(PatientSymptomsofAllergy::class,'allergies_Id','id');
+        return $this->belongsTo(PatientSymptomsofAllergy::class, 'allergies_Id','id');
     }
     public function cause_of_allergy() {
-        return $this->belongsTo(PatientCauseofAllergy::class,'allergies_Id','id');
+        return $this->belongsTo(PatientCauseofAllergy::class, 'allergies_Id','id');
     }
 }

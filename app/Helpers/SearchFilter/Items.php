@@ -116,7 +116,8 @@ class Items
     $warehouse = Request()->warehouse_idd;
     if ($warehouse) {
       $this->model->with('wareHouseItems')->whereHas('wareHouseItems', function ($query) use ($warehouse) {
-        $query->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id);
+        // $query->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id); 
+        $query->where('warehouse_Id', $warehouse)->where('branch_id', Auth::user()->branch_id); 
       });
     }
   }

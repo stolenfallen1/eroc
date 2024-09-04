@@ -7,6 +7,10 @@ use App\Http\Controllers\BuildFile\Hospital\DietSubTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DietTypeController;
 use App\Http\Controllers\BuildFile\Hospital\DispositionController;
 use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
+use App\Http\Controllers\HIS\AllergyTypeController;
+use App\Http\Controllers\HIS\CaseIndicatorController;
+use App\Http\Controllers\HIS\HISHospitalRoomsController;
+use App\Http\Controllers\HIS\MedicalPackageMasterController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -432,6 +436,7 @@ Route::resource('save-user-information', UserController::class);
 
 Route::controller(RoleController::class)->group(function () {
     Route::get('get-role', 'list');
+    Route::get('get-inv-level', 'getlevel');
     Route::get('get-permissions', 'permission');
     Route::get('get-role-permission', 'role_permission');
 
@@ -457,7 +462,9 @@ Route::controller(ModuleController::class)->group(function () {
     Route::get('module-list', 'list');
     Route::get('get-system-modules', 'systemModule');
     Route::get('systems-drivers', 'systemsdriver');
+    Route::get('systems-sidebar', 'getSidebar');
 });
+
 
 
 Route::resource('system-modules', ModuleController::class);
@@ -519,6 +526,9 @@ Route::controller(CivilStatusController::class)->group(function () {
 
 Route::resource('civil-status', CivilStatusController::class);
 Route::resource('statuses', StatusController::class);
+Route::controller(StatusController::class)->group(function () {
+    Route::get('get-his-status', 'his_status');
+});
 Route::resource('patient-relations', PatientRelationsController::class);
 
 
@@ -577,6 +587,11 @@ Route::controller(BuildingController::class)->group(function () {
 Route::resource('submit-rooms-and-beds', HospitalRoomsController::class);
 Route::controller(HospitalRoomsController::class)->group(function () {
     Route::get('rooms-and-beds', 'index');
+});
+
+Route::controller(HISHospitalRoomsController::class)->group(function () {
+    Route::get('get-station-list', 'getStation');
+    Route::get('get-ipd-rooms', 'index');
 });
 
 
@@ -643,6 +658,9 @@ Route::controller(TransactionCodesController::class)->group(function () {
     Route::post('add-revenue-access', 'add_revenue_access');
     Route::post('remove-revenue-access', 'remove_revenue_access');
 
+    // FOR HIS
+    Route::post('get-his-charges', 'hischargeslist');
+    Route::get('get-charges-specimen', 'chargespecimen');
 });
 Route::resource('database-drivers', DriverController::class);
 
@@ -661,6 +679,23 @@ Route::controller(SystemReportsController::class)->group(function () {
     Route::post('add-report', 'addreport');
     Route::post('remove-report-access', 'remove_report_access');
     Route::get('get-reports', 'mscReportlist');
+});
+
+Route::controller(AllergyTypeController::class)->group(function () {
+    Route::get('get-allergy-type', 'index');
+    Route::get('get-allergy-symptoms', 'getAllergySymptoms');
+
+    Route::post('create-allergy-type', 'store');
+    Route::put('update-allergy-type/{id}', 'update');
+    Route::put('archive-allergy-type/{id}', 'archive');
+});
+
+Route::controller(CaseIndicatorController::class)->group(function () {
+    Route::get('get-case-indicators', 'list');
+});
+
+Route::controller(MedicalPackageMasterController::class)->group(function () {
+    Route::get('get-medical-package', 'index');
 });
 
 Route::resource('system-reports', SystemReportsController::class);

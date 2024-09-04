@@ -137,11 +137,12 @@ class PurchaseRequestController extends Controller
             }
             $pr = PurchaseRequest::updateOrCreate(
                 [
-                    'pr_Document_Number' => $number
+                    'pr_Document_Number' => $number,
+                    'branch_Id' => (int)$user->branch_id
                 ],
                 [
                 'branch_Id' => (int)$user->branch_id,
-                'warehouse_Id' => (int)$user->warehouse_id,
+                'warehouse_Id' => (int)$request->department_id ?? $user->warehouse_id,
                 'pr_Justication' => $request->pr_Justication,
                 'pr_Transaction_Date' => Carbon::now(),
                 'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
@@ -301,6 +302,7 @@ class PurchaseRequestController extends Controller
             'pr_Justication' => $request->pr_Justication,
             'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
             'pr_Priority_Id' => $request->pr_Priority_Id,
+            'warehouse_Id' => (int)$request->department_id,
             'invgroup_id' => $request->invgroup_id,
             'item_Category_Id' => $request->item_Category_Id,
             'item_SubCategory_Id' => $request->item_SubCategory_Id,

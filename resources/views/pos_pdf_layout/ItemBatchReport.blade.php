@@ -149,7 +149,7 @@
                                 $totalamount +=  ((float)$item[0]['totalamountsales'])
                                 ?>
                                     <tr  style="border-bottom:1px dashed #ddd;">
-                                        <td style="width: 12%;" >{{$batchnumber}}<</td>
+                                        <td style="width: 12%;" >{{$batchnumber}}</td>
                                         <td style="width: 12%;" >{{$invoice}}</td>
                                         <td style="width: 12%;">{{date("Y-m-d",strtotime($invoices[0]['transaction_date']))}}</td>
                                         <td style="width: 40%;" >{{$item[0]['customername']}}</td>

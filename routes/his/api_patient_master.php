@@ -19,11 +19,17 @@ Route::controller(OutpatientRegistrationController::class)->group(function () {
 }); 
 Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('get-emergency', 'index');
+    Route::get('get-revoked-emergency-patient', 'getrevokedemergencypatient');
+    Route::get('/patient-brought-by', 'getPatientBroughtBy');
+    Route::get('/get-msc-complaint', 'getComplaintList');
+    Route::get('disposition', 'getDisposition');
+    Route::get('service-type', 'getServiceType');
     Route::post('register-emergency', 'register');
     Route::put('update-emergency/{id}', 'update');
 });
 Route::controller(InpatientRegistrationController::class)->group(function () {
     Route::get('get-inpatient', 'index');
+    Route::get('get-revoked-inpatient', 'getrevokedinpatient');
     Route::post('register-inpatient', 'register');
     Route::put('update-inpatient/{id}', 'update'); 
 });

@@ -32,10 +32,12 @@ class DeliveryController extends Controller
 
     public function store(Request $request)
     {
+
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-            $has_dup_invoice_no = Delivery::where('rr_Document_Warehouse_Id', Auth::user()->warehouse_id)->where('po_Document_Number',$request['po_Document_number'])->where('rr_Document_Invoice_No', $request['rr_Document_Invoice_No'])->exists();
+            $warehouse_id = $request['po_Document_warehouse_id'] ?? Auth::user()->warehouse_id;
+            $has_dup_invoice_no = Delivery::where('rr_Document_Warehouse_Id', $warehouse_id)->where('po_Document_Number',$request['po_Document_number'])->where('rr_Document_Invoice_No', $request['rr_Document_Invoice_No'])->exists();
             if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
             if(Auth::user()->branch_id == 1){
                 $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN1'])->where('branch_id', Auth::user()->branch_id)->first();
@@ -74,7 +76,7 @@ class DeliveryController extends Controller
 
                 'rr_Document_Branch_Id' => Auth::user()->branch_id,
                 'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
-                'rr_Document_Warehouse_Id' => Auth::user()->warehouse_id,
+                'rr_Document_Warehouse_Id' => $warehouse_id,
 
                 'po_Document_Number' => $request['po_Document_number'],
                 'po_Document_Prefix' => $request['po_Document_prefix'],
@@ -103,10 +105,10 @@ class DeliveryController extends Controller
                     $item_amount = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
                     $total_amount = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
                     if($vat_rate){
-                        if($request['vendor']['isVATInclusive'] == 0){
+                        // if($request['vendor']['isVATInclusive'] == 0){
                             $vat_amount = $total_amount * ($vat_rate / 100);
                             $total_amount += $vat_amount;
-                        }
+                        // }
                     }
                     if($discount_percent){
                         $discount_amount = $total_amount * ($discount_percent / 100);
@@ -204,7 +206,7 @@ class DeliveryController extends Controller
                             'mark_up' => $batch['mark_up'] ?? 0,
                         ]);
     
-                        (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'in');
+                        (new RecomputePrice())->compute($warehouse_id,'',$batch['item_Id'],'in');
     
                         if(Auth::user()->branch_id == 1){
                             $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only

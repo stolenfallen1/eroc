@@ -15,6 +15,34 @@ use App\Models\BuildFile\Hospital\DeathType;
 use App\Models\BuildFile\Hospital\Nationalities;
 use App\Models\BuildFile\Hospital\Religions;
 use App\Models\BuildFile\Hospital\Sex;
+use App\Models\HIS\PatientAdministeredMedicines;
+use App\Models\HIS\PatientMedications;
+use App\Models\HIS\PatientPastBadHabits;
+use App\Models\HIS\PatientHistory;
+use App\Models\HIS\PatientImmunizations;
+use App\Models\HIS\PatientMedicalProcedures;
+use App\Models\HIS\PatientDrugUsedForAllergy;
+use App\Models\HIS\PatientPhysicalExamtionGeneralSurvey;
+use App\Models\HIS\PatientPhysicalSkinExtremities;
+use App\Models\HIS\PatientPhysicalAbdomen;
+use App\Models\HIS\PatientPhysicalGUIE;
+use App\Models\HIS\PatientDoctors;
+use App\Models\HIS\PatientPertinentSignAndSymptoms;
+use App\Models\HIS\PatientPhysicalExamtionChestLungs;
+use App\Models\HIS\PatientCourseInTheWard;
+use App\Models\HIS\PatientPhysicalExamtionHEENT;
+use App\Models\HIS\PatientPhysicalNeuroExam;
+use App\Models\HIS\PatientPhysicalExamtionCVS;
+use App\Models\HIS\PatientOBGYNHistory;
+use App\Models\HIS\PatientDischargeInstructions;
+use App\Models\HIS\PatientGynecologicalConditions;
+use App\Models\HIS\PatientPastAllergyHistory;
+use App\Models\HIS\PatientPastImmunizations;
+use App\Models\HIS\PatientPastMedicalHistory;
+use App\Models\HIS\PatientPastMedicalProcedures;
+use App\Models\HIS\PatientPrivilegedCard;
+use App\Models\HIS\PatientAppointments;
+use App\Models\HIS\PatientVitalSigns;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,11 +51,12 @@ class Patient extends Model
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $connection = "sqlsrv_patient_data";
+    protected $primaryKey = 'patient_Id';
     protected $guarded = [];
 
     // Relationships
     public function patientRegistry(){
-        return $this->belongsTo(PatientRegistry::class, 'patient_id', 'patient_id');
+        return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
     public function sex() {
         return $this->belongsTo(Sex::class, 'sex_id', 'id');
@@ -68,4 +97,90 @@ class Patient extends Model
     public function branch() {
         return $this->belongsTo(Branchs::class, 'branch_id', 'id');
     }
+    public function past_immunization() {
+        return $this->hasMany(PatientPastImmunizations::class, 'patient_Id', 'patient_Id');
+    }
+    public function past_medical_history() {
+        return $this->hasMany(PatientPastMedicalHistory::class, 'patient_Id', 'patient_Id');
+    }
+    public function past_medical_procedures() {
+        return $this->hasMany(PatientPastMedicalProcedures::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function past_bad_habits() {
+        return $this->hasMany(PatientPastBadHabits::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function past_allergy_history() {
+        return $this->hasMany(PatientPastAllergyHistory::class,'patient_Id', 'patient_Id');
+    }
+
+    public function drug_used_for_allergy() {
+        return $this->hasMany(PatientDrugUsedForAllergy::class,'patient_Id', 'patient_Id');
+    }
+
+    public function physicalExamtionGeneralSurvey() {
+        return $this->hasMany(PatientPhysicalExamtionGeneralSurvey::class,'patient_Id','patient_Id');
+    }
+
+    public function physicalSkinExtremities() {
+        return $this->hasMany(PatientPhysicalSkinExtremities::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function physicalAbdomen() {
+        return $this->hasMany(PatientPhysicalAbdomen::class, 'patient_Id','patient_Id');
+    }
+
+    public function physicalGUIE() {
+        return $this->hasMany(PatientPhysicalGUIE::class,'patient-Id','patient_Id');
+    }
+
+    public function patientDoctors() {
+        return $this->hasMany(PatientDoctors::class,'patient_Id','patient_Id');
+    }
+
+    public function pertinentSignAndSymptoms() {
+        return $this->hasMany(PatientPertinentSignAndSymptoms::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function physicalExamtionChestLungs() {
+        return $this->hasMany(PatientPhysicalExamtionChestLungs::class,'patient_Id','patient_Id');
+    }
+
+    public function courseInTheWard() {
+        return $this->hasMany(PatientCourseInTheWard::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function physicalExamtionHEENT() {
+        return $this->hasMany(PatientPhysicalExamtionHEENT::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function physicalNeuroExam() {
+        return $this->hasMany(PatientPhysicalNeuroExam::class,'patient_Id','patient_Id');
+    }
+
+    public function physicalExamtionCVS() {
+        return $this->hasMany(PatientPhysicalExamtionCVS::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function oBGYNHistory() {
+        return $this->hasMany(PatientOBGYNHistory::class,'patient_Id','patient_Id');
+    }
+
+    public function medications() {
+        return $this->hasMany(PatientMedications::class, 'patient_Id','patient_Id');
+    }
+
+    public function dischargeInstructions() {
+        return $this->hasMany(PatientDischargeInstructions::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function privilegedCard() {
+        return $this->hasMany(PatientPrivilegedCard::class, 'patient_Id', 'patient_Id');
+    }
+
+    public function appointments() {
+        return $this->hasMany(PatientAppointments::class, 'patient_Id','patient_Id');
+    }
+
 }

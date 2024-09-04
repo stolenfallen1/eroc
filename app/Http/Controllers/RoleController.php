@@ -8,6 +8,7 @@ use App\Models\RolePermission;
 use TCG\Voyager\Facades\Voyager;
 use Illuminate\Support\Facades\DB;
 use TCG\Voyager\Models\Permission;
+use App\Models\Approver\InvApprover;
 use App\Models\BuildFile\SidebarGroup;
 
 class RoleController extends Controller
@@ -24,7 +25,11 @@ class RoleController extends Controller
     {
         return response()->json(['data' => Role::orderBy('name', 'asc')->get()]);
     }
-
+    public function getlevel()
+    {
+        return response()->json(['data' => InvApprover::whereNotNull('approver_designation')->get()]);
+    }
+    
     public function index()
     {
         try {

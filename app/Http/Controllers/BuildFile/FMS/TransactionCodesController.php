@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\BuildFile\FMS;
 
+use App\Models\HIS\his_functions\ExamSpecimenLaboratory;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\UserRevenueCodeAccess;
 use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\FmsExamProcedureItems;
+use Illuminate\Support\Facades\DB;
 
 class TransactionCodesController extends Controller
 {
@@ -17,7 +19,7 @@ class TransactionCodesController extends Controller
             $data->with('medicare_type');
           
             if(Request()->keyword) {
-                $data->where('transaction_description', 'LIKE', '%' . Request()->keyword . '%');
+                $data->where('description', 'LIKE', '%' . Request()->keyword . '%');
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -69,7 +71,7 @@ class TransactionCodesController extends Controller
             $data->with('medicare_type');
             $data->whereIn('id', Auth()->user()->RevenueCode);
             if(Request()->keyword) {
-                $data->where('transaction_code', Request()->keyword);
+                $data->where('code', Request()->keyword);
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -84,7 +86,7 @@ class TransactionCodesController extends Controller
     {
         try {
             $data = FmsExamProcedureItems::query();
-            $data->where('transaction_code', Request()->revenuecode);
+            $data->where('code', Request()->revenuecode);
             if(Request()->chargecode){
                 $data->whereNotIn('map_item_id', Request()->chargecode);
             }
@@ -106,16 +108,16 @@ class TransactionCodesController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = TransactionCodes::select('transaction_description')
-                       ->where('transaction_description', $request->payload['transaction_description'])
+            $check_if_exist = TransactionCodes::select('description')
+                       ->where('description', $request->payload['description'])
                        ->first();
             if(!$check_if_exist) {
                 $data['data'] = TransactionCodes::create([
-                    'transaction_code' => $request->payload['transaction_code'],
-                    'transaction_description' => $request->payload['transaction_description'],
+                    'code' => $request->payload['transaction_code'],
+                    'description' => $request->payload['transaction_description'],
                     'DrCr' => $request->payload['DrCr'],
                     'LGRP' => $request->payload['LGRP'],
-                    'Medicare_Type_id' => $request->payload['Medicare_Type_id'],
+                    'medicare_group_id' => $request->payload['Medicare_Type_id'],
                     'isActive' => $request->payload['isActive'],
                     'createdBy' => Auth()->user()->idnumber,
                 ]);
@@ -135,11 +137,11 @@ class TransactionCodesController extends Controller
 
         try {
             $data['data'] = TransactionCodes::where('id', $id)->update([
-                    'transaction_code' => $request->payload['transaction_code'],
-                    'transaction_description' => $request->payload['transaction_description'],
+                    'code' => $request->payload['transaction_code'],
+                    'description' => $request->payload['transaction_description'],
                     'DrCr' => $request->payload['DrCr'],
                     'LGRP' => $request->payload['LGRP'],
-                    'Medicare_Type_id' => $request->payload['Medicare_Type_id'],
+                    'medicare_group_id' => $request->payload['Medicare_Type_id'],
                     'isActive' => $request->payload['isActive'],
                     'createdBy' => Auth()->user()->idnumber,
                ]);
@@ -163,5 +165,55 @@ class TransactionCodesController extends Controller
         $data['data'] = TransactionCodes::where('id', $id)->delete();
         $data['msg'] = 'Success';
         return Response()->json($data, 200);
+    }
+
+    /**
+     * FOR HIS CONTROLLERS
+     */
+
+    public function hischargeslist(Request $request) 
+    {
+        try {
+            $data = FmsExamProcedureItems::query();
+            $data->where('code', Request()->revenuecode);
+            if(Request()->chargecode){
+                $data->whereNotIn('map_item_id', Request()->chargecode);
+            }
+            if(Request()->keyword){
+                $data->where('exam_description','LIKE','%'.Request()->keyword.'%');
+            }
+            $data->with(['prices' => function ($q) {
+                $q->where('msc_price_scheme_id', Request()->patienttype);
+            }]);
+            $data->with(['sections' => function ($q) {
+                $q->where('code', Request()->revenuecode);
+                $q->where('barcodeid_prefix', '!=', null);
+            }]);
+
+            $data->orderBy('id', 'desc');
+            $page  = Request()->per_page ?? '1';
+            return response()->json($data->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500); 
+        }
+    }
+
+    public function chargespecimen(Request $request) 
+    {
+        DB::beginTransaction();
+        try {
+            $exam_id = $request->query('map_item_id');
+            
+            $data = ExamSpecimenLaboratory::with('specimens')
+                ->where('exam_id', $exam_id)
+                ->get();
+
+            DB::commit();
+            return response()->json(['data' => $data], 200);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
     }
 }

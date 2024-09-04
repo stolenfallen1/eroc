@@ -14,7 +14,7 @@ class PatientRegistry extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
     protected $guarded = [];
 
-    public function patient_details(){
+    public function patient_details( ) {
         return $this->belongsTo(PatientMaster::class,'patient_id', 'patient_id');
     }
 }

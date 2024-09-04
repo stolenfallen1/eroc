@@ -4,8 +4,8 @@ namespace App\Http\Controllers\HIS\his_functions;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
+use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\HISBillingOut;
-use App\Models\BuildFile\HISChargeSequence;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +63,7 @@ class HISPostChargesController extends Controller
     {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = HISChargeSequence::where('seq_prefix', 'gc')->first();
+            $chargeslip_sequence = SystemSequence::where('seq_prefix', 'gc')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
             }
@@ -72,6 +72,7 @@ class HISPostChargesController extends Controller
             $case_no = $request->payload['case_no'];
             $transDate = Carbon::now();
             $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
+            $request_doctors_id = $request->payload['attending_doctor'];
             $refnum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
@@ -93,7 +94,9 @@ class HISPostChargesController extends Controller
                         'refnum' => $sequence,
                         'amount' => $amount,
                         'userid' => Auth()->user()->idnumber,
+                        'request_doctors_id' => $request_doctors_id,
                         'net_amount' => $amount,
+                        'record_status' => 1,
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $patient_id,
                         'auto_discount' => 0,
@@ -122,6 +125,7 @@ class HISPostChargesController extends Controller
                         'amount' => $amount,
                         'userid' => Auth()->user()->idnumber,
                         'net_amount' => $amount,
+                        'record_status' => 1,
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $patient_id,
                         'auto_discount' => 0,
@@ -170,6 +174,7 @@ class HISPostChargesController extends Controller
                         'amount' => $existingData->amount * -1,
                         'userid' => Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,
+                        'record_status' => $existingData->record_status,
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $existingData->pid,
                         'auto_discount' => 0,

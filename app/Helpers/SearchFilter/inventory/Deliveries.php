@@ -2,18 +2,21 @@
 
 namespace App\Helpers\SearchFilter\inventory;
 
-use App\Models\MMIS\Audit;
-use App\Models\MMIS\inventory\Delivery;
 use Carbon\Carbon;
+use App\Models\MMIS\Audit;
+use App\Helpers\ParentRole;
+use App\Models\MMIS\inventory\Delivery;
 
 class Deliveries
 {
   protected $model;
   protected $authUser;
+  protected $role;
   public function __construct()
   {
     $this->model = Delivery::query();
     $this->authUser = auth()->user();
+    $this->role = new ParentRole();
   }
 
   public function searchable(){
@@ -45,7 +48,7 @@ class Deliveries
   }
 
   public function byWarehouse(){
-    if($this->authUser->role->name == 'audit'){
+    if($this->role->audit()){
       // $this->model->with(['purchaseOrder'=>function($q){
       //   $q->with(['comptroller', 'administrator', 'corporateAdmin', 'president','purchaseRequest'=> function($q1){
       //     $q1->with(['purchaseRequestDetails' => function($q2){
@@ -87,7 +90,9 @@ class Deliveries
         });
       }
     }else{
-      $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
+
+      $warehouse_id = $this->authUser->departments ?? $this->authUser->warehouse_id;
+      $this->model->whereIn('rr_Document_Warehouse_Id', $warehouse_id)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
     }
   }
 

@@ -12,4 +12,8 @@ class SystemSequence extends Model
     protected $connection = "sqlsrv";
     protected $guarded = [];
     
+    protected $keyType = 'string';
+    public $incrementing = false;
+    public $timestamps = false;
+    
 }

@@ -839,7 +839,6 @@ class OutpatientRegistrationController extends Controller
                 'isPrescribed'          => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
-                
             ];
 
             $patientDischargeInstructions = [
@@ -1008,7 +1007,7 @@ class OutpatientRegistrationController extends Controller
     public function update(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
-            $patient = Patient::findOrFail($id);
+            $patient = Patient::where('patient_Id', $id)->firstOrFail();
             $today = Carbon::now()->format('Y-m-d');
             $patient_id = $patient->patient_Id;
             $registry_sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
@@ -1883,7 +1882,7 @@ class OutpatientRegistrationController extends Controller
                 $pastImmunization->update($patientPastImmunizationData);
                 $pastMedicalHistory->update($patientPastMedicalHistoryData);
                 $pastMedicalProcedure->update($patientPastMedicalProcedureData);
-                $updateAllergy = $pastAllergyHistory->update($patientPastAllergyHistoryData);
+                $pastAllergyHistory->update($patientPastAllergyHistoryData);
                 $pastCauseOfAllergy->update($patientPastCauseOfAllergyData);
                 $pastSymtomsOfAllergy->update($patientPastSymptomsOfAllergyData);
                 $drugUsedForAllergy->update($patientDrugUsedForAllergyData);
@@ -1891,13 +1890,25 @@ class OutpatientRegistrationController extends Controller
                 $privilegedCard->update($patientPrivilegedCard);
                 $privilegedPointTransfers->update($patientPrivilegedPointTransfers);
                 $privilegedPointTransactions->update($patientPrivilegedPointTransactions);
-                $dischargeInstructions->update($patientDischargeInstructions);
-                $dischargeMedications->update($patientDischargeMedications);
-                $dischargeFollowUpTreatment->update($patientDischargeFollowUpTreatment);
-                $dischargeFollowUpLaboratories->update($patientDischargeFollowUpLaboratories);
-                $dischargeDoctorsFollowUp->update($patientDischargeDoctorsFollowUp);
             } else {
-                throw new \Exception('ERROR UPDATING PATIENT AND RELATED DATA');
+                $pastMedicalProcedure->create($patientPastMedicalProcedureData);
+                $pastMedicalHistory->create($patientPastMedicalHistoryData);
+                $pastImmunization->create($patientPastImmunizationData);
+                $pastBadHabits->create($patientPastBadHabitsData);
+                $drugUsedForAllergy->create($patientDrugUsedForAllergyData);
+
+                $privilegedCard->create($patientPrivilegedCard);
+                $privilegedPointTransfers['fromCard_Id'] = $privilegedCard->id;
+                $privilegedPointTransfers['toCard_Id'] = $privilegedCard->id;
+                $privilegedPointTransactions['card_Id'] = $privilegedCard->id;
+                $privilegedPointTransfers->create($patientPrivilegedPointTransfers);
+                $privilegedPointTransactions->create($patientPrivilegedPointTransactions);
+
+                $pastAllergyHistory->create($patientPastAllergyHistoryData);
+                $pastCauseOfAllergy['history_Id'] = $pastAllergyHistory->id;
+                $pastSymtomsOfAllergy['history_Id'] = $pastAllergyHistory->id;
+                $pastCauseOfAllergy->create($patientPastCauseOfAllergyData);
+                $pastSymtomsOfAllergy->create($patientPastSymptomsOfAllergyData);
             }
 
             $existingPatientRegistry = PatientRegistry::where('patient_Id', $patient_id)->whereDate('created_at', $today)->exists();
@@ -1929,8 +1940,52 @@ class OutpatientRegistrationController extends Controller
                 $physicalNeuroExam->update($patientPhysicalNeuroExamData);
                 $physicalSkinExtremities->update($patientPhysicalSkinExtremitiesData);
                 $medications->update($patientMedicationsData);
+                $dischargeMedications->update($patientDischargeMedications);
+                $dischargeFollowUpTreatment->update($patientDischargeFollowUpTreatment);
+                $dischargeFollowUpLaboratories->update($patientDischargeFollowUpLaboratories);
+                $dischargeDoctorsFollowUp->update($patientDischargeDoctorsFollowUp);
             } else {
-                throw new \Exception('ERROR UPDATING PATIENT REGISTRY AND RELATED DATA');
+                $patientRegistry->create($patientRegistryData);
+                $patientHistory->create($patientHistoryData);
+                $patientImmunization->create($patientImmunizationsData);
+                $patientVitalSign->create($patientVitalSignsData);
+                $patientMedicalProcedure->create($patientMedicalProcedureData);
+                $patientAdministeredMedicine->create($patientAdministeredMedicineData);
+                $badHabits->create($patientBadHabitsData);
+                $patientDoctors->create($patientDoctorsData);
+                $pertinentSignAndSymptoms->create($patientPertinentSignAndSymptomsData);
+                $physicalExamtionChestLungs->create($patientPhysicalExamtionChestLungsData);
+                $courseInTheWard->create($patientCourseInTheWardData);
+                $physicalExamtionCVS->create($patientPhysicalExamtionCVSData);
+                $medications->create($patientMedicationsData);
+                $physicalExamtionHEENT->create($patientPhysicalExamtionHEENTData);
+                $physicalSkinExtremities->create($patientPhysicalSkinExtremitiesData);
+                $physicalAbdomen->create($patientPhysicalAbdomenData);
+                $physicalNeuroExam->create($patientPhysicalNeuroExamData);
+                $physicalGUIE->create($patientPhysicalGUIEData);
+                $physicalExamtionGeneralSurvey->create($patientPhysicalExamtionGeneralSurveyData);
+
+                $OBGYNHistory->create($patientOBGYNHistoryData);
+                $pregnancyHistory['OBGYNHistoryID'] = $OBGYNHistory->id;
+                $gynecologicalConditions['OBGYNHistoryID'] = $OBGYNHistory->id;
+                $pregnancyHistory->create($patientPregnancyHistoryData);
+                $gynecologicalConditions->create($patientGynecologicalConditionsData);
+
+                $allergy->create($patientAllergyData);
+                $causeOfAllergy['allergies_Id'] = $allergy->id;
+                $symptomsOfAllergy['allergies_Id'] = $allergy->id;
+                $causeOfAllergy->create($patientCauseOfAllergyData);
+                $symptomsOfAllergy->create($patientSymptomsOfAllergyData);
+
+                $dischargeInstructions->create($patientDischargeInstructions);
+                $dischargeMedications['instruction_Id'] = $dischargeInstructions->id;
+                $dischargeFollowUpTreatment['instruction_Id'] = $dischargeInstructions->id;
+                $dischargeFollowUpLaboratories['instruction_Id'] = $dischargeInstructions->id;
+                $dischargeDoctorsFollowUp['instruction_Id'] = $dischargeInstructions->id;
+                $dischargeMedications->create($patientDischargeMedications);
+                $dischargeFollowUpTreatment->create($patientDischargeFollowUpTreatment);
+                $dischargeFollowUpLaboratories->create($patientDischargeFollowUpLaboratories);
+                $dischargeDoctorsFollowUp->create($patientDischargeDoctorsFollowUp);
             }
 
             DB::connection('sqlsrv_patient_data')->commit();
@@ -1939,7 +1994,7 @@ class OutpatientRegistrationController extends Controller
                 'recent_generated' => $registry_sequence->seq_no,
             ]);
             return response()->json([
-                'message' => 'Outpatient data updated successfully',
+                'message' => $existingPatientRecord && $existingPatientRegistry ? 'Outpatient data updated successfully' : 'Outpatient data created successfully',
                 'patient' => $patient,
                 'patientRegistry' => $patientRegistry
             ], 200);

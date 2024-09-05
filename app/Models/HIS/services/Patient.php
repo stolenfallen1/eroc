@@ -51,7 +51,6 @@ class Patient extends Model
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $connection = "sqlsrv_patient_data";
-    protected $primaryKey = 'patient_Id';
     protected $guarded = [];
 
     // Relationships

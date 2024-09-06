@@ -45,6 +45,7 @@ use App\Models\HIS\PatientAppointments;
 use App\Models\HIS\PatientVitalSigns;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Patient extends Model
 {
@@ -55,7 +56,7 @@ class Patient extends Model
 
     // Relationships
     public function patientRegistry(){
-        return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id');
+        return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id')->whereDate('registry_Date', Carbon::now()->format('Y-m-d'));
     }
     public function sex() {
         return $this->belongsTo(Sex::class, 'sex_id', 'id');

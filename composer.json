@@ -38,7 +38,8 @@
         },
         "files": [
             "app/Helpers/Fileupload.php",
-            "app/Helpers/HIS/UpdateIfNotNull.php"
+            "app/Helpers/HIS/UpdateIfNotNull.php",
+            "app/Helpers/HIS/CreateIfNotNull.php"
         ]
     },
     "autoload-dev": {

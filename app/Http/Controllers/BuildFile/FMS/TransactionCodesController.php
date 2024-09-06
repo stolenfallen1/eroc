@@ -175,7 +175,7 @@ class TransactionCodesController extends Controller
     {
         try {
             $data = FmsExamProcedureItems::query();
-            $data->where('code', Request()->revenuecode);
+            $data->where('transaction_code', Request()->revenuecode);
             if(Request()->chargecode){
                 $data->whereNotIn('map_item_id', Request()->chargecode);
             }
@@ -186,7 +186,7 @@ class TransactionCodesController extends Controller
                 $q->where('msc_price_scheme_id', Request()->patienttype);
             }]);
             $data->with(['sections' => function ($q) {
-                $q->where('code', Request()->revenuecode);
+                $q->where('transaction_code', Request()->revenuecode);
                 $q->where('barcodeid_prefix', '!=', null);
             }]);
 

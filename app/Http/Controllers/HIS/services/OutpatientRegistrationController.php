@@ -940,7 +940,7 @@ class OutpatientRegistrationController extends Controller
 
     public function update(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
-        try {
+        // try {
             $patient = Patient::where('patient_Id', $id)->firstOrFail();
             $today = Carbon::now()->format('Y-m-d');
             $patient_id = $patient->patient_Id;
@@ -987,7 +987,7 @@ class OutpatientRegistrationController extends Controller
             $dischargeFollowUpLaboratories      = $dischargeInstructions->dischargeFollowUpLaboratories()->first();
             $dischargeDoctorsFollowUp           = $dischargeInstructions->dischargeDoctorsFollowUp()->first();
 
-            $patientRegistry                    = $patient->patientRegistry()->first();
+            $patientRegistry                    = PatientRegistry::where('patient_Id', $patient_id)->orderBy('id', 'desc')->first(); 
             $patientHistory                     = $patientRegistry->history()->first();
             $patientMedicalProcedure            = $patientRegistry->medical_procedures()->first();
             $patientVitalSign                   = $patientRegistry->vitals()->first();
@@ -1937,13 +1937,13 @@ class OutpatientRegistrationController extends Controller
                 'patientRegistry' => $patientRegistry
             ], 200);
 
-        } catch(\Exception $e) {
-            DB::connection('sqlsrv_patient_data')->rollBack();
-            return response()->json([
-                'message' => 'Failed to update outpatient data',
-                'error' => $e->getMessage(), $e->getTraceAsString()
-            ], 500);
-        }
+        // } catch(\Exception $e) {
+        //     DB::connection('sqlsrv_patient_data')->rollBack();
+        //     return response()->json([
+        //         'message' => 'Failed to update outpatient data',
+        //         'error' => $e->getMessage(), $e->getTraceAsString()
+        //     ], 500);
+        // }
     }
 
     public function getrevokedoutpatient() {

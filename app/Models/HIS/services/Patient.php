@@ -56,7 +56,9 @@ class Patient extends Model
 
     // Relationships
     public function patientRegistry(){
-        return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id')->whereDate('registry_Date', Carbon::now()->format('Y-m-d'));
+        return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id')
+            ->whereDate('registry_Date', Carbon::now()->format('Y-m-d'))
+            ->whereDate('created_at', Carbon::now()->format('Y-m-d'));
     }
     public function sex() {
         return $this->belongsTo(Sex::class, 'sex_id', 'id');

@@ -128,7 +128,7 @@ class OutpatientRegistrationController extends Controller
                 'revokedBy'                     => $request->payload['revokedBy'] ?? null,
                 'revoked_Date'                  => $request->payload['revoked_Date'] ?? null,
                 'revoked_Remarks'               => $request->payload['revoked_Remarks'] ?? null,
-                'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? null,
+                'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? ($patient_id ?? null),
                 'guarantor_Name'                => $request->payload['selectedGuarantor'][0]['guarantor_name'] ?? null,
                 'guarantor_Approval_code'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_code'] ?? null,
                 'guarantor_Approval_no'         => $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] ?? null,

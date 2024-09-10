@@ -12,5 +12,4 @@ class PatientPastMedicalProcedures extends Model
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastMedicalProcedures';
     protected $guarded = [];
-    // protected $with = [''];
 }

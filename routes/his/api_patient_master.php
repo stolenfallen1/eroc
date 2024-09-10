@@ -29,6 +29,7 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 });
 Route::controller(InpatientRegistrationController::class)->group(function () {
     Route::get('get-inpatient', 'index');
+    Route::get('get-revoked-inpatient', 'getrevokedinpatient');
     Route::post('register-inpatient', 'register');
     Route::put('update-inpatient/{id}', 'update'); 
 });

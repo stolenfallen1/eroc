@@ -19,7 +19,7 @@ class TransactionCodesController extends Controller
             $data->with('medicare_type');
           
             if(Request()->keyword) {
-                $data->where('transaction_description', 'LIKE', '%' . Request()->keyword . '%');
+                $data->where('description', 'LIKE', '%' . Request()->keyword . '%');
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -71,7 +71,7 @@ class TransactionCodesController extends Controller
             $data->with('medicare_type');
             $data->whereIn('id', Auth()->user()->RevenueCode);
             if(Request()->keyword) {
-                $data->where('transaction_code', Request()->keyword);
+                $data->where('code', Request()->keyword);
             }
             $data->orderBy('id', 'desc');
             $page  = Request()->per_page ?? '1';
@@ -86,7 +86,7 @@ class TransactionCodesController extends Controller
     {
         try {
             $data = FmsExamProcedureItems::query();
-            $data->where('transaction_code', Request()->revenuecode);
+            $data->where('code', Request()->revenuecode);
             if(Request()->chargecode){
                 $data->whereNotIn('map_item_id', Request()->chargecode);
             }
@@ -108,16 +108,16 @@ class TransactionCodesController extends Controller
     public function store(Request $request)
     {
         try {
-            $check_if_exist = TransactionCodes::select('transaction_description')
-                       ->where('transaction_description', $request->payload['transaction_description'])
+            $check_if_exist = TransactionCodes::select('description')
+                       ->where('description', $request->payload['description'])
                        ->first();
             if(!$check_if_exist) {
                 $data['data'] = TransactionCodes::create([
-                    'transaction_code' => $request->payload['transaction_code'],
-                    'transaction_description' => $request->payload['transaction_description'],
+                    'code' => $request->payload['transaction_code'],
+                    'description' => $request->payload['transaction_description'],
                     'DrCr' => $request->payload['DrCr'],
                     'LGRP' => $request->payload['LGRP'],
-                    'Medicare_Type_id' => $request->payload['Medicare_Type_id'],
+                    'medicare_group_id' => $request->payload['Medicare_Type_id'],
                     'isActive' => $request->payload['isActive'],
                     'createdBy' => Auth()->user()->idnumber,
                 ]);
@@ -137,11 +137,11 @@ class TransactionCodesController extends Controller
 
         try {
             $data['data'] = TransactionCodes::where('id', $id)->update([
-                    'transaction_code' => $request->payload['transaction_code'],
-                    'transaction_description' => $request->payload['transaction_description'],
+                    'code' => $request->payload['transaction_code'],
+                    'description' => $request->payload['transaction_description'],
                     'DrCr' => $request->payload['DrCr'],
                     'LGRP' => $request->payload['LGRP'],
-                    'Medicare_Type_id' => $request->payload['Medicare_Type_id'],
+                    'medicare_group_id' => $request->payload['Medicare_Type_id'],
                     'isActive' => $request->payload['isActive'],
                     'createdBy' => Auth()->user()->idnumber,
                ]);
@@ -175,7 +175,7 @@ class TransactionCodesController extends Controller
     {
         try {
             $data = FmsExamProcedureItems::query();
-            $data->where('transaction_code', Request()->revenuecode);
+            $data->where('code', Request()->revenuecode);
             if(Request()->chargecode){
                 $data->whereNotIn('map_item_id', Request()->chargecode);
             }
@@ -186,7 +186,7 @@ class TransactionCodesController extends Controller
                 $q->where('msc_price_scheme_id', Request()->patienttype);
             }]);
             $data->with(['sections' => function ($q) {
-                $q->where('transaction_code', Request()->revenuecode);
+                $q->where('code', Request()->revenuecode);
                 $q->where('barcodeid_prefix', '!=', null);
             }]);
 

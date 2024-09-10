@@ -14,6 +14,7 @@ class PatientOBGYNHistory extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientOBGYNHistory';
+    protected $primaryKey = 'id';
     protected $guarded = [];
 
     public function patientMaster() {

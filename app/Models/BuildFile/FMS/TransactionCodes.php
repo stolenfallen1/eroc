@@ -13,6 +13,6 @@ class TransactionCodes extends Model
     protected $connection = "sqlsrv";
     protected $guarded = [];
     public function medicare_type(){
-        return $this->belongsTo(MedicareType::class, 'Medicare_Type_id', 'id');
+        return $this->belongsTo(MedicareType::class, 'medicare_group_id', 'id');
     }
 }

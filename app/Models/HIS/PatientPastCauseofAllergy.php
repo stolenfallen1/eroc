@@ -11,6 +11,7 @@ class PatientPastCauseofAllergy extends Model
     use HasFactory;
     protected $connection = 'sqlsrv_patient_data';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastCauseofAllergy';
+    
     protected $guarded = [];
 
     protected $primaryKey = 'history_Id';

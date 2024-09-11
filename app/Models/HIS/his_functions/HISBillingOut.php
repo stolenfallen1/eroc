@@ -17,14 +17,14 @@ class HISBillingOut extends Model
     public $timestamps = false;
 
     public function patientRegistry() {
-        return $this->belongsTo(PatientRegistry::class, 'pid', 'patient_id');
+        return $this->belongsTo(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
 
     public function items(){
-        return $this->belongsTo(FmsExamProcedureItems::class, 'item_id', 'map_item_id');
+        return $this->belongsTo(FmsExamProcedureItems::class, 'itemID', 'map_item_id');
     }
 
     public function doctor_details(){
-        return $this->belongsTo(Doctor::class,'item_id', 'doctor_code');
+        return $this->belongsTo(Doctor::class,'itemID', 'doctor_code');
     }
 }

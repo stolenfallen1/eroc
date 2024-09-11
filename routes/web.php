@@ -23,6 +23,7 @@ use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
 use App\Http\Controllers\UserManager\UserManagerController;
 use App\Http\Controllers\BuildFile\ItemandServicesController;
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
+use App\Http\Controllers\HIS\CaseIndicatorController;
 
 
 /*
@@ -263,3 +264,5 @@ Route::group(['middleware' => 'admin.user'], function () {
 // });
 
 Route::get('/fetch-data', [EmergencyRegistrationController::class, 'fetchData'])->where('id', '[0-9]+');
+Route::get('/get-indicator', [CaseIndicatorController::class, 'list']);
+Route::get('/get-emergency', [EmergencyRegistrationController::class, 'index']);

@@ -43,6 +43,7 @@ use App\Models\HIS\PatientPastMedicalProcedures;
 use App\Models\HIS\PatientPrivilegedCard;
 use App\Models\HIS\PatientAppointments;
 use App\Models\HIS\PatientVitalSigns;
+use App\Models\HIS\PatientAllergies;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -52,6 +53,7 @@ class Patient extends Model
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $connection = "sqlsrv_patient_data";
+    protected $primaryKey = 'patient_Id';
     protected $guarded = [];
 
     // Relationships
@@ -115,6 +117,10 @@ class Patient extends Model
 
     public function past_allergy_history() {
         return $this->hasMany(PatientPastAllergyHistory::class,'patient_Id', 'patient_Id');
+    }
+
+    public function allergies() {
+        return $this->belongsTo(PatientAllergies::class,'patient_Id', 'patient_Id');
     }
 
     public function drug_used_for_allergy() {

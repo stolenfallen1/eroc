@@ -13,5 +13,4 @@ class PatientPastMedicalProcedures extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastMedicalProcedures';
     protected $primaryKey = 'patient_Id';
     protected $guarded = [];
-    // protected $with = [''];
 }

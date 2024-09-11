@@ -34,6 +34,7 @@ class TransactionCodesController extends Controller
         try {
             $data = TransactionCodes::query();
             $data->with('medicare_type');
+            $data->with('ledger_groups');
             return response()->json($data->get(), 200);
         } catch(\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);

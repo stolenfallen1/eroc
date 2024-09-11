@@ -14,6 +14,6 @@ class PatientCauseofAllergy extends Model
     protected $primaryKey = 'allergies_Id';
     protected $guarded = [];
     public function allergies() {
-        return $this->belongsTo(PatientAllergies::class, 'id','allergies_Id');
+        return $this->belongsTo(PatientAllergies::class, 'id', 'allergies_Id');
     }
 }

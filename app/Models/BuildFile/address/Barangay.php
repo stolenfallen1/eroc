@@ -5,6 +5,7 @@ namespace App\Models\BuildFile\address;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\address\Municipality;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\HIS\services\Patient;
 
 class Barangay extends Model
 {

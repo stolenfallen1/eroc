@@ -4,110 +4,19 @@ namespace App\Http\Controllers\HIS\services;
 
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\SystemSequence;
-use App\Models\HIS\PatientAdministeredMedicines;
-use App\Models\HIS\PatientAppointmentsTemporary;
-use App\Models\HIS\PatientDoctors;
-use App\Models\HIS\PatientHistory;
-use App\Models\HIS\PatientImmunizations;
-use App\Models\HIS\PatientMedicalProcedures;
-use App\Models\HIS\PatientPastAllergyHistory;
-use App\Models\HIS\PatientPastBadHabits;
-use App\Models\HIS\PatientPastImmunizations;
-use App\Models\HIS\PatientPastMedicalHistory;
-use App\Models\HIS\PatientPastMedicalProcedures;
-use App\Models\HIS\PatientPhysicalExamtionChestLungs;
-use App\Models\HIS\PatientPhysicalExamtionHEENT;
-use App\Models\HIS\PatientPhysicalNeuroExam;
-use App\Models\HIS\PatientVitalSigns;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use Carbon\Carbon;
-use DeviceDetector\Parser\Device\Console;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\GetIP;
+use Log;
 
 class OutpatientRegistrationController extends Controller
 {
-    public function index() {
-        try { 
-            $data = Patient::query();
-            $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
-            $today = Carbon::now()->format('Y-m-d');
-            
-            $data->whereHas('patientRegistry', function($query) use ($today) {
-                $query->where('mscAccount_Trans_Types', 2); 
-                $query->where('isRevoked', 0);
-                $query->whereDate('registry_Date', $today)
-                    ->where(function($q) use ($today) {
-                        $q->whereNull('discharged_Date')
-                            ->orWhereDate('discharged_Date', '>=', $today);
-                });
-
-                if(Request()->keyword) {
-                    $query->where(function($subQuery) {
-                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
-                                ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
-                                ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
-                    });
-                }
-            });
-            $data->orderBy('id', 'desc');
-            $page = Request()->per_page ?? '50'; 
-            return response()->json($data->paginate($page), 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to get outpatient patients',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function register(Request $request) {
-        DB::connection('sqlsrv_patient_data')->beginTransaction();
-        try {
-            $today = Carbon::now();
-            $sequence = SystemSequence::where('code','MPID')->where('branch_id', 1)->first();
-            $registry_sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
-            if (!$sequence || !$registry_sequence) {
-                throw new \Exception('Sequence not found');
-            }
-
-            $registry_id        = $registry_sequence->seq_no;
-            $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
-            $isHemodialysis     = ($patientIdentifier === 1) ? true : false;
-            $isPeritoneal       = ($patientIdentifier === 2) ? true : false;
-            $isLINAC            = ($patientIdentifier === 3) ? true : false;
-            $isCOBALT           = ($patientIdentifier === 4) ? true : false;
-            $isBloodTrans       = ($patientIdentifier === 5) ? true : false;
-            $isChemotherapy     = ($patientIdentifier === 6) ? true : false;
-            $isBrachytherapy    = ($patientIdentifier === 7) ? true : false;
-            $isDebridement      = ($patientIdentifier === 8) ? true : false;
-            $isTBDots           = ($patientIdentifier === 9) ? true : false;
-            $isPAD              = ($patientIdentifier === 10) ? true : false;
-            $isRadioTherapy     = ($patientIdentifier === 11) ? true : false;
-
-            $existingPatient = Patient::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->where('birthdate', $request->payload['birthdate'])->first();
-            if ($existingPatient) {
-                $patient_id = $existingPatient->patient_Id;
-                $patient_category = 3;
-            } else {
-                $patient_category = 2;
-                $patient_id = $sequence->seq_no;
-                $sequence->update([
-                    'seq_no' => $sequence->seq_no + 1,
-                    'recent_generated' => $sequence->seq_no,
-                ]);
-            }
-
-            $patientRule = [
-                'lastname'  => $request->payload['lastname'], 
-                'firstname' => $request->payload['firstname'],
-                'birthdate' => $request->payload['birthdate']
-            ];
-
-            $patientData = [
+    protected function getRegisterPatientData(Request $request, $patient_id = null, $registry_id = null, $patientIdentifier = null, $patient_category = null) {
+        return [
+            'patientData' => [
                 'patient_Id'                => $patient_id,
                 'title_id'                  => $request->payload['title_id'] ?? null,
                 'lastname'                  => ucwords($request->payload['lastname'] ?? null),
@@ -179,117 +88,8 @@ class OutpatientRegistrationController extends Controller
                 'updatedBy'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
                 'updated_at'                => Carbon::now(),
-            ];
-
-            $patientPastImmunizationData = [
-                'branch_Id'             => 1,
-                'patient_Id'            => $patient_id,
-                'vaccine_Id'            => '',
-                'administration_Date'   => '',
-                'dose'                  => '',
-                'site'                  => '',
-                'administrator_Name'    => '',
-                'notes'                 => '',
-                'createdby'             => Auth()->user()->idnumber,
-                'created_at'            => Carbon::now(),
-            ];
-
-            $patientPastMedicalHistoryData = [
-                'branch_Id'                 => 1,    
-                'patient_Id'                => $patient_id,
-                'diagnose_Description'      => '',
-                'diagnosis_Date'            => '',
-                'treament'                  => '',
-                'createdby'                 => Auth()->user()->idnumber,
-                'created_at'                => Carbon::now(), 
-            ];
-
-            $patientPastMedicalProcedureData = [
-                'patient_Id'                => $patient_id,
-                'description'               => '',
-                'date_Of_Procedure'         => '',
-                'createdby'                 => Auth()->user()->idnumber,
-                'created_at'                => Carbon::now(),
-            ];
-
-            $patientPastAllergyHistoryData = [
-                'patient_Id'                => $patient_id,
-                'family_History'            => '',
-                'createdby'                 => Auth()->user()->idnumber,
-                'created_at'                => Carbon::now(),
-            ];
-
-            $patientPastCauseOfAllergyData = [
-                'history_Id'            => '',
-                'allergy_Type_Id'       => '',
-                'duration'              => '',
-                'createdby'             => Auth()->user()->idnumber,
-                'created_at'            => Carbon::now(),
-            ];
-
-            $patientPastSymptomsOfAllergyData = [
-                'history_Id'            => '',
-                'symptom_Description'   => '',
-                'createdby'             => Auth()->user()->idnumber,
-                'created_at'            => Carbon::now(),
-            ];
-
-            $patientDrugUsedForAllergyData = [
-                'patient_Id'        => $patient_id,
-                'drug_Description'  => '',
-                'hospital'          => '',
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now(),
-            ];
-
-            $patientPastBadHabitsData = [
-                'patient_Id'                    => $patient_id,
-                'description'                   => null,
-                'createdby'                     => Auth()->user()->idnumber,
-                'created_at'                    => Carbon::now(),
-            ];
-
-            $patientPrivilegedCard = [
-                'patient_Id'            => $patient_id,
-                'card_number'           => $request->payload['card_number'] ?? '374245455400126',
-                'card_Type_Id'          => $request->payload['card_Type_Id'] ?? null,
-                'card_BenefitLevel'     => $request->payload['card_BenefitLevel'] ?? null,
-                'card_PIN'              => $request->payload['card_PIN'] ?? null,
-                'card_Bardcode'         => $request->payload['card_Bardcode'] ?? null,
-                'card_RFID'             => $request->payload['card_RFID'] ?? null,
-                'card_Balance'          => $request->payload['card_Balance'] ?? null,
-                'issued_Date'           => $request->payload['issued_Date'] ?? null,
-                'expiry_Date'           => $request->payload['expiry_Date'] ?? null,
-                'points_Earned'         => $request->payload['points_Earned'] ?? null,
-                'points_Transferred'    => $request->payload['points_Transferred'] ?? null,
-                'points_Redeemed'       => $request->payload['points_Redeemed'] ?? null,
-                'points_Forfeited'      => $request->payload['points_Forfeited'] ?? null,
-                'card_Status'           => $request->payload['card_Status'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
-                'created_at'            => Carbon::now()
-            ];
-
-            $patientPrivilegedPointTransfers = [
-                'fromCard_Id'       => '',
-                'toCard_Id'         => $request->payload['toCard_Id'] ?? 4,
-                'transaction_Date'  => Carbon::now(),
-                'description'       => $request->payload['description'] ?? null,
-                'points'            => $request->payload['points'] ?? 1000,
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now()
-            ];
-
-            $patientPrivilegedPointTransactions = [
-                'card_Id'           => '',
-                'transaction_Date'  => Carbon::now(),
-                'transaction_Type'  => $request->payload['transaction_Type'] ?? 'Test Transaction',
-                'description'       => $request->payload['description'] ?? null,
-                'points'            => $request->payload['points'] ?? 1000,
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now()
-            ]; 
-
-            $patientRegistryData = [
+            ],
+            'patientRegistryData' => [
                 'branch_Id'                     =>  1,
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
@@ -328,7 +128,7 @@ class OutpatientRegistrationController extends Controller
                 'revokedBy'                     => $request->payload['revokedBy'] ?? null,
                 'revoked_Date'                  => $request->payload['revoked_Date'] ?? null,
                 'revoked_Remarks'               => $request->payload['revoked_Remarks'] ?? null,
-                'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? null,
+                'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? ($patient_id ?? null),
                 'guarantor_Name'                => $request->payload['selectedGuarantor'][0]['guarantor_name'] ?? null,
                 'guarantor_Approval_code'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_code'] ?? null,
                 'guarantor_Approval_no'         => $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] ?? null,
@@ -343,21 +143,20 @@ class OutpatientRegistrationController extends Controller
                 'medical_Package_Id'            => $request->payload['medical_Package_Id'] ?? null,
                 'medical_Package_Name'          => $request->payload['medical_Package_Name'] ?? null,
                 'medical_Package_Amount'        => $request->payload['medical_Package_Amount'] ?? null,
-                // 'chief_Complaint_Description'   => $request->payload['chief_Complaint_Description'] ?? null,
                 'impression'                    => $request->payload['impression'] ?? null,
                 'isCriticallyIll'               => $request->payload['isCriticallyIll'] ?? false,
                 'illness_Type'                  => $request->payload['illness_Type'] ?? null,
-                'isHemodialysis'                => $isHemodialysis,
-                'isPeritoneal'                  => $isPeritoneal,
-                'isLINAC'                       => $isLINAC,
-                'isCOBALT'                      => $isCOBALT,
-                'isBloodTrans'                  => $isBloodTrans,
-                'isChemotherapy'                => $isChemotherapy,
-                'isBrachytherapy'               => $isBrachytherapy,
-                'isDebridement'                 => $isDebridement,
-                'isTBDots'                      => $isTBDots,
-                'isPAD'                         => $isPAD,
-                'isRadioTherapy'                => $isRadioTherapy,
+                'isHemodialysis'                => $patientIdentifier === 1 ? true : false,
+                'isPeritoneal'                  => $patientIdentifier === 2 ? true : false,
+                'isLINAC'                       => $patientIdentifier === 3 ? true : false,
+                'isCOBALT'                      => $patientIdentifier === 4 ? true : false,
+                'isBloodTrans'                  => $patientIdentifier === 5 ? true : false,
+                'isChemotherapy'                => $patientIdentifier === 6 ? true : false,
+                'isBrachytherapy'               => $patientIdentifier === 7 ? true : false,
+                'isDebridement'                 => $patientIdentifier === 8 ? true : false,
+                'isTBDots'                      => $patientIdentifier === 9 ? true : false,
+                'isPAD'                         => $patientIdentifier === 10 ? true : false,
+                'isRadioTherapy'                => $patientIdentifier === 11 ? true : false,
                 'attending_Doctor'              => $request->payload['selectedConsultant'][0]['attending_Doctor'] ?? null,
                 'attending_Doctor_fullname'     => $request->payload['selectedConsultant'][0]['attending_Doctor_fullname'] ?? null,
                 'bmi'                           => $request->payload['bmi'] ?? null,
@@ -380,9 +179,105 @@ class OutpatientRegistrationController extends Controller
                 'registry_Remarks'              => $request->payload['registry_Remarks'] ?? null,
                 'CreatedBy'                     => Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
-            ];
-
-            $patientHistoryData = [
+            ], 
+            'patientPastImmunizationData' => [
+                'branch_Id'             => 1,
+                'patient_Id'            => $patient_id,
+                'vaccine_Id'            => '',
+                'administration_Date'   => '',
+                'dose'                  => '',
+                'site'                  => '',
+                'administrator_Name'    => '',
+                'notes'                 => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+            ],
+            'patientPastMedicalHistoryData' => [
+                'branch_Id'                 => 1,    
+                'patient_Id'                => $patient_id,
+                'diagnose_Description'      => '',
+                'diagnosis_Date'            => '',
+                'treament'                  => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(), 
+            ],
+            'patientPastMedicalProcedureData' => [
+                'patient_Id'                => $patient_id,
+                'description'               => '',
+                'date_Of_Procedure'         => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+            ],
+            'patientPastAllergyHistoryData' => [
+                'patient_Id'                => $patient_id,
+                'family_History'            => '',
+                'createdby'                 => Auth()->user()->idnumber,
+                'created_at'                => Carbon::now(),
+            ],
+            'patientPastCauseOfAllergyData' => [
+                'history_Id'            => '',
+                'allergy_Type_Id'       => '',
+                'duration'              => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+            ],
+            'patientPastSymptomsOfAllergyData' => [
+                'history_Id'            => '',
+                'symptom_Description'   => '',
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
+            ],
+            'patientDrugUsedForAllergyData' => [
+                'patient_Id'        => $patient_id,
+                'drug_Description'  => '',
+                'hospital'          => '',
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
+            ],
+            'patientPastBadHabitsData' => [
+                'patient_Id'                    => $patient_id,
+                'description'                   => null,
+                'createdby'                     => Auth()->user()->idnumber,
+                'created_at'                    => Carbon::now(),
+            ],
+            'patientPrivilegedCard' => [
+                'patient_Id'            => $patient_id,
+                'card_number'           => $request->payload['card_number'] ?? '374245455400126',
+                'card_Type_Id'          => $request->payload['card_Type_Id'] ?? null,
+                'card_BenefitLevel'     => $request->payload['card_BenefitLevel'] ?? null,
+                'card_PIN'              => $request->payload['card_PIN'] ?? null,
+                'card_Bardcode'         => $request->payload['card_Bardcode'] ?? null,
+                'card_RFID'             => $request->payload['card_RFID'] ?? null,
+                'card_Balance'          => $request->payload['card_Balance'] ?? null,
+                'issued_Date'           => $request->payload['issued_Date'] ?? null,
+                'expiry_Date'           => $request->payload['expiry_Date'] ?? null,
+                'points_Earned'         => $request->payload['points_Earned'] ?? null,
+                'points_Transferred'    => $request->payload['points_Transferred'] ?? null,
+                'points_Redeemed'       => $request->payload['points_Redeemed'] ?? null,
+                'points_Forfeited'      => $request->payload['points_Forfeited'] ?? null,
+                'card_Status'           => $request->payload['card_Status'] ?? null,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now()
+            ],
+            'patientPrivilegedPointTransfers' => [
+                'fromCard_Id'       => '',
+                'toCard_Id'         => '',
+                'transaction_Date'  => Carbon::now(),
+                'description'       => $request->payload['description'] ?? null,
+                'points'            => $request->payload['points'] ?? 1000,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now()
+            ],
+            'patientPrivilegedPointTransactions' => [
+                'card_Id'           => '',
+                'transaction_Date'  => Carbon::now(),
+                'transaction_Type'  => $request->payload['transaction_Type'] ?? 'Test Transaction',
+                'description'       => $request->payload['description'] ?? null,
+                'points'            => $request->payload['points'] ?? 1000,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now()
+            ],
+            'patientHistoryData' => [
                 'branch_Id'                                 => $request->payload['branch_Id'] ?? 1,
                 'patient_Id'                                => $patient_id,
                 'case_No'                                   => $registry_id,
@@ -411,9 +306,8 @@ class OutpatientRegistrationController extends Controller
                 'physicalExamination_Neurological'          => null,
                 'createdby'                                 => Auth()->user()->idnumber,
                 'created_at'                                => now(),
-            ];
-
-            $patientAdministeredMedicineData = [
+            ],
+            'patientAdministeredMedicineData' => [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
                 'item_Id'               => null,
@@ -424,32 +318,28 @@ class OutpatientRegistrationController extends Controller
                 'transaction_num'       => null,
                 'createdby'             => Auth()->user()->idnumber,
                 'updatedby'             => Auth()->user()->idnumber,
-            ];
-            
-            $patientAllergyData = [
+            ],
+            'patientAllergyData' => [
                 'patient_Id'        => $patient_id,
                 'case_No'           => $registry_id,
                 'family_History'    => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
-            ];
-
-            $patientCauseAllergyData = [
-                'allergies_Id'        => '',
+            ],
+            'patientCauseAllergyData' => [
+                'allergies_Id'      => '',
                 'allergy_Type_Id'   => '',
                 'duration'          => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
-            ];
-
-            $patientSymptomsOfAllergy = [
-                'allergies_Id'            => '',
+            ],
+            'patientSymptomsOfAllergy' => [
+                'allergies_Id'          => '',
                 'symptom_Description'   => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
-            ];
-
-            $patientImmunizationsData = [
+            ],
+            'patientImmunizationsData' => [
                 'branch_id'             => 1,
                 'patient_id'            => $patient_id,
                 'case_No'               => $registry_id,
@@ -461,9 +351,8 @@ class OutpatientRegistrationController extends Controller
                 'Notes'                 => null,
                 'createdby'             => Auth()->user()->idnumber,
                 'updatedby'             => Auth()->user()->idnumber,
-            ];
-
-            $patientMedicalProcedureData = [
+            ],
+            'patientMedicalProcedureData' => [
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
                 'description'                   => null,
@@ -472,9 +361,8 @@ class OutpatientRegistrationController extends Controller
                 'performing_Doctor_Fullname'    => null,
                 'createdby'                     => Auth()->user()->idnumber,
                 'updatedby'                     => Auth()->user()->idnumber,
-            ];
-
-            $patientVitalSignsData = [
+            ],
+            'patientVitalSignsData' => [
                 'branch_Id'                 => 1,
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
@@ -487,17 +375,15 @@ class OutpatientRegistrationController extends Controller
                 'oxygenSaturation'          => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : null,
                 'createdby'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
-            ]; 
-
-            $patientBadHabitsData = [
+            ], 
+            'patientBadHabitsData' => [
                 'patient_Id' => $patient_id,
                 'case_No'   => $registry_id,
                 'description' => '',
                 'createdby'                     => Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
-            ];
-
-            $patientDoctorsData = [
+            ],
+            'patientDoctorsData' => [
                 'patient_Id'        => $patient_id,
                 'case_No'           => $registry_id,
                 'doctor_Id'         => '',
@@ -505,9 +391,8 @@ class OutpatientRegistrationController extends Controller
                 'role_Id'           => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
-            ];
-
-            $patientPhysicalAbdomenData = [
+            ],
+            'patientPhysicalAbdomenData' => [
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
                 'essentially_Normal'        => '',
@@ -518,9 +403,8 @@ class OutpatientRegistrationController extends Controller
                 'others_Description'        => '',
                 'createdby'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
-            ];
-
-            $patientPertinentSignAndSymptomsData = [
+            ],
+            'patientPertinentSignAndSymptomsData' => [
                 'patient_Id'                        => $patient_id,
                 'case_No'                           => $registry_id,
                 'altered_Mental_Sensorium'          => '',
@@ -562,9 +446,8 @@ class OutpatientRegistrationController extends Controller
                 'others_Description'                => '',
                 'createdby'                         => Auth()->user()->idnumber,
                 'created_at'                        => Carbon::now(),
-            ];
-
-            $patientPhysicalExamtionChestLungsData = [
+            ],
+            'patientPhysicalExamtionChestLungsData' => [
                 'patient_Id'                            => $patient_id,
                 'case_No'                               => $registry_id,
                 'essentially_Normal'                    => '',
@@ -577,17 +460,15 @@ class OutpatientRegistrationController extends Controller
                 'others_Description'                    => '',
                 'createdby'                             => Auth()->user()->idnumber,
                 'created_at'                            => Carbon::now(),
-            ];
-
-            $patientCourseInTheWardData = [
+            ],
+            'patientCourseInTheWardData' => [
                 'patient_Id'                            => $patient_id,
                 'case_No'                               => $registry_id,
                 'doctors_OrdersAction'                   => '',
                 'createdby'                             => Auth()->user()->idnumber,
                 'created_at'                            => Carbon::now(),
-            ];
-
-            $patientPhysicalExamtionCVSData = [
+            ],
+            'patientPhysicalExamtionCVSData' => [
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
                 'essentially_Normal'        => '',
@@ -600,18 +481,16 @@ class OutpatientRegistrationController extends Controller
                 'others_Description'        => '',
                 'createdby'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
-            ];
-
-            $patientPhysicalExamtionGeneralSurveyData = [
+            ],
+            'patientPhysicalExamtionGeneralSurveyData' => [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
                 'awake_And_Alert'       => '',
                 'altered_Sensorium'     => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
-            ];
-
-            $patientPhysicalExamtionHEENTData = [
+            ],
+            'patientPhysicalExamtionHEENTData' => [
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
                 'essentially_Normal'            => '',
@@ -625,9 +504,8 @@ class OutpatientRegistrationController extends Controller
                 'others_description'            => '',
                 'createdby'                     => Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
-            ];
-
-            $patientPhysicalGUIEData = [
+            ],
+            'patientPhysicalGUIEData' => [
                 'patient_Id'                        => $patient_id,
                 'case_No'                           => $registry_id,
                 'essentially_Normal'                => '',
@@ -637,9 +515,8 @@ class OutpatientRegistrationController extends Controller
                 'others_Description'                => '',
                 'createdby'                         => Auth()->user()->idnumber,
                 'created_at'                        => Carbon::now(),
-            ];
-
-            $patientPhysicalNeuroExamData = [
+            ],
+            'patientPhysicalNeuroExamData' => [
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
                 'essentially_Normal'            => '',
@@ -652,9 +529,8 @@ class OutpatientRegistrationController extends Controller
                 'poor_Coordination'             => '',
                 'createdby'                     => Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
-            ];
-
-            $patientPhysicalSkinExtremitiesData = [
+            ],
+            'patientPhysicalSkinExtremitiesData' => [
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
                 'essentially_Normal'        => '',
@@ -670,9 +546,8 @@ class OutpatientRegistrationController extends Controller
                 'others_Description'        => '',
                 'createdby'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
-            ];
-
-            $patientOBGYNHistory = [
+            ],
+            'patientOBGYNHistory' => [
                 'patient_Id'                                            => $patient_id,
                 'case_No'                                               => $registry_id,
                 'obsteric_Code'                                         => null,
@@ -807,9 +682,8 @@ class OutpatientRegistrationController extends Controller
                 'followUp_Prenatal_Remarks'                             => null,
                 'createdby'                                             => Auth()->user()->idnumber,
                 'created_at'                                            => Carbon::now(),
-            ];
-
-            $patientPregnancyHistoryData = [
+            ],
+            'patientPregnancyHistoryData' => [
                 'OBGYNHistoryID'    => $patient_id,
                 'pregnancyNumber'   => $registry_id,
                 'outcome'           => '',
@@ -817,17 +691,15 @@ class OutpatientRegistrationController extends Controller
                 'complications'     => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
-            ];
-
-            $patientGynecologicalConditions = [
+            ],
+            'patientGynecologicalConditions' => [
                 'OBGYNHistoryID'    => $patient_id,
                 'conditionName'     => $registry_id,
                 'diagnosisDate'     => '',
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
-            ];
-
-            $patientMedicationsData = [
+            ],
+            'patientMedicationsData' => [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
                 'item_Id'               => '',
@@ -839,10 +711,8 @@ class OutpatientRegistrationController extends Controller
                 'isPrescribed'          => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
-                
-            ];
-
-            $patientDischargeInstructions = [
+            ],
+            'patientDischargeInstructions' => [
                 'branch_Id'                         => 1,
                 'patient_Id'                        => $patient_id,
                 'case_No'                           => $registry_id,
@@ -860,9 +730,8 @@ class OutpatientRegistrationController extends Controller
                 'intructedBy_Nurse'                => '',
                 'createdby'                         => Auth()->user()->idnumber,
                 'created_at'                        => Carbon::now(),
-            ];
-
-            $patientDischargeDoctorsFollowUp = [
+            ],
+            'patientDischargeDoctorsFollowUp' => [
                 'instruction_Id'            => '',
                 'doctor_Id'                 => '',
                 'doctor_Name'               => '',
@@ -870,9 +739,8 @@ class OutpatientRegistrationController extends Controller
                 'schedule_Date'             => '',
                 'createdby'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
-            ];
-
-            $patientDischargeFollowUpTreatment = [
+            ],
+            'patientDischargeFollowUpTreatment' => [
                 'instruction_Id'                => '',
                 'treatment_Description'         => '',
                 'treatment_Date'                => '',
@@ -881,9 +749,8 @@ class OutpatientRegistrationController extends Controller
                 'notes'                         => '',
                 'createdby'                     => Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
-            ];
-
-            $patientDischargeMedications = [
+            ],
+            'patientDischargeMedications' => [
                 'instruction_Id'        => '',
                 'item_Id'               => '',
                 'medication_Name'       => '',
@@ -893,9 +760,8 @@ class OutpatientRegistrationController extends Controller
                 'purpose'               => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
-            ];
-
-            $patientDischargeFollowUpLaboratories = [
+            ],
+            'patientDischargeFollowUpLaboratories' => [
                 'instruction_Id'        => '',
                 'item_Id'               => '',
                 'test_Name'             => '',
@@ -903,30 +769,98 @@ class OutpatientRegistrationController extends Controller
                 'notes'                 => '',
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
-            ];
+            ],
+        ];
+    }
 
-            $patient = Patient::updateOrCreate($patientRule, $patientData);
+    public function index() {
+        try { 
+            $data = Patient::query();
+            $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
+            $today = Carbon::now()->format('Y-m-d');
+            
+            $data->whereHas('patientRegistry', function($query) use ($today) {
+                $query->where('mscAccount_Trans_Types', 2); 
+                $query->where('isRevoked', 0);
+                $query->whereDate('registry_Date', $today);
+                $query->whereNull('discharged_Date');
+
+                if(Request()->keyword) {
+                    $query->where(function($subQuery) {
+                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
+                                ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
+                                ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
+                    });
+                }
+            });
+            $data->orderBy('id', 'desc');
+            $page = Request()->per_page ?? '50'; 
+            return response()->json($data->paginate($page), 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to get outpatient patients',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function register(Request $request) {
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        try {
+            $today = Carbon::now();
+            $sequence = SystemSequence::where('code','MPID')->where('branch_id', 1)->first();
+            $registry_sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
+            if (!$sequence || !$registry_sequence) {
+                throw new \Exception('Sequence not found');
+            }
+
+            $registry_id        = $registry_sequence->seq_no;
+            $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
+
+            $existingPatient = Patient::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->where('birthdate', $request->payload['birthdate'])->first();
+            if ($existingPatient) {
+                $patient_id = $existingPatient->patient_Id;
+                $patient_category = 3;
+            } else {
+                $patient_category = 2;
+                $patient_id = $sequence->seq_no;
+                $sequence->update([
+                    'seq_no' => $sequence->seq_no + 1,
+                    'recent_generated' => $sequence->seq_no,
+                ]);
+            }
+
+            $patientRule = [
+                'lastname'  => $request->payload['lastname'], 
+                'firstname' => $request->payload['firstname'],
+                'birthdate' => $request->payload['birthdate']
+            ];
+            
+            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category);
+            $patient = Patient::updateOrCreate($patientRule, $registerData['patientData']);
+            
             if (!$patient) {
                 throw new \Exception('Failed to create patient master data');
             } else {
-                $patient->past_medical_procedures()->create($patientPastMedicalProcedureData);
-                $patient->past_medical_history()->create($patientPastMedicalHistoryData);
-                $patient->past_immunization()->create($patientPastImmunizationData);
-                $patient->past_bad_habits()->create($patientPastBadHabitsData);
-                $patient->drug_used_for_allergy()->create($patientDrugUsedForAllergyData);
+                $patient->past_medical_procedures()->create($registerData['patientPastMedicalProcedureData']);
+                $patient->past_medical_history()->create($registerData['patientPastMedicalHistoryData']);
+                $patient->past_immunization()->create($registerData['patientPastImmunizationData']);
+                $patient->past_bad_habits()->create($registerData['patientPastBadHabitsData']);
+                $patient->drug_used_for_allergy()->create($registerData['patientDrugUsedForAllergyData']);
 
-                $patientPriviledgeCard = $patient->privilegedCard()->create($patientPrivilegedCard);
-                $patientPrivilegedPointTransfers['fromCard_Id'] = $patientPriviledgeCard->id;
-                $patientPrivilegedPointTransfers['toCard_Id'] = $patientPriviledgeCard->id;
-                $patientPrivilegedPointTransactions['card_Id'] = $patientPriviledgeCard->id;
-                $patientPriviledgeCard->pointTransactions()->create($patientPrivilegedPointTransactions);
-                $patientPriviledgeCard->pointTransfers()->create($patientPrivilegedPointTransfers);
+                $patientPriviledgeCard = $patient->privilegedCard()->create($registerData['patientPrivilegedCard']);
+                $registerData['patientPrivilegedPointTransfers']['fromCard_Id'] = $patientPriviledgeCard->id;
+                $registerData['patientPrivilegedPointTransfers']['toCard_Id'] = $patientPriviledgeCard->id;
+                $registerData['patientPrivilegedPointTransactions']['card_Id'] = $patientPriviledgeCard->id;
+                $patientPriviledgeCard->pointTransactions()->create($registerData['patientPrivilegedPointTransactions']);
+                $patientPriviledgeCard->pointTransfers()->create($registerData['patientPrivilegedPointTransfers']);
     
-                $pastHistory = $patient->past_allergy_history()->create($patientPastAllergyHistoryData);
-                $patientPastCauseOfAllergyData['history_Id'] =   $pastHistory->id;
-                $patientPastSymptomsOfAllergyData['history_Id'] =   $pastHistory->id;
-                $pastHistory->pastCauseOfAllergy()->create($patientPastCauseOfAllergyData);
-                $pastHistory->pastSymptomsOfAllergy()->create($patientPastSymptomsOfAllergyData);
+                $pastHistory = $patient->past_allergy_history()->create($registerData['patientPastAllergyHistoryData']);
+                $registerData['patientPastCauseOfAllergyData']['history_Id'] = $pastHistory->id;
+                $registerData['patientPastSymptomsOfAllergyData']['history_Id'] = $pastHistory->id;
+                $pastHistory->pastCauseOfAllergy()->create($registerData['patientPastCauseOfAllergyData']);
+                $pastHistory->pastSymptomsOfAllergy()->create($registerData['patientPastSymptomsOfAllergyData']);
             }
 
             $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
@@ -934,48 +868,47 @@ class OutpatientRegistrationController extends Controller
                 ->exists();
 
             if (!$existingRegistry) {
-                $patientRegistry = $patient->patientRegistry()->create($patientRegistryData);
-                $patientRegistry->history()->create($patientHistoryData);
-                $patientRegistry->immunizations()->create($patientImmunizationsData);
-                $patientRegistry->vitals()->create($patientVitalSignsData);
-                $patientRegistry->medical_procedures()->create($patientMedicalProcedureData);
-                $patientRegistry->administered_medicines()->create($patientAdministeredMedicineData);
-                $patientRegistry->bad_habits()->create($patientBadHabitsData);
-                $patientRegistry->patientDoctors()->create($patientDoctorsData);
-                $patientRegistry->pertinentSignAndSymptoms()->create($patientPertinentSignAndSymptomsData);
-                $patientRegistry->physicalExamtionChestLungs()->create($patientPhysicalExamtionChestLungsData);
-                $patientRegistry->courseInTheWard()->create($patientCourseInTheWardData);
-                $patientRegistry->physicalExamtionCVS()->create($patientPhysicalExamtionCVSData);
-                $patientRegistry->medications()->create($patientMedicationsData);
-                $patientRegistry->physicalExamtionHEENT()->create($patientPhysicalExamtionHEENTData);
-                $patientRegistry->physicalSkinExtremities()->create($patientPhysicalSkinExtremitiesData);
-                $patientRegistry->physicalAbdomen()->create($patientPhysicalAbdomenData);
-                $patientRegistry->physicalNeuroExam()->create($patientPhysicalNeuroExamData);
-                $patientRegistry->physicalGUIE()->create($patientPhysicalGUIEData);
-                $patientRegistry->PhysicalExamtionGeneralSurvey()->create($patientPhysicalExamtionGeneralSurveyData);
+                $patientRegistry = $patient->patientRegistry()->create($registerData['patientRegistryData']);
+                $patientRegistry->history()->create($registerData['patientHistoryData']);
+                $patientRegistry->immunizations()->create($registerData['patientImmunizationsData']);
+                $patientRegistry->vitals()->create($registerData['patientVitalSignsData']);
+                $patientRegistry->medical_procedures()->create($registerData['patientMedicalProcedureData']);
+                $patientRegistry->administered_medicines()->create($registerData['patientAdministeredMedicineData']);
+                $patientRegistry->bad_habits()->create($registerData['patientBadHabitsData']);
+                $patientRegistry->patientDoctors()->create($registerData['patientDoctorsData']);
+                $patientRegistry->pertinentSignAndSymptoms()->create($registerData['patientPertinentSignAndSymptomsData']);
+                $patientRegistry->physicalExamtionChestLungs()->create($registerData['patientPhysicalExamtionChestLungsData']);
+                $patientRegistry->courseInTheWard()->create($registerData['patientCourseInTheWardData']);
+                $patientRegistry->physicalExamtionCVS()->create($registerData['patientPhysicalExamtionCVSData']);
+                $patientRegistry->medications()->create($registerData['patientMedicationsData']);
+                $patientRegistry->physicalExamtionHEENT()->create($registerData['patientPhysicalExamtionHEENTData']);
+                $patientRegistry->physicalSkinExtremities()->create($registerData['patientPhysicalSkinExtremitiesData']);
+                $patientRegistry->physicalAbdomen()->create($registerData['patientPhysicalAbdomenData']);
+                $patientRegistry->physicalNeuroExam()->create($registerData['patientPhysicalNeuroExamData']);
+                $patientRegistry->physicalGUIE()->create($registerData['patientPhysicalGUIEData']);
+                $patientRegistry->PhysicalExamtionGeneralSurvey()->create($registerData['patientPhysicalExamtionGeneralSurveyData']);
 
-                $OBG = $patientRegistry->oBGYNHistory()->create($patientOBGYNHistory);
-                $patientPregnancyHistoryData['OBGYNHistoryID'] = $OBG->id;
-                $patientGynecologicalConditions['OBGYNHistoryID'] = $OBG->id;
-                $OBG->PatientPregnancyHistory()->create($patientPregnancyHistoryData);
-                $OBG->gynecologicalConditions()->create($patientGynecologicalConditions);
+                $OBG = $patientRegistry->oBGYNHistory()->create($registerData['patientOBGYNHistory']);
+                $registerData['patientPregnancyHistoryData']['OBGYNHistoryID'] = $OBG->id;
+                $registerData['patientGynecologicalConditions']['OBGYNHistoryID'] = $OBG->id;
+                $OBG->PatientPregnancyHistory()->create($registerData['patientPregnancyHistoryData']);
+                $OBG->gynecologicalConditions()->create($registerData['patientGynecologicalConditions']);
 
-                $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
-                $last_inserted_id = $patientAllergy->id;
-                $patientCauseAllergyData['allergies_Id'] = $last_inserted_id;
-                $patientSymptomsOfAllergy['allergies_Id'] = $last_inserted_id;
-                $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
-                $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
+                $patientAllergy = $patientRegistry->allergies()->create($registerData['patientAllergyData']);
+                $registerData['patientCauseAllergyData']['allergies_Id'] = $patientAllergy->id;
+                $registerData['patientSymptomsOfAllergy']['allergies_Id'] = $patientAllergy->id;
+                $patientAllergy->cause_of_allergy()->create($registerData['patientCauseAllergyData']);
+                $patientAllergy->symptoms_allergy()->create($registerData['patientSymptomsOfAllergy']);
 
-                $patientDischarge = $patientRegistry->dischargeInstructions()->create($patientDischargeInstructions);
-                $patientDischargeMedications['instruction_Id'] = $patientDischarge->id;
-                $patientDischargeFollowUpLaboratories['instruction_Id'] = $patientDischarge->id;
-                $patientDischargeFollowUpTreatment['instruction_Id'] = $patientDischarge->id;
-                $patientDischargeDoctorsFollowUp['instruction_Id'] = $patientDischarge->id;
-                $patientDischarge->dischargeMedications($patientDischargeMedications)->create();
-                $patientDischarge->dischargeFollowUpLaboratories()->create($patientDischargeFollowUpLaboratories);
-                $patientDischarge->dischargeFollowUpTreatment()->create($patientDischargeFollowUpTreatment);
-                $patientDischarge->dischargeDoctorsFollowUp()->create($patientDischargeDoctorsFollowUp);
+                $patientDischarge = $patientRegistry->dischargeInstructions()->create($registerData['patientDischargeInstructions']);
+                $registerData['patientDischargeMedications']['instruction_Id'] = $patientDischarge->id;
+                $registerData['patientDischargeFollowUpLaboratories']['instruction_Id'] = $patientDischarge->id;
+                $registerData['patientDischargeFollowUpTreatment']['instruction_Id'] = $patientDischarge->id;
+                $registerData['patientDischargeDoctorsFollowUp']['instruction_Id'] = $patientDischarge->id;
+                $patientDischarge->dischargeMedications()->create($registerData['patientDischargeMedications']);
+                $patientDischarge->dischargeFollowUpLaboratories()->create($registerData['patientDischargeFollowUpLaboratories']);
+                $patientDischarge->dischargeFollowUpTreatment()->create($registerData['patientDischargeFollowUpTreatment']);
+                $patientDischarge->dischargeDoctorsFollowUp()->create($registerData['patientDischargeDoctorsFollowUp']);
 
             } else {
                 throw new \Exception('Patient already registered today');
@@ -1007,8 +940,8 @@ class OutpatientRegistrationController extends Controller
 
     public function update(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
-        try {
-            $patient = Patient::findOrFail($id);
+        // try {
+            $patient = Patient::where('patient_Id', $id)->firstOrFail();
             $today = Carbon::now()->format('Y-m-d');
             $patient_id = $patient->patient_Id;
             $registry_sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
@@ -1054,7 +987,7 @@ class OutpatientRegistrationController extends Controller
             $dischargeFollowUpLaboratories      = $dischargeInstructions->dischargeFollowUpLaboratories()->first();
             $dischargeDoctorsFollowUp           = $dischargeInstructions->dischargeDoctorsFollowUp()->first();
 
-            $patientRegistry                    = $patient->patientRegistry()->first();
+            $patientRegistry                    = PatientRegistry::where('patient_Id', $patient_id)->orderBy('id', 'desc')->first(); 
             $patientHistory                     = $patientRegistry->history()->first();
             $patientMedicalProcedure            = $patientRegistry->medical_procedures()->first();
             $patientVitalSign                   = $patientRegistry->vitals()->first();
@@ -1874,16 +1807,19 @@ class OutpatientRegistrationController extends Controller
                 'updated_at'            => $today,
             ];
 
+
+            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id);
             $existingPatientRecord = Patient::where('patient_Id', $patient_id)
                 ->whereDate('created_at', $today)
                 ->exists();
             
-            $patient->update($patientData);
+            
             if ($existingPatientRecord) { 
+                $patient->update($patientData);
                 $pastImmunization->update($patientPastImmunizationData);
                 $pastMedicalHistory->update($patientPastMedicalHistoryData);
                 $pastMedicalProcedure->update($patientPastMedicalProcedureData);
-                $updateAllergy = $pastAllergyHistory->update($patientPastAllergyHistoryData);
+                $pastAllergyHistory->update($patientPastAllergyHistoryData);
                 $pastCauseOfAllergy->update($patientPastCauseOfAllergyData);
                 $pastSymtomsOfAllergy->update($patientPastSymptomsOfAllergyData);
                 $drugUsedForAllergy->update($patientDrugUsedForAllergyData);
@@ -1891,13 +1827,26 @@ class OutpatientRegistrationController extends Controller
                 $privilegedCard->update($patientPrivilegedCard);
                 $privilegedPointTransfers->update($patientPrivilegedPointTransfers);
                 $privilegedPointTransactions->update($patientPrivilegedPointTransactions);
-                $dischargeInstructions->update($patientDischargeInstructions);
-                $dischargeMedications->update($patientDischargeMedications);
-                $dischargeFollowUpTreatment->update($patientDischargeFollowUpTreatment);
-                $dischargeFollowUpLaboratories->update($patientDischargeFollowUpLaboratories);
-                $dischargeDoctorsFollowUp->update($patientDischargeDoctorsFollowUp);
             } else {
-                throw new \Exception('ERROR UPDATING PATIENT AND RELATED DATA');
+                $patient->update($patientData);
+                $pastMedicalProcedure->create($registerData['patientPastMedicalProcedureData']);
+                $pastMedicalHistory->create($registerData['patientPastMedicalHistoryData']);
+                $pastImmunization->create($registerData['patientPastImmunizationData']);
+                $pastBadHabits->create($registerData['patientPastBadHabitsData']);
+                $drugUsedForAllergy->create($registerData['patientDrugUsedForAllergyData']);
+
+                $newPrivelgedCard = $privilegedCard->create($registerData['patientPrivilegedCard']);
+                $registerData['patientPrivilegedPointTransfers']['fromCard_Id'] = $newPrivelgedCard->id;
+                $registerData['patientPrivilegedPointTransfers']['toCard_Id'] = $newPrivelgedCard->id;
+                $registerData['patientPrivilegedPointTransactions']['card_Id'] = $newPrivelgedCard->id;
+                $privilegedPointTransfers->create($registerData['patientPrivilegedPointTransfers']);
+                $privilegedPointTransactions->create($registerData['patientPrivilegedPointTransactions']);
+
+                $newPastAllergyHistory = $pastAllergyHistory->create($registerData['patientPastAllergyHistoryData']);
+                $registerData['patientPastCauseOfAllergyData']['history_Id'] = $newPastAllergyHistory->id;
+                $registerData['patientPastSymptomsOfAllergyData']['history_Id'] = $newPastAllergyHistory->id;
+                $pastCauseOfAllergy->create($registerData['patientPastCauseOfAllergyData']);
+                $pastSymtomsOfAllergy->create($registerData['patientPastSymptomsOfAllergyData']);
             }
 
             $existingPatientRegistry = PatientRegistry::where('patient_Id', $patient_id)->whereDate('created_at', $today)->exists();
@@ -1929,8 +1878,52 @@ class OutpatientRegistrationController extends Controller
                 $physicalNeuroExam->update($patientPhysicalNeuroExamData);
                 $physicalSkinExtremities->update($patientPhysicalSkinExtremitiesData);
                 $medications->update($patientMedicationsData);
+                $dischargeMedications->update($patientDischargeMedications);
+                $dischargeFollowUpTreatment->update($patientDischargeFollowUpTreatment);
+                $dischargeFollowUpLaboratories->update($patientDischargeFollowUpLaboratories);
+                $dischargeDoctorsFollowUp->update($patientDischargeDoctorsFollowUp);
             } else {
-                throw new \Exception('ERROR UPDATING PATIENT REGISTRY AND RELATED DATA');
+                $patientRegistry->create($patientRegistryData);
+                $patientHistory->create($registerData['patientHistoryData']);
+                $patientImmunization->create($registerData['patientImmunizationsData']);
+                $patientVitalSign->create($registerData['patientVitalSignsData']);
+                $patientMedicalProcedure->create($registerData['patientMedicalProcedureData']);
+                $patientAdministeredMedicine->create($registerData['patientAdministeredMedicineData']);
+                $badHabits->create($registerData['patientBadHabitsData']);
+                $patientDoctors->create($registerData['patientDoctorsData']);
+                $pertinentSignAndSymptoms->create($registerData['patientPertinentSignAndSymptomsData']);
+                $physicalExamtionChestLungs->create($registerData['patientPhysicalExamtionChestLungsData']);
+                $courseInTheWard->create($registerData['patientCourseInTheWardData']);
+                $physicalExamtionCVS->create($registerData['patientPhysicalExamtionCVSData']);
+                $medications->create($registerData['patientMedicationsData']);
+                $physicalExamtionHEENT->create($registerData['patientPhysicalExamtionHEENTData']);
+                $physicalSkinExtremities->create($registerData['patientPhysicalSkinExtremitiesData']);
+                $physicalAbdomen->create($registerData['patientPhysicalAbdomenData']);
+                $physicalNeuroExam->create($registerData['patientPhysicalNeuroExamData']);
+                $physicalGUIE->create($registerData['patientPhysicalGUIEData']);
+                $physicalExamtionGeneralSurvey->create($registerData['patientPhysicalExamtionGeneralSurveyData']);
+
+                $newOBGYNHistory = $OBGYNHistory->create($registerData['patientOBGYNHistory']);
+                $registerData['patientPregnancyHistoryData']['OBGYNHistoryID'] = $newOBGYNHistory->id;
+                $registerData['patientGynecologicalConditions']['OBGYNHistoryID'] = $newOBGYNHistory->id;
+                $pregnancyHistory->create($registerData['patientPregnancyHistoryData']);
+                $gynecologicalConditions->create($registerData['patientGynecologicalConditions']);
+
+                $newAllergy = $allergy->create($registerData['patientAllergyData']);
+                $registerData['patientCauseAllergyData']['allergies_Id'] = $newAllergy->id;
+                $registerData['patientSymptomsOfAllergy']['allergies_Id'] = $newAllergy->id;
+                createIfNotNull($causeOfAllergy, $registerData['patientCauseAllergyData']);
+                createIfNotNull($symptomsOfAllergy, $registerData['patientSymptomsOfAllergy']);
+
+                $newDischargeInstructions = $dischargeInstructions->create($registerData['patientDischargeInstructions']);
+                $registerData['patientDischargeMedications']['instruction_Id'] = $newDischargeInstructions->id;
+                $registerData['patientDischargeFollowUpLaboratories']['instruction_Id'] = $newDischargeInstructions->id;
+                $registerData['patientDischargeFollowUpTreatment']['instruction_Id'] = $newDischargeInstructions->id;
+                $registerData['patientDischargeDoctorsFollowUp']['instruction_Id'] = $newDischargeInstructions->id;
+                $dischargeMedications->create($registerData['patientDischargeMedications']);
+                $dischargeFollowUpTreatment->create($registerData['patientDischargeFollowUpTreatment']);
+                $dischargeFollowUpLaboratories->create($registerData['patientDischargeFollowUpLaboratories']);
+                $dischargeDoctorsFollowUp->create($registerData['patientDischargeDoctorsFollowUp']);
             }
 
             DB::connection('sqlsrv_patient_data')->commit();
@@ -1939,18 +1932,18 @@ class OutpatientRegistrationController extends Controller
                 'recent_generated' => $registry_sequence->seq_no,
             ]);
             return response()->json([
-                'message' => 'Outpatient data updated successfully',
+                'message' => $existingPatientRecord && $existingPatientRegistry ? 'Outpatient data updated successfully' : 'Outpatient data created successfully',
                 'patient' => $patient,
                 'patientRegistry' => $patientRegistry
             ], 200);
 
-        } catch(\Exception $e) {
-            DB::connection('sqlsrv_patient_data')->rollBack();
-            return response()->json([
-                'message' => 'Failed to update outpatient data',
-                'error' => $e->getMessage(), $e->getTraceAsString()
-            ], 500);
-        }
+        // } catch(\Exception $e) {
+        //     DB::connection('sqlsrv_patient_data')->rollBack();
+        //     return response()->json([
+        //         'message' => 'Failed to update outpatient data',
+        //         'error' => $e->getMessage(), $e->getTraceAsString()
+        //     ], 500);
+        // }
     }
 
     public function getrevokedoutpatient() {

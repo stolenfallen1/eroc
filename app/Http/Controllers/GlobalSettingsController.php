@@ -7,6 +7,7 @@ use App\Models\GlobalSettings;
 use App\Models\UserGlobalAccess;
 use App\Models\BuildFile\GlobalSetting;
 use App\Models\BuildFile\Hospital\Setting\System;
+use Illuminate\Support\Facades\DB;
 
 class GlobalSettingsController extends Controller
 {
@@ -33,7 +34,7 @@ class GlobalSettingsController extends Controller
     }
     public function list()
     {
-        $data = System::with('globalSettings')->get();
+        $data = System::with('globalSettings')->get(); 
         return response()->json($data,200);
     }
 
@@ -128,4 +129,46 @@ class GlobalSettingsController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
+    /** 
+     * FOR HIS ( HOSPITAL INFORMATION SYSTEM)
+     * Update lang nya sir cel if ever na magamit na sa HIS
+     */
+    public function his_list() 
+    {
+        $data = GlobalSettings::query();
+        $data->where('Systems_id', 4);
+        return response()->json($data->get(), 200);
+    }
+
+    public function updateglobalsetting(Request $request) 
+    {
+        DB::connection('sqlsrv')->beginTransaction();
+        try {
+            $items = $request->payload; 
+            $updatedItems = []; 
+            
+            $id = $items['id'];
+            $group_module = $items['group_module'];
+            $value = $items['value'];
+
+            $data = GlobalSetting::where('id', $id)
+                ->where('group_module', $group_module)
+                ->update(['value' => $value]);
+            
+            if (!$data) {
+                throw new \Exception('Failed to update global setting');
+            } else {                
+                DB::connection('sqlsrv')->commit();
+                return response()->json([
+                    'message' => 'Success',
+                    'data' => $updatedItems 
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv')->rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
 }

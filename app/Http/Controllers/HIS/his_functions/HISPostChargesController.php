@@ -63,13 +63,13 @@ class HISPostChargesController extends Controller
     {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = SystemSequence::where('seq_prefix', 'gc')->first();
+            $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
             }
 
-            $patient_id = $request->payload['patient_id'];
-            $case_no = $request->payload['case_no'];
+            $patient_id = $request->payload['patient_Id'];
+            $case_no = $request->payload['case_No'];
             $transDate = Carbon::now();
             $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
             $request_doctors_id = $request->payload['attending_doctor'];

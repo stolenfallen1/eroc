@@ -670,6 +670,10 @@ Route::controller(GlobalSettingsController::class)->group(function () {
     Route::post('get-other-user-access', 'getuseraccess');
     Route::post('add-globalsetting-access', 'add_user_access');
     Route::post('remove-globalsetting-access', 'remove_user_access');
+
+    // FOR HIS 
+    Route::get('get-his-setup-options', 'his_list');
+    Route::post('update-his-setup-options', 'updateglobalsetting');
 });
 Route::resource('global-settings', GlobalSettingsController::class);
 Route::controller(SystemReportsController::class)->group(function () {

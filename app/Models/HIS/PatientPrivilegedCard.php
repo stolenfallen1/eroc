@@ -14,10 +14,10 @@ class PatientPrivilegedCard extends Model
     protected $guarded = [];
 
     public function pointTransfers() {
-        return $this->hasOne(PrivilegedPointTransfers::class, 'fromCard_Id', 'id');
+        return $this->hasMany(PrivilegedPointTransfers::class, 'fromCard_Id', 'id');
     }
 
     public function pointTransactions() {
-        return $this->hasOne(PrivilegedPointTransactions::class, 'card_Id', 'id');
+        return $this->hasMany(PrivilegedPointTransactions::class, 'card_Id', 'id');
     }
 }

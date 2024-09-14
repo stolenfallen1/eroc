@@ -7,6 +7,7 @@ use App\Models\HIS\services\PatientRegistry;
 use App\Models\BuildFile\Hospital\Doctor;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\HIS\services\Patient;
 
 class HISBillingOut extends Model
 {
@@ -16,12 +17,15 @@ class HISBillingOut extends Model
     protected $guarded = [];
     public $timestamps = false;
 
+    public function patient() {
+        return $this->belongsTo(Patient::class, 'patient_Id', 'patient_Id');
+    }
     public function patientRegistry() {
-        return $this->belongsTo(PatientRegistry::class, 'pid', 'patient_id');
+        return $this->belongsTo(PatientRegistry::class, 'case_No', 'case_No');
     }
 
     public function items(){
-        return $this->belongsTo(FmsExamProcedureItems::class, 'item_id', 'map_item_id');
+        return $this->belongsTo(FmsExamProcedureItems::class, 'itemID', 'map_item_id');
     }
 
     public function doctor_details(){

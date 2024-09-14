@@ -15,6 +15,7 @@ use App\Models\BuildFile\Hospital\DeathType;
 use App\Models\BuildFile\Hospital\Nationalities;
 use App\Models\BuildFile\Hospital\Religions;
 use App\Models\BuildFile\Hospital\Sex;
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\PatientAdministeredMedicines;
 use App\Models\HIS\PatientMedications;
 use App\Models\HIS\PatientPastBadHabits;
@@ -53,7 +54,7 @@ class Patient extends Model
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $connection = "sqlsrv_patient_data";
-    protected $primaryKey = 'patient_Id';
+    // protected $primaryKey = 'patient_Id'; 
     protected $guarded = [];
 
     // Relationships
@@ -61,6 +62,10 @@ class Patient extends Model
         return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id')
             ->whereDate('registry_Date', Carbon::now()->format('Y-m-d'))
             ->whereDate('created_at', Carbon::now()->format('Y-m-d'));
+    }
+
+    public function billingOut() {
+        return $this->hasMany(HISBillingOut::class, 'patient_Id', 'patient_Id');
     }
     public function sex() {
         return $this->belongsTo(Sex::class, 'sex_id', 'id');

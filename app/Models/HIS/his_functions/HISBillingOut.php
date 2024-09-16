@@ -21,7 +21,7 @@ class HISBillingOut extends Model
         return $this->belongsTo(Patient::class, 'patient_Id', 'patient_Id');
     }
     public function patientRegistry() {
-        return $this->belongsTo(PatientRegistry::class, 'case_No', 'case_No');
+        return $this->belongsTo(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
 
     public function items(){
@@ -29,6 +29,6 @@ class HISBillingOut extends Model
     }
 
     public function doctor_details(){
-        return $this->belongsTo(Doctor::class,'item_id', 'doctor_code');
+        return $this->belongsTo(Doctor::class,'itemID', 'doctor_code');
     }
 }

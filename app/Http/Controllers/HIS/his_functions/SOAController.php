@@ -13,8 +13,9 @@ class SOAController extends Controller
 {
     //  
 
-    public function createStatmentOfAccount() {
-        $data = OutPatient::with('patientBillingInfo')->where('case_No', 294306)->take(1)->get();
+    public function createStatmentOfAccount($id) {
+        $caseNo = intval($id);
+        $data = OutPatient::with('patientBillingInfo')->where('case_No', $caseNo)->take(1)->get();
         // return $data;
         $patientInfo = $data->map(function($item) {
             return [
@@ -92,8 +93,9 @@ class SOAController extends Controller
         return $pdf->stream($filename . '.pdf');
     }
 
-    public function createStatmentOfAccountSummary() {
-        $data = OutPatient::with('patientBillingInfo')->where('case_No', 291467)->take(1)->get();
+    public function createStatmentOfAccountSummary($id) {
+        // $caseNo = intval($id);
+        $data = OutPatient::with('patientBillingInfo')->where('case_No', $id)->take(1)->get();
         $patientInfo = $data->map(function($item) {
             return [
                 'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,
@@ -110,9 +112,9 @@ class SOAController extends Controller
             ];
         });
 
-        $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [294306]);
+        $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
 
-        $totalCharges = collect($billsPayment)
+        $totalChargesSummary = collect($billsPayment)
             ->groupBy('RevenueID') 
             ->map(function($groupedItems) {
                 $totalAmount = $groupedItems->sum(function($billing) {
@@ -137,21 +139,63 @@ class SOAController extends Controller
                     'Payment'       => $PaymentType
                 ];
             });
-     
-        $patientBillSummary = [
+
+            $firstRow = true;
+            $runningBalance = 0; 
+            $totalCharges = 0;
+            
+            $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance) {
+                return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance) {
+                    $charges = floatval(str_replace(',', '', ($billing->amount * intval($billing->quantity))));  
+            
+                    if ($firstRow && ($billing->drcr === 'D' || $billing->drcr === 'P')) {
+                        $runningBalance = $charges;
+                        $firstRow = false;
+                    } elseif($firstRow && $billing->drcr === 'C') {
+                        $runningBalance = 0;
+                        $firstRow = false;
+                    } else {
+                        if ($billing->drcr === 'D' || $billing->drcr === 'P') {
+                            $runningBalance += $charges;
+                        } elseif ($billing->drcr === 'C') {
+                            $runningBalance -= $charges;
+                        }
+                    }
+            
+                    return [
+                        'Date' => date('Y/m/d', strtotime($billing->transDate)),
+                        'Reference_No' => $billing->revenueID . ' ' . $billing->refNum,
+                        'Description' => $billing->exam_description,
+                        'Quantity' => isset($billing->quantity) ? intval($billing->quantity) : 1,
+                        'Charges' => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
+                                    ? number_format(0, 2)
+                                    : number_format($charges, 2),
+                        'Credit' => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
+                                    ? number_format($charges, 2) 
+                                    : number_format(0, 2),
+                        'Balance' => number_format($runningBalance, 2), 
+                    ];
+                });
+            });
+            
+        $patientBillInfo = [
             'Patient_Info'      => $patientInfo->toArray(),
-            'PatientBilSummary' =>  $totalCharges,
+            'PatientBilSummary' =>  $totalChargesSummary,
             'Run_Date'          => Carbon::now()->format('Y/m/d'),
-            'Run_Time'          => Carbon::now()->format('g:i A')
+            'Run_Time'          => Carbon::now()->format('g:i A'),
+            'Patient_Bill'  => $patientBill->toArray(),
+            'Total_Charges' => number_format($totalCharges = $runningBalance, 2),
         ]; 
 
+
         $filename   = 'Statement_of_account_summary';
-        $html       = view('his.report.soa.statement_of_account_summary', $patientBillSummary)->render();
+        $html       = view('his.report.soa.statement_of_account_summary', $patientBillInfo)->render();
         $pdf        = PDF::loadHTML($html)->setPaper('letter', 'portrait');
 
         $pdf->render();
         $dompdf = $pdf->getDomPDF();
         $font = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
+        // $dompdf->get_canvas()->page_text(510, 45, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
         $dompdf->get_canvas()->page_text(500, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
 
         $currentDateTime = \Carbon\Carbon::now()->format('Y-m-d g:i A');

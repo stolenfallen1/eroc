@@ -41,53 +41,54 @@ class EmergencyRegistrationController extends Controller
 {
     //
     public function index() {
-        try {
-            $today = Carbon::now()->format('Y-m-d');  // Get today's date
-    
-            // Start querying the Patient model
-            $data = Patient::query();
-    
-            // Apply a filter to only include patients with a registry record for today
-            $data->whereHas('patientRegistry', function($query) use ($today) {
-                $query->where('mscAccount_Trans_Types', 5)   // Only records with type 5
-                      ->where('isRevoked', 0)                // Ensure it's not revoked
-                      ->whereDate('registry_Date', $today);  // Filter for today's date
-            });
-    
-            // Eager load only the relationships we need, including filtered patientRegistry for today
-            $data->with([
-                'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-                // Load only today's records in patientRegistry
-                'patientRegistry' => function($query) use ($today) {
-                    $query->whereDate('registry_Date', $today);
-                }
-            ]);
-    
-            // Add search filter if a keyword is present
-            if (Request()->has('keyword')) {
-                $keyword = Request()->keyword;
-                $data->where(function($subQuery) use ($keyword) {
-                    $subQuery->where('lastname', 'LIKE', '%' . $keyword . '%')
-                             ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
-                             ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
-                });
+    try {
+        $today = Carbon::now()->format('Y-m-d');  // Get today's date
+
+        // Start querying the Patient model
+        $data = Patient::query();
+
+        // Apply a filter to only include patients with a registry record for today
+        $data->whereHas('patientRegistry', function($query) use ($today) {
+            $query->where('mscAccount_Trans_Types', 5)   // Only records with type 5
+                  ->where('isRevoked', 0)                // Ensure it's not revoked
+                  ->whereDate('registry_Date', $today);  // Filter for today's date
+        });
+
+        // Eager load only the relationships we need, including filtered patientRegistry for today
+        $data->with([
+            'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
+            // Load only today's records in patientRegistry
+            'patientRegistry' => function($query) use ($today) {
+                $query->whereDate('registry_Date', $today);
             }
-    
-            // Order by the latest patient entries
-            $data->orderBy('id', 'desc');
-    
-            // Paginate the result
-            $page = Request()->per_page ?? '50';
-            return response()->json($data->paginate($page), 200);
-    
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to get patients',
-                'error' => $e->getMessage()
-            ], 500);
+        ]);
+        // return $data;
+
+        // Add search filter if a keyword is present
+        if (Request()->has('keyword')) {
+            $keyword = Request()->keyword;
+            $data->where(function($subQuery) use ($keyword) {
+                $subQuery->where('lastname', 'LIKE', '%' . $keyword . '%')
+                         ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
+                         ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
+            });
         }
+
+        // Order by the latest patient entries
+        $data->orderBy('id', 'desc');
+
+        // Paginate the result
+        $page = Request()->per_page ?? '50';
+        return response()->json($data->paginate($page), 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Failed to get patients',
+            'error' => $e->getMessage()
+        ], 500);
     }
-    
+}
+
 
     public function getPatientBroughtBy() {
         try {

@@ -148,9 +148,9 @@
                         <th>Patient  </th>
                         <td style="width: 40%;">: {{ $Patient_Info[0]['Patient_Name'] }}</td>
                         <th>Admission #</th>
-                        <td style="width: 15%;">: {{ $Patient_Info[0]['Admission_No'] }}</td>
+                        <td style="width: 10%;">: {{ $Patient_Info[0]['Admission_No'] }}</td>
                         <th>Room</th>
-                        <td style="width: 15%;">: EMERGENCY</td>
+                        <td style="width: 20%;">: EMERGENCY</td>
                     </tr>
 
                     <tr>
@@ -164,7 +164,11 @@
 
                     <tr>
                         <th>Company</th>
-                        <td colspan="5">:  {{ $Patient_Info[0]['Guarantor'] }}</td>
+                        <td style="width: 40%;">:  {{ $Patient_Info[0]['Guarantor'] }}</td>
+                        <th style="width: 20%;">Discharged Date</th>
+                        <td>:</td>
+                        <th>Time</th>
+                        <td>:</td>
                     </tr>
                     
                     <tr>
@@ -179,12 +183,10 @@
                     <tr>
                         <th>Credit L  </th>
                         <td>:  {{ $Patient_Info[0]['Credit_Limit'] }}</td>
-                        @if ($Patient_Info[0]['Billed_Date'])
-                            <th>Billed Date</th>
-                            <td>: {{ $Patient_Info[0]['Billed_Date'] }}</td>
-                            <th>Time</th>
-                            <td>:  {{ $Patient_Info[0]['Billed_Time'] }}</td>
-                        @endif
+                        <th>Billed Date</th>
+                        <td>: {{ $Patient_Info[0]['Billed_Date'] }}</td>
+                        <th>Time</th>
+                        <td>:  {{ $Patient_Info[0]['Billed_Time'] }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -217,10 +219,7 @@
             <table>
                 <tbody style="border: none;">
                     <tr>
-                        <td style="width: 50%"></td>
-                        <td style="width: 20%">Total Due to Hospital : </td>
-                        <td style="width: 10%; text-align: left"">=========></td>
-                        <td style="width: 10%; text-align: left">{{ $Total_Charges }}</td>
+                        <td style="width: 100%; text-align: right;">Total Due to Hospital : =========> {{ $Total_Charges }}</td>
                     </tr>
                 </tbody>
             </table>

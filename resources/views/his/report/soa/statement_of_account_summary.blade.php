@@ -57,7 +57,7 @@
             .body-content {
                 display: inline-block;
                 position: relative;
-                top: 30%;
+                top: 20%;
                 left: 0;
                 right: 0;
                 box-sizing: border-box;
@@ -183,9 +183,15 @@
                 white-space: nowrap;
             }
             .solid-line {
-                border-top: 1px solid #000;
-                padding-top: 2px;
+                width: 20%;
+                text-align: right;
             }
+            .solid-line-last {
+                width: 20%;
+                text-align: right;
+                border-bottom: 1px solid #000;
+            }
+
         </style>
     </head>
     <body>
@@ -217,9 +223,9 @@
                         <th>Patient  </th>
                         <td style="width: 40%;">: {{ $Patient_Info[0]['Patient_Name'] }}</td>
                         <th>Admission #</th>
-                        <td style="width: 15%;">: {{ $Patient_Info[0]['Admission_No'] }}</td>
+                        <td style="width: 10%;">: {{ $Patient_Info[0]['Admission_No'] }}</td>
                         <th>Room</th>
-                        <td style="width: 15%;">: EMERGENCY</td>
+                        <td style="width: 20%;">: EMERGENCY</td>
                     </tr>
 
                     <tr>
@@ -233,7 +239,11 @@
 
                     <tr>
                         <th>Company</th>
-                        <td colspan="5">:  {{ $Patient_Info[0]['Guarantor'] }}</td>
+                        <td style="width: 40%;">:  {{ $Patient_Info[0]['Guarantor'] }}</td>
+                        <th style="width: 20%;">Discharged Date</th>
+                        <td>:</td>
+                        <th>Time</th>
+                        <td>:</td>
                     </tr>
                     
                     <tr>
@@ -248,53 +258,59 @@
                     <tr>
                         <th>Credit L  </th>
                         <td>:  {{ $Patient_Info[0]['Credit_Limit'] }}</td>
-                        @if ($Patient_Info[0]['Billed_Date'])
-                            <th>Billed Date</th>
-                            <td>: {{ $Patient_Info[0]['Billed_Date'] }}</td>
-                            <th>Time</th>
-                            <td>:  {{ $Patient_Info[0]['Billed_Time'] }}</td>
-                        @endif
+                        <th>Billed Date</th>
+                        <td>: {{ $Patient_Info[0]['Billed_Date'] }}</td>
+                        <th>Time</th>
+                        <td>:  {{ $Patient_Info[0]['Billed_Time'] }}</td>
                     </tr>
                 </tbody>
             </table>
             @php
                 $grossTotal = 0;
                 $lessAmount = 0;
+                $lessDiscount = 0;
+                $doctorsFee = 0;
             @endphp
             <table class="custom-table">
                 <thead style=" border: none;">
                     <tr>
-                        <th colspan="4" style="text-align: center;">*** Summary ***</th>
+                        <th colspan="4" style="text-align: center;font-size: 14px; font-weight: bold; text-transform: uppercase;">*** Summary ***</th>
                     </tr>
                 </thead>
                 <tbody style="border-bottom: none;">
                     <tr>
-                        <td colspan="4">Description :</td>
+                        <td colspan="4">Description</td>
                     </tr>
                     @foreach ($PatientBilSummary as $bill)
                         {{ $grossTotal += floatval($bill['Total']) }}
                         @if ($bill['AccountType'] === 'D' || $bill['AccountType'] === 'P')
                             <tr>
-                                <td class="dot-cell" style="text-indent: 20px;" colspan="3">
-                                <span>{{ $bill['Description'] }}</span>
+                                <td class="dot-cell" style="text-indent: 20px;" colspan="2">
+                                    <span>{{ $bill['Description'] }}</span>
                                 </t>
-                                <td style="width: 5%;">
+                                <td class="solid-line">
                                     {{ number_format($bill['Total'], 2) }}
                                 </td>
+                                <td style="width: 30%;"></td>
                             </tr>
                         @else
                             {{ $grossTotal -= floatval($bill['Total']) }}
                             @continue
                         @endif
                     @endforeach
+                    <tr>
+                        <td style="text-indent: 20px;" colspan="2"></td>
+                        <td class="solid-line-last"></td>
+                        <td style="width: 30%;"></td>
+                    </tr>
                 </tbody>
             </table>
             <table class="custom-table">
                 <tbody style="border: none;">
                     <tr>
-                        <td style="width: 100%; text-align: right;">
+                        <td style="width: 100%; text-align: right; font-weight: bold;">
                             <span class="solid-line">
-                                Total Due : {{ number_format($grossTotal, 2)}}
+                                {{ number_format($grossTotal, 2)}}
                             </span>
                         </td>
                     </tr>
@@ -302,19 +318,40 @@
             </table>
             <table class="custom-table">
                 <tbody style="border-bottom: none;">
-                    <tr>
-                        <td colspan="4">LESS :</td>
-                    </tr>
                     @foreach ($PatientBilSummary as $bill)
                         @if ($bill['AccountType'] === 'C')
-                            {{ $lessAmount += floatval($bill['Total']) }}
                             <tr>
-                                <td class="dot-cell" style="text-indent: 20px;" colspan="3">
+                                <td colspan="4">LESS :</td>
+                            </tr>
+                        @else
+                            @continue
+                        @endif
+                    @endforeach
+
+                    @foreach ($PatientBilSummary as $bill)
+                        @if ($bill['AccountType'] === 'C')
+
+                            {{ $lessAmount += floatval($bill['Credit']) }}
+                            <tr>
+                                <td class="dot-cell" style="text-indent: 20px;" colspan="2">
                                     {{ $bill['Description'] }}
                                 </t>
-                                <td style="width: 5%;">
-                                    {{ number_format($bill['Total'], 2) }}
+                                <td class="solid-line">
+                                    ( {{ number_format($bill['Credit'], 2) }} )
                                 </td>
+                                <td style="width: 30%;"></td>
+                            </tr>
+                        @else
+                            @continue
+                        @endif
+                    @endforeach
+
+                    @foreach ($PatientBilSummary as $bill)
+                        @if ($bill['AccountType'] === 'C')
+                            <tr>
+                                <td style="text-indent: 20px;" colspan="2"></td>
+                                <td class="solid-line-last"></td>
+                                <td style="width: 30%;"></td>
                             </tr>
                         @else
                             @continue
@@ -322,15 +359,97 @@
                     @endforeach
                 </tbody>
             </table>
-            <br/>
             <table class="custom-table">
                 <tbody style="border: none;">
                     <tr>
-                        <td style="width: 100%; text-align: right;">
-                            <span class="solid-line">
-                                Net Due Amount : {{ number_format(floatval($grossTotal) - floatval($lessAmount), 2)}}
+                        <td style="text-indent: 20px;" colspan="2"></td>
+                        <td style="width: 30%;"></td>
+                        <td class="solid-line-last" style="font-weight: bold;">
+                            ( {{ number_format($lessAmount, 2)}} )
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">Net Amount :</td>
+                        <td style="text-align: right; font-weight: bold;">
+                            {{ number_format(floatval($grossTotal) - floatval($lessAmount), 2)}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"></td>
+                        <td class="solid-line-last"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"></td>
+                        <td class="solid-line-last"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="custom-table">
+                <thead style=" border: none;">
+                    <tr>
+                        <th colspan="4" style="text-align: center;font-size: 14px; font-weight: bold; text-transform: uppercase;">*** Medical Fees ***</th>
+                    </tr>
+                </thead>
+            </table>
+            <table class="custom-table">
+                <tbody style="border-bottom: none;">
+                    <tr>
+                        <td colspan="4">Doctor</>
+                    </tr>
+                </>
+            </table>
+            <table class="custom-table">
+                <thead style=" border: none;">
+                    <tr>
+                        <th style="width: 40%"></th>
+                        <th style="text-align: right;">CHARGES</th>
+                        <th style="text-align: right;">PHIC</th>
+                        <th style="text-align: right;">DISCOUNT</th>
+                        <th style="text-align: right;">PAYMENT</th>
+                        <th style="text-align: right;">BALANCE</th>
+                    </tr>
+                </thead>
+                <tbody style="border-bottom: none;">
+                    @foreach ($PatientBilSummary as $bill)
+                        @if ($bill['RevenueID'] === "MD")
+                            @php   
+                                $doctorsFee += floatval($bill['Total']);
+                                $lessDiscount += floatval($bill['PHIC']) + floatval($bill['Discount']) + floatval($bill['Payment']);
+                            @endphp
+                        <tr>
+                            <td style="text-indent: 20px;">{{ $bill['Description'] }}</td>
+                            <td style="border-bottom: 1px solid #000;">{{ number_format($bill['Total'],2) }}</td>
+                            <td style="border-bottom: 1px solid #000; text-align: right;">{{ number_format($bill['PHIC'], 2) }}</td>
+                            <td style="border-bottom: 1px solid #000; text-align: right;">{{ number_format($bill['Discount'], 2) }}</td>
+                            <td style="border-bottom: 1px solid #000; text-align: right;">{{ $bill['Payment'] }}</td>
+                        </tr>
+                        @endif
+                    @endforeach
+             
+                    <tr>
+                        <td colspan="5"></td>
+                        <td style="border-bottom: 1px solid #000; text-align: right;">{{ number_format(($doctorsFee - $lessDiscount), 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table>
+                <tbody style="border-bottom: none;">
+                    <tr>
+                        <td style="width: 70%; text-align: right;">
+                            Please Claim This Amount =====================
+                            <span style="font-weight: bold; position: relative; left: 10;">
+                                P
                             </span>
                         </td>
+                        <td style="width: 30%; text-align: right; border-bottom: 1px solid #000;"><span style="font-weight: bold;">{{ number_format(($doctorsFee - $lessDiscount), 2) }}</span></td>
+                    </tr>
+                    <tr>
+                        <td style="width: 70%; text-align: right;"></td>
+                        <td style="width: 30%; text-align: right; border-bottom: 1px solid #000;"></td>
                     </tr>
                 </tbody>
             </table>

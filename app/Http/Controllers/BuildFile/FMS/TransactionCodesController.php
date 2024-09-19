@@ -184,6 +184,7 @@ class TransactionCodesController extends Controller
                 $data->where('exam_description','LIKE','%'.Request()->keyword.'%');
             }
             $data->with(['prices' => function ($q) {
+                $q->where('transaction_code', Request()->revenuecode);
                 $q->where('msc_price_scheme_id', Request()->patienttype);
             }]);
             $data->with(['sections' => function ($q) {

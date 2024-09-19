@@ -72,7 +72,8 @@ class HISPostChargesController extends Controller
             $case_no = $request->payload['case_No'];
             $transDate = Carbon::now();
             $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
-            $request_doctors_id = $request->payload['attending_doctor'];
+            $request_doctors_id = $request->payload['attending_Doctor'];
+            $guarantor_Id = $request->payload['guarantor_Id'];
             $refnum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
@@ -101,7 +102,7 @@ class HISPostChargesController extends Controller
                         'request_doctors_id' => $request_doctors_id,
                         'net_amount' => $amount,
                         'hostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $patient_id,
+                        'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
                 }
@@ -133,7 +134,7 @@ class HISPostChargesController extends Controller
                         'userId' => Auth()->user()->idnumber,
                         'net_amount' => $amount,
                         'hostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $patient_id,
+                        'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
                 }
@@ -181,7 +182,7 @@ class HISPostChargesController extends Controller
                         'userId' => Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,
                         'HostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $existingData->patient_Id,
+                        'accountnum' => $existingData->accountnum,
                         'auto_discount' => 0,
                     ]);
                 }

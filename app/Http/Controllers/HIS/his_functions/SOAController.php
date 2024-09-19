@@ -94,8 +94,13 @@ class SOAController extends Controller
     }
 
     public function createStatmentOfAccountSummary($id) {
-        // $caseNo = intval($id);
-        $data = OutPatient::with('patientBillingInfo')->where('case_No', $id)->take(1)->get();
+        $data = OutPatient::with(['patientBillingInfo' => function($query) {
+            $query->orderBy('revenueID', 'asc'); 
+        }])
+        ->where('case_No', $id)
+        ->take(1)
+        ->get();
+
         $patientInfo = $data->map(function($item) {
             return [
                 'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,
@@ -106,14 +111,14 @@ class SOAController extends Controller
                 'Admission_No'      => $item->case_No,
                 'Hospital_No'       => $item->branch_Id,
                 'Hospital_Name'     => $item->patient_Id,
+                'Date_Admitted'     => isset($item->registry_Date) ? date('Y/m/d', strtotime($item->registry_Date)) : '',
                 'Time_Admitted'     => isset($item->registry_Date) ? date('h:i A', strtotime($item->registry_Date)) : '',
                 'Billed_Date'       => isset($item->build_Date) ? date('Y/m/d', strtotime($item->build_Date)) : '',
                 'Billed_Time'       => isset($item->build_Date) ? date('h:i A', strtotime($item->build_Date)) : '',
             ];
         });
-
+        
         $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
-
         $totalChargesSummary = collect($billsPayment)
             ->groupBy('RevenueID') 
             ->map(function($groupedItems) {
@@ -139,6 +144,7 @@ class SOAController extends Controller
                     'Payment'       => $PaymentType
                 ];
             });
+
 
             $firstRow = true;
             $runningBalance = 0; 
@@ -177,16 +183,16 @@ class SOAController extends Controller
                     ];
                 });
             });
-            
+   
         $patientBillInfo = [
             'Patient_Info'      => $patientInfo->toArray(),
             'PatientBilSummary' =>  $totalChargesSummary,
+            'DoctorsFee'        => $billsPayment,
             'Run_Date'          => Carbon::now()->format('Y/m/d'),
             'Run_Time'          => Carbon::now()->format('g:i A'),
             'Patient_Bill'  => $patientBill->toArray(),
             'Total_Charges' => number_format($totalCharges = $runningBalance, 2),
         ]; 
-
 
         $filename   = 'Statement_of_account_summary';
         $html       = view('his.report.soa.statement_of_account_summary', $patientBillInfo)->render();
@@ -195,11 +201,9 @@ class SOAController extends Controller
         $pdf->render();
         $dompdf = $pdf->getDomPDF();
         $font = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
-        // $dompdf->get_canvas()->page_text(510, 45, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-        $dompdf->get_canvas()->page_text(500, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-
-        $currentDateTime = \Carbon\Carbon::now()->format('Y-m-d g:i A');
-        // $dompdf->get_canvas()->page_text(35, 750, $currentDateTime, $font, 10, array(0, 0, 0));
+        $dompdf->get_canvas()->page_text(554, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
+        
+        // $dompdf->get_canvas()->page_text(100, 780, $pageInfo, $font, 8, array(0, 0, 0));
         return $pdf->stream($filename . '.pdf');
     }
 }

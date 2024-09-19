@@ -15,7 +15,7 @@ class OPDBilling extends Model
     protected $guarded = [];
 
     public function outPatientInfo() {
-        return $this->hasMany(OutPatient::class,  'patient_Id', 'patient_Id');
+        return $this->hasMany(OutPatient::class,  'patient_Id', 'patient_Id')->orderBy('revenueID', 'asc');
     }
     
 }

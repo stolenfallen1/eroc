@@ -32,8 +32,10 @@
             .header-column 
             .left-text {
                 text-align: left;
+                padding-left: 70px;
                 font-size : 12px;
                 line-height: 11px;
+                width: 100%;
             }
             .header-column 
             .center-text-sub-content {
@@ -225,29 +227,6 @@
                     </div>
                 </div>
             </div>
-            <!-- <div style="margin: 3rem">
-                <table>
-                    <tbody style="border-bottom: none;">
-                        <tr>
-                            <td>
-                                <img src="../public/images/CDUH_logo.jpg" width="80" height="80" class="logo" />
-                            </td>
-                            <td style="line-height: 4px;">
-                                <p class="upper-center-text" style="text-align: center;">Cebu Doctors University Hospital, Inc.</p>
-                                <p class="center-text-sub-content" style="text-align: center;">Osmeña Boulevard. Cebu City 6000</p>
-                                <p class="center-text-sub-content" style="text-align: center;">000-309-308-000-NV</p>
-                                <p class="center-text-sub-content" style="text-align: center;">Tel#: 2555555 Fax#: 2536021</p>
-                                <p class="lower-center-text" style="text-align: center;">Patient's Statement of Account</p>
-                            </td>
-                            <td>
-                                <p class="left-text">Page No: Page</p>
-                                <p class="left-text">Run Date: {{ $Run_Date }}</p>
-                                <p class="left-text">Run Time: {{ $Run_Time }}</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div> -->
             <table>
                 <tbody style="border-bottom: 1px solid #000;">
                     <tr>
@@ -300,6 +279,7 @@
                 $grossTotal = 0;
                 $lessAmount = 0;
                 $lessDiscount = 0;
+                $netAmount = 0;
                 $doctorsFee = 0;
             @endphp
             <table class="custom-table">
@@ -314,7 +294,7 @@
                     </tr>
                     @foreach ($PatientBilSummary as $bill)
                         {{ $grossTotal += floatval($bill['Total']) }}
-                        @if ($bill['AccountType'] === 'D' || $bill['AccountType'] === 'P')
+                        @if (($bill['AccountType'] === 'D' || $bill['AccountType'] === 'P') && $bill['RevenueID'] !== 'MD')
                             <tr>
                                 <td class="dot-cell" style="text-indent: 20px;" colspan="2">
                                     <span>{{ $bill['Description'] }}</span>
@@ -402,7 +382,10 @@
                     <tr>
                         <td colspan="3">Net Amount :</td>
                         <td style="text-align: right; font-weight: bold;">
-                            {{ number_format(floatval($grossTotal) - floatval($lessAmount), 2)}}
+                            @php
+                                $netAmount = floatval($grossTotal) - floatval($lessAmount)
+                            @endphp
+                            {{ number_format($netAmount, 2)}}
                         </td>
                     </tr>
                     <tr>
@@ -445,22 +428,37 @@
                     </tr>
                 </thead>
                 <tbody style="border-bottom: none;">
-                    @foreach ($PatientBilSummary as $bill)
-                        @if ($bill['RevenueID'] === "MD")
+                    @php
+                        $totalPHIC = 0;
+                        $totalDiscount = 0;
+                        $totalPayment = 0;
+                    @endphp
+                    @foreach ($DoctorsFee as $bill)
+                        @if ($bill->RevenueID === "MD")
                             @php   
-                                $doctorsFee += floatval($bill['Total']);
-                                $lessDiscount += floatval($bill['PHIC']) + floatval($bill['Discount']) + floatval($bill['Payment']);
+                                $doctorsFee += floatval($bill->Charges);
+                                $totalPHIC += floatval($bill->PHIC_MD);
+                                $totalDiscount += floatval($bill->Discount);
+                                $totalPayment += floatval($bill->Credit);
+                                $lessDiscount += floatval($bill->PHIC_MD) + floatval($bill->Discount) + floatval($bill->Credit_MD);
                             @endphp
                         <tr>
-                            <td style="text-indent: 20px;">{{ $bill['Description'] }}</td>
-                            <td style="border-bottom: 1px solid #000;">{{ number_format($bill['Total'],2) }}</td>
-                            <td style="border-bottom: 1px solid #000; text-align: right;">{{ number_format($bill['PHIC'], 2) }}</td>
-                            <td style="border-bottom: 1px solid #000; text-align: right;">{{ number_format($bill['Discount'], 2) }}</td>
-                            <td style="border-bottom: 1px solid #000; text-align: right;">{{ $bill['Payment'] }}</td>
+                            <td style="text-indent: 20px;">{{ $bill->Description }}</td>
+                            <td style="text-align: right;">{{ number_format($bill->Charges,2) }}</td>
+                            <td style="text-align: right;">{{ number_format($bill->PHIC_MD, 2) }}</td>
+                            <td style="text-align: right;">{{ number_format($bill->Discount, 2) }}</td>
+                            <td style="text-align: right;">{{ number_format($bill->Credit, 2)}}</td>
                         </tr>
+             
                         @endif
                     @endforeach
-             
+                     <tr>
+                            <td style="text-indent: 20px;"></td>
+                            <td style="border-top: 1px solid #000; text-align: right;">{{ number_format($doctorsFee,2) }}</td>
+                            <td style="border-top: 1px solid #000; text-align: right;">{{ number_format($totalPHIC, 2) }}</td>
+                            <td style="border-top: 1px solid #000; text-align: right;">{{ number_format($totalDiscount, 2) }}</td>
+                            <td style="border-top: 1px solid #000; text-align: right;">{{ number_format($totalPayment, 2) }}</td>
+                    </tr>
                     <tr>
                         <td colspan="5"></td>
                         <td style="border-bottom: 1px solid #000; text-align: right;">{{ number_format(($doctorsFee - $lessDiscount), 2) }}</td>
@@ -471,12 +469,12 @@
                 <tbody style="border-bottom: none;">
                     <tr>
                         <td style="width: 70%; text-align: right;">
-                            Please Claim This Amount =====================
+                            Please Pay This Amount =====================
                             <span style="font-weight: bold; position: relative; left: 10;">
                                 P
                             </span>
                         </td>
-                        <td style="width: 30%; text-align: right; border-bottom: 1px solid #000;"><span style="font-weight: bold;">{{ number_format(($doctorsFee - $lessDiscount), 2) }}</span></td>
+                        <td style="width: 30%; text-align: right; border-bottom: 1px solid #000;"><span style="font-weight: bold;">{{ number_format($netAmount + ($doctorsFee - $lessDiscount), 2) }}</span></td>
                     </tr>
                     <tr>
                         <td style="width: 70%; text-align: right;"></td>
@@ -569,10 +567,10 @@
                         <th>Acct. #  </th>
                         <td>:  {{ $Patient_Info[0]['Account_No'] }}</td>
                         <th>Admitted</th>
-                        <td>: 1136918</td>
+                        <td>: {{ $Patient_Info[0]['Date_Admitted'] }}</td>
                         <th>Time</th>
                         <td>:  {{ $Patient_Info[0]['Time_Admitted'] }}</td>
-                    </tr>
+                    </tr> 
 
                     <tr>
                         <th>Credit L  </th>
@@ -597,16 +595,72 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($Patient_Bill as $bill) 
+                    @php
+                        $count = 0;
+                    @endphp
+                    @foreach ($Patient_Bill as $bill)
                         <tr>
                             <td>{{ $bill['Date'] }}</td>
                             <td>{{ $bill['Reference_No'] }}</td>
                             <td>{{ $bill['Description'] }}</td>
                             <td style="text-align:right;">{{ $bill['Quantity'] }}</td>
-                            <td style="text-align:right;">{{ $bill['Charges'] }}</td> style="text-align:right;"
+                            <td style="text-align:right;">{{ $bill['Charges'] }}</td> 
                             <td style="text-align:right;">{{ $bill['Credit'] }}</td>
                             <td style="text-align:right;">{{ $bill['Balance'] }}</td>
                         </tr>
+                        @php
+                            $count++;
+                        @endphp
+
+                        @if ($count % 38 == 0)
+                            </tbody>
+                            </table>
+                            <div class="page-break"></div>
+                            <div class="header">
+                                <div class="header-column" style="width: 25%;">
+                                    <div class="header-position-logo">
+                                        <img src="../public/images/CDUH_logo.jpg" width="80" height="80" class="logo" />
+                                    </div>
+                                </div>
+                                <div class="header-column" style="width: 40%;">
+                                    <p class="upper-center-text">Cebu Doctors University Hospital, Inc.</p>
+                                    <p class="center-text-sub-content">Osmeña Boulevard. Cebu City 6000</p>
+                                    <p class="center-text-sub-content">000-309-308-000-NV</p>
+                                    <p class="center-text-sub-content">Tel#: 2555555 Fax#: 2536021</p>
+                                    <p class="lower-center-text">Patient's Statement of Account</p>
+                                </div>
+                                <div class="header-column" style="width: 25%;">
+                                    <div class="header-position">
+                                        <p class="left-text">Page No: Page</p>
+                                        <p class="left-text">Run Date: {{ $Run_Date }}</p>
+                                        <p class="left-text">Run Time: {{ $Run_Time }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <table style="paddting-top: 10px;">
+                                <thead>
+                                    <tr>
+                                        <th>PATIENT : </th>
+                                        <td colspan="4">: {{ $Patient_Info[0]['Patient_Name'] }}</td>
+                                        <td> ADMISSION : {{ $Patient_Info[0]['Admission_No'] }}</td>
+                                        <td style="text-align: right;"> HOSPITAL : {{ $Patient_Info[0]['Hospital_Name'] }}</td>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width:10%;">Date</th>
+                                        <th style="width:15%;">Ref #</th>
+                                        <th style="width:30%;">Description</th>
+                                        <th style="width:5%;">Qty</th>
+                                        <th style="width:10%;">Charges</th>
+                                        <th style="width:15%;">Credit</th>
+                                        <th style="width:15%;">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        @endif
                     @endforeach
                 </tbody>
             </table>

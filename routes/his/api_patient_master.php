@@ -5,6 +5,7 @@ use App\Http\Controllers\HIS\services\OutpatientRegistrationController;
 use App\Http\Controllers\HIS\services\InpatientRegistrationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
+use App\Http\Controllers\HIS\his_functions\SOAController;
 
 Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);
@@ -17,6 +18,7 @@ Route::controller(OutpatientRegistrationController::class)->group(function () {
     Route::put('revoke-patient/{id}', 'revokepatient');
     Route::put('unrevoke-patient/{id}', 'unrevokepatient');
 }); 
+
 Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('get-emergency', 'index');
     Route::get('get-revoked-emergency-patient', 'getrevokedemergencypatient');
@@ -27,6 +29,12 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::post('register-emergency', 'register');
     Route::put('update-emergency/{id}', 'update');
 });
+
+Route::controller(SOAController::class)->group(function() {
+    Route::get('generate-statement/{id}', 'createStatmentOfAccount');
+    Route::get('generate-statement-summary/{id}', 'createStatmentOfAccountSummary');
+});
+
 Route::controller(InpatientRegistrationController::class)->group(function () {
     Route::get('get-inpatient', 'index');
     Route::get('get-revoked-inpatient', 'getrevokedinpatient');

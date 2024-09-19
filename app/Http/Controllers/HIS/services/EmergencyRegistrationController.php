@@ -478,7 +478,7 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'                                => $patient_id,
                 'case_No'                                   => $registry_id,
                 'er_Case_No'                                => $request->payload['er_Case_No'] ?? null,
-                'register_source'                           => $request->payload['register_source'] ?? null,
+                'register_source'                           => $request->payload['register_Source'] ?? null,
                 'register_Casetype'                         => $request->payload['register_Casetype'] ?? null,
                 'register_Link_Case_No'                     => $request->payload['register_Link_Case_No'] ?? null,
                 'register_Case_No_Consolidate'              => $request->payload['register_Case_No_Consolidate'] ?? null,
@@ -2016,7 +2016,7 @@ class EmergencyRegistrationController extends Controller
             $patientRegistryData = [
                 'branch_Id'                                 =>  1,
                 'er_Case_No'                                => Arr::get($request->payload, 'er_Case_No', optional($patientRegistry)->er_Case_No),
-                'register_source'                           => Arr::get($request->payload, 'register_source', optional($patientRegistry)->register_Source),
+                'register_source'                           => Arr::get($request->payload, 'register_Source', optional($patientRegistry)->register_Source),
                 'register_Casetype'                         => Arr::get($request->payload, 'register_Casetype', optional($patientRegistry)->register_Casetype),
                 'register_Link_Case_No'                     => Arr::get($request->payload, 'register_Link_Case_No', optional($patientRegistry)->register_Link_Case_No),
                 'register_Case_No_Consolidate'              => Arr::get($request->payload, 'register_Case_No_Consolidate', optional($patientRegistry)->register_Case_No_Consolidate),
@@ -2306,6 +2306,7 @@ class EmergencyRegistrationController extends Controller
                 'seq_no' => $registry_sequence->seq_no + 1,
                 'recent_generated' => $registry_sequence->seq_no,
             ]);
+            
             return response()->json([
                 'message' => 'Emergency data updated successfully',
                 'patient' => $patient,

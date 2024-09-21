@@ -14,9 +14,9 @@ class SOAController extends Controller
     //  
 
     public function createStatmentOfAccount($id) {
-        $caseNo = intval($id);
-        $data = OutPatient::with('patientBillingInfo')->where('case_No', $caseNo)->take(1)->get();
-        // return $data;
+ 
+        $data = OutPatient::with('patientBillingInfo')->where('case_No', $id)->take(1)->get();
+      
         $patientInfo = $data->map(function($item) {
             return [
                 'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,
@@ -119,19 +119,22 @@ class SOAController extends Controller
         });
         
         $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
+
         $totalChargesSummary = collect($billsPayment)
             ->groupBy('RevenueID') 
             ->map(function($groupedItems) {
+
                 $totalAmount = $groupedItems->sum(function($billing) {
                     return floatval(str_replace(',', '', $billing->Charges ?? 0));
                 });
+
                 $revenueDescription = $groupedItems->first()->Description ?? 'N/A';
-                $accountType = $groupedItems->first()->DrCr ?? 'N/A';
-                $RevenueID = $groupedItems->first()->RevenueID ?? '';
-                $Credit = $groupedItems->first()->Credit_MD ? floatval($groupedItems->first()->Credit) : number_format(0, 2);
-                $Discount = $groupedItems->first()->Discount ? floatval($groupedItems->first()->Discount) : number_format(0, 2);
-                $PhicMD = $groupedItems->first()->PHIC_MD ? floatval($groupedItems->first()->PHIC_MD) : number_format(0, 2);
-                $PaymentType = $groupedItems->first()->PaymentType ? floatval($groupedItems->first()->PaymentType) : number_format(0, 2);
+                $accountType        = $groupedItems->first()->DrCr ?? 'N/A';
+                $RevenueID          = $groupedItems->first()->RevenueID ?? '';
+                $Credit             = $groupedItems->first()->Credit_MD ? floatval($groupedItems->first()->Credit) : number_format(0, 2);
+                $Discount           = $groupedItems->first()->Discount ? floatval($groupedItems->first()->Discount) : number_format(0, 2);
+                $PhicMD             = $groupedItems->first()->PHIC_MD ? floatval($groupedItems->first()->PHIC_MD) : number_format(0, 2);
+                $PaymentType        = $groupedItems->first()->PaymentType ? floatval($groupedItems->first()->PaymentType) : number_format(0, 2);
 
                 return [
                     'Total'         => $totalAmount,
@@ -145,41 +148,71 @@ class SOAController extends Controller
                 ];
             });
 
-
             $firstRow = true;
             $runningBalance = 0; 
             $totalCharges = 0;
+            $prevID = '';
             
-            $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance) {
-                return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance) {
+            $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
+
+                return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
+
                     $charges = floatval(str_replace(',', '', ($billing->amount * intval($billing->quantity))));  
             
                     if ($firstRow && ($billing->drcr === 'D' || $billing->drcr === 'P')) {
+
                         $runningBalance = $charges;
+                        $totalCharges = $charges;
                         $firstRow = false;
+
+
                     } elseif($firstRow && $billing->drcr === 'C') {
+
                         $runningBalance = 0;
+                        $totalCharges = 0;
                         $firstRow = false;
+
                     } else {
+
                         if ($billing->drcr === 'D' || $billing->drcr === 'P') {
+
                             $runningBalance += $charges;
-                        } elseif ($billing->drcr === 'C') {
+                            $totalCharges += $charges;
+
+                        } else {
+
                             $runningBalance -= $charges;
+                            $totalCharges -= $charges;
+                        }
+
+                        if($billing->revenueID !== $prevID) {
+
+                            $runningBalance = 0;
+                            $runningBalance += $charges;
+
                         }
                     }
+
+                    $prevID = $billing->revenueID;
             
                     return [
-                        'Date' => date('Y/m/d', strtotime($billing->transDate)),
-                        'Reference_No' => $billing->revenueID . ' ' . $billing->refNum,
-                        'Description' => $billing->exam_description,
-                        'Quantity' => isset($billing->quantity) ? intval($billing->quantity) : 1,
-                        'Charges' => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
-                                    ? number_format(0, 2)
-                                    : number_format($charges, 2),
-                        'Credit' => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
-                                    ? number_format($charges, 2) 
-                                    : number_format(0, 2),
-                        'Balance' => number_format($runningBalance, 2), 
+                        'Date'                  => date('Y/m/d', strtotime($billing->transDate)),
+                        'RevenueID'             => $billing->revenueID,
+                        'RevenueDesc'           => $billing->revenue,
+                        'Reference_No'          => $billing->revenueID . ' ' . $billing->refNum,
+                        'Description'           => $billing->exam_description,
+                        'Charges_Description'   => $billing->revenue,
+                        'Quantity'              => isset($billing->quantity) ? intval($billing->quantity) : 1,
+                        
+                        'Charges'               => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
+                                                ? number_format(0, 2)
+                                                : number_format($charges,2),
+
+                        'Credit'                => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
+                                                ? number_format($charges,2)
+                                                : number_format(0, 2),
+
+                        'Balance'               => number_format($runningBalance, 2)
                     ];
                 });
             });
@@ -190,8 +223,8 @@ class SOAController extends Controller
             'DoctorsFee'        => $billsPayment,
             'Run_Date'          => Carbon::now()->format('Y/m/d'),
             'Run_Time'          => Carbon::now()->format('g:i A'),
-            'Patient_Bill'  => $patientBill->toArray(),
-            'Total_Charges' => number_format($totalCharges = $runningBalance, 2),
+            'Patient_Bill'      => $patientBill->toArray(),
+            'Total_Charges'     => number_format($totalCharges, 2),
         ]; 
 
         $filename   = 'Statement_of_account_summary';
@@ -199,10 +232,10 @@ class SOAController extends Controller
         $pdf        = PDF::loadHTML($html)->setPaper('letter', 'portrait');
 
         $pdf->render();
+
         $dompdf = $pdf->getDomPDF();
-        $font = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
+        $font   = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
         $dompdf->get_canvas()->page_text(554, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-        
         // $dompdf->get_canvas()->page_text(100, 780, $pageInfo, $font, 8, array(0, 0, 0));
         return $pdf->stream($filename . '.pdf');
     }

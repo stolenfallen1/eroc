@@ -49,7 +49,6 @@ class Report_ItemizedController extends Controller
             }
             $data['transdate'] =  Carbon::parse($date)->format('M d, Y');
             return $this->print_out_layout($data,$papersize,'ItemizedReport_v1');
-            // return response()->json($data,200);
         }
 
     }

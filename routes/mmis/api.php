@@ -13,9 +13,11 @@ use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\StockTransferController;
+use App\Http\Controllers\MMIS\PurchaseReturnController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
 use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
+use App\Http\Controllers\MMIS\InventoryStocksAlertController;
 use App\Http\Controllers\MMIS\InventoryTransactionController;
 
 Route::controller(UserController::class)->group(function () {
@@ -154,3 +156,22 @@ Route::controller(ManualUpdateController::class)->group(function () {
   Route::post('update-pr-details', 'update_purchaserequest');
   Route::post('update-pr-canvas-details', 'update_purchasecanvass');
 });
+
+
+
+
+
+Route::controller(InventoryStocksAlertController::class)->group(function () {
+  Route::get('inventory-alert', 'index');  
+  Route::get('/sales-per-vendor', 'GenerateSalesPerVendor');
+});
+
+
+
+Route::controller(PurchaseReturnController::class)->group(function () {
+  Route::get('purchase-returned', 'index');  
+  Route::get('get-purchase-items', 'list');  
+  Route::post('save-returned-purchased', 'store');  
+ 
+});
+

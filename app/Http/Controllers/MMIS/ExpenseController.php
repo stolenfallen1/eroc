@@ -48,7 +48,7 @@ class ExpenseController extends Controller
                 'item_OnHand' => $warehouse_item->item_OnHand - $expense->quantity
             ]);
 
-            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Expense Issuance%')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Expense Issuance%')->where('isActive', 1)->first();
 
             InventoryTransaction::create([
                 'branch_Id' => $expense->branch_id,
@@ -62,7 +62,7 @@ class ExpenseController extends Controller
                 'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
                 'transaction_UserID' =>  $auth_user->idnumber,
                 'createdBy' =>  $auth_user->idnumber,
-                'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                'transaction_Acctg_TransType' =>  $transaction->code ?? '',
             ]);
 
             DB::connection('sqlsrv_mmis')->commit();

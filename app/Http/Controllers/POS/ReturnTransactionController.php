@@ -420,7 +420,7 @@ class ReturnTransactionController extends Controller
                 //     'user_id'=>Auth()->user()->idnumber,
                 //     'shift_id'=>Auth()->user()->shift,
                 // ]);
-                $transaction = FmsTransactionCode::where('transaction_code', 'RMS')->where('isActive', 1)->first();
+                $transaction = FmsTransactionCode::where('code', 'RMS')->where('isActive', 1)->first();
 
                 $return_items = ReturnDetailsTransaction::where('refund_id',Request()->return_payment_details['refund_id'])->get();
                 foreach($return_items as $row){
@@ -453,7 +453,7 @@ class ReturnTransactionController extends Controller
                             'transaction_Item_ListCost' => $row['returned_order_item_total_amount'],
                             'transaction_UserID' =>  Auth()->user()->idnumber,
                             'createdBy' => Auth()->user()->idnumber,
-                            'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                            'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                         ]);
 
                     }
@@ -491,7 +491,7 @@ class ReturnTransactionController extends Controller
                            'transaction_Item_ListCost' => $row['order_item_total_amount'],
                            'transaction_UserID' =>  Auth()->user()->idnumber,
                            'createdBy' => Auth()->user()->idnumber,
-                           'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                           'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                        ]);
 
                     }

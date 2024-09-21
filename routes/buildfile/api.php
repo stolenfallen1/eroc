@@ -134,6 +134,7 @@ Route::controller(HospitalModalityController::class)->group(function () {
 
 Route::controller(VendorController::class)->group(function () {
     Route::get('vendors', 'index');
+    Route::get('get-vendors', 'vendorList');
     Route::post('vendors', 'store');
     Route::put('vendors/{vendor}', 'update');
     Route::delete('vendors/{vendor}', 'destroy');

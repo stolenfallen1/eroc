@@ -13,7 +13,10 @@ class VendorController extends Controller
     public function index(){
         return (new SearchFilterVendors)->searchable();
     }
-
+    public function vendorList(){
+        $data = Vendors::whereNull('deleted_at')->get();
+        return response()->json($data, 200);
+    }
     public function store(Request $request){
         Vendors::updateOrCreate(
             [

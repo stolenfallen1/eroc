@@ -25,6 +25,7 @@ use App\Models\MMIS\inventory\ItemBatchModelMaster;
 
 class NewCustomerPaymentController extends Controller
 {
+    
      public function index(Request $request){
         try {
             $data = Payments::query();
@@ -97,7 +98,7 @@ class NewCustomerPaymentController extends Controller
                'order_status_id' => '9'
             ]);
             $orders = OrderItems::where('order_id', $payload['order_id'])->get();
-            $transaction = FmsTransactionCode::where('transaction_code', 'PY')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('code', 'PY')->where('isActive', 1)->first();
             foreach ($orders as $row) {
                 $warehouse = Warehouseitems::where("item_Id",$row['order_item_id'])->where('warehouse_Id',Auth()->user()->warehouse_id)->where('branch_id',Auth()->user()->branch_id)->first();
                 $batch = ItemBatchModelMaster::where("id", $row['order_item_batchno'])->first();
@@ -115,7 +116,7 @@ class NewCustomerPaymentController extends Controller
                     'transaction_Item_ListCost' => $row['order_item_total_amount'],
                     'transaction_UserID' =>  Auth()->user()->idnumber,
                     'createdBy' => Auth()->user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                 ]);
             }
 

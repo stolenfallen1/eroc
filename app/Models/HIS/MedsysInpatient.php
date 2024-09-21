@@ -14,7 +14,6 @@ class MedsysInpatient extends Model
     protected $table = 'PATIENT_DATA.dbo.tbpatient';
     protected $guarded = [];
     protected $primaryKey = 'HospNum';
-    protected $with = [];
 
     public function patient_details()
     {

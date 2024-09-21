@@ -67,7 +67,7 @@ class BatchController extends Controller
                 ]);
 
                 $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
+                $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
                 InventoryTransaction::create([
                     'branch_Id' => Auth::user()->branch_id,
                     'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
@@ -81,7 +81,7 @@ class BatchController extends Controller
                     'transaction_Item_ListCost' => $request->price,
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                 ]);
                 $sequence->update([
                     'seq_no' => (int) $sequence->seq_no + 1,
@@ -143,7 +143,7 @@ class BatchController extends Controller
                 ]);
 
                 $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
+                $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
                 InventoryTransaction::create([
                     'branch_Id' => Auth::user()->branch_id,
                     'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
@@ -157,7 +157,7 @@ class BatchController extends Controller
                     'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                 ]);
                 $sequence->update([
                     'seq_no' => (int) $sequence->seq_no + 1,

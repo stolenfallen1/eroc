@@ -206,14 +206,14 @@ class DeliveryController extends Controller
                             'mark_up' => $batch['mark_up'] ?? 0,
                         ]);
     
-                        (new RecomputePrice())->compute($warehouse_id,'',$batch['item_Id'],'in');
+                        (new RecomputePrice())->compute($warehouse_id,'',$batch['item_Id'],'out');
     
                         if(Auth::user()->branch_id == 1){
                             $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                         }else{
                             $sequence1 = SystemSequence::where('code', 'ITCR2')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                         }
-                        $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                        $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
     
                         // return $detail['purchase_request_detail'];
                         $batchdetail = ItemBatchModelMaster::where('batch_Number',$batch['batch_Number'])->where('item_Id',$batch['item_Id'])->where('warehouse_id',$delivery->rr_Document_Warehouse_Id)->first();
@@ -231,7 +231,7 @@ class DeliveryController extends Controller
                             'transaction_Item_ListCost' => $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'],
                             'transaction_UserID' =>  Auth::user()->idnumber,
                             'createdBy' =>  Auth::user()->idnumber,
-                            'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                            'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                         ]);
                         
                         $sequence1->update([
@@ -270,7 +270,7 @@ class DeliveryController extends Controller
                         ]);
                         
                         $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                        $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                        $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
                         // return $detail['purchase_request_detail'];
                         InventoryTransaction::create([
                             'branch_Id' => $delivery->rr_Document_Branch_Id,
@@ -285,7 +285,7 @@ class DeliveryController extends Controller
                             'transaction_Item_ListCost' => $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'],
                             'transaction_UserID' =>  Auth::user()->idnumber,
                             'createdBy' =>  Auth::user()->idnumber,
-                            'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                            'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                             'isFreeGoods' =>  "1",
                         ]);
                         
@@ -421,7 +421,7 @@ class DeliveryController extends Controller
                     ]);
                     
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                    $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
 
                     // return $detail['purchase_request_detail'];
                     InventoryTransaction::create([
@@ -437,7 +437,7 @@ class DeliveryController extends Controller
                         'transaction_Item_ListCost' => $delivery_item->rr_Detail_Item_ListCost,
                         'transaction_UserID' =>  Auth::user()->idnumber,
                         'createdBy' =>  Auth::user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                     ]);
                     
                     $sequence1->update([

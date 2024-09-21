@@ -5,9 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthPOSController;
+use App\Http\Controllers\ClearanceController;
 use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\Schedules\SchedulingDashboard;
+use App\Http\Controllers\POS\TerminalSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,14 +25,21 @@ use App\Http\Controllers\Schedules\SchedulingDashboard;
 
 /*require_once('/schedules/api.php');*/
 // Route::resource('userss', UserController::class);
+Route::get('clearances', [ClearanceController::class, 'index']);
 Route::get('/service_record/pdf/generate-save-pdf',  [PdfController::class,          'generatePDF']);
 
+Route::controller(TerminalSettingsController::class)->group(function () {
+    Route::post('store-terminal', 'store');
+});
 
 Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('pos/login', [AuthPOSController::class, 'login']);
 Route::get('get-schedule', [SettingController::class, 'schedule']);
 Route::post('create-account', [UserController::class, 'createdoctor']);
+
+
+require_once('appointment/api_appointment.php');
 Route::group(['middleware' => 'auth:api'], function () {
     Route::controller(UserController::class)->group(function () {
         Route::get('department/users', 'getDepartmentUsers');

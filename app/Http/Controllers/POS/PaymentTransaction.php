@@ -113,7 +113,7 @@ class PaymentTransaction extends Controller
                 'order_status_id'=>'9'
             ]);
             
-            $transaction = FmsTransactionCode::where('transaction_code', 'PY')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('code', 'PY')->where('isActive', 1)->first();
             foreach ($orderdetails as $row) {
                 // $batch = ItemBatch::where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                 $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('warehouse_Id',$row['warehouse_Id'])->where('item_Id', (int)$row['order_item_id'])->first();
@@ -143,7 +143,7 @@ class PaymentTransaction extends Controller
                         'transaction_Item_ListCost' => $row['order_item_total_amount'],
                         'transaction_UserID' =>  Auth()->user()->idnumber,
                         'createdBy' => Auth()->user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                     ]);
 
                 }

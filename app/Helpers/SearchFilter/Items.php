@@ -71,8 +71,8 @@ class Items
 
   private function forStockRequisition(){
     if(Request()->for_sr){
-      $ids = Warehouseitems::where('branch_id', Auth::user()->branch_id)->where('warehouse_Id', Auth::user()->warehouse_id)->get()->pluck('item_Id');
-      $this->model->whereIn('id', $ids);
+      $ids = Warehouseitems::where('branch_id', Auth::user()->branch_id)->where('warehouse_Id', Auth::user()->warehouse_id)->pluck('item_Id');
+      $this->model->whereIn('id', ['1']);
       // ->whereHas('wareHouseItem', function($q){
       //   $q->where('item_OnHand', '>', 0);
       // });

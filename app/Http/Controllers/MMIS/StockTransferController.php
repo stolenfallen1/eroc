@@ -98,8 +98,8 @@ class StockTransferController extends Controller
         try {
 
 
-            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Stock Transfer%')->where('isActive', 1)->first();
-            $transaction1 = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Stock Transfer%')->where('isActive', 1)->first();
+            $transaction1 = FmsTransactionCode::where('description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
             $sequence = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
             $receivestocks = StockTransferMaster::where('id', $id)->first();
           
@@ -233,7 +233,7 @@ class StockTransferController extends Controller
                     'transaction_Item_ListCost' => (float)$item['transfer_item_unit_cost'],
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                 ]);
                 // return "test";
                 $sequence->update([
@@ -280,8 +280,8 @@ class StockTransferController extends Controller
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
             
-            (new RecomputePrice())->compute($receiver['warehouse_Id'],'',$receiver['item_Id'],'in');
-            (new RecomputePrice())->compute($requestpayload['sender_warehouse_id'],'',$item['transfer_item_id'],'in');
+            (new RecomputePrice())->compute($receiver['warehouse_Id'],'',$receiver['item_Id'],'out');
+            (new RecomputePrice())->compute($requestpayload['sender_warehouse_id'],'',$item['transfer_item_id'],'out');
             return response()->json(['message' => 'success'], 200);
         } catch (\Throwable $e) {
             DB::connection('sqlsrv')->rollback();

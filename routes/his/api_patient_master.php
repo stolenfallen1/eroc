@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
-use App\Http\Controllers\HIS\services\OutpatientRegistrationController;
-use App\Http\Controllers\HIS\services\InpatientRegistrationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
+use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
+use App\Http\Controllers\HIS\services\InpatientRegistrationController;
+use App\Http\Controllers\HIS\services\OutpatientRegistrationController;
 
 Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);

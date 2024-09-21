@@ -160,7 +160,7 @@ class PurchaseOrders
 
   private function forApproval(){
     
-    if($this->authUser->branch_id == 1){
+    if(Request()->branch == 1 && $this->authUser->branch_id == 1){
       if($this->role->comptroller()){
         $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
       }
@@ -205,6 +205,7 @@ class PurchaseOrders
       
     }else{
       if($this->role->comptroller()){
+        $this->model->where('admin_approved_date', '!=', null);
         $this->model->where(function($q){
           $q->whereHas('purchaseRequest', function($q1){
             $q1->where('invgroup_id', 2);
@@ -218,10 +219,33 @@ class PurchaseOrders
       }
       else if($this->role->administrator()){
         $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
-      }else{
-        $this->model->whereNull('comptroller_approved_by')->where(function($q){
-          $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
-        });
+      }
+      else if($this->role->purchaser()){
+
+        if(Request()->approver == 1){
+          $this->model->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
+        }else if(Request()->approver == 2){
+          $this->model->where('admin_approved_date', '=', null)->where(['comptroller_approved_date' => null, 'comptroller_approved_by' => null]);
+        }else if(Request()->approver == 3){
+          $this->model->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+        }else if(Request()->approver == 4){
+          $this->model->where(function($q){
+            $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
+          })
+          // $this->model->where('comptroller_approved_date', '!=', null)->where('corp_admin_approved_date', '!=', null)
+          ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])
+          ->where('po_Document_total_net_amount', '>', 99999);
+        }
+        else{
+          $this->model->whereNull('comptroller_approved_by')->where(function($q){
+            $q->whereNull('admin_approved_by')->whereNull('corp_admin_approved_by');
+          });
+        }
+
+        $this->model->orderBy('isprinted', 'asc');
+      }
+      else{
+        $this->model->whereNull('corp_admin_approved_by');
       }
       
     }
@@ -230,7 +254,7 @@ class PurchaseOrders
       if($this->authUser->branch_id == Request()->branch){
         $this->model->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
       }else{
-        $this->model->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
+         $this->model->where('admin_approved_date', '!=', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null]);
       }
       // $this->model->where(function($q1){
       //   $q1->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)

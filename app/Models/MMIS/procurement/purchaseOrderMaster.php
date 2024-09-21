@@ -2,15 +2,16 @@
 
 namespace App\Models\MMIS\procurement;
 
-use App\Models\Approver\InvStatus;
+use App\Models\User;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
+use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Warehouses;
+use Illuminate\Support\Facades\Crypt;
 use App\Models\MMIS\inventory\Delivery;
-use App\Models\MMIS\inventory\DeliveryItems;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\MMIS\inventory\DeliveryItems;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class purchaseOrderMaster extends Model
 {
@@ -18,7 +19,7 @@ class purchaseOrderMaster extends Model
     protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseOrderMaster';
 
-    protected $appends = ['code'];
+    protected $appends = ['code','encrypted_key_id'];
     
     protected $guarded = [];
 
@@ -87,5 +88,12 @@ class purchaseOrderMaster extends Model
 
     public function getCodeAttribute(){
         return generateCompleteSequence($this->po_Document_prefix, $this->po_Document_number, $this->po_Document_suffix, "-");
+    }
+    public function setKeyIdAttribute($value){
+        $this->attributes['id'] = Crypt::encrypt($value);
+    }
+    public function getEncryptedKeyIdAttribute()
+    {
+        return Crypt::encrypt($this->attributes['id']);
     }
 }

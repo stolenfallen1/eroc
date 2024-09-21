@@ -8,6 +8,7 @@ use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Priority;
 use App\Models\BuildFile\ItemGroup;
 use App\Models\BuildFile\Warehouses;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Itemcategories;
 use App\Models\BuildFile\Itemsubcategories;
@@ -21,7 +22,7 @@ class PurchaseRequest extends Model
     protected $table = 'purchaseRequestMaster';
 
     protected $guarded = [];
-    protected $appends = ['code'];
+    protected $appends = ['code','encrypted_key_id'];
     // protected $fillable = [
 
     // ];
@@ -96,5 +97,12 @@ class PurchaseRequest extends Model
 
     public function getCodeAttribute(){
         return generateCompleteSequence($this->pr_Document_Prefix, $this->pr_Document_Number, $this->pr_Document_Suffix, "-");
+    }
+    public function setKeyIdAttribute($value){
+        $this->attributes['id'] = Crypt::encrypt($value);
+    }
+    public function getEncryptedKeyIdAttribute()
+    {
+        return Crypt::encrypt($this->attributes['id']);
     }
 }

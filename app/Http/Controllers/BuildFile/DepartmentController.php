@@ -13,7 +13,12 @@ class DepartmentController extends Controller
 {
     public function index(){
         $branch = Request()->branch_id ? Request()->branch_id : Auth()->user()->branch_id;
-        return response()->json(['departments' => Warehouses::with('sections','subWarehouse')->where('warehouse_Branch_Id',$branch)->where('isWarehouse', 1)->get() ]);
+        $warehouse_id = Request()->warehouse_id;
+        $query =  Warehouses::with('sections','subWarehouse')->where('warehouse_Branch_Id',$branch)->where('isWarehouse', 1);
+        if($warehouse_id){
+            $query->where('id',$warehouse_id);
+        }
+        return response()->json(['departments' =>$query->get() ]);
         // return response()->json(['departments' => Warehouses::get() ]);
     }
   

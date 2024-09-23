@@ -4,6 +4,15 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+
+use App\Models\HIS\services\Patient;
+use App\Observers\PatientMasterObserver;
+
+use App\Models\HIS\services\PatientRegistry;
+use App\Observers\MedsysOutpatientObserver;
+
+use App\Models\HIS\his_functions\CashAssessment;
+use App\Observers\CashAssessmentObserver;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -13,7 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
     }
 
     /**
@@ -24,5 +32,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrap();
+
+        Patient::observe(PatientMasterObserver::class);
+        PatientRegistry::observe(MedsysOutpatientObserver::class);
+        // CashAssessment::observe(CashAssessmentObserver::class);
     }
 }

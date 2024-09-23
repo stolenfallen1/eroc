@@ -21,6 +21,7 @@ use App\Models\BuildFile\Hospital\Doctor;
 use Illuminate\Support\Facades\Auth;
 
 use App\Helpers\SMSHelper;
+
 class PatientAppointmentController extends Controller
 {
     public function __construct() {}
@@ -29,6 +30,7 @@ class PatientAppointmentController extends Controller
     {
         // If a keyword is provided, filter by patient name
         $keyword = $request->keyword;
+        $date = $request->date;
         $tabType = $request->type;
         $userId = $request->id; // Assuming you are passing the user ID in the request
         $query = PatientAppointment::with('patient'); // Eager load the patient relationship
@@ -42,11 +44,20 @@ class PatientAppointmentController extends Controller
         if ($keyword) {
             $query->whereHas('patient', function ($q) use ($keyword) {
                 $q->where('lastname', 'like', '%' . $keyword . '%')
-                    ->orWhere('firstname', 'like', '%' . $keyword . '%');
+                    ->orWhere('firstname', 'like', '%' . $keyword . '%')
+                    ->orWhere('appointment_ReferenceNumber', 'like', '%' . $keyword . '%');
             });
         }
-        if($tabType){
-            $query->where('status_Id',$tabType);
+        if ($tabType) {
+            $query->where('status_Id', $tabType);
+        }
+        if ($date) {
+            $query->whereDate('appointment_Date', $date);
+        }
+        if(in_array(Auth()->guard('patient')->user()->role_id, ['1', '2','3'])){
+            $query->where('appointment_section_id',Auth()->guard('patient')->user()->section_id);
+        }else if(Auth()->guard('patient')->user()->role_id == '4'){
+
         }
         // Handle pagination
         $per_page = $request->get('per_page', 15); // Default to 15 items per page
@@ -58,66 +69,77 @@ class PatientAppointmentController extends Controller
 
     public function registration(Request $request)
     {
-        
-        $payload = $request->payload;
-        $userLogin = AppointmentUser::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
-            [
-                'lastname'      => $payload['lastName'],
-                'firstname'     => $payload['firstName'],
-            ],
-            [
-                'lastname'      => $payload['lastName'],
-                'firstname'     => $payload['firstName'],
-                'middlename'    => $payload['middleName'],
-                'birthdate'     => $payload['birthdate'],
-                'name'          => $payload['lastName'] . ', ' . $payload['firstName'] . ' ' . $payload['middleName'],
-                'mobileno'      => $payload['contactNumber'],
-                'portal_UID'    => $payload['portal_UID'],
-                'passcode'      => $payload['portal_PWD'],
-                'portal_PWD'    => Hash::make($payload['portal_PWD']),
-                'role_id'       => 4,
-                'branch_id'     => 1,
-                'email'         => $payload['email'],
-                'isactive'      => 1,
-                'created_at'    => Carbon::now(),
-                'isonline'      => 1,
-            ]
-        );
-        $patientLogin = PatientAppointmentsTemporary::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
-            [
-                'lastname'      => $payload['lastName'],
-                'firstname'     => $payload['firstName'],
-            ],
-            [
-                'lastname'          => $payload['lastName'],
-                'firstname'         => $payload['firstName'],
-                'middlename'        => $payload['middleName'],
-                'email_Address'     => $payload['email'],
-                'birthdate'         => $payload['birthdate'],
-                'branch_Id'         => 1,
-                'user_id'           => $userLogin->id,
-                'suffix'            => $payload['suffix'],
-                'sex_Id'            => $payload['gender'],
-                'birthplace'        => $payload['birthPlace'],
-                'age'               => $payload['age'],
-                'region_Id'         => $payload['region_code'],
-                'bldgstreet'        => $payload['currentAddress'],
-                'province_Id'       => $payload['province_id'],
-                'municiplaity_Id'   => $payload['municipality_id'],
-                'barangay_Id'       => $payload['barangay'],
-                'zipcode_Id'        => $payload['zipcode']['id'],
-                'mobile_Number'     => $payload['contactNumber'],
-                'civil_Status_Id'   => $payload['civilStatus'],
-                'nationality_Id'    => $payload['nationality'],
-                'portal_UID'        => $payload['portal_UID'],
-                'portal_PWD'        => Hash::make($payload['portal_PWD']),
-            ]
-        );
+        DB::connection('sqlsrv')->beginTransaction();
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        try {
+
+            $payload = $request->payload;
+            $userLogin = AppointmentUser::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
+                [
+                    'lastname'      => $payload['lastName'],
+                    'firstname'     => $payload['firstName'],
+                ],
+                [
+                    'lastname'      => $payload['lastName'],
+                    'firstname'     => $payload['firstName'],
+                    'middlename'    => $payload['middleName'],
+                    'birthdate'     => $payload['birthdate'],
+                    'name'          => $payload['lastName'] . ', ' . $payload['firstName'] . ' ' . $payload['middleName'],
+                    'mobileno'      => $payload['contactNumber'],
+                    'portal_UID'    => $payload['portal_UID'],
+                    'passcode'      => $payload['portal_PWD'],
+                    'portal_PWD'    => Hash::make($payload['portal_PWD']),
+                    'role_id'       => 4,
+                    'branch_id'     => 1,
+                    'email'         => $payload['email'],
+                    'isactive'      => 1,
+                    'created_at'    => Carbon::now(),
+                    'isonline'      => 1,
+                ]
+            );
+            $patientLogin = PatientAppointmentsTemporary::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
+                [
+                    'lastname'      => $payload['lastName'],
+                    'firstname'     => $payload['firstName'],
+                ],
+                [
+                    'lastname'          => $payload['lastName'],
+                    'firstname'         => $payload['firstName'],
+                    'middlename'        => $payload['middleName'],
+                    'email_Address'     => $payload['email'],
+                    'birthdate'         => $payload['birthdate'],
+                    'branch_Id'         => 1,
+                    'user_id'           => $userLogin->id,
+                    'suffix'            => $payload['suffix'],
+                    'sex_Id'            => $payload['gender'],
+                    'birthplace'        => $payload['birthPlace'],
+                    'age'               => $payload['age'],
+                    'region_Id'         => $payload['region_code'],
+                    'bldgstreet'        => $payload['currentAddress'],
+                    'province_Id'       => $payload['province_id'],
+                    'municipality_Id'   => $payload['municipality_id'],
+                    'barangay_Id'       => $payload['barangay'],
+                    'zipcode_Id'        => $payload['zipcode']['id'],
+                    'mobile_Number'     => $payload['contactNumber'],
+                    'civil_Status_Id'   => $payload['civilStatus'],
+                    'nationality_Id'    => $payload['nationality'],
+                    'portal_UID'        => $payload['portal_UID'],
+                    'portal_PWD'        => Hash::make($payload['portal_PWD']),
+                ]
+            );
 
 
-        $token = $userLogin->createToken();
-        // Return patient data or a token
-        return response()->json(['details' => $userLogin, 'access_token' => $token], 200);
+            $token = $userLogin->createToken();
+            DB::connection('sqlsrv')->commit();
+            DB::connection('sqlsrv_patient_data')->commit();
+            // Return patient data or a token
+            return response()->json(['details' => $userLogin, 'access_token' => $token], 201);
+        } catch (\Exception $e) {
+
+            DB::connection('sqlsrv')->rollBack();
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            return response()->json($e->getMessage(), 200);
+        }
     }
 
 
@@ -171,19 +193,19 @@ class PatientAppointmentController extends Controller
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
 
-            $sequence = SystemSequence::select('seq_no','digit')->where(['isActive' => true, 'code' => 'APN'])->first();
-            $refno = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
-            $patientID = $request->selectedPatientID;
-            $slotNo = $request->selectedSlot;
-            $date = $request->selectedDate;
-            $doctorId = $request->selectedDoctor;
-            $sectionID = $request->selectedSectionID;
-            $centerID = $request->selectedCenter;
-            $mobileno = $request->mobileno;
-            $patient_name = $request->patient_name;
+            $sequence             = SystemSequence::select('seq_no', 'digit')->where(['isActive' => true, 'code' => 'APN'])->first();
+            $refno                = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
+            $patientID            = $request->selectedPatientID;
+            $slotNo               = $request->selectedSlot;
+            $date                 = $request->selectedDate;
+            $doctorId             = $request->selectedDoctor;
+            $sectionID            = $request->selectedSectionID;
+            $centerID             = $request->selectedCenter;
+            $mobileno             = $request->mobileno;
+            $patient_name         = $request->patient_name;
             $PaymentTransactionNo = $request->selectedPaymentTransactionNo;
-            $totalAmount = $request->selectedTotalAmount;
-            
+            $totalAmount          = $request->selectedTotalAmount;
+
             $procedures = json_decode($request->selectedProcedures, true);
 
             // Initialize variable to store the path of the uploaded file
@@ -227,7 +249,7 @@ class PatientAppointmentController extends Controller
                     'doctor_Id'                    => $doctorId,
                     'doctors_Request_Path'         => $doctorsFile,
                     'appointment_Time'             => '',
-                    'status_Id'                    =>1,
+                    'status_Id'                    => 1,
                     'slot_Number'                  => $slotNo,
                     'total_Amount'                 => $request->selectedTotalAmount,
                 ]
@@ -304,14 +326,14 @@ class PatientAppointmentController extends Controller
             DB::connection('sqlsrv_patient_data')->commit();
 
             $data = [
-                'patient_name'=> $patient_name,
-                'date_schedule'=>$date,
-                'slot'=>$slotNo,
-                'amount'=>$totalAmount,
-                'reference_no'=>$refno,
+                'patient_name' => $patient_name,
+                'date_schedule' => $date,
+                'slot' => $slotNo,
+                'amount' => $totalAmount,
+                'reference_no' => $refno,
             ];
-            $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
-            $helpersms = new SMSHelper();
+            // $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
+            // $helpersms = new SMSHelper();
             // $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::message($data));
 
             return response()->json(['data' => 'success'], 201);
@@ -326,8 +348,8 @@ class PatientAppointmentController extends Controller
     public function slots(Request $request)
     {
         $selectedDate = Carbon::parse($request->date)->format('Y-m-d');
-        $selectedSlot = $request->slot;
-        $notAvailableSlots = PatientAppointment::select('slot_Number')->whereDate('appointment_Date', $selectedDate)->pluck('slot_Number')->toArray();
+        $center_id = $request->center_id;
+        $notAvailableSlots = PatientAppointment::select('slot_Number')->where('appointment_center_id',$center_id)->whereDate('appointment_Date', $selectedDate)->pluck('slot_Number')->toArray();
         $slots = [];
         for ($i = 1; $i < 50; $i++) {
             $slots[] = [

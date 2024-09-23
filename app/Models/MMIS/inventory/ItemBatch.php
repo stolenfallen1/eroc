@@ -12,7 +12,7 @@ class ItemBatch extends Model
 {
     use HasFactory;
 
-    protected $table = 'CDG_MMIS.dbo.itemBatchNumberMaster';
+    protected $table = 'CDG_MMIS.dbo.itemBatchModelNumberMaster';
     protected $connection = "sqlsrv_mmis";
 
     protected $guarded = [];

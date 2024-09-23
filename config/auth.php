@@ -45,11 +45,11 @@ return [
             'provider' => 'users',
             'hash' => false,
         ],
-        // 'appointment' => [
-        //     'driver' => 'token',
-        //     'provider' => 'appointment',
-        //     'hash' => false,
-        // ],
+        'patient' => [
+            'driver' => 'token',
+            'provider' => 'patient',
+            'hash' => false,
+        ],
     ],
 
     /*
@@ -74,10 +74,10 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
         ],
-        // 'appointment' => [
-        //     'driver' => 'eloquent',
-        //     'model' => App\Models\Appointments\AppointmentUser::class,
-        // ],
+        'patient' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Appointments\AppointmentUser::class,
+        ],
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',

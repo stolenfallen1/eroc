@@ -9,5 +9,5 @@ class Itembatchnumbermasters extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_mmis';
-    protected $table = 'itemBatchNumberMaster';
+    protected $table = 'itemBatchModelNumberMaster';
 }

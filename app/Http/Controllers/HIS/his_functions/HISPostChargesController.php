@@ -15,42 +15,42 @@ class HISPostChargesController extends Controller
     public function chargehistory(Request $request)
     {
         try {
-            $patient_id = $request->patient_id;
-            $case_no = $request->case_no;
-            $transaction_code = $request->transaction_code;
-            $data = $this->history($patient_id, $case_no, $transaction_code);
+            $patient_id = $request->patient_Id;
+            $case_no = $request->case_No; 
+            $code = $request->code;
+            $data = $this->history($patient_id, $case_no, $code);
             return response()->json(['data' => $data]);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    public function history($patient_id, $case_no, $transaction_code, $refnum = [])
+    public function history($patient_id, $case_no, $code, $refnum = [])
     {
         try {
             $today = Carbon::now()->format('Y-m-d');
             $query = HISBillingOut::with('items','doctor_details')
-                ->where('pid', $patient_id)
-                ->where('case_no', $case_no)
+                ->where('patient_Id', $patient_id)
+                ->where('case_No', $case_no)
                 ->where('quantity', '>', 0)
                 ->whereDate('transDate', $today);
 
-            if ($transaction_code == 'MD') {
-                $query->whereIn('revenue_id', ['MD']);
-            } else if ($transaction_code == '') {
-                $query->whereNotIn('revenue_id', ['MD']);
+            if ($code == 'MD') {
+                $query->whereIn('revenueID', ['MD']);
+            } else if ($code == '') {
+                $query->whereNotIn('revenueID', ['MD']);
             }
             if (count($refnum) > 0) {
-                $query->whereIn('refnum', $refnum);
+                $query->whereIn('refNum', $refnum);
             }
 
             $query->whereNotExists(function ($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('BillingOut as cancelled')
-                    ->whereColumn('cancelled.pid', 'BillingOut.pid')
-                    ->whereColumn('cancelled.case_no', 'BillingOut.case_no')
-                    ->whereColumn('cancelled.item_id', 'BillingOut.item_id')
-                    ->whereColumn('cancelled.refnum', 'BillingOut.refnum')
+                    ->whereColumn('cancelled.patient_Id', 'BillingOut.patient_Id')
+                    ->whereColumn('cancelled.case_No', 'BillingOut.case_No')
+                    ->whereColumn('cancelled.itemID', 'BillingOut.itemID')
+                    ->whereColumn('cancelled.refNum', 'BillingOut.refNum')
                     ->where('cancelled.quantity', -1);
             });
 
@@ -63,42 +63,46 @@ class HISPostChargesController extends Controller
     {
         DB::beginTransaction();
         try {
-            $chargeslip_sequence = SystemSequence::where('seq_prefix', 'gc')->first();
+            $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
             }
 
-            $patient_id = $request->payload['patient_id'];
-            $case_no = $request->payload['case_no'];
+            $patient_id = $request->payload['patient_Id'];
+            $case_no = $request->payload['case_No'];
             $transDate = Carbon::now();
             $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
-            $request_doctors_id = $request->payload['attending_doctor'];
+            $request_doctors_id = $request->payload['attending_Doctor'];
+            $guarantor_Id = $request->payload['guarantor_Id'];
             $refnum = [];
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
-                    $revenue_id = $charge['transaction_code'];
+                    $revenue_id = $charge['code'];
                     $item_id = $charge['map_item_id'];
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
-                    $sequence = $revenue_id . $chargeslip_sequence->seq_no;
+                    $drcr = $charge['drcr'];
+                    $lgrp = $charge['lgrp'];
+                    $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
                     $refnum[] = $sequence;
                     HISBillingOut::create([
-                        'pid' => $patient_id,
-                        'case_no' => $case_no,
+                        'patient_Id' => $patient_id,
+                        'case_No' => $case_no,
                         'transDate' => $transDate,
                         'msc_price_scheme_id' => $msc_price_scheme_id,
-                        'revenue_id' => $revenue_id,
-                        'drcr' => 'D',
-                        'item_id' => $item_id,
+                        'revenueID' => $revenue_id,
+                        'drcr' => $drcr,
+                        'lgrp' => $lgrp,
+                        'itemID' => $item_id,
                         'quantity' => $quantity,
-                        'refnum' => $sequence,
+                        'refNum' => $sequence,
+                        'ChargeSlip' => $sequence,
                         'amount' => $amount,
-                        'userid' => Auth()->user()->idnumber,
+                        'userId' => Auth()->user()->idnumber,
                         'request_doctors_id' => $request_doctors_id,
                         'net_amount' => $amount,
-                        'record_status' => 1,
-                        'HostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $patient_id,
+                        'hostName' => (new GetIP())->getHostname(),
+                        'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
                 }
@@ -106,28 +110,31 @@ class HISPostChargesController extends Controller
 
             if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
                 foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
-                    $revenue_id = $doctorcharges['transaction_code'];
+                    $revenue_id = $doctorcharges['code'];
                     $item_id = $doctorcharges['doctor_code'];
                     $quantity = 1;
                     $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-                    $sequence = $revenue_id . $chargeslip_sequence->seq_no;
+                    $drcr = $doctorcharges['drcr'];
+                    $lgrp = $doctorcharges['lgrp'];
+                    $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
                     $refnum[] = $sequence;
                     HISBillingOut::create([
-                        'pid' => $patient_id,
-                        'case_no' => $case_no,
+                        'patient_Id' => $patient_id,
+                        'case_No' => $case_no,
                         'transDate' => $transDate,
                         'msc_price_scheme_id' => $msc_price_scheme_id,
-                        'revenue_id' => $revenue_id,
-                        'drcr' => 'D',
-                        'item_id' => $item_id,
+                        'revenueID' => $revenue_id,
+                        'drcr' => $drcr,
+                        'lgrp' => $lgrp,
+                        'itemID' => $item_id,
                         'quantity' => $quantity,
-                        'refnum' => $sequence,
+                        'refNum' => $sequence,
+                        'ChargeSlip' => $sequence,
                         'amount' => $amount,
-                        'userid' => Auth()->user()->idnumber,
+                        'userId' => Auth()->user()->idnumber,
                         'net_amount' => $amount,
-                        'record_status' => 1,
-                        'HostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $patient_id,
+                        'hostName' => (new GetIP())->getHostname(),
+                        'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
                 }
@@ -149,34 +156,33 @@ class HISPostChargesController extends Controller
         try {
             $items = $request->items;
             foreach ($items as $item) {
-                $patient_id = $item['pid'];
-                $case_no = $item['case_no'];
-                $refnum = $item['refnum'];
-                $item_id = $item['item_id'];
+                $patient_id = $item['patient_Id'];
+                $case_no = $item['case_No'];
+                $refnum = $item['refNum'];
+                $item_id = $item['itemID'];
                 
-                $existingData = HISBillingOut::where('pid', $patient_id)
-                    ->where('case_no', $case_no)
-                    ->where('refnum', $refnum)
-                    ->where('item_id', $item_id)
+                $existingData = HISBillingOut::where('patient_Id', $patient_id)
+                    ->where('case_No', $case_no)
+                    ->where('refNum', $refnum)
+                    ->where('itemID', $item_id)
                     ->first();
 
                 if ($existingData) {
                     HISBillingOut::create([
-                        'pid' => $existingData->pid,
-                        'case_no' => $existingData->case_no,
+                        'patient_Id' => $existingData->patient_Id,
+                        'case_No' => $existingData->case_No,
                         'transDate' => Carbon::now(),
                         'msc_price_scheme_id' => $existingData->msc_price_scheme_id,
-                        'revenue_id' => $existingData->revenue_id,
+                        'revenueID' => $existingData->revenueID,
                         'drcr' => 'C',
-                        'item_id' => $existingData->item_id,
+                        'itemID' => $existingData->itemID,
                         'quantity' => -1,
-                        'refnum' => $existingData->refnum,
+                        'refNum' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
-                        'userid' => Auth()->user()->idnumber,
+                        'userId' => Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,
-                        'record_status' => $existingData->record_status,
                         'HostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $existingData->pid,
+                        'accountnum' => $existingData->accountnum,
                         'auto_discount' => 0,
                     ]);
                 }

@@ -105,14 +105,14 @@ class ReturnTransactionController extends Controller
                 foreach($return_items as $row){
 
                     $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['returned_order_item_id'])->first();
-                    $batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
+                    $batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
                     if($batch) {
                         $isConsumed = '0';
                         $usedqty = $batch->item_Qty_Used - $row['returned_order_item_qty'];
                         if($usedqty >= $batch->item_Qty) {
                             $isConsumed = '1';
                         }
-                        DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
+                        DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
                             'item_Qty_Used'=>  (int)$batch->item_Qty_Used - (int)$row['returned_order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
@@ -426,14 +426,14 @@ class ReturnTransactionController extends Controller
                 foreach($return_items as $row){
                     // return order 
                     $return_warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['returned_order_item_id'])->first();
-                    $return_batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
+                    $return_batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
                     if($return_batch) {
                         $isConsumed = '0';
                         $usedqty = $return_batch->item_Qty_Used - $row['returned_order_item_qty'];
                         if($usedqty >= $return_batch->item_Qty) {
                             $isConsumed = '1';
                         }
-                        DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
+                        DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
                             'item_Qty_Used'=>  (int)$return_batch->item_Qty_Used - (int)$row['returned_order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
@@ -464,14 +464,14 @@ class ReturnTransactionController extends Controller
 
                     // new order 
                     $order_warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['order_item_id'])->first();
-                    $order_batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
+                    $order_batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                     if($order_batch) {
                         $isConsumed = '0';
                         $usedqty = $order_batch->item_Qty_Used + $row['order_item_qty'];
                         if($usedqty >= $order_batch->item_Qty) {
                             $isConsumed = '1';
                         }
-                        DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
+                        DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
                             'item_Qty_Used'=>  (int)$order_batch->item_Qty_Used + (int)$row['order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);

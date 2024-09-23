@@ -12,7 +12,9 @@ use App\Models\Appointments\AppointmentUser;
 use DB;
 use App\Models\BuildFile\Branchs;
 use App\Models\Appointments\AppointmentCenter;
+use App\Models\Appointments\PatientAppointmentCheckIn;
 use App\Models\Appointments\AppointmentCenterSectection;
+use App\Helpers\SMSHelper;
 
 class AppointmentController extends Controller
 {
@@ -36,6 +38,7 @@ class AppointmentController extends Controller
                 $q->where('lastname', 'like', '%' . $keyword . '%')->orWhere('firstname', 'like', '%' . $keyword . '%');
             });
         }
+       
        
         // Handle branch and tab filtering (if provided)
         $branch = $request->branch;
@@ -72,7 +75,15 @@ class AppointmentController extends Controller
                 $q->where('lastname', 'like', '%' . $keyword . '%')->orWhere('firstname', 'like', '%' . $keyword . '%');
             });
         }
-        $query->where('role_id',$type);
+        if(Auth()->guard('patient')->user()->role_id != '5'){
+            $query->where('role_id',Auth()->guard('patient')->user()->role_id);
+        }else{
+            if($type != 2){
+                $query->whereIn('role_id',[1,3,5]);
+            }else{
+                $query->whereIn('role_id',[2]);
+            }
+        }
         // Handle sorting (if provided)
         $sortBy = $request->get('sortBy', 'lastname'); // Default sorting by 'lastname'
         $sortDirection = 'asc';
@@ -94,14 +105,65 @@ class AppointmentController extends Controller
     }
 
     
-    public function confirmedAppointment(Request $request)
+    public function checkedIn(Request $request)
     {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
+            
             $id = $request->id;
-            $details = PatientAppointment::where('id', $id)->update(
+            $details = PatientAppointment::where('id', $id)->first();
+
+            PatientAppointmentCheckIn::updateOrCreate(
                 [
-                    'status_Id'=>2,
+                    'patient_Id'=> $details['patient_Id'],
+                    'case_No'=> $details['case_No'],
+                ],
+                [
+                'branch_Id'=> $details['patient']['branch_Id'],
+                'appointment_ReferenceNumber'=> $details['appointment_ReferenceNumber'],
+                'patient_Id'=> $details['patient_Id'],
+                'case_No'=> $details['case_No'],
+                'checkin_Time'=>Carbon::now()->format('H:i:s'),
+                'checkinby'=> Auth()->guard('patient')->user()->portal_UID,
+                'status_Id'=> $details['status_Id'],
+                'createdby'=> Auth()->guard('patient')->user()->portal_UID,
+                'created_at'=>Carbon::now(),
+            ]);
+
+            $details->update(
+                [
+                    'status_Id'=>3,
+                    'updated_at'=>Carbon::now()
+                ]
+            );
+            DB::connection('sqlsrv_patient_data')->commit();
+            $data = [
+                'patient_name' => $details['patient']['name'],
+                'date_schedule' => $details['appointment_Date'],
+                'reference_no' => $details['appointment_ReferenceNumber'],
+            ];
+            // $mobileno = $details['patient']['mobile_Number'];
+            // $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
+            // $helpersms = new SMSHelper();
+            // $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::checkedIn_message($data));
+            return response()->json(['details' => $details], 201);
+        } catch (\Exception $e) {
+
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            return response()->json($e->getMessage(), 200);
+        }
+    }
+
+    public function transfer(Request $request)
+    {
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        try {
+            
+            $id = $request->payload['id'];
+            $details = PatientAppointment::where('id', $id)->first();
+            $details->update(
+                [
+                    'appointment_section_id'=>$request->payload['transfer_section_id'],
                     'updated_at'=>Carbon::now()
                 ]
             );
@@ -113,6 +175,8 @@ class AppointmentController extends Controller
             return response()->json($e->getMessage(), 200);
         }
     }
+
+    
 
     public function storeUser(Request $request)
     {

@@ -117,14 +117,14 @@ class PaymentTransaction extends Controller
             foreach ($orderdetails as $row) {
                 // $batch = ItemBatch::where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                 $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('warehouse_Id',$row['warehouse_Id'])->where('item_Id', (int)$row['order_item_id'])->first();
-                $batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
+                $batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                 if($batch) {
                     $isConsumed = '0';
                     $usedqty = $batch->item_Qty_Used + $row['order_item_qty'];
                     if($usedqty >= $batch->item_Qty) {
                         $isConsumed = '1';
                     }
-                    DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
+                    DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
                         'item_Qty_Used'=>  (int)$batch->item_Qty_Used + (int)$row['order_item_qty'],
                         'isConsumed'=>  $isConsumed 
                     ]);

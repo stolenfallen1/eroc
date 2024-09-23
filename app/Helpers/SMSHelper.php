@@ -72,4 +72,30 @@ class SMSHelper {
         return $message;
     }
 
+    public static function confirmed_message($data){
+        $name           = ucwords($data['patient_name']);
+        $dateSchedule   = $data['date_schedule'];
+        $referenceno    = $data['reference_no'];
+
+
+        $message =  $name."!\n\n";
+        $message .= "Your booking with reference number $referenceno has been confirmed.";
+        $message .= "\n\n";
+        $message .= "We'd be happy to serve you on your scheduled date  $dateSchedule\n\n";
+        $message .= '';
+        return $message;
+    }
+
+    public static function checkedIn_message($data){
+        $name           = ucwords($data['patient_name']);
+        $dateSchedule   = $data['date_schedule'];
+        $referenceno    = $data['reference_no'];
+
+        $message =  $name."!\n\n";
+        $message .= "Your booking with reference number $referenceno has been confirmed.";
+        $message .= "\n\n";
+        $message .= "We'd be happy to serve you on your scheduled date  $dateSchedule\n\n";
+        $message .= '';
+        return $message;
+    }
 }

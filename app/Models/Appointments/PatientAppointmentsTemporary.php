@@ -24,7 +24,7 @@ class PatientAppointmentsTemporary extends  Authenticatable
     
     public function getNameAttribute()
     {
-        return $this->lastname.' '.$this->firstname;
+        return ucwords($this->lastname).', '.ucwords($this->firstname);
     }
 
     public function createToken()

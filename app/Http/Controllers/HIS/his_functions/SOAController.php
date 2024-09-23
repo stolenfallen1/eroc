@@ -93,7 +93,8 @@ class SOAController extends Controller
         return $pdf->stream($filename . '.pdf');
     }
 
-    public function createStatmentOfAccountSummary($id) {
+    public function createStatmentOfAccountSummary() {
+        $id =  294310;
         $data = OutPatient::with(['patientBillingInfo' => function($query) {
             $query->orderBy('revenueID', 'asc'); 
         }])
@@ -174,7 +175,13 @@ class SOAController extends Controller
 
                     } else {
 
-                        if ($billing->drcr === 'D' || $billing->drcr === 'P') {
+                        if ((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID) !== 0) {
+
+                            $runningBalance = 0;
+                            $runningBalance += $charges;
+                            $totalCharges += $charges;
+
+                        } elseif((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID)=== 0) {
 
                             $runningBalance += $charges;
                             $totalCharges += $charges;
@@ -185,12 +192,6 @@ class SOAController extends Controller
                             $totalCharges -= $charges;
                         }
 
-                        if($billing->revenueID !== $prevID) {
-
-                            $runningBalance = 0;
-                            $runningBalance += $charges;
-
-                        }
                     }
 
                     $prevID = $billing->revenueID;

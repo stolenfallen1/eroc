@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\HIS\his_functions;
 
 use App\Http\Controllers\Controller;
+use App\Models\HIS\his_functions\HISBillingOut;
 use Illuminate\Http\Request;
 use PDF;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\SOA\OutPatient;
 class SOAController extends Controller
 {
@@ -239,5 +239,59 @@ class SOAController extends Controller
         $dompdf->get_canvas()->page_text(554, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
         // $dompdf->get_canvas()->page_text(100, 780, $pageInfo, $font, 8, array(0, 0, 0));
         return $pdf->stream($filename . '.pdf');
+    }
+
+    public function getPatientSOA(Request $request) {
+        try {
+            $patient_Id = $request->query('patient_Id');
+            $case_No = $request->query('case_No');
+    
+            $data = HISBillingOut::with('items', 'doctor_details')
+                ->where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->orderBy('transDate', 'asc')  
+                ->get();
+
+                $cumulativeBalance = 0;
+                $result = [];
+        
+                foreach ($data as $item) {
+                    $amount = (float) $item->amount;
+                    $isCredit = $item->drcr === 'C'; 
+                    $charge = $isCredit ? 0 : ($amount < 0 ? -$amount : $amount);
+                    $credit = $isCredit ? ($amount < 0 ? -$amount : $amount) : 0;
+        
+                    $cumulativeBalance += ($charge - $credit);
+        
+                    $result[] = [
+                        'transDate'             => $item->transDate,
+                        'refNum'                => $item->refNum,
+                        'item_description'      => $item->items,
+                        'doctor_description'    => $item->doctor_details,
+                        'quantity'              => $item->quantity,
+                        'charge'                => number_format($charge, 2),
+                        'credit'                => number_format($credit, 2),
+                        'balance'               => number_format($cumulativeBalance, 2),
+                    ];
+                }
+        
+                $grandTotalBalance = !empty($result) ? $result[count($result) - 1]['balance'] : 0;
+        
+                return response()->json([
+                    'message' => 'success',
+                    'query' => [
+                        'patient_Id' => $patient_Id,
+                        'case_No' => $case_No,
+                    ],
+                    'data' => $result,
+                    'grand_total' => $grandTotalBalance
+                ], 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to get patient SOA',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

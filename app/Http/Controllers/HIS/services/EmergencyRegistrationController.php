@@ -42,29 +42,22 @@ class EmergencyRegistrationController extends Controller
     //
     public function index() {
     try {
-        $today = Carbon::now()->format('Y-m-d');  // Get today's date
-
-        // Start querying the Patient model
+        $today = Carbon::now()->format('Y-m-d'); 
         $data = Patient::query();
 
-        // Apply a filter to only include patients with a registry record for today
         $data->whereHas('patientRegistry', function($query) use ($today) {
-            $query->where('mscAccount_Trans_Types', 5)   // Only records with type 5
-                  ->where('isRevoked', 0)                // Ensure it's not revoked
-                  ->whereDate('registry_Date', $today);  // Filter for today's date
+            $query->where('mscAccount_Trans_Types', 5)  
+                  ->where('isRevoked', 0)              
+                  ->whereDate('registry_Date', $today); 
         });
 
-        // Eager load only the relationships we need, including filtered patientRegistry for today
         $data->with([
             'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-            // Load only today's records in patientRegistry
             'patientRegistry' => function($query) use ($today) {
                 $query->whereDate('registry_Date', $today);
             }
         ]);
-        // return $data;
 
-        // Add search filter if a keyword is present
         if (Request()->has('keyword')) {
             $keyword = Request()->keyword;
             $data->where(function($subQuery) use ($keyword) {
@@ -74,10 +67,8 @@ class EmergencyRegistrationController extends Controller
             });
         }
 
-        // Order by the latest patient entries
+  
         $data->orderBy('id', 'desc');
-
-        // Paginate the result
         $page = Request()->per_page ?? '50';
         return response()->json($data->paginate($page), 200);
 
@@ -478,7 +469,7 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'                                => $patient_id,
                 'case_No'                                   => $registry_id,
                 'er_Case_No'                                => $request->payload['er_Case_No'] ?? null,
-                'register_source'                           => $request->payload['register_source'] ?? null,
+                'register_source'                           => $request->payload['register_Source'] ?? null,
                 'register_Casetype'                         => $request->payload['register_Casetype'] ?? null,
                 'register_Link_Case_No'                     => $request->payload['register_Link_Case_No'] ?? null,
                 'register_Case_No_Consolidate'              => $request->payload['register_Case_No_Consolidate'] ?? null,
@@ -2016,7 +2007,7 @@ class EmergencyRegistrationController extends Controller
             $patientRegistryData = [
                 'branch_Id'                                 =>  1,
                 'er_Case_No'                                => Arr::get($request->payload, 'er_Case_No', optional($patientRegistry)->er_Case_No),
-                'register_source'                           => Arr::get($request->payload, 'register_source', optional($patientRegistry)->register_Source),
+                'register_source'                           => Arr::get($request->payload, 'register_Source', optional($patientRegistry)->register_Source),
                 'register_Casetype'                         => Arr::get($request->payload, 'register_Casetype', optional($patientRegistry)->register_Casetype),
                 'register_Link_Case_No'                     => Arr::get($request->payload, 'register_Link_Case_No', optional($patientRegistry)->register_Link_Case_No),
                 'register_Case_No_Consolidate'              => Arr::get($request->payload, 'register_Case_No_Consolidate', optional($patientRegistry)->register_Case_No_Consolidate),
@@ -2306,6 +2297,7 @@ class EmergencyRegistrationController extends Controller
                 'seq_no' => $registry_sequence->seq_no + 1,
                 'recent_generated' => $registry_sequence->seq_no,
             ]);
+            
             return response()->json([
                 'message' => 'Emergency data updated successfully',
                 'patient' => $patient,
@@ -2350,10 +2342,13 @@ class EmergencyRegistrationController extends Controller
     }
 
     public function revokepatient(Request $request, $id) {
+        echo '<pre>';
+        print_r($id);
+        echo '</pre>';
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
-            $patientRegistry = PatientRegistry::where('patient_id', $id)->first();
-
+            $patientRegistry = PatientRegistry::where('case_No', $id)->first();
+            // $patientRegistry = PatientRegistry::findOrFail($id);
             $patientRegistry->update([
                 'isRevoked' => 1,
                 'revokedBy' => Auth()->user()->idnumber,

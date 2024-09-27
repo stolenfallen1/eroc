@@ -227,22 +227,22 @@ class CashierController extends Controller
             $discount_type          = $request->payload['discount'] ?? null;
             $discount               = $request->payload['discount_percent'] ?? null;
             // CASH TRANSACTIONS
-            $cash_amount = $request->payload['cash_amount'] ?? null;
-            $cash_tendered = $request->payload['cash_tendered'] ?? null;
-            $cash_change = $request->payload['cash_change'] ?? null;
+            $cash_amount            = $request->payload['cash_amount'] ?? null;
+            $cash_tendered          = $request->payload['cash_tendered'] ?? null;
+            $cash_change            = $request->payload['cash_change'] ?? null;
             // CARD TRANSACTIONS
-            $card_type_id = $request->payload['card_type_id'] ?? null;
-            $card_id = $request->payload['card_id'] ?? null;
-            $card_amount = $request->payload['card_amount'] ?? null;
-            $card_approval_number = $request->payload['card_approval_number'] ?? null;
-            $card_date = $request->payload['card_date'] ?? null;
+            $card_type_id           = $request->payload['card_type_id'] ?? null;
+            $card_id                = $request->payload['card_id'] ?? null;
+            $card_amount            = $request->payload['card_amount'] ?? null;
+            $card_approval_number   = $request->payload['card_approval_number'] ?? null;
+            $card_date              = $request->payload['card_date'] ?? null;
             // CHECK TRANSACTIONS
-            $bank_check = $request->payload['bank_check'] ?? null;
-            $check_no = $request->payload['check_no'] ?? null;
-            $check_amount = $request->payload['check_amount'] ?? null;
-            $check_date = $request->payload['check_date'] ?? null;
+            $bank_check             = $request->payload['bank_check'] ?? null;
+            $check_no               = $request->payload['check_no'] ?? null;
+            $check_amount           = $request->payload['check_amount'] ?? null;
+            $check_date             = $request->payload['check_date'] ?? null;
+            $total_payment = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
-            $total_amount_paid = ($cash_amount ?? 0) + ($card_amount ?? 0) + ($check_amount ?? 0);
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
                 foreach ($request->payload['Items'] as $item) {
@@ -259,8 +259,8 @@ class CashierController extends Controller
                         'drcr'                  => 'C',
                         'refNum'                => $ORNum,
                         'ChargeSlip'            => $ORNum,
-                        'amount'                => $total_amount_paid,
-                        'net_amount'            => $total_amount_paid,
+                        'amount'                => $total_payment,
+                        'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         // 'discount'              => $discount,
                         'auto_discount'         => 0,
@@ -287,6 +287,7 @@ class CashierController extends Controller
                         'Particulars'               => $Particulars,
                         'Discount_type'             => $discount_type,
                         'Discount'                  => $discount,
+                        'NetAmount'                 => $total_payment,
                         'CashAmount'                => $cash_amount,
                         'CashTendered'              => $cash_tendered,
                         'ChangeAmount'              => $cash_change,
@@ -298,7 +299,7 @@ class CashierController extends Controller
                         'BankCheck'                 => $bank_check,
                         'Checknum'                  => $check_no,
                         'CheckAmount'               => $check_amount,
-                        'CheckDate'                 => $check_date,//
+                        'CheckDate'                 => $check_date,
                         'UserID'                    => Auth()->user()->idnumber,
                         'Shift'                     => $Shift,
                         'Hostname'                  => (new GetIP())->getHostname(),
@@ -325,7 +326,7 @@ class CashierController extends Controller
             $case_No                = $request->payload['case_No'];
             $accountnum             = $request->payload['accountnum'];
             $transDate              = Carbon::now();
-            $refNum                 = $request->payload['refNum'];
+            $refNum                 = $request->payload['refNum'] ?? null;
             $ORNum                  = $request->payload['ORNumber'];
             $tin                    = $request->payload['tin'] ?? null;
             $business_style         = $request->payload['business_style'] ?? null;
@@ -335,23 +336,91 @@ class CashierController extends Controller
             $discount_type          = $request->payload['discount'] ?? null;
             $discount               = $request->payload['discount_percent'] ?? null;
             // CASH TRANSACTIONS
-            $cash_amount = $request->payload['cash_amount'] ?? null;
-            $cash_tendered = $request->payload['cash_tendered'] ?? null;
-            $cash_change = $request->payload['cash_change'] ?? null;
+            $cash_amount            = $request->payload['cash_amount'] ?? null;
+            $cash_tendered          = $request->payload['cash_tendered'] ?? null;
+            $cash_change            = $request->payload['cash_change'] ?? null;
             // CARD TRANSACTIONS
-            $card_type_id = $request->payload['card_type_id'] ?? null;
-            $card_id = $request->payload['card_id'] ?? null;
-            $card_amount = $request->payload['card_amount'] ?? null;
-            $card_approval_number = $request->payload['card_approval_number'] ?? null;
-            $card_date = $request->payload['card_date'] ?? null;
+            $card_type_id           = $request->payload['card_type_id'] ?? null;
+            $card_id                = $request->payload['card_id'] ?? null;
+            $card_amount            = $request->payload['card_amount'] ?? null;
+            $card_approval_number   = $request->payload['card_approval_number'] ?? null;
+            $card_date              = $request->payload['card_date'] ?? null;
             // CHECK TRANSACTIONS
-            $bank_check = $request->payload['bank_check'] ?? null;
-            $check_no = $request->payload['check_no'] ?? null;
-            $check_amount = $request->payload['check_amount'] ?? null;
-            $check_date = $request->payload['check_date'] ?? null;
+            $bank_check             = $request->payload['bank_check'] ?? null;
+            $check_no               = $request->payload['check_no'] ?? null;
+            $check_amount           = $request->payload['check_amount'] ?? null;
+            $check_date             = $request->payload['check_date'] ?? null;
+            $total_payment = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
-            $total_amount_paid = ($cash_amount ?? 0) + ($card_amount ?? 0) + ($check_amount ?? 0);
-            // DB::connection('sqlsrv_billingOut')->commit();
+
+            if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
+                foreach ($request->payload['Items'] as $item) {
+                    $itemID = $item['itemID'];
+                    $revenueID = $item['revenueID'];
+                    $Particulars = isset($item['items']) ? $item['items']['exam_description'] : '';
+                    
+                    $billingOut = BillingOutModel::create([
+                        'patient_Id'            => $patient_Id,
+                        'case_No'               => $case_No,
+                        'accountnum'            => $accountnum,
+                        'transDate'             => $transDate,
+                        'revenueID'             => $itemID, // CP
+                        'drcr'                  => 'C',
+                        'refNum'                => $ORNum,
+                        'ChargeSlip'            => $ORNum,
+                        'amount'                => $total_payment,
+                        'net_amount'            => $total_payment,
+                        'discount_type'         => $discount_type,
+                        // 'discount'              => $discount,
+                        'auto_discount'         => 0,
+                        'userId'                => Auth()->user()->idnumber,
+                        'hostName'              => (new GetIP())->getHostname(),
+                        'createdby'             => Auth()->user()->idnumber,
+                        'created_at'            => Carbon::now(),
+                    ]);
+
+                    if (!$billingOut) throw new \Exception('Failed to save billing out');
+                    CashORMaster::create([
+                        'branch_id'                 => 1,
+                        'RefNum'                    => $ORNum,
+                        'HospNum'                   => $patient_Id,
+                        'case_no'                   => $case_No,
+                        'TransDate'                 => $transDate,
+                        'transaction_code'          => $itemID, // CP
+                        'TIN'                       => $tin,
+                        'BusinessStyle'             => $business_style,
+                        'SCPWDId'                   => $osca_pwd_id,
+                        'Revenueid'                 => $itemID, // CP
+                        'PaymentType'               => $PaymentType,
+                        'PaymentFor'                => $ORNum,
+                        'Particulars'               => $Particulars,
+                        'Discount_type'             => $discount_type,
+                        'Discount'                  => $discount,
+                        'NetAmount'                 => $total_payment,
+                        'CashAmount'                => $cash_amount,
+                        'CashTendered'              => $cash_tendered,
+                        'ChangeAmount'              => $cash_change,
+                        'card_type_id'              => $card_type_id,
+                        'card_id'                   => $card_id,
+                        'CardAmount'                => $card_amount,
+                        'CardApprovalNum'           => $card_approval_number,
+                        'CardDate'                  => $card_date,
+                        'BankCheck'                 => $bank_check,
+                        'Checknum'                  => $check_no,
+                        'CheckAmount'               => $check_amount,
+                        'CheckDate'                 => $check_date,
+                        'UserID'                    => Auth()->user()->idnumber,
+                        'Shift'                     => $Shift,
+                        'Hostname'                  => (new GetIP())->getHostname(),
+                        'createdby'                 => Auth()->user()->idnumber,
+                        'created_at'                => Carbon::now(),
+                    ]);
+                    DB::connection('sqlsrv_billingOut')->commit();
+                    return response()->json([
+                        'message' => 'Successfully saved payment',
+                    ], 200);
+                }
+            }
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);

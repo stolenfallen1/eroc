@@ -13,7 +13,7 @@ class HISBillingOut extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_billingOut';
-    protected $table = 'BillingOut';
+    protected $table = 'CDG_BILLING.dbo.BillingOut';
     protected $guarded = [];
     public $timestamps = false;
 
@@ -23,12 +23,13 @@ class HISBillingOut extends Model
     public function patientRegistry() {
         return $this->belongsTo(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
-
     public function items(){
         return $this->belongsTo(FmsExamProcedureItems::class, 'itemID', 'map_item_id');
     }
-
     public function doctor_details(){
         return $this->belongsTo(Doctor::class,'itemID', 'doctor_code');
+    }
+    public function lab_services() {
+        return $this->hasMany(LaboratoryMaster::class, 'profileId', 'itemID');
     }
 }

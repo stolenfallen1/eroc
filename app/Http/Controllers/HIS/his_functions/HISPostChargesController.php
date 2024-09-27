@@ -8,6 +8,7 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\LaboratoryMaster;
+use Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -126,6 +127,7 @@ class HISPostChargesController extends Controller
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
                     $drcr = $charge['drcr'];
                     $lgrp = $charge['lgrp'];
+                    $form = $charge['form'] ?? null;
                     $specimenId = $charge['specimen'];
                     $charge_type = $charge['charge_type'];
                     $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
@@ -158,7 +160,7 @@ class HISPostChargesController extends Controller
                         'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
-                    if ($revenue_id == 'LB') {
+                    if ($revenue_id == 'LB' && $form == 'C') {
                         $labProfileData = $this->getLabItems($item_id);
                         if ($labProfileData->getStatusCode() === 200) {
                             $labItems = $labProfileData->getData()->data;
@@ -177,13 +179,42 @@ class HISPostChargesController extends Controller
                                         'NetAmount'             => 0,
                                         'doctor_Id'             => $request_doctors_id,
                                         'specimen_Id'           => $exam->map_specimen_id,
+                                        'processed_By'          => Auth()->user()->idnumber,
+                                        'processed_Date'        => $transDate,
                                         'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                                        'request_Status'        => 'X', // Pending
+                                        'result_Status'         => 'X', // Pending
                                         'userId'                => Auth()->user()->idnumber,
                                         'barcode'               => $barcode,
+                                        'created_at'            => Carbon::now(),
+                                        'createdby'             => Auth()->user()->idnumber,
                                     ]);
                                 }
                             }
                         }
+                    } else if ($revenue_id == 'LB') {
+                        LaboratoryMaster::create([
+                            'patient_Id'            => $patient_id,
+                            'case_No'               => $case_no,
+                            'transdate'             => $transDate,
+                            'refNum'                => $sequence,
+                            'profileId'             => $item_id,
+                            'item_Charged'          => $item_id,
+                            'quantity'              => 1,
+                            'amount'                => 0,
+                            'NetAmount'             => 0,
+                            'doctor_Id'             => $request_doctors_id,
+                            'specimen_Id'           => $specimenId,
+                            'processed_By'          => Auth()->user()->idnumber,
+                            'processed_Date'        => $transDate,
+                            'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                            'request_Status'        => 'X', // Pending
+                            'result_Status'         => 'X', // Pending
+                            'userId'                => Auth()->user()->idnumber,
+                            'barcode'               => $barcode,
+                            'created_at'            => Carbon::now(),
+                            'createdby'             => Auth()->user()->idnumber,
+                        ]);
                     }
                 }
             }

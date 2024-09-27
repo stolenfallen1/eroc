@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HIS\his_functions\CashierController;
 use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
+use App\Http\Controllers\HIS\his_functions\LaboratoryController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
@@ -38,4 +39,12 @@ Route::controller(CashierController::class)->group(function () {
 // SOA Routes
 Route::controller(SOAController::class)->group(function () {
     Route::get('get-his-patient-soa', 'getPatientSOA');
+});
+// Laboratory Routes
+Route::controller(LaboratoryController::class)->group(function() {
+    Route::get('get-discharged-patient-today', 'getDischargedPatientToday');
+    Route::get('get-opd-patients', 'getOPDPatients');
+    Route::get('get-er-patients', 'getERPatients');
+    Route::get('get-ipd-patients', 'getIPDPatient');
+    Route::post('get-laboratory-exams', 'getPatientLabExams');
 });

@@ -105,7 +105,8 @@ class HISPostChargesController extends Controller
     }
     public function charge(Request $request)
     {
-        DB::beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_laboratory')->beginTransaction();
         try {
             $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
@@ -200,11 +201,12 @@ class HISPostChargesController extends Controller
                             'refNum'                => $sequence,
                             'profileId'             => $item_id,
                             'item_Charged'          => $item_id,
+                            'itemId'                => $item_id,
                             'quantity'              => 1,
                             'amount'                => 0,
                             'NetAmount'             => 0,
                             'doctor_Id'             => $request_doctors_id,
-                            'specimen_Id'           => $specimenId,
+                            'specimen_Id'           => $specimenId ?? 1, // BLOOD BY DEFAULT if no specimen
                             'processed_By'          => Auth()->user()->idnumber,
                             'processed_Date'        => $transDate,
                             'isrush'                => $charge_type == 1 ? 'N' : 'Y',
@@ -252,18 +254,20 @@ class HISPostChargesController extends Controller
             }
 
             $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
-            DB::commit();
+            DB::connection('sqlsrv_billingOut')->commit();
+            DB::connection('sqlsrv_laboratory')->commit();
             $data['charges'] =  $this->history($patient_id, $case_no, 'all', $refnum);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_laboratory')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     public function revokecharge(Request $request) 
     {
-        DB::beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
             $items = $request->items;
             foreach ($items as $item) {
@@ -299,11 +303,11 @@ class HISPostChargesController extends Controller
                 }
             }
 
-            DB::commit();
+            DB::connection('sqlsrv_billingOut')->commit();
             return response()->json(['message' => 'Charges revoked successfully'], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

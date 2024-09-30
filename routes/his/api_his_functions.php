@@ -46,5 +46,8 @@ Route::controller(LaboratoryController::class)->group(function() {
     Route::get('get-opd-patients', 'getOPDPatients');
     Route::get('get-er-patients', 'getERPatients');
     Route::get('get-ipd-patients', 'getIPDPatient');
-    Route::post('get-laboratory-exams', 'getPatientLabExams');
+    Route::post('get-laboratory-exams', 'getAllLabExamsByPatient'); // Get All Laboratory Exams
+    Route::post('get-lab-exams-uncancelled', 'getUncancelledLabExamsByPatient'); // Get All Uncancelled Laboratory Exams
+    Route::post('archive-lab-exam', 'archivePatientLabItem'); // For Staff access cancellation
+    Route::post('cancel-lab-exam', 'cancelPatientLabItem'); // For Head of Laboratory access cancellation
 });

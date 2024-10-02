@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Helpers\HIS\SeriesNo;
 
 use App\Models\HIS\PatientMaster;
+use App\Models\HIS\ViewMedsysPatientMaster;
 use App\Helpers\HIS\MedsysPatient;
 use App\Models\HIS\MedsysSeriesNo;
 use App\Models\HIS\MedsysGuarantor;
@@ -48,8 +49,8 @@ class MasterPatientController extends Controller
     {
         try {
             if($this->check_is_allow_medsys) {
-                $data = PatientMaster::query();
-                // $data = MedsysPatientMaster::query();
+                // $data = PatientMaster::query();
+                $data = MedsysPatientMaster::query();
             } else {
                 $data = PatientMaster::query();
             }
@@ -77,25 +78,67 @@ class MasterPatientController extends Controller
         }
     }
 
-     public function list()
+    //  public function list()
+    // {
+    //     try {
+    //         // $query = PatientMaster::orderBy('id','desc');
+    //         $query = MedsysPatientMaster::orderBy('id','desc');
+    //         if(Request()->lastname) {
+    //             $query->where('lastname', 'LIKE', '' . Request()->lastname . '%');
+    //         }
+    //         if(Request()->firstname) {
+    //             $query->where('firstname', 'LIKE', '' . Request()->firstname . '%');
+    //         }
+    //         if(Request()->middlename) {
+    //             $query->where('middlename', 'LIKE', '' . Request()->middlename . '%');
+    //         }
+    //         if(Request()->birthdate) {
+    //             $query->whereDate('birthdate', carbon::parse(Request()->birthdate)->format('Y-m-d'));
+    //         }
+    //         $data = $query->get();
+    //         return response()->json($data, 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json(["msg" => $e->getMessage()], 200);
+    //     }
+    // }
+
+    public function list()
     {
         try {
-            $query = PatientMaster::orderBy('id','desc');
-            if(Request()->lastname) {
-                $query->where('lastname', 'LIKE', '' . Request()->lastname . '%');
+            if($this->check_is_allow_medsys) {
+
+                $query = ViewMedsysPatientMaster::orderBy('id','desc')->offset(0)->limit(100);
+
+            } else {
+
+                $query = PatientMaster::orderBy('id','desc');
             }
-            if(Request()->firstname) {
-                $query->where('firstname', 'LIKE', '' . Request()->firstname . '%');
-            }
-            if(Request()->middlename) {
-                $query->where('middlename', 'LIKE', '' . Request()->middlename . '%');
-            }
-            if(Request()->birthdate) {
-                $query->whereDate('birthdate', carbon::parse(Request()->birthdate)->format('Y-m-d'));
-            }
-            $data = $query->get();
+                if(Request()->lastname) {
+
+                    $query->where('lastname', 'LIKE', ''. Request()->lastname . '%');
+                }
+
+                if(Request()->firstname) {
+
+                    $query->where('firstname', 'LIKE', '' . Request()->firstname . '%');
+                }
+
+                if(Request()->middlename) {
+
+                    $query->where('middlename', 'LIKE', '' . Request()->middlename . '%');
+                }
+
+                if(Request()->birthdate) {
+
+                    $query->whereDate('birthdate', carbon::parse(Request()->birthdate)->format('Y-m-d'));
+                }
+            
+            $data = $query->get(); 
+      
             return response()->json($data, 200);
+
         } catch (\Exception $e) {
+
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }

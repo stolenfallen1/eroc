@@ -45,6 +45,7 @@ use App\Models\HIS\PatientPrivilegedCard;
 use App\Models\HIS\PatientAppointments;
 use App\Models\HIS\PatientVitalSigns;
 use App\Models\HIS\PatientAllergies;
+use App\Models\HIS\MedsysPatientMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -57,7 +58,11 @@ class Patient extends Model
     // protected $primaryKey = 'patient_Id'; 
     protected $guarded = [];
 
+
     // Relationships
+    public function medsysPatientInfo() {
+        return $this->belongsTo(MedsysPatientMaster::class, 'HospNum', 'patient_Id');
+    }
     public function patientRegistry(){
         return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id')
             ->whereDate('registry_Date', Carbon::now()->format('Y-m-d'))

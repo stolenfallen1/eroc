@@ -26,6 +26,7 @@ use App\Models\HIS\PatientMedications;
 use App\Models\HIS\PatientDischargeInstructions;
 use App\Models\HIS\PatientGynecologicalConditions;
 use App\Models\HIS\PatientAppointments;
+use App\Models\HIS\MedsysPatientMaster;
 use App\Models\HIS\services\Patient;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\FMS\AccountType;
@@ -46,6 +47,9 @@ class PatientRegistry extends Model
     protected $guarded = [];
 
     // Relationships
+    public function medsysErMaster() {
+        return $this->belongsTo(MedsysPatientMaster::class, 'IDnum', 'case_No');
+    }
     public function patient_details(){
         return $this->belongsTo(Patient::class, 'patient_Id', 'patient_Id');
     }    

@@ -20,4 +20,8 @@ class Medsys_SeriesNo
     {
         return str_pad($seq_no, $digit, "0", STR_PAD_LEFT);
     }
+
+    public function get_er_sequence() {
+        return MedsysSeriesNo::select('HospNum', 'IDNum', 'ERNum')->where('HemoNum', '0')->first();
+    }
 }

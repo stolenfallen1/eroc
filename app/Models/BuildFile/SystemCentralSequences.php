@@ -9,5 +9,6 @@ class SystemCentralSequences extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.sysCentralSequence";
+    protected $table = "CDG_CORE.dbo.sysCentralSequences";
+    public $timestamps = false;
 }

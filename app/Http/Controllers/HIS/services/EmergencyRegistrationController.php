@@ -168,6 +168,7 @@ class EmergencyRegistrationController extends Controller
 
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
+        DB::connection('sqlsrv')->beginTransaction();
 
         try {
 
@@ -201,7 +202,6 @@ class EmergencyRegistrationController extends Controller
                 $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
             }
             
-
             $patientIdentifier      = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis         = ($patientIdentifier === "Hemo Patient") ? true : false;
             $isPeritoneal           = ($patientIdentifier === "Peritoneal Patient") ? true : false;
@@ -228,6 +228,11 @@ class EmergencyRegistrationController extends Controller
                 ]);
 
                 $registry_sequence->where('code', 'MERN')->update([
+                    'seq_no'            => $registry_id,
+                    'recent_generated'  => $registry_id
+                ]);
+
+                $registry_sequence->where('code', 'MOPD')->update([
                     'seq_no'            => $registry_id,
                     'recent_generated'  => $registry_id
                 ]);
@@ -1156,7 +1161,7 @@ class EmergencyRegistrationController extends Controller
             }
             
             //Insert Data Function
-            $patient = Patient::Create($patientData);
+            $patient = Patient::updateOrCreate($patientRule, $patientData);
             $patient->past_medical_procedures()->create($pastientPastMedicalProcedureData);
             $patient->past_medical_history()->create($patientPastMedicalHistoryData);
             $patient->past_immunization()->create($patientPastImmunizationData);
@@ -1230,6 +1235,7 @@ class EmergencyRegistrationController extends Controller
 
             DB::connection('sqlsrv_patient_data')->commit();
             DB::connection('sqlsrv_medsys_patient_data')->commit();
+            DB::connection('sqlsrv')->commit();
             
             return response()->json([
                 'message' => 'Patient registered successfully',
@@ -1241,6 +1247,7 @@ class EmergencyRegistrationController extends Controller
 
             DB::connection('sqlsrv_patient_data')->rollBack();
             DB::connection('sqlsrv_medsys_patient_data')->rollBack();
+            DB::connection('sqlsrv')->rollBack();
 
             return response()->json([
                 'message' => 'Failed to register patient',
@@ -1253,6 +1260,7 @@ class EmergencyRegistrationController extends Controller
 
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
+        DB::connection('sqlsrv')->beginTransaction();
 
         try {
 
@@ -2474,6 +2482,7 @@ class EmergencyRegistrationController extends Controller
 
                 DB::connection('sqlsrv_patient_data')->commit();
                 DB::connection('sqlsrv_medsys_patient_data')->commit();
+                DB::connection('sqlsrv')->commit();
 
                 return response()->json([
                     'message' => 'Emergency data updated successfully',
@@ -2485,6 +2494,7 @@ class EmergencyRegistrationController extends Controller
 
             DB::connection('sqlsrv_patient_data')->rollBack();
             DB::connection('sqlsrv_medsys_patient_data')->rollBack();
+            DB::connection('sqlsrv')->rollBack();
 
             return response()->json([
                 'message'   => 'Failed to update Emergency data',

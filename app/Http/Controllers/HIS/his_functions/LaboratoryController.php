@@ -132,6 +132,7 @@ class LaboratoryController extends Controller
         try {
             $case_No = $request->items['case_No'];
             $itemcharged = $request->items['itemcharged'];
+            $remarks = $request->items['remarks'];
 
             $data = LaboratoryMaster::where('case_No', $case_No)
                 ->where('profileId', $itemcharged)
@@ -143,6 +144,7 @@ class LaboratoryController extends Controller
                     'canceled_Date'     => Carbon::now(),
                     'updatedby'         => Auth()->user()->idnumber,
                     'updated_at'        => Carbon::now(),
+                    'remarks'           => $remarks,
                 ]);
             
             if ($data) {

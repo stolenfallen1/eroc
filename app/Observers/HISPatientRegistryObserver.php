@@ -39,6 +39,9 @@ class HISPatientRegistryObserver
                         'Hospnum'           => $patientRegistry->patient_Id,
                         'IDnum'             => $patientRegistry->case_No . 'B',
                         'ERNum'             => $patientRegistry->er_Case_No         ?? '',
+                        'AdmDate'           => $patientRegistry->registry_Date  
+                                            ? $patientRegistry->registry_Date 
+                                            : Carbon::now(),
                         'ReasonOfReferral'  => $patientRegistry->referral_Reason    ?? '',
                         'ReferredFrom'      => $patientRegistry->referred_From_HCI  ?? '',
                         'BEDNUMBER'         => $patientRegistry->er_Bedno           ?? '',
@@ -49,7 +52,9 @@ class HISPatientRegistryObserver
                         'HospNum'       => $patientRegistry->patient_Id,
                         'IDNum'         => $patientRegistry->case_No . 'B',
                         'ERNum'         => $patientRegistry->er_Case_No     ?? '',
-                        'AdmDate'       => $patientRegistry->registry_Date ? $patientRegistry->registry_Date : Carbon::now(),
+                        'AdmDate'       => $patientRegistry->registry_Date 
+                                        ? $patientRegistry->registry_Date 
+                                        : Carbon::now(),
                         'AccountNum'    => $patientRegistry->guarantor_Id   ? $patientRegistry->guarantor_Id : $patientRegistry->patient_Id,
                     ];
 
@@ -101,10 +106,10 @@ class HISPatientRegistryObserver
     public function updated(PatientRegistry $patientRegistry)
     {
     
-        // try {
+        try {
 
             if($this->check_is_allow_medsys && $patientRegistry) {
-
+                
                 $today = Carbon::now()->format('Y-m-d');
                 $erId = $patientRegistry->case_No . 'B';
 
@@ -112,11 +117,15 @@ class HISPatientRegistryObserver
 
                     $ER_Patient_Master  = MedsysERMaster::findOrFail($erId);
                     $MedsysOPD          = MedsysOutpatient::findOrFail($erId);
-           
+                    
                     if($ER_Patient_Master && $MedsysOPD) {
 
                         $ER_Patient_Master_Data = [
+                            'Hospnum'           => $patientRegistry->patient_Id,
                             'ERNum'             => $patientRegistry->er_Case_No ?? $ER_Patient_Master->er_Case_No,
+                            'AdmDate'           => $ER_Patient_Master->AdmDate  
+                                                ? $ER_Patient_Master->AdmDate 
+                                                : Carbon::now(),
                             'ReasonOfReferral'  => $patientRegistry->referral_Reason,
                             'ReferredFrom'      => $patientRegistry->referred_From_HCI,
                             'BEDNUMBER'         => $patientRegistry->er_Bedno,
@@ -128,8 +137,12 @@ class HISPatientRegistryObserver
                             'HospNum'       => $patientRegistry->patient_Id,
                             'IDNum'         => $patientRegistry->case_No . 'B',
                             'ERNum'         => $patientRegistry->er_Case_No,
-                            'AdmDate'       => $patientRegistry->registry_Date  ? $patientRegistry->registry_Date : Carbon::now(),
-                            'AccountNum'    => $patientRegistry->guarantor_Id   ? $patientRegistry->guarantor_Id : $patientRegistry->patient_Id,
+                            'AdmDate'       => $patientRegistry->registry_Date  
+                                            ? $patientRegistry->registry_Date 
+                                            : Carbon::now(),
+                            'AccountNum'    => $patientRegistry->guarantor_Id   
+                                            ? $patientRegistry->guarantor_Id 
+                                            : $patientRegistry->patient_Id,
                         ];
 
                         $isRegisteredToday  = MedsysERMaster::where('IDnum', $erId)
@@ -168,12 +181,12 @@ class HISPatientRegistryObserver
                 Log::error('Cannot update is Either persion id denied or patient registry is empty');
             }
             
-        // } catch(\Exception $e) {
+        } catch(\Exception $e) {
 
-        //     Log::error('Failed to update patient info in  Medsys: ' . $e->getMessage());
+            Log::error('Failed to update patient info in  Medsys: ' . $e->getMessage());
 
-        //     throw new \Exception('Failed to update patient into Medsys: ' . $e->getMessage());
-        // }
+            throw new \Exception('Failed to update patient into Medsys: ' . $e->getMessage());
+        }
     }
 
     /**

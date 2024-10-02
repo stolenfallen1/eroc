@@ -1148,17 +1148,13 @@ class EmergencyRegistrationController extends Controller
                 'created_at'            => Carbon::now()
             ];
 
-            if(!$request->payload['patient_Id']) {
 
-                $today = Carbon::now()->format('Y-m-d');
+            $today = Carbon::now()->format('Y-m-d');
 
-                $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
-                    ->whereDate('created_at', $today)
-                    ->exists();
-            } else {
-
-                $existingRegistry = false;
-            }
+            $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
+                ->whereDate('created_at', $today)
+                ->exists();
+    
             
             //Insert Data Function
             $patient = Patient::updateOrCreate($patientRule, $patientData);
@@ -1384,7 +1380,7 @@ class EmergencyRegistrationController extends Controller
                 $patient = Patient::updateOrCreate(['patient_Id' => $id], $patientData);
 
             endif;
-
+            
                 $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
                 ->whereDate('created_at', $today)
                 ->exists();

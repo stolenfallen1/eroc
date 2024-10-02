@@ -23,7 +23,7 @@ Route::controller(HISCashAssestmentController::class)->group(function () {
 // Cashier Routes 
 Route::controller(CashierController::class)->group(function () {
     Route::get('get-charge-item', 'populatechargeitem');
-    Route::get('get-ornumber', 'getOR');
+    Route::get('get-or-for-cancellation', 'getORForCancellation');
     Route::get('get-payment-codes', 'getpaymentcode');
     Route::get('get-or-sequence', 'getORSequence');
     Route::get('get-patient-by-caseno', 'populatePatientDataByCaseNo');
@@ -31,7 +31,7 @@ Route::controller(CashierController::class)->group(function () {
     Route::get('get-company-details', 'getCompanyDetails');
     Route::post('get-opd-bill', 'getOPDBill');
     Route::post('cashier-settings', 'cashiersettings');
-    Route::post('save-payment', 'saveCashAssessment');
+    Route::post('save-cash-transaction', 'saveCashAssessment');
     Route::post('save-opbill', 'saveOPDBill');
     Route::post('save-companybill', 'saveCompanyTransaction');
     Route::put('cancel-ornumber', 'cancelOR');

@@ -80,6 +80,7 @@ class LaboratoryController extends Controller
         }
     }
 
+
     // For viewing patient lab exams 
     public function getAllLabExamsByPatient(Request $request) 
     {
@@ -101,6 +102,7 @@ class LaboratoryController extends Controller
             ], 500);
         }
     }
+
 
     // For fetching Lab Exams that is not cancelled ( For request cancellation )
     public function getUncancelledLabExamsByPatient(Request $request) 
@@ -194,7 +196,7 @@ class LaboratoryController extends Controller
     {
 
     }
-
+  
     public function getDischargedPatientToday() 
     {
         try {

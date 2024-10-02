@@ -171,51 +171,36 @@ class EmergencyRegistrationController extends Controller
 
         try {
 
-            if($request->payload['patient_Id'] && $this->check_is_allow_medsys) {
-                SystemSequence::where('code','MERN')->increment('seq_no');
-                SystemSequence::where('code','MOPD')->increment('seq_no');
-                $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->first();
-                $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
+            SystemSequence::where('code','MPID')->increment('seq_no');
+            SystemSequence::where('code','MERN')->increment('seq_no');
+            SystemSequence::where('code','MOPD')->increment('seq_no');
 
+            SystemSequence::where('code','MPID')->increment('recent_generated');
+            SystemSequence::where('code','MERN')->increment('recent_generated');
+            SystemSequence::where('code','MOPD')->increment('recent_generated');
+        
+
+            $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->first();
+            $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
+
+            if($this->check_is_allow_medsys) {
+
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('HospNum');
                 DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
                 DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('ERNum');
-                $check_medsys_series_no = MedsysSeriesNo::select('ERNum', 'OPDId')->first();
-                
-                $patient_id     = $request->payload['patient_Id'];
+
+                $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'ERNum', 'OPDId')->first();
+
+                $patient_id     = $check_medsys_series_no->HospNum;
                 $registry_id    = $check_medsys_series_no->OPDId;
                 $er_Case_No     = $check_medsys_series_no->ERNum;
-
-            } else {
-                SystemSequence::where('code','MPID')->increment('seq_no');
-                SystemSequence::where('code','MERN')->increment('seq_no');
-                SystemSequence::where('code','MOPD')->increment('seq_no');
-
-                SystemSequence::where('code','MPID')->increment('recent_generated');
-                SystemSequence::where('code','MERN')->increment('recent_generated');
-                SystemSequence::where('code','MOPD')->increment('recent_generated');
             
-
-                $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->first();
-                $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
-
-                if($this->check_is_allow_medsys) {
-
-                    DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('HospNum');
-                    DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
-                    DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('ERNum');
-
-                    $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'ERNum', 'OPDId')->first();
-
-                    $patient_id     = $check_medsys_series_no->HospNum;
-                    $registry_id    = $check_medsys_series_no->OPDId;
-                    $er_Case_No     = $check_medsys_series_no->ERNum;
-                
-                } else {
-                
-                    $patient_id             = $request->payload['patient_Id'] ?? intval($sequence->seq_no + 1);
-                    $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
-                }
+            } else {
+            
+                $patient_id             = $request->payload['patient_Id'] ?? intval($sequence->seq_no + 1);
+                $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
             }
+            
 
             $patientIdentifier      = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis         = ($patientIdentifier === "Hemo Patient") ? true : false;

@@ -47,8 +47,6 @@ class AdmissionSourceController extends Controller
             }
             $data['msg'] = 'Already Exists!';
             return Response()->json($data, 200);
-
-
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 200);
         }

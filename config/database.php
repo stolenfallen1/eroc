@@ -175,6 +175,14 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'options' => [
+                'PDO::ATTR_ERRMODE' => PDO::ERRMODE_EXCEPTION,
+                'PDO::SQLSRV_ATTR_QUERY_OPTIONS' => [
+                    'PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE' => true,
+                    'ansi_nulls' => true,
+                    'ansi_warnings' => true,
+                ],
+            ],
         ],
 
         'sqlsrv_medsys_patient_data' => [

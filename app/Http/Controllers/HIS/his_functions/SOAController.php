@@ -93,8 +93,7 @@ class SOAController extends Controller
         return $pdf->stream($filename . '.pdf');
     }
 
-    public function createStatmentOfAccountSummary() {
-        $id =  294310;
+    public function createStatmentOfAccountSummary($id) {
         $data = OutPatient::with(['patientBillingInfo' => function($query) {
             $query->orderBy('revenueID', 'asc'); 
         }])

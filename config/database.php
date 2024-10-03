@@ -172,6 +172,28 @@ return [
             ],
         ],
 
+        'sqlsrv_medsys_core_db' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_CORE_DB', '10.4.15.251'),
+            'port' => env('DB_PORT_MEDSYS_CORE_DB', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_CORE_DB', ''),
+            'username' => env('DB_USERNAME_MEDSYS_CORE_DB', ''),
+            'password' => env('DB_PASSWORD_MEDSYS_CORE_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'options' => [
+                'PDO::ATTR_ERRMODE' => PDO::ERRMODE_EXCEPTION,
+                'PDO::SQLSRV_ATTR_QUERY_OPTIONS' => [
+                    'PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE' => true,
+                    'ansi_nulls' => true,
+                    'ansi_warnings' => true,
+                ],
+            ],
+        ],
+
+
         'sqlsrv_medsys_patient_data' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -184,6 +206,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
         'sqlsrv_medsys_hemodialysis' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -196,6 +219,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
         'sqlsrv_medsys_nurse_station' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -208,6 +232,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
         'sqlsrv_medsys_patientdatacdg' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

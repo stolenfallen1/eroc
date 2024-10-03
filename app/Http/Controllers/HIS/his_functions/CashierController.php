@@ -113,7 +113,6 @@ class CashierController extends Controller
         }
     }
     
-
     public function populatePatientDataByCaseNo(Request $request) 
     {
         try {
@@ -162,7 +161,7 @@ class CashierController extends Controller
             $check_no               = $request->payload['check_no'] ?? null;
             $check_amount           = $request->payload['check_amount'] ?? null;
             $check_date             = $request->payload['check_date'] ?? null;
-            $withholding_tax        = floatval(str_replace([',', '₱'], '', $request->payload['withholding_tax']));
+            $withholding_tax        = floatval(str_replace([',', '₱'], '', $request->payload['withholding_tax'] ?? 0));
             $total_payment          = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
@@ -181,7 +180,6 @@ class CashierController extends Controller
                         ->where('revenueID', $revenueID)
                         ->where('id', $id)
                         ->update([
-                            'refNum'            => $ORNum,
                             'ORNumber'          => $ORNum, 
                             'updatedBy'         => Auth()->user()->idnumber, 
                             'updated_at'        => Carbon::now()
@@ -263,6 +261,7 @@ class CashierController extends Controller
                                                 'case_No'               => $case_No,
                                                 'transdate'             => $transDate,
                                                 'refNum'                => $refNum,
+                                                'ornumber'              => $ORNum,
                                                 'profileId'             => $exam->map_profile_id,
                                                 'item_Charged'          => $exam->map_profile_id,
                                                 'itemId'                => $exam->map_exam_id,
@@ -290,6 +289,7 @@ class CashierController extends Controller
                                     'case_No'               => $case_No,
                                     'transdate'             => $transDate,
                                     'refNum'                => $refNum,
+                                    'ornumber'              => $ORNum,
                                     'profileId'             => $itemID,
                                     'item_Charged'          => $itemID,
                                     'itemId'                => $itemID,
@@ -355,7 +355,7 @@ class CashierController extends Controller
             $check_no               = $request->payload['check_no'] ?? null;
             $check_amount           = $request->payload['check_amount'] ?? null;
             $check_date             = $request->payload['check_date'] ?? null;
-            $withholding_tax        = floatval(str_replace([',', '₱'], '', $request->payload['withholding_tax']));
+            $withholding_tax        = floatval(str_replace([',', '₱'], '', $request->payload['withholding_tax'] ?? 0));
             $total_payment          = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
 
@@ -468,7 +468,7 @@ class CashierController extends Controller
             $check_no               = $request->payload['check_no'] ?? null;
             $check_amount           = $request->payload['check_amount'] ?? null;
             $check_date             = $request->payload['check_date'] ?? null;
-            $withholding_tax        = floatval(str_replace([',', '₱'], '', $request->payload['withholding_tax']));
+            $withholding_tax        = floatval(str_replace([',', '₱'], '', $request->payload['withholding_tax'] ?? 0));
             $total_payment          = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
 
@@ -552,12 +552,19 @@ class CashierController extends Controller
     {
         try {
             $ORNumber = $request->query('ORNumber');
+            
+            $query = CashAssessment::where('ORNumber', $ORNumber);
+            $ORData = $query->get();
+            $revenueIDs = $ORData->pluck('revenueID')->unique();
+            if ($revenueIDs == 'MD') {
+                $ORData->load('doctor_details');
+            } else {
+                $ORData->load(['items' => function($itemQuery) use ($revenueIDs) {
+                    $itemQuery->whereIn('transaction_code', $revenueIDs);
+                }]);
+            }
 
-            $data = CashAssessment::with('items', 'doctor_details')
-                ->where('ORNumber', $ORNumber)
-                ->get();
-
-            return response()->json(['data' => $data], 200);
+            return response()->json(['data' => $ORData], 200);
 
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -566,72 +573,97 @@ class CashierController extends Controller
 
     public function cancelOR(Request $request)
     {
-        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction(); 
         try {
+            $patient_Id = $request->items['patient_Id'];
+            $case_No = $request->items['case_No'];
+            $refNum = $request->items['refNum'];
             $ORNumber = $request->items['ORNumber'];
             $cancelDate = $request->items['CancelDate'];
             $cancelReason = $request->items['CancelledReason'];
-            $status = $request->items['status'];
-
-            $update = CashORMaster::where('RefNum', $ORNumber)
+    
+            $update = CashORMaster::where('HospNum', $patient_Id)
+                ->where('case_no', $case_No)
+                ->where('RefNum', $ORNumber)
                 ->update([
-                    'Status' => $status,
                     'CancelDate' => $cancelDate,
                     'CancelledBy' => Auth()->user()->idnumber,
                     'CancelledReason' => $cancelReason,
             ]);
-
+    
             if (!$update) {
-                DB::connection('sqlsrv_billingOut')->rollBack();
                 throw new \Exception('Failed to cancel OR');
             } else {
-                $cashAssessment = CashAssessment::where('ORNumber', $ORNumber)->first();
-                if (!$cashAssessment) { 
-                    throw new \Exception('Cash Assessment not found');
-                } else {
-                    $updateCashAssessment = CashAssessment::where('ORNumber', $ORNumber)
-                        ->update([
-                            'recordStatus' => '',
-                            'ORNumber' => '',
-                        ]);
-                    if (!$updateCashAssessment) {
-                        DB::connection('sqlsrv_billingOut')->rollBack();
-                        throw new \Exception('Failed to update Cash Assessment');
-                    } else {
-                        $updateExistingBillingOut = BillingOutModel::where('ornumber', $ORNumber)
-                            ->update([
-                                'updatedBy' => Auth()->user()->idnumber,
-                                'updated_at' => Carbon::now(),
-                        ]);
-                        if ($updateExistingBillingOut) {
-                            $data = BillingOutModel::where('ornumber', $ORNumber)->get();
-                            if ($data) {
-                                foreach ($data as $record) {
-                                    $newRecord = $record->replicate();
-                                    $newRecord->transDate = Carbon::now();
-                                    $newRecord->drcr = 'C';
-                                    $newRecord->quantity = -1;
-                                    $newRecord->amount = $record->amount * -1;
-                                    $newRecord->net_amount = $record->net_amount * -1;
-                                    $newRecord->record_status = $status;
-                                    $newRecord->userId = Auth()->user()->idnumber;
-                                    $newRecord->created_at = Carbon::now();
-                                    $newRecord->createdby = Auth()->user()->idnumber;
-                                    $newRecord->save();
-                                }
-                                DB::connection('sqlsrv_billingOut')->commit();
-                                return response()->json(['message' => 'Successfully cancelled OR'], 200);
-                            }
-                        }
+                $cashAssessment = CashAssessment::where('patient_Id', $patient_Id)
+                    ->where('case_No', $case_No)
+                    ->where('refNum', $refNum)
+                    ->where('ORNumber', $ORNumber)
+                    ->get();
+    
+                if ($cashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found');
+                foreach ($cashAssessment as $item) {
+                    $item->update([
+                        'recordStatus' => '',
+                        'ORNumber' => '',
+                    ]);
+                }
+    
+                $existingBillingOut = BillingOutModel::where('patient_Id', $patient_Id)
+                    ->where('case_No', $case_No)
+                    ->where('ChargeSlip', $refNum)
+                    ->where('ornumber', $ORNumber)
+                    ->get();
+
+                if ($existingBillingOut->isEmpty()) throw new \Exception('Billing Out not found');
+                foreach ($existingBillingOut as $item) {
+                    $item->update([
+                        'updatedBy' => Auth()->user()->idnumber,
+                        'updated_at' => Carbon::now(),
+                    ]);
+                }
+    
+                $replicatedItems = [];
+                foreach ($existingBillingOut as $data) {
+                    $item = $data->replicate();
+                    $item->transDate = Carbon::now();
+                    $item->drcr = 'C';
+                    $item->quantity = $data->quantity * -1;
+                    $item->amount = $data->amount * -1;
+                    $item->net_amount = $data->net_amount * -1;
+                    $item->userId = Auth()->user()->idnumber;
+                    $item->created_at = Carbon::now();
+                    $item->createdby = Auth()->user()->idnumber;
+    
+                    if ($item->save()) {
+                        $replicatedItems[] = $item;
                     }
                 }
-            }
+    
+                if (empty($replicatedItems)) throw new \Exception('No items replicated, submitted empty array');
+                $labExams = LaboratoryMaster::where('patient_Id', $patient_Id)
+                    ->where('case_No', $case_No)
+                    ->where('refNum', $refNum)
+                    ->where('ornumber', $ORNumber)
+                    ->get();
 
+                if ($labExams->isEmpty()) throw new \Exception('Lab Exams not found');
+                foreach ($labExams as $exam) {
+                    $exam->update([
+                        'request_Status' => 'C',
+                        'result_Status' => 'C',
+                    ]);
+                }
+    
+                DB::connection('sqlsrv_billingOut')->commit();
+                return response()->json(['message' => 'Successfully cancelled OR'], 200);
+            }
+    
         } catch(\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+    
 
     public function getpaymentcode() 
     {

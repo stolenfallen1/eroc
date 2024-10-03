@@ -14,5 +14,6 @@ class MedsysERMaster extends Model
     protected $primaryKey = 'IDnum';
     protected $guarded = [];
     public $timestamps = false;
+
     
 }

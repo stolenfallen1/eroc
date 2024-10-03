@@ -785,7 +785,7 @@ class OutpatientRegistrationController extends Controller
             $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
             $today = Carbon::now()->format('Y-m-d');
             
-            $data->whereHas('patientRegistry', function($query) use ($today) {
+            $data->whereHas('patientRegistryToday', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2); 
                 $query->where('isRevoked', 0);
                 $query->whereDate('registry_Date', $today);

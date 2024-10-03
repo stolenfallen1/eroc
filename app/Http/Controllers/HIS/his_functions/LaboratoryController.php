@@ -24,6 +24,8 @@ class LaboratoryController extends Controller
             $data = PatientRegistry::with('patient_details')
                 ->whereHas('lab_services', function($query) {
                     $query->whereNotNull('case_No');
+                    // $query->where('request_Status', '!=', 'C'); // C = Cancelled OR
+                    // $query->where('result_Status', '!=', 'C'); // C = Cancelled OR
                 })
                 ->where('mscAccount_Trans_Types', 2) 
                 // ->whereDate('created_at', $today)
@@ -91,6 +93,8 @@ class LaboratoryController extends Controller
             $data = LaboratoryExamsView::query()
                 ->where('caseno', $case_No)
                 ->where('trans_types', $trans_types)
+                ->where('request_Status', '!=', 'C') 
+                ->where('result_Status', '!=', 'C') 
                 ->orderByRaw('CASE WHEN cancelledby IS NULL AND cancelleddate IS NULL THEN 0 ELSE 1 END') 
                 ->orderBy('refNum', 'desc');
             $page = Request()->per_page;
@@ -114,6 +118,8 @@ class LaboratoryController extends Controller
             $data = LaboratoryExamsView::query()
                 ->where('caseno', $case_No)
                 ->where('trans_types', $trans_types)
+                ->where('request_Status', '!=', 'C') 
+                ->where('result_Status', '!=', 'C') 
                 ->whereNull('cancelledby')
                 ->whereNull('cancelleddate')
                 ->orderBy('refNum', 'desc');

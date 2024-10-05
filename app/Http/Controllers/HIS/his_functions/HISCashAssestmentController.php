@@ -7,6 +7,7 @@ use App\Helpers\GetIP;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\CashAssessment;
 use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -63,6 +64,14 @@ class HISCashAssestmentController extends Controller
     {
         DB::beginTransaction();
         try {
+            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            
+            if(!$checkUser):
+                return response()->json([
+                    'message' => 'Incorrect Username or Password',
+                ], 404);
+            endif;
+
             $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Charge Slip Sequence not found');
@@ -139,9 +148,9 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
                         'Barcode' => $barcode,
-                        'userId' => Auth()->user()->idnumber,
+                        'userId' => $checkUser->idnumber,
                         'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => Auth()->user()->idnumber,
+                        'createdBy' => $checkUser->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
                 }
@@ -171,9 +180,9 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorID' => $requesting_doctor_id,
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
-                        'userId' => Auth()->user()->idnumber,
+                        'userId' => $checkUser->idnumber,
                         'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => Auth()->user()->idnumber,
+                        'createdBy' => $checkUser->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
                 }
@@ -199,6 +208,14 @@ class HISCashAssestmentController extends Controller
     {
         DB::beginTransaction();
         try {
+            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            
+            if(!$checkUser):
+                return response()->json([
+                    'message' => 'Incorrect Username or Password',
+                ], 404);
+            endif;
+
             $items = $request->items;
             foreach ($items as $item) {
                 $patient_id = $item['patient_Id'];
@@ -214,7 +231,7 @@ class HISCashAssestmentController extends Controller
 
                 $existingData->updateOrFail([
                     'dateRevoked' => Carbon::now(),
-                    'revokedBy' => Auth()->user()->idnumber,
+                    'revokedBy' => $checkUser->idnumber,
                 ]);
 
                 if ($existingData) {
@@ -232,9 +249,9 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorID' => $existingData->requestDoctorID,
                         'requestDoctorName' => $existingData->requestDoctorName,
                         'departmentID' => $existingData->departmentID,
-                        'userId' => Auth()->user()->idnumber,
+                        'userId' => $checkUser->idnumber,
                         'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => Auth()->user()->idnumber,
+                        'createdBy' => $checkUser->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
                 }

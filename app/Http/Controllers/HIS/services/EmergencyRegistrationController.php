@@ -32,6 +32,7 @@ use App\Models\HIS\PatientPrivilegedCard;
 use App\Models\HIS\PatientAppointmentsTemporary;
 use App\Models\HIS\PatientOBGYNHistory;
 use App\Rules\UniquePatientRegistration;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,8 +44,10 @@ use App\Helpers\HIS\SysGlobalSetting;
 class EmergencyRegistrationController extends Controller
 {
     protected $check_is_allow_medsys;
+    
     public function __construct() {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+
 
     }
     //
@@ -164,6 +167,24 @@ class EmergencyRegistrationController extends Controller
         }
     }
 
+    public function getStaffId(Request $request) {
+        // $username = $request->payload['username'];
+        // $password = $request->payload['password'];
+        $username = 'er001';
+        $password = '12345';
+        $data = User::with('role')->where([['idnumber', $username], ['passcode', $password]])->get();
+        $staff = $data->map(function($item){
+            return [
+                'idnumber'  => $item->idnumber,
+                'lastname'  => $item->lastname,
+                'firstname' => $item->firstname,
+                'role_id'   => $item->role_id
+            ];
+        });
+
+        return $staff;
+    }
+
      public function register(Request $request) {
 
         DB::connection('sqlsrv_patient_data')->beginTransaction();
@@ -171,6 +192,11 @@ class EmergencyRegistrationController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
 
         try {
+            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            
+            if(!$checkUser):
+                return response()->json([$message='Incorrect Username or Password'], 404);
+            endif;
 
             SystemSequence::where('code','MPID')->increment('seq_no');
             SystemSequence::where('code','MERN')->increment('seq_no');
@@ -346,7 +372,7 @@ class EmergencyRegistrationController extends Controller
                 'branch_id'                 => $request->payload['branch_id'] ?? null,
                 'previous_patient_id'       => $request->payload['previous_patient_id'] ?? null,
                 'medsys_patient_id'         => $request->payload['medsys_patient_id'] ?? null,
-                'createdBy'                 => Auth()->user()->idnumber,
+                'createdBy'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -359,7 +385,7 @@ class EmergencyRegistrationController extends Controller
                 'site'                  => $request->payload['site'] ?? null,
                 'administrator_Name'    => $request->payload['administrator_Name'] ?? null,
                 'notes'                 => $request->payload['notes'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -368,7 +394,7 @@ class EmergencyRegistrationController extends Controller
                 'diagnose_Description'      => $request->payload['diagnose_Description'] ?? null,
                 'diagnosis_Date'            => $request->payload['diagnosis_Date'] ?? null,
                 'treament'                  => $request->payload['treament'] ?? null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -376,14 +402,14 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'                => $patient_id,
                 'description'               => $request->payload['description'] ?? null,
                 'date_Of_Procedure'         => $request->payload['date_Of_Procedure'] ?? null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
             $pastientPastAllergyHistoryData =[
                 'patient_Id'                => $patient_id,
                 'family_History'            => $request->payload['family_History'] ?? null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -391,14 +417,14 @@ class EmergencyRegistrationController extends Controller
                 'history_Id'            => '',
                 'allergy_Type_Id'       => $request->payload['allergy_Type_Id'] ?? null,
                 'duration'              => $request->payload['duration'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
             $pastientPastSymptomsOfAllergyData =[
                 'history_Id'            => '',
                 'symptom_Description'   => $request->payload['symptom_Description'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -406,7 +432,7 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'        => $patient_id,
                 'case_No'           => $registry_id,
                 'family_History'    => $request->payload['family_History'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now(),
             ];
 
@@ -414,14 +440,14 @@ class EmergencyRegistrationController extends Controller
                 'allergies_Id'        => '',
                 'allergy_Type_Id'   => $request->payload['allergy_Type_Id'] ?? null,
                 'duration'          => $request->payload['duration'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now(),
             ];
 
             $patientSymptomsOfAllergy = [
                 'allergies_Id'            => '',
                 'symptom_Description'   => $request->payload['symptom_Description'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -435,7 +461,7 @@ class EmergencyRegistrationController extends Controller
                 'administered_By'       => $request->payload['administered_By'] ?? null,
                 'reference_num'         => $request->payload['reference_num'] ?? null,
                 'transaction_num'       => $request->payload['transaction_num'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -466,7 +492,7 @@ class EmergencyRegistrationController extends Controller
                 'physicalExamination_LympNodes'             => $request->payload['physicalExamination_LympNodes'] ?? null,
                 'physicalExamination_Extremities'           => $request->payload['physicalExamination_Extremities'] ?? null,
                 'physicalExamination_Neurological'          => $request->payload['physicalExamination_Neurological'] ?? null,
-                'createdby'                                 => Auth()->user()->idnumber,
+                'createdby'                                 => $checkUser->idnumber,
                 'created_at'                                => Carbon::now(),
             ];
 
@@ -480,7 +506,7 @@ class EmergencyRegistrationController extends Controller
                 'site'                  => $request->payload['site'] ?? null,
                 'administrator_Name'    => $request->payload['administrator_Name'] ?? null,
                 'Notes'                 => $request->payload['Notes'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -491,7 +517,7 @@ class EmergencyRegistrationController extends Controller
                 'date_Of_Procedure'             => $request->payload['date_Of_Procedure'] ?? null,
                 'performing_Doctor_Id'          => $request->payload['performing_Doctor_Id'] ?? null,
                 'performing_Doctor_Fullname'    => $request->payload['performing_Doctor_Fullname'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
+                'createdby'                     => $checkUser->idnumber,
                 'created_at'                    => Carbon::now(),
             ];
 
@@ -506,7 +532,7 @@ class EmergencyRegistrationController extends Controller
                 'pulseRate'                 => isset($request->payload['pulseRate']) ? (int)$request->payload['pulseRate'] : null,
                 'respiratoryRate'           => isset($request->payload['respiratoryRate']) ? (int)$request->payload['respiratoryRate'] : null,
                 'oxygenSaturation'          => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -541,7 +567,7 @@ class EmergencyRegistrationController extends Controller
                 'mscBroughtBy_Relationship_Id'              => $request->payload['mscBroughtBy_Relationship_Id'] ?? null,
                 'queue_Number'                              => $request->payload['queue_Number'] ?? null,
                 'arrived_Date'                              => Carbon::now(),
-                'registry_Userid'                           => Auth()->user()->idnumber,
+                'registry_Userid'                           => $checkUser->idnumber,
                 'registry_Date'                             => Carbon::now(),
                 'registry_Status'                           => $request->payload['registry_Status'] ?? 1,
                 'registry_Hostname'                         => $request->payload['registry_Hostname'] ?? null,
@@ -674,7 +700,7 @@ class EmergencyRegistrationController extends Controller
                 'isBadDebt'                                 => $request->payload['isBadDebt'] ?? null,
                 'registry_Remarks'                          => $request->payload['registry_Remarks'] ?? null,
                 'medsys_map_idnum'                          => $request->payload['medsys_map_idnum'] ?? null,
-                'createdBy'                                 => Auth()->user()->idnumber,
+                'createdBy'                                 => $checkUser->idnumber,
                 'created_at'                                => Carbon::now(),           
             ];    
 
@@ -682,14 +708,14 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'    => $patient_id,
                 'case_No'       => $registry_id,
                 'description'   => $request->payload['description'] ?? null,
-                'createdby'     => Auth()->user()->idnumber,
+                'createdby'     => $checkUser->idnumber,
                 'created_at'    => Carbon::now(),
             ];
 
             $patientPastBadHabitsData = [
                 'patient_Id'    => $patient_id,
                 'description'   => '',
-                'createdby'     => Auth()->user()->idnumber,
+                'createdby'     => $checkUser->idnumber,
                 'created_at'    => Carbon::now(),
             ];
 
@@ -697,7 +723,7 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'        => $patient_id,
                 'drug_Description'  => $request->payload['drug_Description'] ?? null,
                 'hospital'          => $request->payload['hospital'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now(),
             ];
 
@@ -707,7 +733,7 @@ class EmergencyRegistrationController extends Controller
                 'doctor_Id'         => $request->payload['doctor_Id'] ?? null,
                 'doctors_Fullname'  => $request->payload['doctors_Fullname'] ?? null,
                 'role_Id'           => $request->payload['role_Id'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now(),
             ];
 
@@ -720,7 +746,7 @@ class EmergencyRegistrationController extends Controller
                 'uterine_Contraction'       => $request->payload['uterine_Contraction'] ?? null,
                 'hyperactive_Bowel_Sounds'  => $request->payload['hyperactive_Bowel_Sounds'] ?? null,
                 'others_Description'        => $request->payload['others_Description'] ?? null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -764,7 +790,7 @@ class EmergencyRegistrationController extends Controller
                 'weightloss'                        => $request->payload['weightloss'] ?? null,
                 'others'                            => $request->payload['others'] ?? null,
                 'others_Description'                => $request->payload['others_Description'] ?? null,
-                'createdby'                         => Auth()->user()->idnumber,
+                'createdby'                         => $checkUser->idnumber,
                 'created_at'                        => Carbon::now(),
             ];
 
@@ -779,7 +805,7 @@ class EmergencyRegistrationController extends Controller
                 'intercostalrib_Clavicular_Retraction'  => $request->payload['intercostalrib_Clavicular_Retraction'] ?? null,
                 'wheezes'                               => $request->payload['wheezes'] ?? null,
                 'others_Description'                    => $request->payload['others_Description'] ?? null,
-                'createdby'                             => Auth()->user()->idnumber,
+                'createdby'                             => $checkUser->idnumber,
                 'created_at'                            => Carbon::now(),
             ];
 
@@ -787,7 +813,7 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'                            => $patient_id,
                 'case_No'                               => $registry_id,
                 'doctors_OrdersAction'                  => $request->payload['doctors_OrdersAction'] ?? null,
-                'createdby'                             => Auth()->user()->idnumber,
+                'createdby'                             => $checkUser->idnumber,
                 'created_at'                            => Carbon::now(),
             ];
 
@@ -802,7 +828,7 @@ class EmergencyRegistrationController extends Controller
                 'murmurs'                   => $request->payload['murmurs'] ?? null,
                 'pericardial_Bulge'         => $request->payload['pericardial_Bulge'] ?? null,
                 'others_Description'        => $request->payload['others_Description'] ?? null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -811,7 +837,7 @@ class EmergencyRegistrationController extends Controller
                 'case_No'               => $registry_id,
                 'awake_And_Alert'       => $request->payload['awake_And_Alert'] ?? null,
                 'altered_Sensorium'     => $request->payload['altered_Sensorium'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -827,7 +853,7 @@ class EmergencyRegistrationController extends Controller
                 'dry_Mucous_Membrane'           => $request->payload['dry_Mucous_Membrane'] ?? null,
                 'sunken_Fontanelle'             => $request->payload['sunken_Fontanelle'] ?? null,
                 'others_description'            => $request->payload['others_description'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
+                'createdby'                     => $checkUser->idnumber,
                 'created_at'                    => Carbon::now(),
             ];
 
@@ -839,7 +865,7 @@ class EmergencyRegistrationController extends Controller
                 'cervical_Dilatation'               => $request->payload['cervical_Dilatation'] ?? null,
                 'presence_Of_AbnormalDischarge'     => $request->payload['presence_Of_AbnormalDischarge'] ?? null,
                 'others_Description'                => $request->payload['others_Description'] ?? null,
-                'createdby'                         => Auth()->user()->idnumber,
+                'createdby'                         => $checkUser->idnumber,
                 'created_at'                        => Carbon::now(),
             ];
 
@@ -854,7 +880,7 @@ class EmergencyRegistrationController extends Controller
                 'poor_Muscle_Tone_Strength'     => $request->payload['poor_Muscle_Tone_Strength'] ?? null,
                 'abnormal_Decreased_Sensation'  => $request->payload['abnormal_Decreased_Sensation'] ?? null,
                 'poor_Coordination'             => $request->payload['poor_Coordination'] ?? null,
-                'createdby'                     => Auth()->user()->idnumber,
+                'createdby'                     => $checkUser->idnumber,
                 'created_at'                    => Carbon::now(),
             ];
 
@@ -872,7 +898,7 @@ class EmergencyRegistrationController extends Controller
                 'cyanosis_Mottled_Skin'     => $request->payload['cyanosis_Mottled_Skin'] ?? null,
                 'poor_Skin_Turgor'          => $request->payload['poor_Skin_Turgor'] ?? null,
                 'others_Description'        => $request->payload['others_Description'] ?? null,
-                'createdby'                 => Auth()->user()->idnumber,
+                'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
             ];
 
@@ -1009,7 +1035,7 @@ class EmergencyRegistrationController extends Controller
                 'followUp_Prenatal_BloodPresureDiastolic_12th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_12th'] ?? null,
                 'followUp_Prenatal_Temperature_12th'                    => $request->payload['followUp_Prenatal_Temperature_12th'] ?? null,
                 'followUp_Prenatal_Remarks'                             => $request->payload['followUp_Prenatal_Remarks'] ?? null,
-                'createdby'                                             => Auth()->user()->idnumber,
+                'createdby'                                             => $checkUser->idnumber,
                 'created_at'                                            => Carbon::now(),
             ];
 
@@ -1019,7 +1045,7 @@ class EmergencyRegistrationController extends Controller
                 'outcome'           => $request->payload['outcome'] ?? null,
                 'deliveryDate'      => $request->payload['deliveryDate'] ?? null,
                 'complications'     => $request->payload['complications'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now(),
             ];
 
@@ -1027,7 +1053,7 @@ class EmergencyRegistrationController extends Controller
                 'OBGYNHistoryID'    => $patient_id,
                 'conditionName'     => $registry_id,
                 'diagnosisDate'     => $request->payload['diagnosisDate'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now(),
             ];
 
@@ -1041,7 +1067,7 @@ class EmergencyRegistrationController extends Controller
                 'adverse_Side_Effect'   => $request->payload['adverse_Side_Effect'] ?? null,
                 'hospital'              => $request->payload['hospital'] ?? null,
                 'isPrescribed'          => $request->payload['isPrescribed'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now(),
             ];
 
@@ -1061,7 +1087,7 @@ class EmergencyRegistrationController extends Controller
                 'points_Redeemed'       => $request->payload['points_Redeemed'] ?? null,
                 'points_Forfeited'      => $request->payload['points_Forfeited'] ?? null,
                 'card_Status'           => $request->payload['card_Status'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now()
             ];
 
@@ -1071,7 +1097,7 @@ class EmergencyRegistrationController extends Controller
                 'transaction_Date'  => Carbon::now(),
                 'description'       => $request->payload['description'] ?? null,
                 'points'            => $request->payload['points'] ?? 1000,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now()
             ];
 
@@ -1081,7 +1107,7 @@ class EmergencyRegistrationController extends Controller
                 'transaction_Type'  => $request->payload['transaction_Type'] ?? 'Test Transaction',
                 'description'       => $request->payload['description'] ?? null,
                 'points'            => $request->payload['points'] ?? 1000,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now()
             ];
 
@@ -1101,7 +1127,7 @@ class EmergencyRegistrationController extends Controller
                 'intructedBy_clinicalPharmacist'    => $request->payload['intructedBy_clinicalPharmacist'] ?? null,
                 'intructedBy_Dietitians'            => $request->payload['intructedBy_Dietitians'] ?? null,
                 'intructedBy_Nurse'                 => $request->payload['intructedBy_Nurse'] ?? null,
-                'createdby'                         => Auth()->user()->idnumber,
+                'createdby'                         => $checkUser->idnumber,
                 'created_at'                        => Carbon::now()
             ];
 
@@ -1113,7 +1139,7 @@ class EmergencyRegistrationController extends Controller
                 'dosage'                => $request->payload['dosage'] ?? null,
                 'frequency'             => $request->payload['frequency'] ?? null,
                 'purpose'               => $request->payload['purpose'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now()
             ];
 
@@ -1124,7 +1150,7 @@ class EmergencyRegistrationController extends Controller
                 'doctor_Id'             => $request->payload['doctor_Id'] ?? null,
                 'doctor_Name'           => $request->payload['doctor_Name'] ?? null,
                 'notes'                 => $request->payload['notes'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now()
             ];
 
@@ -1134,7 +1160,7 @@ class EmergencyRegistrationController extends Controller
                 'test_Name'         => $request->payload['test_Name'] ?? null,
                 'test_DateTime'     => $request->payload['test_DateTime'] ?? null,
                 'notes'             => $request->payload['notes'] ?? null,
-                'createdby'         => Auth()->user()->idnumber,
+                'createdby'         => $checkUser->idnumber,
                 'created_at'        => Carbon::now()
             ];
 
@@ -1144,7 +1170,7 @@ class EmergencyRegistrationController extends Controller
                 'doctor_Name'           => $request->payload['doctor_Name'] ?? null,
                 'doctor_Specialization' => $request->payload['doctor_Specialization'] ?? null,
                 'schedule_Date'         => $request->payload['schedule_Date'] ?? null,
-                'createdby'             => Auth()->user()->idnumber,
+                'createdby'             => $checkUser->idnumber,
                 'created_at'            => Carbon::now()
             ];
 
@@ -1260,11 +1286,20 @@ class EmergencyRegistrationController extends Controller
 
         try {
 
+            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            
+            if(!$checkUser):
+                return response()->json([
+                    'message' => 'Incorrect Username or Password',
+                ], 404);
+            endif;
+
             $today = Carbon::now()->format('Y-m-d');
             $userId = Auth()->user()->idnumber;
             $currentTimestamp = Carbon::now();
 
             $patient = Patient::where('patient_Id', $id)->first();
+            
             if($patient):
 
                 $patient_id = $patient->patient_Id;
@@ -1374,13 +1409,16 @@ class EmergencyRegistrationController extends Controller
                     'branch_id'                 => $request->payload['branch_id'] ?? null,
                     'previous_patient_id'       => $request->payload['previous_patient_id'] ?? null,
                     'medsys_patient_id'         => $request->payload['medsys_patient_id'] ?? null,
-                    'createdBy'                 => Auth()->user()->idnumber,
-                    'created_at'                => Carbon::now(),
+                    'createdBy'                 => $checkUser->idnumber,
+                    'created_at'                => $currentTimestamp,
+                    'updatedBy'                 => $checkUser->idnumber,
+                    'updated_at'                => $currentTimestamp,   
                 ];
+
                 $patient = Patient::updateOrCreate(['patient_Id' => $id], $patientData);
 
             endif;
-            
+
                 $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
                 ->whereDate('created_at', $today)
                 ->exists();
@@ -1411,14 +1449,14 @@ class EmergencyRegistrationController extends Controller
 
                 $mergeToPatientRelatedTable = [
                     'patient_Id' => $patient_id,
-                    'createdBy'  => $userId,
+                    'createdBy'  => $checkUser->idnumber,
                     'created_at' => $currentTimestamp
                 ];
 
                 $mergeToRegistryRelatedTable = [
                     'patient_Id' => $patient_id,
                     'case_No'    => $registry_id,
-                    'createdBy'  => $userId,
+                    'createdBy'  => $checkUser->idnumber,
                     'created_at' => $currentTimestamp
                 ];
 
@@ -1673,7 +1711,7 @@ class EmergencyRegistrationController extends Controller
                     'branch_id'                 => Arr::get($request->payload, 'branch_id', optional($patient)->branch_id),
                     'previous_patient_id'       => Arr::get($request->payload, 'previous_patient_id', optional($patient)->previous_patient_id),
                     'medsys_patient_id'         => Arr::get($request->payload, 'medsys_patient_id', optional($patient)->medsys_patient_id),
-                    'updatedBy'                 => $userId,
+                    'updatedBy'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,   
                 ];
 
@@ -1685,7 +1723,7 @@ class EmergencyRegistrationController extends Controller
                     'site'                  => Arr::get($request->payload, 'site', optional($pastImmunization)->site),
                     'administrator_Name'    => Arr::get($request->payload, 'administrator_Name', optional($pastImmunization)->administrator_Name),
                     'notes'                 => Arr::get($request->payload, 'notes', optional($pastImmunization)->notes),
-                    'updatedby'             => $userId,
+                    'updatedby'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -1693,39 +1731,39 @@ class EmergencyRegistrationController extends Controller
                     'diagnose_Description'      => Arr::get($request->payload, 'diagnose_Description', optional($pastMedicalHistory)->diagnose_Description),
                     'diagnosis_Date'            => Arr::get($request->payload, 'diagnosis_Date', optional($pastMedicalHistory)->diagnosis_Date),
                     'treament'                  => Arr::get($request->payload, 'treament', optional($pastMedicalHistory)->treament),
-                    'updatedby'                 => $userId,
+                    'updatedby'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
 
                 $pastientPastMedicalProcedureData = [
                     'description'               => Arr::get($request->payload, 'description', optional($pastMedicalProcedure)->description),
                     'date_Of_Procedure'         => Arr::get($request->payload, 'date_Of_Procedure', optional($pastMedicalProcedure)->date_Of_Procedure),
-                    'updatedby'                 => $userId,
+                    'updatedby'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
 
                 $pastientPastAllergyHistoryData = [
                     'family_History'            => Arr::get($request->payload, 'family_History', optional($pastAllergyHistory)->family_History),
-                    'updatedBy'                 => $userId,
+                    'updatedBy'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
 
                 $pastientPastCauseOfAllergyData = [
                     'allergy_Type_Id'       => Arr::get($request->payload, 'allergy_Type_Id', optional($pastCauseOfAllergy)->allergy_Type_Id),
                     'duration'              => Arr::get($request->payload, 'duration', optional($pastCauseOfAllergy)->duration),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
                 $pastientPastSymptomsOfAllergyData = [
                     'symptom_Description'   => Arr::get($request->payload, 'symptom_Description', optional($pastSymtomsOfAllergy)->symptom_Description),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
                 $patientAllergyData = [
                     'family_History'    => Arr::get($request->payload, 'family_History', optional($allergy)->family_History),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
@@ -1733,33 +1771,33 @@ class EmergencyRegistrationController extends Controller
                     'allergies_Id'      => optional($allergy)->id,
                     'allergy_Type_Id'   => Arr::get($request->payload, 'allergy_Type_Id', optional($causeOfAllergy)->allergy_Type_Id),
                     'duration'          => Arr::get($request->payload, 'duration', optional($causeOfAllergy)->duration),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
                 $patientSymptomsOfAllergyData = [
                     'allergies_Id'         => optional($allergy)->id, 
                     'symptom_Description'  => Arr::get($request->payload, 'symptom_Description', optional($symptomsOfAllergy)->symptom_Description),
-                    'updatedBy'            => $userId,
+                    'updatedBy'            => $checkUser->idnumber,
                     'updated_at'           => $currentTimestamp,
                 ];
 
                 $patientBadHabitsData = [
                     'description'   => Arr::get($request->payload, 'description', optional($badHabits)->description),
-                    'updatedBy'     => $userId,
+                    'updatedBy'     => $checkUser->idnumber,
                     'updated_at'    => $currentTimestamp,
                 ];
 
                 $patientPastBadHabitsData = [
                     'description'   => Arr::get($request->payload, 'description', optional($pastBadHabits)->description),
-                    'updatedBy'     => $userId,
+                    'updatedBy'     => $checkUser->idnumber,
                     'updated_at'    => $currentTimestamp,
                 ];
 
                 $patientDrugUsedForAllergyData = [
                     'drug_Description'  => Arr::get($request->payload, 'drug_Description', optional($drugUsedForAllergy)->drug_Description),
                     'hospital'          => Arr::get($request->payload, 'hospital', optional($drugUsedForAllergy)->hospital),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
@@ -1767,7 +1805,7 @@ class EmergencyRegistrationController extends Controller
                     'doctor_Id'         => Arr::get($request->payload, 'doctor_Id', optional($patientDoctors)->doctor_Id),
                     'doctors_Fullname'  => Arr::get($request->payload, 'doctors_Fullname', optional($patientDoctors)->doctors_Fullname),
                     'role_Id'           => Arr::get($request->payload, 'role_Id', optional($patientDoctors)->role_Id),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
@@ -1778,7 +1816,7 @@ class EmergencyRegistrationController extends Controller
                     'uterine_Contraction'       => Arr::get($request->payload, 'uterine_Contraction', optional($physicalAbdomen)->uterine_Contraction),
                     'hyperactive_Bowel_Sounds'  => Arr::get($request->payload, 'hyperactive_Bowel_Sounds', optional($physicalAbdomen)->hyperactive_Bowel_Sounds),
                     'others_Description'        => Arr::get($request->payload, 'others_Description', optional($physicalAbdomen)->others_Description),
-                    'updatedBy'                 => $userId,
+                    'updatedBy'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
 
@@ -1820,7 +1858,7 @@ class EmergencyRegistrationController extends Controller
                     'weightloss'                      => Arr::get($request->payload, 'weightloss', optional($pertinentSignAndSymptoms)->weightloss),
                     'others'                          => Arr::get($request->payload, 'others', optional($pertinentSignAndSymptoms)->others),
                     'others_Description'              => Arr::get($request->payload, 'others_Description', optional($pertinentSignAndSymptoms)->others_Description),
-                    'updatedBy'                       => $userId,
+                    'updatedBy'                       => $checkUser->idnumber,
                     'updated_at'                      => $currentTimestamp,
                 ];
 
@@ -1833,13 +1871,13 @@ class EmergencyRegistrationController extends Controller
                     'intercostalrib_Clavicular_Retraction'  => Arr::get($request->payload, 'intercostalrib_Clavicular_Retraction', optional($physicalExamtionChestLungs)->intercostalrib_Clavicular_Retraction),
                     'wheezes'                               => Arr::get($request->payload, 'wheezes', optional($physicalExamtionChestLungs)->wheezes),
                     'others_Description'                    => Arr::get($request->payload, 'others_Description', optional($physicalExamtionChestLungs)->others_Description),
-                    'updatedBy'                             => $userId,
+                    'updatedBy'                             => $checkUser->idnumber,
                     'updated_at'                            => $currentTimestamp,
                 ];
 
                 $patientCourseInTheWardData = [
                     'doctors_OrdersAction'  => Arr::get($request->payload, 'doctors_OrdersAction', optional($courseInTheWard)->doctors_OrdersAction),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -1852,14 +1890,14 @@ class EmergencyRegistrationController extends Controller
                     'murmurs'                   => Arr::get($request->payload, 'murmurs', optional($physicalExamtionCVS)->murmurs),
                     'pericardial_Bulge'         => Arr::get($request->payload, 'pericardial_Bulge', optional($physicalExamtionCVS)->pericardial_Bulge),
                     'others_Description'        => Arr::get($request->payload, 'others_Description', optional($physicalExamtionCVS)->others_Description),
-                    'updatedBy'                 => $userId,
+                    'updatedBy'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
 
                 $patientPhysicalExamtionGeneralSurveyData = [
                     'awake_And_Alert'       => Arr::get($request->payload, 'awake_And_Alert', optional($physicalExamtionGeneralSurvey)->awake_And_Alert),
                     'altered_Sensorium'     => Arr::get($request->payload, 'altered_Sensorium', optional($physicalExamtionGeneralSurvey)->altered_Sensorium),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -1873,7 +1911,7 @@ class EmergencyRegistrationController extends Controller
                     'dry_Mucous_Membrane'           => Arr::get($request->payload, 'dry_Mucous_Membrane', optional($physicalExamtionHEENT)->dry_Mucous_Membrane),
                     'sunken_Fontanelle'             => Arr::get($request->payload, 'sunken_Fontanelle', optional($physicalExamtionHEENT)->sunken_Fontanelle),
                     'others_description'            => Arr::get($request->payload, 'others_description', optional($physicalExamtionHEENT)->others_description),
-                    'updatedBy'                     => $userId,
+                    'updatedBy'                     => $checkUser->idnumber,
                     'updated_at'                    => $currentTimestamp,
                 ];
 
@@ -1883,7 +1921,7 @@ class EmergencyRegistrationController extends Controller
                     'cervical_Dilatation'               => Arr::get($request->payload, 'cervical_Dilatation', optional($physicalGUIE)->cervical_Dilatation),
                     'presence_Of_AbnormalDischarge'     => Arr::get($request->payload, 'presence_Of_AbnormalDischarge', optional($physicalGUIE)->presence_Of_AbnormalDischarge),
                     'others_Description'                => Arr::get($request->payload, 'others_Description', optional($physicalGUIE)->others_Description),
-                    'updatedBy'                         => $userId,
+                    'updatedBy'                         => $checkUser->idnumber,
                     'updated_at'                        => $currentTimestamp,
                 ];
 
@@ -1896,7 +1934,7 @@ class EmergencyRegistrationController extends Controller
                     'poor_Muscle_Tone_Strength'     => Arr::get($request->payload, 'poor_Muscle_Tone_Strength', optional($physicalNeuroExam)->poor_Muscle_Tone_Strength),
                     'abnormal_Decreased_Sensation'  => Arr::get($request->payload, 'abnormal_Decreased_Sensation', optional($physicalNeuroExam)->abnormal_Decreased_Sensation),
                     'poor_Coordination'             => Arr::get($request->payload, 'poor_Coordination', optional($physicalNeuroExam)->poor_Coordination),
-                    'updatedBy'                     => $userId,
+                    'updatedBy'                     => $checkUser->idnumber,
                     'updated_at'                    => $currentTimestamp,
                 ];
 
@@ -1912,7 +1950,7 @@ class EmergencyRegistrationController extends Controller
                     'cyanosis_Mottled_Skin'     => Arr::get($request->payload, 'cyanosis_Mottled_Skin', optional($physicalSkinExtremities)->cyanosis_Mottled_Skin),
                     'poor_Skin_Turgor'          => Arr::get($request->payload, 'poor_Skin_Turgor', optional($physicalSkinExtremities)->poor_Skin_Turgor),
                     'others_Description'        => Arr::get($request->payload, 'others_Description', optional($physicalSkinExtremities)->others_Description),
-                    'updatedBy'                 => $userId,
+                    'updatedBy'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
 
@@ -2047,7 +2085,7 @@ class EmergencyRegistrationController extends Controller
                     'followUp_Prenatal_BloodPresureDiastolic_12th'      => Arr::get($request->payload, 'followUp_Prenatal_BloodPresureDiastolic_12th', optional($OBGYNHistory)->followUp_Prenatal_BloodPresureDiastolic_12th),
                     'followUp_Prenatal_Temperature_12th'                => Arr::get($request->payload, 'followUp_Prenatal_Temperature_12th', optional($OBGYNHistory)->followUp_Prenatal_Temperature_12th),
                     'followUp_Prenatal_Remarks'                         => Arr::get($request->payload, 'followUp_Prenatal_Remarks', optional($OBGYNHistory)->followUp_Prenatal_Remarks),
-                    'updatedBy'                                         => $userId,
+                    'updatedBy'                                         => $checkUser->idnumber,
                     'updated_at'                                        => $currentTimestamp
                 ];
 
@@ -2056,14 +2094,14 @@ class EmergencyRegistrationController extends Controller
                     'outcome'           => Arr::get($request->payload, 'outcome', optional($pregnancyHistory)->outcome),
                     'deliveryDate'      => Arr::get($request->payload, 'deliveryDate', optional($pregnancyHistory)->deliveryDate),
                     'complications'     => Arr::get($request->payload, 'complications', optional($pregnancyHistory)->complications),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
                 $patientGynecologicalConditions = [
                     'conditionName'     => $registry_id,
                     'diagnosisDate'     => Arr::get($request->payload, 'diagnosisDate', optional($gynecologicalConditions)->diagnosisDate),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
@@ -2075,7 +2113,7 @@ class EmergencyRegistrationController extends Controller
                     'adverse_Side_Effect'   => Arr::get($request->payload, 'adverse_Side_Effect', optional($medications)->adverse_Side_Effect),
                     'hospital'              => Arr::get($request->payload, 'hospital', optional($medications)->hospital),
                     'isPrescribed'          => Arr::get($request->payload, 'isPrescribed', optional($medications)->isPrescribed),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -2093,7 +2131,7 @@ class EmergencyRegistrationController extends Controller
                     'intructedBy_clinicalPharmacist'    => Arr::get($request->payload, 'intructedBy_clinicalPharmacist', optional($dischargeInstructions)->intructedBy_clinicalPharmacist),
                     'intructedBy_Dietitians'            => Arr::get($request->payload, 'intructedBy_Dietitians', optional($dischargeInstructions)->intructedBy_Dietitians),
                     'intructedBy_Nurse'                 => Arr::get($request->payload, 'intructedBy_Nurse', optional($dischargeInstructions)->intructedBy_Nurse),
-                    'updatedBy'                         => $userId,
+                    'updatedBy'                         => $checkUser->idnumber,
                     'updated_at'                        => $currentTimestamp,
                 ];
 
@@ -2104,7 +2142,7 @@ class EmergencyRegistrationController extends Controller
                     'dosage'                => Arr::get($request->payload, 'dosage', optional($dischargeMedications)->dosage),
                     'frequency'             => Arr::get($request->payload, 'frequency', optional($dischargeMedications)->frequency),
                     'purpose'               => Arr::get($request->payload, 'purpose', optional($dischargeMedications)->purpose),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -2114,7 +2152,7 @@ class EmergencyRegistrationController extends Controller
                     'doctor_Id'             => Arr::get($request->payload, 'doctor_Id', optional($dischargeFollowUpTreatment)->doctor_Id),
                     'doctor_Name'           => Arr::get($request->payload, 'doctor_Name', optional($dischargeFollowUpTreatment)->doctor_Name),
                     'notes'                 => Arr::get($request->payload, 'notes', optional($dischargeFollowUpTreatment)->notes),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -2123,7 +2161,7 @@ class EmergencyRegistrationController extends Controller
                     'test_Name'         => Arr::get($request->payload, 'test_Name', optional($dischargeFollowUpLaboratories)->test_Name),
                     'test_DateTime'     => Arr::get($request->payload, 'test_DateTime', optional($dischargeFollowUpLaboratories)->test_DateTime),
                     'notes'             => Arr::get($request->payload, 'notes', optional($dischargeFollowUpLaboratories)->notes),
-                    'updatedBy'         => $userId,
+                    'updatedBy'         => $checkUser->idnumber,
                     'updated_at'        => $currentTimestamp,
                 ];
 
@@ -2132,7 +2170,7 @@ class EmergencyRegistrationController extends Controller
                     'doctor_Name'           => Arr::get($request->payload, 'doctor_Name', optional($dischargeDoctorsFollowUp)->doctor_Name),
                     'doctor_Specialization' => Arr::get($request->payload, 'doctor_Specialization', optional($dischargeDoctorsFollowUp)->doctor_Specialization),
                     'schedule_Date'         => Arr::get($request->payload, 'schedule_Date', optional($dischargeDoctorsFollowUp)->schedule_Date),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,
                 ];
 
@@ -2161,7 +2199,7 @@ class EmergencyRegistrationController extends Controller
                     'physicalExamination_LympNodes'             => Arr::get($request->payload, 'physicalExamination_LympNodes', optional($patientHistory)->physicalExamination_LympNodes),
                     'physicalExamination_Extremities'           => Arr::get($request->payload, 'physicalExamination_Extremities', optional($patientHistory)->physicalExamination_Extremities),
                     'physicalExamination_Neurological'          => Arr::get($request->payload, 'physicalExamination_Neurological', optional($patientHistory)->physicalExamination_Neurological),
-                    'updatedBy'                                 => $userId,
+                    'updatedBy'                                 => $checkUser->idnumber,
                     'updated_at'                                => $currentTimestamp,
                 ];
 
@@ -2170,7 +2208,7 @@ class EmergencyRegistrationController extends Controller
                     'date_Of_Procedure'             => Arr::get($request->payload, 'date_Of_Procedure', optional($patientMedicalProcedure)->date_Of_Procedure),
                     'performing_Doctor_Id'          => Arr::get($request->payload, 'performing_Doctor_Id', optional($patientMedicalProcedure)->performing_Doctor_Id),
                     'performing_Doctor_Fullname'    => Arr::get($request->payload, 'performing_Doctor_Fullname', optional($patientMedicalProcedure)->performing_Doctor_Fullname),
-                    'updatedBy'                     => $userId,
+                    'updatedBy'                     => $checkUser->idnumber,
                     'updated_at'                    => $currentTimestamp,
                 ];
 
@@ -2183,7 +2221,7 @@ class EmergencyRegistrationController extends Controller
                     'pulseRate'                 => (int) Arr::get($request->payload, 'pulseRate', optional($patientVitalSign)->pulseRate),
                     'respiratoryRate'           => (int) Arr::get($request->payload, 'respiratoryRate', optional($patientVitalSign)->respiratoryRate),
                     'oxygenSaturation'          => (float) Arr::get($request->payload, 'oxygenSaturation', optional($patientVitalSign)->oxygenSaturation),
-                    'updatedBy'                 => $userId,
+                    'updatedBy'                 => $checkUser->idnumber,
                     'updated_at'                => $currentTimestamp,
                 ];
         
@@ -2216,7 +2254,7 @@ class EmergencyRegistrationController extends Controller
                     'mscBroughtBy_Relationship_Id'              => (int)Arr::get($request->payload, 'mscBroughtBy_Relationship_Id', optional($patientRegistry)->mscBroughtBy_Relationship_Id),
                     'queue_Number'                              => Arr::get($request->payload, 'queue_Number', optional($patientRegistry)->queue_Number),
                     'arrived_Date'                              => $currentTimestamp,
-                    'registry_Userid'                           => $userId,
+                    'registry_Userid'                           => $checkUser->idnumber,
                     'registry_Date'                             => $currentTimestamp,
                     'registry_Status'                           => 1,
                     'registry_Hostname'                         => Arr::get($request->payload, 'registry_Hostname', optional($patientRegistry)->registry_Hostname),
@@ -2349,7 +2387,7 @@ class EmergencyRegistrationController extends Controller
                     'isBadDebt'                                 => Arr::get($request->payload, 'isBadDebt', optional($patientRegistry)->isBadDebt),
                     'registry_Remarks'                          => Arr::get($request->payload, 'registry_Remarks', optional($patientRegistry)->registry_Remarks),
                     'medsys_map_idnum'                          => Arr::get($request->payload, 'medsys_map_idnum', optional($patientRegistry)->medsys_map_idnum),
-                    'updatedBy'                                 => $userId,
+                    'updatedBy'                                 => $checkUser->idnumber,
                     'updated_at'                                => $currentTimestamp,      
                 ];
 
@@ -2361,7 +2399,7 @@ class EmergencyRegistrationController extends Controller
                     'site'                  => Arr::get($request->payload, 'site', optional($patientImmunization)->site),
                     'administrator_Name'    => Arr::get($request->payload, 'administrator_Name', optional($patientImmunization)->administrator_Name),
                     'Notes'                 => Arr::get($request->payload, 'Notes', optional($patientImmunization)->Notes),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,       
                 ];
 
@@ -2372,7 +2410,7 @@ class EmergencyRegistrationController extends Controller
                     'administered_By'       => Arr::get($request->payload, 'administered_By', optional($patientAdministeredMedicine)->administered_By),
                     'reference_num'         => Arr::get($request->payload, 'reference_num', optional($patientAdministeredMedicine)->reference_num),
                     'transaction_num'       => Arr::get($request->payload, 'transaction_num', optional($patientAdministeredMedicine)->transaction_num),
-                    'updatedBy'             => $userId,
+                    'updatedBy'             => $checkUser->idnumber,
                     'updated_at'            => $currentTimestamp,   
                 ];
 

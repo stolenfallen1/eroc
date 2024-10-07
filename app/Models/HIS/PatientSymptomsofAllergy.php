@@ -16,9 +16,4 @@ class PatientSymptomsofAllergy extends Model
     public function allergies() {
         return $this->belongsTo(PatientAllergies::class, 'id','allergies_Id');
     }
-    
-    public function allergy() {
-        return $this->belongsTo(PatientAllergies::class,'allergies_Id', 'id');
-    }
-
 }

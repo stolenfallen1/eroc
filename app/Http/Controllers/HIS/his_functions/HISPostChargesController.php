@@ -10,6 +10,7 @@ use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\LaboratoryMaster;
 use Auth;
 use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -108,6 +109,14 @@ class HISPostChargesController extends Controller
         DB::connection('sqlsrv_billingOut')->beginTransaction();
         DB::connection('sqlsrv_laboratory')->beginTransaction();
         try {
+            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            
+            if(!$checkUser):
+                return response()->json([
+                    'message' => 'Incorrect Username or Password',
+                ], 404);
+            endif;
+
             $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
                 throw new \Exception('Chargeslip sequence not found');
@@ -154,7 +163,7 @@ class HISPostChargesController extends Controller
                         'refNum' => $sequence,
                         'ChargeSlip' => $sequence,
                         'amount' => $amount,
-                        'userId' => Auth()->user()->idnumber,
+                        'userId' => $checkUser->idnumber,
                         'request_doctors_id' => $request_doctors_id,
                         'net_amount' => $amount,
                         'hostName' => (new GetIP())->getHostname(),
@@ -244,7 +253,7 @@ class HISPostChargesController extends Controller
                         'refNum' => $sequence,
                         'ChargeSlip' => $sequence,
                         'amount' => $amount,
-                        'userId' => Auth()->user()->idnumber,
+                        'userId' => $checkUser->idnumber,
                         'net_amount' => $amount,
                         'hostName' => (new GetIP())->getHostname(),
                         'accountnum' => $guarantor_Id,
@@ -269,6 +278,14 @@ class HISPostChargesController extends Controller
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
+            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            
+            if(!$checkUser):
+                return response()->json([
+                    'message' => 'Incorrect Username or Password',
+                ], 404);
+            endif;
+
             $items = $request->items;
             foreach ($items as $item) {
                 $patient_id = $item['patient_Id'];
@@ -294,7 +311,7 @@ class HISPostChargesController extends Controller
                         'quantity' => -1,
                         'refNum' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
-                        'userId' => Auth()->user()->idnumber,
+                        'userId' => $checkUser->idnumber,
                         'net_amount' => $existingData->net_amount * -1,
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $existingData->accountnum,

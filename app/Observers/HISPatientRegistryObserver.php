@@ -54,6 +54,7 @@ class HISPatientRegistryObserver
                                         :   Carbon::now(),
                         'DoctorID1'     =>  $patientRegistry->attending_Doctor   ?? '',
                         'AccountNum'    =>  $patientRegistry->guarantor_Id   ? $patientRegistry->guarantor_Id : $patientRegistry->patient_Id,
+                        'UserID'        => $patientRegistry->createdBy
                     ];
 
                     $isRegisteredToday  = MedsysERMaster::where('IDnum', $IDnum)
@@ -88,6 +89,7 @@ class HISPatientRegistryObserver
                                         :   Carbon::now(),
                         'DoctorID1'     =>  $patientRegistry->attending_Doctor   ?? '',
                         'AccountNum'    =>  $patientRegistry->guarantor_Id   ? $patientRegistry->guarantor_Id : $patientRegistry->patient_Id,
+                        'UserID'        => $patientRegistry->createdBy
                     ];
 
                     $isRegisteredToday  = MedsysERMaster::where('IDnum', $IDnum)
@@ -176,6 +178,7 @@ class HISPatientRegistryObserver
                             'AccountNum'    =>  $patientRegistry->guarantor_Id   
                                             ?   $patientRegistry->guarantor_Id 
                                             :   $patientRegistry->patient_Id,
+                            'UserID'        => $patientRegistry->updatedBy
                         ];
 
                         $isRegisteredToday  = MedsysERMaster::where('IDnum', $erId)

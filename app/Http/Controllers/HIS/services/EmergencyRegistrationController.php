@@ -201,14 +201,17 @@ class EmergencyRegistrationController extends Controller
             SystemSequence::where('code','MPID')->increment('seq_no');
             SystemSequence::where('code','MERN')->increment('seq_no');
             SystemSequence::where('code','MOPD')->increment('seq_no');
+            SystemSequence::where('code','SERCN')->increment('seq_no');
 
             SystemSequence::where('code','MPID')->increment('recent_generated');
             SystemSequence::where('code','MERN')->increment('recent_generated');
             SystemSequence::where('code','MOPD')->increment('recent_generated');
+            SystemSequence::where('code','SERCN')->increment('recent_generated');
         
 
             $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->first();
             $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
+            $er_case_sequence = SystemSequence::where('code', 'SERCN')->select('seq_no', 'recent_generated')->first();
 
             if($this->check_is_allow_medsys) {
 
@@ -224,8 +227,9 @@ class EmergencyRegistrationController extends Controller
             
             } else {
             
-                $patient_id             = $request->payload['patient_Id'] ?? intval($sequence->seq_no + 1);
-                $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
+                $patient_id             = $request->payload['patient_Id'] ?? intval($sequence->seq_no);
+                $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no);
+                $er_Case_No             = $request->payload['er_Case_No'] ?? intval($er_case_sequence->seq_no);
             }
             
             $patientIdentifier      = $request->payload['patientIdentifier'] ?? null;
@@ -262,6 +266,12 @@ class EmergencyRegistrationController extends Controller
                     'seq_no'            => $registry_id,
                     'recent_generated'  => $registry_id
                 ]);
+
+                $er_case_sequence->where('code', 'SERCN')->update([
+                    'seq_no'            => $er_Case_No,
+                    'recent_generated'  => $er_Case_No
+                ]);
+                
             endif;
 
             $patientRule = [
@@ -1424,7 +1434,11 @@ class EmergencyRegistrationController extends Controller
                 ->exists();
 
                 SystemSequence::where('code','MERN')->increment('seq_no');
+                SystemSequence::where('code','MOPD')->increment('seq_no');
+                SystemSequence::where('code','SERCN')->increment('seq_no');
+
                 $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
+                $er_case_sequence = SystemSequence::where('code', 'SERCN')->select('seq_no', 'recent_generated')->first();
 
                 if($this->check_is_allow_medsys) {
 
@@ -1432,7 +1446,7 @@ class EmergencyRegistrationController extends Controller
             
                         DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
                         DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('ERNum');
-
+            
                         $check_medsys_series_no = MedsysSeriesNo::select('OPDId', 'ERNum')->first();
                         $registry_id = $check_medsys_series_no->OPDId;
                         $er_Case_No  = $check_medsys_series_no->ERNum;
@@ -1440,11 +1454,13 @@ class EmergencyRegistrationController extends Controller
                     } else {
             
                         $registry_id = $request->payload['registry_id'] ?? $registry_sequence->seq_no;
+                        $er_Case_No = $request->payload['er_Case_No'] ?? $er_case_sequence->seq_no;
                     }
 
                 } else {
                 
                     $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
+                    $er_Case_No             = $request->payload['er_Case_No'] ?? $er_case_sequence->seq_no;
                 }
 
                 $mergeToPatientRelatedTable = [

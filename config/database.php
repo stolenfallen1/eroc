@@ -91,6 +91,19 @@ return [
             'prefix_indexes' => true,
         ],
 
+        'sqlsrv_laboratory' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_LABORATORY', 'localhost'),
+            'port' => env('DB_PORT_LABORATORY', '1433'),
+            'database' => env('DB_DATABASE_LABORATORY', 'forge'),
+            'username' => env('DB_USERNAME_LABORATORY', 'forge'),
+            'password' => env('DB_PASSWORD_LABORATORY', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
             /*
     DB_CONNECTION_SERVICE_RECORD=sqlsrv
     DB_HOST_SERVICE_RECORD=10.4.15.101

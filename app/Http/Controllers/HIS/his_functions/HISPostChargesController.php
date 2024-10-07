@@ -5,7 +5,10 @@ namespace App\Http\Controllers\HIS\his_functions;
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\BuildFile\SystemSequence;
+use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\HISBillingOut;
+use App\Models\HIS\his_functions\LaboratoryMaster;
+use Auth;
 use Carbon\Carbon;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,6 +16,47 @@ use Illuminate\Support\Facades\DB;
 
 class HISPostChargesController extends Controller
 {
+    public function getLabItems($item_id) 
+    {
+        try {
+            $data = ExamLaboratoryProfiles::with('lab_exams')
+                ->where('map_profile_id', $item_id)
+                ->get();
+            return response()->json(['data' => $data]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    public function getBarCode($barcode_prefix, $sequence, $specimenId) 
+    {
+        $barcode = $barcode_prefix . $sequence . $specimenId;
+        $barcodeLength = strlen($barcode);
+        switch ($barcodeLength) {
+            case 4: 
+                $barcode = 'XXXXXXXX' . $barcode;
+                break;
+            case 5:
+                $barcode = 'XXXXXXX' . $barcode;
+                break;
+            case 6:
+                $barcode = 'XXXXXX' . $barcode;
+            case 7:
+                $barcode = 'XXXXX' . $barcode;
+                break;
+            case 8:
+                $barcode = 'XXXX' . $barcode;
+                break;
+            case 9: 
+                $barcode = 'XXX' . $barcode;
+            case 10: 
+                $barcode = 'XX' . $barcode;
+                break;
+            case 11:
+                $barcode = 'X' . $barcode;
+                break;
+        }
+        return $barcode;
+    }
     public function chargehistory(Request $request)
     {
         try {
@@ -29,12 +73,12 @@ class HISPostChargesController extends Controller
     public function history($patient_id, $case_no, $code, $refnum = [])
     {
         try {
-            $today = Carbon::now()->format('Y-m-d');
+            // $today = Carbon::now()->format('Y-m-d');
             $query = HISBillingOut::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
-                ->where('quantity', '>', 0)
-                ->whereDate('transDate', $today);
+                ->where('quantity', '>', 0);
+                // ->whereDate('transDate', $today);
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -62,7 +106,8 @@ class HISPostChargesController extends Controller
     }
     public function charge(Request $request)
     {
-        DB::beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_laboratory')->beginTransaction();
         try {
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
             
@@ -92,7 +137,18 @@ class HISPostChargesController extends Controller
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
                     $drcr = $charge['drcr'];
                     $lgrp = $charge['lgrp'];
+                    $form = $charge['form'] ?? null;
+                    $specimenId = $charge['specimen'];
+                    $charge_type = $charge['charge_type'];
                     $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
+                    $barcode_prefix = $charge['barcode_prefix'] ?? null;
+
+                    if ($barcode_prefix === null) {
+                        $barcode = '';
+                    } else {
+                        $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
+                    }
+
                     $refnum[] = $sequence;
                     HISBillingOut::create([
                         'patient_Id' => $patient_id,
@@ -114,6 +170,63 @@ class HISPostChargesController extends Controller
                         'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
+                    if ($revenue_id == 'LB' && $form == 'C') {
+                        $labProfileData = $this->getLabItems($item_id);
+                        if ($labProfileData->getStatusCode() === 200) {
+                            $labItems = $labProfileData->getData()->data;
+                            foreach ($labItems as $labItem) {
+                                foreach ($labItem->lab_exams as $exam) {
+                                    LaboratoryMaster::create([
+                                        'patient_Id'            => $patient_id,
+                                        'case_No'               => $case_no,
+                                        'transdate'             => $transDate,
+                                        'refNum'                => $sequence,
+                                        'profileId'             => $exam->map_profile_id,
+                                        'item_Charged'          => $exam->map_profile_id,
+                                        'itemId'                => $exam->map_exam_id,
+                                        'quantity'              => 1,
+                                        'amount'                => 0,
+                                        'NetAmount'             => 0,
+                                        'doctor_Id'             => $request_doctors_id,
+                                        'specimen_Id'           => $exam->map_specimen_id,
+                                        'processed_By'          => Auth()->user()->idnumber,
+                                        'processed_Date'        => $transDate,
+                                        'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                                        'request_Status'        => 'X', // Pending
+                                        'result_Status'         => 'X', // Pending
+                                        'userId'                => Auth()->user()->idnumber,
+                                        'barcode'               => $barcode,
+                                        'created_at'            => Carbon::now(),
+                                        'createdby'             => Auth()->user()->idnumber,
+                                    ]);
+                                }
+                            }
+                        }
+                    } else if ($revenue_id == 'LB') {
+                        LaboratoryMaster::create([
+                            'patient_Id'            => $patient_id,
+                            'case_No'               => $case_no,
+                            'transdate'             => $transDate,
+                            'refNum'                => $sequence,
+                            'profileId'             => $item_id,
+                            'item_Charged'          => $item_id,
+                            'itemId'                => $item_id,
+                            'quantity'              => 1,
+                            'amount'                => 0,
+                            'NetAmount'             => 0,
+                            'doctor_Id'             => $request_doctors_id,
+                            'specimen_Id'           => $specimenId ?? 1, // BLOOD BY DEFAULT if no specimen
+                            'processed_By'          => Auth()->user()->idnumber,
+                            'processed_Date'        => $transDate,
+                            'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                            'request_Status'        => 'X', // Pending
+                            'result_Status'         => 'X', // Pending
+                            'userId'                => Auth()->user()->idnumber,
+                            'barcode'               => $barcode,
+                            'created_at'            => Carbon::now(),
+                            'createdby'             => Auth()->user()->idnumber,
+                        ]);
+                    }
                 }
             }
 
@@ -150,18 +263,20 @@ class HISPostChargesController extends Controller
             }
 
             $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
-            DB::commit();
+            DB::connection('sqlsrv_billingOut')->commit();
+            DB::connection('sqlsrv_laboratory')->commit();
             $data['charges'] =  $this->history($patient_id, $case_no, 'all', $refnum);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_laboratory')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     public function revokecharge(Request $request) 
     {
-        DB::beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
             
@@ -205,11 +320,11 @@ class HISPostChargesController extends Controller
                 }
             }
 
-            DB::commit();
+            DB::connection('sqlsrv_billingOut')->commit();
             return response()->json(['message' => 'Charges revoked successfully'], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

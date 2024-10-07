@@ -14,6 +14,36 @@ use Illuminate\Support\Facades\DB;
 class HISCashAssestmentController extends Controller
 {
     //
+    public function getBarCode($barcode_prefix, $sequence, $specimenId) 
+    {
+        $barcode = $barcode_prefix . $sequence . $specimenId;
+        $barcodeLength = strlen($barcode);
+        switch ($barcodeLength) {
+            case 4: 
+                $barcode = 'XXXXXXXX' . $barcode;
+                break;
+            case 5:
+                $barcode = 'XXXXXXX' . $barcode;
+                break;
+            case 6:
+                $barcode = 'XXXXXX' . $barcode;
+            case 7:
+                $barcode = 'XXXXX' . $barcode;
+                break;
+            case 8:
+                $barcode = 'XXXX' . $barcode;
+                break;
+            case 9: 
+                $barcode = 'XXX' . $barcode;
+            case 10: 
+                $barcode = 'XX' . $barcode;
+                break;
+            case 11:
+                $barcode = 'X' . $barcode;
+                break;
+        }
+        return $barcode;
+    }
     public function getcashassessment(Request $request) 
     {
         try {
@@ -29,12 +59,12 @@ class HISCashAssestmentController extends Controller
     public function history($patient_id, $case_no, $code, $refNum = [])
     {
         try {
-            $today = Carbon::now()->format('Y-m-d');
+            // $today = Carbon::now()->format('Y-m-d');
             $query = CashAssessment::with('items', 'doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
-                ->where('quantity', '>', 0)
-                ->whereDate('transdate', $today);
+                ->where('quantity', '>', 0);
+                // ->whereDate('transdate', $today);
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -62,7 +92,7 @@ class HISCashAssestmentController extends Controller
     }
     public function cashassessment(Request $request) 
     {
-        DB::beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
             
@@ -95,38 +125,15 @@ class HISCashAssestmentController extends Controller
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
                     $specimenId = $charge['specimen'];
+                    $form = $charge['form'] ?? null;
+                    $charge_type = $charge['charge_type'] ?? null;
                     $sequence = $revenueID . $chargeslip_sequence->seq_no;
                     $barcode_prefix = $charge['barcode_prefix'] ?? null;
 
                     if ($barcode_prefix === null) {
                         $barcode = '';
                     } else {
-                        $barcode = $barcode_prefix . $sequence . $specimenId;
-                        $barcodeLength = strlen($barcode);
-                        switch ($barcodeLength) {
-                            case 4: 
-                                $barcode = 'XXXXXXXX' . $barcode;
-                                break;
-                            case 5:
-                                $barcode = 'XXXXXXX' . $barcode;
-                                break;
-                            case 6:
-                                $barcode = 'XXXXXX' . $barcode;
-                            case 7:
-                                $barcode = 'XXXXX' . $barcode;
-                                break;
-                            case 8:
-                                $barcode = 'XXXX' . $barcode;
-                                break;
-                            case 9: 
-                                $barcode = 'XXX' . $barcode;
-                            case 10: 
-                                $barcode = 'XX' . $barcode;
-                                break;
-                            case 11:
-                                $barcode = 'X' . $barcode;
-                                break;
-                        }
+                        $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
                     }
 
                     $refNum[] = $sequence;
@@ -138,6 +145,8 @@ class HISCashAssestmentController extends Controller
                         'transdate' => $transdate,
                         'assessnum' => $assessnum_sequence->seq_no,
                         'drcr' => 'C',
+                        'form' => $form,
+                        'stat' => $charge_type,
                         'revenueID' => $revenueID,
                         'itemID' => $itemID,
                         'quantity' => $quantity,
@@ -196,17 +205,18 @@ class HISCashAssestmentController extends Controller
                 'seq_no' => $assessnum_sequence->seq_no + 1,
                 'recent_generated' => $assessnum_sequence->seq_no
             ]);
-            DB::commit();
+            DB::connection('sqlsrv_billingOut')->commit();
             $data['charges'] = $this->history($patient_id, $case_no, 'all', $refNum);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
 
         } catch (\Exception $e) {
+            DB::connection('sqlsrv_billingOut')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     public function revokecashassessment(Request $request) 
     {
-        DB::beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
             
@@ -230,26 +240,32 @@ class HISCashAssestmentController extends Controller
                     ->first();
 
                 $existingData->updateOrFail([
-                    'dateRevoked' => Carbon::now(),
-                    'revokedBy' => $checkUser->idnumber,
+                    'dateRevoked'   => Carbon::now(),
+                    'revokedBy'     => Auth()->user()->idnumber,
+                    'updatedBy'     => Auth()->user()->idnumber,
+                    'updated_at'    => Carbon::now(),
                 ]);
 
                 if ($existingData) {
                     CashAssessment::create([
+                        'branch_id' => 1,
                         'patient_Id' => $existingData->patient_Id,
                         'case_No' => $existingData->case_No,
-                        'patient_name' => $existingData->patient_name,
+                        'patient_Name' => $existingData->patient_Name,
+                        'assessnum' => $existingData->assessnum,
                         'transdate' => Carbon::now(),
                         'drcr' => 'C',
                         'revenueID' => $existingData->revenueID,
                         'itemID' => $existingData->itemID,
-                        'quantity' => -1,
+                        'quantity' => $existingData->quantity * -1,
                         'refNum' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
+                        'specimenId' => $existingData->specimenId,
                         'requestDoctorID' => $existingData->requestDoctorID,
                         'requestDoctorName' => $existingData->requestDoctorName,
                         'departmentID' => $existingData->departmentID,
                         'userId' => $checkUser->idnumber,
+                        'Barcode' => null,
                         'hostname' => (new GetIP())->getHostname(),
                         'createdBy' => $checkUser->idnumber,
                         'created_at' => Carbon::now(),
@@ -257,11 +273,11 @@ class HISCashAssestmentController extends Controller
                 }
             }
 
-            DB::commit();
+            DB::connection('sqlsrv_billingOut')->commit();
             return response()->json(['message' => 'Charges revoked successfully'], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     } 

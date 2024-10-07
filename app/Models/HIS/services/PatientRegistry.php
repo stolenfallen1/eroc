@@ -2,7 +2,9 @@
 
 namespace App\Models\HIS\services;
 
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\HospitalPatientCategories;
+use App\Models\HIS\his_functions\LaboratoryMaster;
 use App\Models\HIS\PatientAdministeredMedicines;
 use App\Models\HIS\PatientAllergies;
 use App\Models\HIS\PatientHistory;
@@ -42,6 +44,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PatientRegistry extends Model
 {
     use HasFactory;
+    // protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
     protected $connection = "sqlsrv_patient_data";
     protected $guarded = [];
@@ -55,6 +58,9 @@ class PatientRegistry extends Model
     }    
     public function branch() {
         return $this->belongsTo(Branchs::class, 'branch_id', 'id');
+    }
+    public function lab_services() {
+        return $this->hasMany(LaboratoryMaster::class, 'case_No', 'case_No');
     }
     public function accountType() {
         return $this->belongsTo(AccountType::class, 'mscAccount_type', 'id');

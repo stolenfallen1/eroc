@@ -38,6 +38,9 @@ class HISPatientRegistryObserver
                         'AdmDate'           => $patientRegistry->registry_Date  
                                             ? $patientRegistry->registry_Date 
                                             : Carbon::now(),
+                        'AccountNum'    =>  $patientRegistry->guarantor_Id   
+                                            ?  $patientRegistry->guarantor_Id 
+                                            :  $patientRegistry->patient_Id,
                         'DoctorID1'         => $patientRegistry->attending_Doctor   ?? '',
                         'ReasonOfReferral'  => $patientRegistry->referral_Reason    ?? '',
                         'ReferredFrom'      => $patientRegistry->referred_From_HCI  ?? '',
@@ -157,7 +160,9 @@ class HISPatientRegistryObserver
                             'AdmDate'           =>  $ER_Patient_Master->AdmDate  
                                                 ?   $ER_Patient_Master->AdmDate 
                                                 :   Carbon::now(),
-
+                            'AccountNum'    =>  $patientRegistry->guarantor_Id   
+                                            ?   $patientRegistry->guarantor_Id 
+                                            :   $patientRegistry->patient_Id,
                             'DoctorID1'         => $patientRegistry->attending_Doctor,
                             'ReasonOfReferral'  =>  $patientRegistry->referral_Reason,
                             'ReferredFrom'      =>  $patientRegistry->referred_From_HCI,

@@ -129,14 +129,20 @@ class OutpatientRegistrationController extends Controller
                 'revoked_Date'                  => $request->payload['revoked_Date'] ?? null,
                 'revoked_Remarks'               => $request->payload['revoked_Remarks'] ?? null,
                 'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? ($patient_id ?? null),
-                'guarantor_Name'                => $request->payload['selectedGuarantor'][0]['guarantor_name'] ?? null,
+                'guarantor_Name'                => $request->payload['selectedGuarantor'][0]['guarantor_name'] ?? ("PERSONAL" ?? null),
                 'guarantor_Approval_code'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_code'] ?? null,
                 'guarantor_Approval_no'         => $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] ?? null,
                 'guarantor_Approval_date'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_date'] ?? null,
                 'guarantor_Validity_date'       => $request->payload['selectedGuarantor'][0]['guarantor_Validity_date'] ?? null,
                 'guarantor_Approval_remarks'    => $request->payload['guarantor_Approval_remarks'] ?? null,
-                'isWithCreditLimit'             => !empty($request->payload['selectedGuarantor'][0]['guarantor_code']) ? true : ($request->payload['isWithCreditLimit'] ?? false),
-                'guarantor_Credit_Limit'        => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null,
+                'isWithCreditLimit'             => isset($request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit']) 
+                                                    && !empty($request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'])
+                                                    ? true 
+                                                    : false,
+                'guarantor_Credit_Limit'        => isset($request->payload['selectedGuarantor'][0]['isOpen']) 
+                                                    && $request->payload['selectedGuarantor'][0]['isOpen'] 
+                                                    ? null 
+                                                    : ($request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null),
                 'isWithPhilHealth'              => $request->payload['isWithPhilHealth'] ?? false,
                 'philhealth_Number'             => $request->payload['philhealth_Number'] ?? null,
                 'isWithMedicalPackage'          => !empty($request->payload['medical_Package_Id']) ? true : ($request->payload['isWithMedicalPackage'] ?? false),
@@ -779,7 +785,7 @@ class OutpatientRegistrationController extends Controller
             $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
             $today = Carbon::now()->format('Y-m-d');
             
-            $data->whereHas('patientRegistry', function($query) use ($today) {
+            $data->whereHas('patientRegistryToday', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2); 
                 $query->where('isRevoked', 0);
                 $query->whereDate('registry_Date', $today);

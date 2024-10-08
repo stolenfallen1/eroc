@@ -203,12 +203,6 @@ class EmergencyRegistrationController extends Controller
             SystemSequence::where('code','MOPD')->increment('seq_no');
             SystemSequence::where('code','SERCN')->increment('seq_no');
 
-            SystemSequence::where('code','MPID')->increment('recent_generated');
-            SystemSequence::where('code','MERN')->increment('recent_generated');
-            SystemSequence::where('code','MOPD')->increment('recent_generated');
-            SystemSequence::where('code','SERCN')->increment('recent_generated');
-        
-
             $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->first();
             $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
             $er_case_sequence = SystemSequence::where('code', 'SERCN')->select('seq_no', 'recent_generated')->first();
@@ -253,22 +247,18 @@ class EmergencyRegistrationController extends Controller
                 $patient_id = $existingPatient->patient_Id;
             else:
                 $sequence->where('code', 'MPID')->update([
-                    'seq_no'            => $patient_id,
                     'recent_generated'  => $patient_id
                 ]);
 
                 $registry_sequence->where('code', 'MERN')->update([
-                    'seq_no'            => $registry_id,
                     'recent_generated'  => $registry_id
                 ]);
 
                 $registry_sequence->where('code', 'MOPD')->update([
-                    'seq_no'            => $registry_id,
                     'recent_generated'  => $registry_id
                 ]);
 
                 $er_case_sequence->where('code', 'SERCN')->update([
-                    'seq_no'            => $er_Case_No,
                     'recent_generated'  => $er_Case_No
                 ]);
                 
@@ -1304,6 +1294,10 @@ class EmergencyRegistrationController extends Controller
                 ], 404);
             endif;
 
+            $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
+            $registry_mopd_sequence = SystemSequence::where('code', 'MOPD')->first();
+            $er_case_sequence = SystemSequence::where('code', 'SERCN')->select('seq_no', 'recent_generated')->first();
+
             $today = Carbon::now()->format('Y-m-d');
             $userId = Auth()->user()->idnumber;
             $currentTimestamp = Carbon::now();
@@ -1433,16 +1427,13 @@ class EmergencyRegistrationController extends Controller
                 ->whereDate('created_at', $today)
                 ->exists();
 
-                SystemSequence::where('code','MERN')->increment('seq_no');
-                SystemSequence::where('code','MOPD')->increment('seq_no');
-                SystemSequence::where('code','SERCN')->increment('seq_no');
-
-                $registry_sequence = SystemSequence::where('code', 'MERN')->select('seq_no', 'recent_generated')->first();
-                $er_case_sequence = SystemSequence::where('code', 'SERCN')->select('seq_no', 'recent_generated')->first();
-
                 if($this->check_is_allow_medsys) {
 
                     if(!$existingRegistry) {
+
+                        SystemSequence::where('code','MERN')->increment('seq_no');
+                        SystemSequence::where('code','MOPD')->increment('seq_no');
+                        SystemSequence::where('code','SERCN')->increment('seq_no');
             
                         DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
                         DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('ERNum');
@@ -1451,6 +1442,18 @@ class EmergencyRegistrationController extends Controller
                         $registry_id = $check_medsys_series_no->OPDId;
                         $er_Case_No  = $check_medsys_series_no->ERNum;
 
+                        $registry_sequence->where('code', '')->update([
+                            'recent_generated'  => $registry_id
+                        ]);
+
+                        $registry_mopd_sequence->where('code', 'MPID')->update([
+                            'recent_generated'  => $registry_id
+                        ]);
+
+                        $er_case_sequence->where('code', 'SERCN')->update([
+                            'recent_generated'  => $er_Case_No
+                        ]);
+
                     } else {
             
                         $registry_id = $request->payload['registry_id'] ?? $registry_sequence->seq_no;
@@ -1458,9 +1461,22 @@ class EmergencyRegistrationController extends Controller
                     }
 
                 } else {
-                
-                    $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
-                    $er_Case_No             = $request->payload['er_Case_No'] ?? $er_case_sequence->seq_no;
+                    $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no);
+                    $er_Case_No             = $request->payload['er_Case_No'] ?? intval($er_case_sequence->seq_no);
+
+                    if(!$existingRegistry) {
+                        $registry_sequence->where('code', '')->update([
+                            'recent_generated'  => $registry_id
+                        ]);
+
+                        $registry_mopd_sequence->where('code', 'MPID')->update([
+                            'recent_generated'  => $registry_id
+                        ]);
+
+                        $er_case_sequence->where('code', 'SERCN')->update([
+                            'recent_generated'  => $er_Case_No
+                        ]);
+                    }
                 }
 
                 $mergeToPatientRelatedTable = [
@@ -2243,7 +2259,7 @@ class EmergencyRegistrationController extends Controller
         
                 $patientRegistryData = [
                     'branch_Id'                                 =>  1,
-                    'er_Case_No'                                => Arr::get($request->payload, 'er_Case_No', optional($patientRegistry)->er_Case_No),
+                    'er_Case_No'                                => $er_Case_No, // Arr::get($request->payload, 'er_Case_No', optional($patientRegistry)->er_Case_No),
                     'register_source'                           => Arr::get($request->payload, 'register_Source', optional($patientRegistry)->register_Source),
                     'register_Casetype'                         => Arr::get($request->payload, 'register_Casetype', optional($patientRegistry)->register_Casetype),
                     'register_Link_Case_No'                     => Arr::get($request->payload, 'register_Link_Case_No', optional($patientRegistry)->register_Link_Case_No),

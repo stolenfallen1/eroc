@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\HIS\services;
 
+use App\Helpers\HIS\SysGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\SystemSequence;
+use App\Models\HIS\MedsysSeriesNo;
+use App\Models\HIS\PatientPastImmunizations;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use Carbon\Carbon;
@@ -14,6 +17,13 @@ use Log;
 
 class OutpatientRegistrationController extends Controller
 {
+    protected $check_is_allow_medsys;
+
+    public function __construct() 
+    {
+        $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+    }
+
     protected function getRegisterPatientData(Request $request, $patient_id = null, $registry_id = null, $patientIdentifier = null, $patient_category = null) {
         return [
             'patientData' => [
@@ -813,27 +823,60 @@ class OutpatientRegistrationController extends Controller
 
     public function register(Request $request) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
+        DB::connection('sqlsrv')->beginTransaction();
+
         try {
-            $today = Carbon::now();
-            $sequence = SystemSequence::where('code','MPID')->where('branch_id', 1)->first();
-            $registry_sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
+            SystemSequence::where('code', 'MPID')->increment('seq_no');
+            SystemSequence::where('code', 'MERN')->increment('seq_no');
+            SystemSequence::where('code', 'MOPD')->increment('seq_no');
+
+            SystemSequence::where('code', 'MPID')->increment('recent_generated');
+            SystemSequence::where('code', 'MERN')->increment('recent_generated');
+            SystemSequence::where('code', 'MOPD')->increment('recent_generated');
+
+            $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->where('branch_id', 1)->first();
+            $registry_sequence = SystemSequence::where('code', 'MOPD')->select('seq_no', 'recent_generated')->where('branch_id', 1)->first();
             if (!$sequence || !$registry_sequence) {
                 throw new \Exception('Sequence not found');
             }
 
-            $registry_id        = $registry_sequence->seq_no;
-            $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
+            if($this->check_is_allow_medsys) {
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('HospNum');
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('ERNum');
 
+                $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'ERNum', 'OPDId')->first();
+
+                $patient_id     = $check_medsys_series_no->HospNum;
+                $registry_id    = $check_medsys_series_no->OPDId;
+
+            } else {
+                $patient_id     = intval($sequence->seq_no + 1);
+                $registry_id    = intval($registry_sequence->seq_no + 1);
+            }
+
+            $today = Carbon::now();
+            $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
             $existingPatient = Patient::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->where('birthdate', $request->payload['birthdate'])->first();
+            
             if ($existingPatient) {
                 $patient_id = $existingPatient->patient_Id;
                 $patient_category = 3;
             } else {
                 $patient_category = 2;
                 $patient_id = $sequence->seq_no;
-                $sequence->update([
-                    'seq_no' => $sequence->seq_no + 1,
-                    'recent_generated' => $sequence->seq_no,
+                $sequence->where('code', 'MPID')->update([
+                    'seq_no'            => $patient_id,
+                    'recent_generated'  => $patient_id,
+                ]);
+                $registry_sequence->where('code', 'MOPD')->update([
+                    'seq_no'            => $registry_id,
+                    'recent_generated'  => $registry_id,
+                ]);
+                $registry_sequence->where('code', 'MERN')->update([
+                    'seq_no'            => $registry_id,
+                    'recent_generated'  => $registry_id,
                 ]);
             }
 
@@ -923,11 +966,11 @@ class OutpatientRegistrationController extends Controller
             if (!$patient || !$patientRegistry) {
                 throw new \Exception('Registration failed, rollback transaction');
             } else {
-                $registry_sequence->update([
-                    'seq_no' => $registry_sequence->seq_no + 1,
-                    'recent_generated' => $registry_sequence->seq_no,
-                ]);
+                
                 DB::connection('sqlsrv_patient_data')->commit();
+                DB::connection('sqlsrv_medsys_patient_data')->commit();
+                DB::connection('sqlsrv')->commit();
+
                 return response()->json([
                     'message' => 'Outpatient data registered successfully',
                     'patient' => $patient,
@@ -937,6 +980,9 @@ class OutpatientRegistrationController extends Controller
 
         } catch(\Exception $e) {
             DB::connection('sqlsrv_patient_data')->rollBack();
+            DB::connection('sqlsrv_medsys_patient_data')->rollBack();
+            DB::connection('sqlsrv')->rollBack();
+
             return response()->json([
                 'message' => 'Failed to register outpatient data',
                 'error' => $e->getMessage()
@@ -946,22 +992,49 @@ class OutpatientRegistrationController extends Controller
 
     public function update(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
-        // try {
-            $patient = Patient::where('patient_Id', $id)->firstOrFail();
-            $today = Carbon::now()->format('Y-m-d');
-            $patient_id = $patient->patient_Id;
-            $registry_sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
+        DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
+        DB::connection('sqlsrv')->beginTransaction();
 
-            $isPatientRegistered = $patient->patientRegistry()->whereDate('created_at', $today)->exists();
+        try {
+            $today = Carbon::now();
+            $patient = Patient::where('patient_Id', $id)->first();
+            $patient_id = $patient ? $patient->patient_Id : $request->payload['patient_Id'];
+
+            $isPatientRegistered = PatientRegistry::where('patient_Id', $patient_id)
+                ->whereDate('registry_Date', $today)
+                ->whereDate('created_at', $today)
+                ->exists();
+
+            if (!$isPatientRegistered) {
+                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
+                SystemSequence::where('code', 'MERN')->increment('seq_no');
+                SystemSequence::where('code', 'MOPD')->increment('seq_no');
+                SystemSequence::where('code', 'MERN')->increment('recent_generated');
+                SystemSequence::where('code', 'MOPD')->increment('recent_generated');
+            }
+
+            $registry_sequence = SystemSequence::where('code', 'MOPD')
+                ->select('seq_no', 'recent_generated')
+                ->where('branch_id', 1)
+                ->first();
+
             if ($isPatientRegistered) {
-                $registry_id = $patient->patientRegistry()->whereDate('created_at', $today)->first()->case_No;
-            } else {
-                if (!$registry_sequence) {
-                    throw new \Exception('Sequence not found');
+                if ($this->check_is_allow_medsys) {
+                    $registry_id = PatientRegistry::where('patient_Id', $patient_id)
+                        ->whereDate('registry_Date', $today)
+                        ->value('case_No');
                 } else {
+                    $registry_id = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
+                }
+            } else {
+                if ($this->check_is_allow_medsys) {
                     $registry_id = $registry_sequence->seq_no;
+                } else {
+                    $registry_id = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
                 }
             }
+
+            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id);
 
             $patientIdentifier  = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis     = ($patientIdentifier === "Hemo Patient") ? true : false;
@@ -976,48 +1049,137 @@ class OutpatientRegistrationController extends Controller
             $isPAD              = ($patientIdentifier === "PAD Patient") ? true : false;
             $isRadioTherapy     = ($patientIdentifier === "Radio Patient") ? true : false;
 
-            $pastImmunization                   = $patient->past_immunization()->first();
-            $pastMedicalHistory                 = $patient->past_medical_history()->first();
-            $pastMedicalProcedure               = $patient->past_medical_procedures()->first();
-            $pastAllergyHistory                 = $patient->past_allergy_history()->first();  
-            $pastCauseOfAllergy                 = $pastAllergyHistory->pastCauseOfAllergy()->first();
-            $pastSymtomsOfAllergy               = $pastAllergyHistory->pastSymptomsOfAllergy()->first();
-            $drugUsedForAllergy                 = $patient->drug_used_for_allergy()->first();
-            $pastBadHabits                      = $patient->past_bad_habits()->first();
-            $privilegedCard                     = $patient->privilegedCard()->first();
-            $privilegedPointTransfers           = $privilegedCard->pointTransfers()->first();
-            $privilegedPointTransactions        = $privilegedCard->pointTransactions()->first();
-            $dischargeInstructions              = $patient->dischargeInstructions()->first();
-            $dischargeMedications               = $dischargeInstructions->dischargeMedications()->first();
-            $dischargeFollowUpTreatment         = $dischargeInstructions->dischargeFollowUpTreatment()->first();
-            $dischargeFollowUpLaboratories      = $dischargeInstructions->dischargeFollowUpLaboratories()->first();
-            $dischargeDoctorsFollowUp           = $dischargeInstructions->dischargeDoctorsFollowUp()->first();
+            if ($patient == null) $patient = Patient::create($registerData['patientData']);
 
-            $patientRegistry                    = PatientRegistry::where('patient_Id', $patient_id)->orderBy('id', 'desc')->first(); 
-            $patientHistory                     = $patientRegistry->history()->first();
-            $patientMedicalProcedure            = $patientRegistry->medical_procedures()->first();
-            $patientVitalSign                   = $patientRegistry->vitals()->first();
-            $patientImmunization                = $patientRegistry->immunizations()->first();
-            $patientAdministeredMedicine        = $patientRegistry->administered_medicines()->first();
-            $OBGYNHistory                       = $patientRegistry->oBGYNHistory()->first();
-            $pregnancyHistory                   = $OBGYNHistory->PatientPregnancyHistory()->first();
-            $gynecologicalConditions            = $OBGYNHistory->gynecologicalConditions()->first();
-            $allergy                            = $patientRegistry->allergies()->first();
-            $causeOfAllergy                     = $allergy->cause_of_allergy()->first();
-            $symptomsOfAllergy                  = $allergy->symptoms_allergy()->first();
-            $badHabits                          = $patientRegistry->bad_habits()->first();
-            $patientDoctors                     = $patientRegistry->patientDoctors()->first();
-            $physicalAbdomen                    = $patientRegistry->physicalAbdomen()->first();
-            $pertinentSignAndSymptoms           = $patientRegistry->pertinentSignAndSymptoms()->first();
-            $physicalExamtionChestLungs         = $patientRegistry->physicalExamtionChestLungs()->first();
-            $courseInTheWard                    = $patientRegistry->courseInTheWard()->first();
-            $physicalExamtionCVS                = $patientRegistry->physicalExamtionCVS()->first();
-            $physicalExamtionGeneralSurvey      = $patientRegistry->PhysicalExamtionGeneralSurvey()->first();
-            $physicalExamtionHEENT              = $patientRegistry->physicalExamtionHEENT()->first();
-            $physicalGUIE                       = $patientRegistry->physicalGUIE()->first();
-            $physicalNeuroExam                  = $patientRegistry->physicalNeuroExam()->first();
-            $physicalSkinExtremities            = $patientRegistry->physicalSkinExtremities()->first();
-            $medications                        = $patientRegistry->medications()->first();
+            $pastImmunization                   = $patient->past_immunization()->whereDate('created_at', $today)->first() ?? null;
+            $pastMedicalHistory                 = $patient->past_medical_history()->whereDate('created_at', $today)->first() ?? null;
+            $pastMedicalProcedure               = $patient->past_medical_procedures()->whereDate('created_at', $today)->first() ?? null;
+            $pastAllergyHistory                 = $patient->past_allergy_history()->whereDate('created_at', $today)->first() ?? null; 
+
+            $pastCauseOfAllergy                 = $pastAllergyHistory && $pastAllergyHistory->pastCauseOfAllergy()
+                                                    ? $pastAllergyHistory->pastCauseOfAllergy()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $pastSymtomsOfAllergy               = $pastAllergyHistory && $pastAllergyHistory->pastSymptomsOfAllergy() 
+                                                    ? $pastAllergyHistory->pastSymptomsOfAllergy()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $drugUsedForAllergy                 = $patient->drug_used_for_allergy()->whereDate('created_at', $today)->first() ?? null;
+            $pastBadHabits                      = $patient->past_bad_habits()->whereDate('created_at', $today)->first() ?? null;
+            $privilegedCard                     = $patient->privilegedCard()->whereDate('created_at', $today)->first() ?? null;
+
+            $privilegedPointTransfers           = $privilegedCard && $privilegedCard->pointTransfers() 
+                                                    ? $privilegedCard->pointTransfers()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $privilegedPointTransactions        = $privilegedCard && $privilegedCard->pointTransactions()
+                                                    ? $privilegedCard->pointTransactions()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $dischargeInstructions              = $patient->dischargeInstructions()->whereDate('created_at', $today)->first() ?? null;
+            $dischargeMedications               = $dischargeInstructions && $dischargeInstructions->dischargeMedications() 
+                                                    ? $dischargeInstructions->dischargeMedications()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $dischargeFollowUpTreatment         = $dischargeInstructions && $dischargeInstructions->dischargeFollowUpTreatment()
+                                                    ? $dischargeInstructions->dischargeFollowUpTreatment()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $dischargeFollowUpLaboratories      = $dischargeInstructions && $dischargeInstructions->dischargeFollowUpLaboratories() 
+                                                    ? $dischargeInstructions->dischargeFollowUpLaboratories()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $dischargeDoctorsFollowUp           = $dischargeInstructions && $dischargeInstructions->dischargeDoctorsFollowUp()
+                                                    ? $dischargeInstructions->dischargeDoctorsFollowUp()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $patientRegistry                    = $patient->patientRegistry()->whereDate('created_at', $today)->first() ?? null;
+            $patientHistory                     = $patientRegistry && $patientRegistry->history() 
+                                                    ? $patientRegistry->history()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $patientMedicalProcedure            = $patientRegistry && $patientRegistry->medical_procedures() 
+                                                    ? $patientRegistry->medical_procedures()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $patientVitalSign                   = $patientRegistry && $patientRegistry->vitals() 
+                                                    ? $patientRegistry->vitals()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $patientImmunization                = $patientRegistry && $patientRegistry->immunizations() 
+                                                    ? $patientRegistry->immunizations()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $patientAdministeredMedicine        = $patientRegistry && $patientRegistry->administered_medicines() 
+                                                    ? $patientRegistry->administered_medicines()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $OBGYNHistory                       = $patientRegistry && $patientRegistry->oBGYNHistory() 
+                                                    ? $patientRegistry->oBGYNHistory()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $pregnancyHistory                   = $OBGYNHistory && $OBGYNHistory->PatientPregnancyHistory() 
+                                                    ? $OBGYNHistory->PatientPregnancyHistory()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $gynecologicalConditions            = $OBGYNHistory && $OBGYNHistory->gynecologicalConditions()
+                                                    ? $OBGYNHistory->gynecologicalConditions()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $allergy                            = $patientRegistry && $patientRegistry->allergies() 
+                                                    ? $patientRegistry->allergies()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $causeOfAllergy                     = $allergy && $allergy->cause_of_allergy() 
+                                                    ? $allergy->cause_of_allergy()->whereDate('created_at', $today)->first() 
+                                                    : null;
+            $symptomsOfAllergy                  = $allergy && $allergy->symptoms_allergy()
+                                                    ? $allergy->symptoms_allergy()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $badHabits                          = $patientRegistry && $patientRegistry->bad_habits() 
+                                                    ? $patientRegistry->bad_habits()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $patientDoctors                     = $patientRegistry && $patientRegistry->patientDoctors() 
+                                                    ? $patientRegistry->patientDoctors()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalAbdomen                    = $patientRegistry &&  $patientRegistry->physicalAbdomen() 
+                                                    ?  $patientRegistry->physicalAbdomen()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $pertinentSignAndSymptoms            = $patientRegistry &&  $patientRegistry->pertinentSignAndSymptoms() 
+                                                    ?  $patientRegistry->pertinentSignAndSymptoms()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalExamtionChestLungs         = $patientRegistry &&  $patientRegistry->physicalExamtionChestLungs() 
+                                                    ?  $patientRegistry->physicalExamtionChestLungs()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $courseInTheWard                    = $patientRegistry &&  $patientRegistry->courseInTheWard() 
+                                                    ?  $patientRegistry->courseInTheWard()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalExamtionCVS                = $patientRegistry &&  $patientRegistry->physicalExamtionCVS() 
+                                                    ?  $patientRegistry->physicalExamtionCVS()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalExamtionGeneralSurvey      = $patientRegistry && $patientRegistry->PhysicalExamtionGeneralSurvey() 
+                                                    ? $patientRegistry->PhysicalExamtionGeneralSurvey()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalExamtionHEENT              = $patientRegistry && $patientRegistry->physicalExamtionHEENT() 
+                                                    ? $patientRegistry->physicalExamtionHEENT()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalGUIE                       = $patientRegistry && $patientRegistry->physicalGUIE() 
+                                                    ? $patientRegistry->physicalGUIE()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalNeuroExam                  = $patientRegistry && $patientRegistry->physicalNeuroExam() 
+                                                    ? $patientRegistry->physicalNeuroExam()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $physicalSkinExtremities            = $patientRegistry && $patientRegistry->physicalSkinExtremities() 
+                                                    ? $patientRegistry->physicalSkinExtremities()->whereDate('created_at', $today)->first() 
+                                                    : null;
+
+            $medications                        = $patientRegistry && $patientRegistry->medications() 
+                                                    ? $patientRegistry->medications()->whereDate('created_at', $today)->first() 
+                                                    : null;
 
             $patientData = [
                 'title_id'                  => $request->payload['title_id'] ?? $patient->title_id,
@@ -1092,66 +1254,57 @@ class OutpatientRegistrationController extends Controller
 
             $patientPastImmunizationData = [
                 'branch_Id'             => 1,
-                'patient_Id'            => $patient_id,
-                'vaccine_Id'            => $request->payload['vaccine_Id'] ?? $pastImmunization->vaccine_Id,
-                'administration_Date'   => $request->payload['administration_Date'] ?? $pastImmunization->administration_Date,
-                'dose'                  => $request->payload['dose'] ?? $pastImmunization->dose,
-                'site'                  => $request->payload['site'] ?? $pastImmunization->site,
-                'administrator_Name'    => $request->payload['administrator_Name'] ?? $pastImmunization->administrator_Name,
-                'notes'                 => $request->payload['notes'] ?? $pastImmunization->notes,
+                'vaccine_Id'            => $request->payload['vaccine_Id'] ?? ($pastImmunization->vaccine_Id ?? null),
+                'administration_Date'   => $request->payload['administration_Date'] ?? ($pastImmunization->administration_Date ?? null),
+                'dose'                  => $request->payload['dose'] ?? ($pastImmunization->dose ?? null),
+                'site'                  => $request->payload['site'] ?? ($pastImmunization->site ?? null),
+                'administrator_Name'    => $request->payload['administrator_Name'] ?? ($pastImmunization->administrator_Name ?? null),
+                'notes'                 => $request->payload['notes'] ?? ($pastImmunization->notes ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now(),
             ];
 
             $patientPastMedicalHistoryData = [
-                'patient_Id'                => $patient_id,
-                'diagnose_Description'      => $request->payload['diagnose_Description'] ?? $pastMedicalHistory->diagnose_Description,
-                'diagnosis_Date'            => $request->payload['diagnosis_Date'] ?? $pastMedicalHistory->diagnosis_Date,
-                'treament'                  => $request->payload['treament'] ?? $pastMedicalHistory->treament,
+                'diagnose_Description'      => $request->payload['diagnose_Description'] ?? ($pastMedicalHistory->diagnose_Description ?? null),
+                'diagnosis_Date'            => $request->payload['diagnosis_Date'] ?? ($pastMedicalHistory->diagnosis_Date ?? null),
+                'treament'                  => $request->payload['treament'] ?? ($pastMedicalHistory->treament ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
             ];
 
             $patientPastMedicalProcedureData = [
-                'patient_Id'                => $patient_id,
-                'description'               => $request->payload['description'] ??  $pastMedicalProcedure->description,
-                'date_Of_Procedure'         => $request->payload['date_Of_Procedure'] ??  $pastMedicalProcedure->date_Of_Procedure,
+                'description'               => $request->payload['description'] ?? ($pastMedicalProcedure->description ?? null),
+                'date_Of_Procedure'         => $request->payload['date_Of_Procedure'] ?? ($pastMedicalProcedure->date_Of_Procedure ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
             ];
 
             $patientPastAllergyHistoryData = [
-                'patient_Id'                => $patient_id,
-                'family_History'            => $request->payload['family_History'] ?? $pastAllergyHistory->family_History,
+                'family_History'            => $request->payload['family_History'] ?? ($pastAllergyHistory->family_History ?? null),
                 'updatedby'                 => Auth()->user()->idnumber, 
                 'updated_at'                => Carbon::now(),
             ];
 
             $patientPastCauseOfAllergyData = [
-                // 'history_Id'            => '',
-                'allergy_Type_Id'       => $request->payload['allergy_Type_Id'] ?? $pastCauseOfAllergy ->allergy_Type_Id,
-                'duration'              => $request->payload['duration'] ?? $pastCauseOfAllergy ->duration,
+                'allergy_Type_Id'       => $request->payload['allergy_Type_Id'] ?? ($pastCauseOfAllergy->allergy_Type_Id ?? null),
+                'duration'              => $request->payload['duration'] ?? ($pastCauseOfAllergy->duration ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now(),
             ];
 
             $patientPastSymptomsOfAllergyData = [
-                // 'history_Id'            => '',
-                'symptom_Description'   => $request->payload['symptom_Description'] ??$pastSymtomsOfAllergy->symptom_Description,
+                'symptom_Description'   => $request->payload['symptom_Description'] ?? ($pastSymtomsOfAllergy->symptom_Description ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now(),
             ];
 
             $patientAllergyData = [
-                'patient_Id'        => $patient_id,
-                'case_No'           => $registry_id,
-                'family_History'    => $request->payload['family_History'] ?? $allergy->family_History,
+                'family_History'    => $request->payload['family_History'] ?? ($allergy->family_History ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now(),
             ];
 
             $patientCauseOfAllergyData = [
-                'allergies_Id'      => '',
                 'allergy_Type_Id'   => $request->payload['allergy_Type_Id'] ?? ($causeOfAllergy->allergy_Type_Id ?? null),
                 'duration'          => $request->payload['duration'] ?? ($causeOfAllergy->duration ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
@@ -1159,668 +1312,610 @@ class OutpatientRegistrationController extends Controller
             ];
 
             $patientSymptomsOfAllergyData = [
-                'allergies_Id'            => '',
                 'symptom_Description'   => $request->payload['symptom_Description'] ?? ($symptomsOfAllergy->symptom_Description ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now(),
             ];
 
             $patientBadHabitsData = [
-                'patient_Id'    => $patient_id,
-                'case_No'       => $registry_id,
-                'description'   => $request->payload['description'] ?? $badHabits->description,
+                'description'   => $request->payload['description'] ?? ($badHabits->description ?? null),
                 'updatedby'     => Auth()->user()->idnumber,
                 'updated_at'    => Carbon::now(),
             ];
 
             $patientPastBadHabitsData = [
-                'patient_Id'    => $patient_id,
-                'description'   => $request->payload['description'] ?? $pastBadHabits->description,
+                'description'   => $request->payload['description'] ?? ($pastBadHabits->description ?? null),
                 'updatedby'     => Auth()->user()->idnumber,
                 'updated_at'    => Carbon::now(),
             ];
 
             $patientDrugUsedForAllergyData = [
-                'patient_Id'        => $patient_id,
-                'drug_Description'  => $request->payload['drug_Description'] ?? $drugUsedForAllergy->drug_Description,
-                'hospital'          => $request->payload['hospital'] ?? $drugUsedForAllergy->hospital,
+                'drug_Description'  => $request->payload['drug_Description'] ?? ($drugUsedForAllergy->drug_Description ?? null),
+                'hospital'          => $request->payload['hospital'] ?? ($drugUsedForAllergy->hospital ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now(),
             ];
 
             $patientDoctorsData = [
-                'patient_Id'        => $patient_id,
-                'case_No'           => $registry_id,
-                'doctor_Id'         => $request->payload['doctor_Id'] ?? $patientDoctors->doctor_Id,
-                'doctors_Fullname'  => $request->payload['doctors_Fullname'] ?? $patientDoctors->doctors_Fullname,
-                'role_Id'           => $request->payload['role_Id'] ?? $patientDoctors->role_Id,
+                'doctor_Id'         => $request->payload['doctor_Id'] ?? ($patientDoctors->doctor_Id ?? null),
+                'doctors_Fullname'  => $request->payload['doctors_Fullname'] ?? ($patientDoctors->doctors_Fullname ?? null),
+                'role_Id'           => $request->payload['role_Id'] ?? ($patientDoctors->role_Id ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now(),
             ];
 
             $patientPhysicalAbdomenData = [
-                'patient_Id'                => $patient_id,
-                'case_No'                   => $registry_id,
-                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? $physicalAbdomen->essentially_Normal,
-                'palpable_Masses'           => $request->payload['palpable_Masses'] ?? $physicalAbdomen->palpable_Masses,
-                'abdominal_Rigidity'        => $request->payload['abdominal_Rigidity'] ?? $physicalAbdomen->abdominal_Rigidity,
-                'uterine_Contraction'       => $request->payload['uterine_Contraction'] ?? $physicalAbdomen->uterine_Contraction,
-                'hyperactive_Bowel_Sounds'  => $request->payload['hyperactive_Bowel_Sounds'] ?? $physicalAbdomen->hyperactive_Bowel_Sounds,
-                'others_Description'        => $request->payload['others_Description'] ?? $physicalAbdomen->others_Description,
+                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? ($physicalAbdomen->essentially_Normal ?? null),
+                'palpable_Masses'           => $request->payload['palpable_Masses'] ?? ($physicalAbdomen->palpable_Masses ?? null),
+                'abdominal_Rigidity'        => $request->payload['abdominal_Rigidity'] ?? ($physicalAbdomen->abdominal_Rigidity ?? null),
+                'uterine_Contraction'       => $request->payload['uterine_Contraction'] ?? ($physicalAbdomen->uterine_Contraction ?? null),
+                'hyperactive_Bowel_Sounds'  => $request->payload['hyperactive_Bowel_Sounds'] ?? ($physicalAbdomen->hyperactive_Bowel_Sounds ?? null),
+                'others_Description'        => $request->payload['others_Description'] ?? ($physicalAbdomen->others_Description ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
             ];
 
             $patientPertinentSignAndSymptomsData = [
-                'patient_Id'                        => $patient_id,
-                'case_No'                           => $registry_id,
-                'altered_Mental_Sensorium'          => $request->payload['altered_Mental_Sensorium'] ?? $pertinentSignAndSymptoms->altered_Mental_Sensorium,
-                'abdominal_CrampPain'               => $request->payload['abdominal_CrampPain'] ?? $pertinentSignAndSymptoms->abdominal_CrampPain,
-                'anorexia'                          => $request->payload['anorexia'] ?? $pertinentSignAndSymptoms->anorexia,
-                'bleeding_Gums'                     => $request->payload['bleeding_Gums'] ?? $pertinentSignAndSymptoms->bleeding_Gums,
-                'body_Weakness'                     => $request->payload['body_Weakness'] ?? $pertinentSignAndSymptoms->body_Weakness,
-                'blurring_Of_Vision'                => $request->payload['blurring_Of_Vision'] ?? $pertinentSignAndSymptoms->blurring_Of_Vision,
-                'chest_PainDiscomfort'              => $request->payload['chest_PainDiscomfort'] ?? $pertinentSignAndSymptoms->chest_PainDiscomfort,
-                'constipation'                      => $request->payload['constipation'] ?? $pertinentSignAndSymptoms->constipation,
-                'cough'                             => $request->payload['cough'] ?? $pertinentSignAndSymptoms->cough,
-                'diarrhea'                          => $request->payload['diarrhea'] ?? $pertinentSignAndSymptoms->diarrhea,
-                'dizziness'                         => $request->payload['dizziness'] ?? $pertinentSignAndSymptoms->dizziness,
-                'dysphagia'                         => $request->payload['dysphagia'] ?? $pertinentSignAndSymptoms->dysphagia,
-                'dysuria'                           => $request->payload['dysuria'] ?? $pertinentSignAndSymptoms->dysuria,
-                'epistaxis'                         => $request->payload['epistaxis'] ?? $pertinentSignAndSymptoms->epistaxis,
-                'fever'                             => $request->payload['fever'] ?? $pertinentSignAndSymptoms->fever,
-                'frequency_Of_Urination'            => $request->payload['frequency_Of_Urination'] ?? $pertinentSignAndSymptoms->frequency_Of_Urination,
-                'headache'                          => $request->payload['headache'] ?? $pertinentSignAndSymptoms->headache,
-                'hematemesis'                       => $request->payload['hematemesis'] ?? $pertinentSignAndSymptoms->hematemesis,
-                'hematuria'                         => $request->payload['hematuria'] ?? $pertinentSignAndSymptoms->hematuria,
-                'hemoptysis'                        => $request->payload['hemoptysis'] ?? $pertinentSignAndSymptoms->hemoptysis,
-                'irritability'                      => $request->payload['irritability'] ?? $pertinentSignAndSymptoms->irritability,
-                'jaundice'                          => $request->payload['jaundice'] ?? $pertinentSignAndSymptoms->jaundice,
-                'lower_Extremity_Edema'             => $request->payload['lower_Extremity_Edema'] ?? $pertinentSignAndSymptoms->lower_Extremity_Edema,
-                'myalgia'                           => $request->payload['myalgia'] ?? $pertinentSignAndSymptoms->myalgia,
-                'orthopnea'                         => $request->payload['orthopnea'] ?? $pertinentSignAndSymptoms->orthopnea,
-                'pain'                              => $request->payload['pain'] ?? $pertinentSignAndSymptoms->pain,
-                'pain_Description'                  => $request->payload['pain_Description'] ?? $pertinentSignAndSymptoms->pain_Description,
-                'palpitations'                      => $request->payload['palpitations'] ?? $pertinentSignAndSymptoms->palpitations,
-                'seizures'                          => $request->payload['seizures'] ?? $pertinentSignAndSymptoms->seizures,
-                'skin_rashes'                       => $request->payload['skin_rashes'] ?? $pertinentSignAndSymptoms->skin_rashes,
-                'stool_BloodyBlackTarry_Mucoid'     => $request->payload['stool_BloodyBlackTarry_Mucoid'] ?? $pertinentSignAndSymptoms->stool_BloodyBlackTarry_Mucoid,
-                'sweating'                          => $request->payload['sweating'] ?? $pertinentSignAndSymptoms->sweating,
-                'urgency'                           => $request->payload['urgency'] ?? $pertinentSignAndSymptoms->urgency,
-                'vomitting'                         => $request->payload['vomitting'] ?? $pertinentSignAndSymptoms->vomitting,
-                'weightloss'                        => $request->payload['weightloss'] ?? $pertinentSignAndSymptoms->weightloss,
-                'others'                            => $request->payload['others'] ?? $pertinentSignAndSymptoms->others,
-                'others_Description'                => $request->payload['others_Description'] ?? $pertinentSignAndSymptoms->others_Description,
+                'altered_Mental_Sensorium'          => $request->payload['altered_Mental_Sensorium'] ?? ($pertinentSignAndSymptoms->altered_Mental_Sensorium ?? null),
+                'abdominal_CrampPain'               => $request->payload['abdominal_CrampPain'] ?? ($pertinentSignAndSymptoms->abdominal_CrampPain ?? null),
+                'anorexia'                          => $request->payload['anorexia'] ?? ($pertinentSignAndSymptoms->anorexia ?? null),
+                'bleeding_Gums'                     => $request->payload['bleeding_Gums'] ?? ($pertinentSignAndSymptoms->bleeding_Gums ?? null),
+                'body_Weakness'                     => $request->payload['body_Weakness'] ?? ($pertinentSignAndSymptoms->body_Weakness ?? null),
+                'blurring_Of_Vision'                => $request->payload['blurring_Of_Vision'] ?? ($pertinentSignAndSymptoms->blurring_Of_Vision ?? null),
+                'chest_PainDiscomfort'              => $request->payload['chest_PainDiscomfort'] ?? ($pertinentSignAndSymptoms->chest_PainDiscomfort ?? null),
+                'constipation'                      => $request->payload['constipation'] ?? ($pertinentSignAndSymptoms->constipation ?? null),
+                'cough'                             => $request->payload['cough'] ?? ($pertinentSignAndSymptoms->cough ?? null),
+                'diarrhea'                          => $request->payload['diarrhea'] ?? ($pertinentSignAndSymptoms->diarrhea ?? null),
+                'dizziness'                         => $request->payload['dizziness'] ?? ($pertinentSignAndSymptoms->dizziness ?? null),
+                'dysphagia'                         => $request->payload['dysphagia'] ?? ($pertinentSignAndSymptoms->dysphagia ?? null),
+                'dysuria'                           => $request->payload['dysuria'] ?? ($pertinentSignAndSymptoms->dysuria ?? null),
+                'epistaxis'                         => $request->payload['epistaxis'] ?? ($pertinentSignAndSymptoms->epistaxis ?? null),
+                'fever'                             => $request->payload['fever'] ?? ($pertinentSignAndSymptoms->fever ?? null),
+                'frequency_Of_Urination'            => $request->payload['frequency_Of_Urination'] ?? ($pertinentSignAndSymptoms->frequency_Of_Urination ?? null),
+                'headache'                          => $request->payload['headache'] ?? ($pertinentSignAndSymptoms->headache ?? null),
+                'hematemesis'                       => $request->payload['hematemesis'] ?? ($pertinentSignAndSymptoms->hematemesis ?? null),
+                'hematuria'                         => $request->payload['hematuria'] ?? ($pertinentSignAndSymptoms->hematuria ?? null),
+                'hemoptysis'                        => $request->payload['hemoptysis'] ?? ($pertinentSignAndSymptoms->hemoptysis ?? null),
+                'irritability'                      => $request->payload['irritability'] ?? ($pertinentSignAndSymptoms->irritability ?? null),
+                'jaundice'                          => $request->payload['jaundice'] ?? ($pertinentSignAndSymptoms->jaundice ?? null),
+                'lower_Extremity_Edema'             => $request->payload['lower_Extremity_Edema'] ?? ($pertinentSignAndSymptoms->lower_Extremity_Edema ?? null),
+                'myalgia'                           => $request->payload['myalgia'] ?? ($pertinentSignAndSymptoms->myalgia ?? null),
+                'orthopnea'                         => $request->payload['orthopnea'] ?? ($pertinentSignAndSymptoms->orthopnea ?? null),
+                'pain'                              => $request->payload['pain'] ?? ($pertinentSignAndSymptoms->pain ?? null),
+                'palpitations'                      => $request->payload['palpitations'] ?? ($pertinentSignAndSymptoms->palpitations ?? null),
+                'seizures'                          => $request->payload['seizures'] ?? ($pertinentSignAndSymptoms->seizures ?? null),
+                'skin_rashes'                       => $request->payload['skin_rashes'] ?? ($pertinentSignAndSymptoms->skin_rashes ?? null),
+                'stool_BloodyBlackTarry_Mucoid'     => $request->payload['stool_BloodyBlackTarry_Mucoid'] ?? ($pertinentSignAndSymptoms->stool_BloodyBlackTarry_Mucoid ?? null),
+                'sweating'                          => $request->payload['sweating'] ?? ($pertinentSignAndSymptoms->sweating ?? null),
+                'urgency'                           => $request->payload['urgency'] ?? ($pertinentSignAndSymptoms->urgency ?? null),
+                'vomitting'                         => $request->payload['vomitting'] ?? ($pertinentSignAndSymptoms->vomitting ?? null),
+                'weightloss'                        => $request->payload['weightloss'] ?? ($pertinentSignAndSymptoms->weightloss ?? null),
+                'others'                            => $request->payload['others'] ?? ($pertinentSignAndSymptoms->others ?? null),
+                'others_Description'                => $request->payload['others_Description'] ?? ($pertinentSignAndSymptoms->others_Description ?? null),
                 'updatedby'                         => Auth()->user()->idnumber,
                 'updated_at'                        => Carbon::now(),
             ];
 
             $patientPhysicalExamtionChestLungsData = [
-                'patient_Id'                            => $patient_id,
-                'case_No'                               => $registry_id,
-                'essentially_Normal'                    => $request->payload['essentially_Normal'] ?? $physicalExamtionChestLungs->essentially_Normal,
-                'lumps_Over_Breasts'                    => $request->payload['lumps_Over_Breasts'] ?? $physicalExamtionChestLungs->lumps_Over_Breasts,
-                'asymmetrical_Chest_Expansion'          => $request->payload['asymmetrical_Chest_Expansion'] ?? $physicalExamtionChestLungs->asymmetrical_Chest_Expansion,
-                'rales_Crackles_Rhonchi'                => $request->payload['rales_Crackles_Rhonchi'] ?? $physicalExamtionChestLungs->rales_Crackles_Rhonchi,
-                'decreased_Breath_Sounds'               => $request->payload['decreased_Breath_Sounds'] ?? $physicalExamtionChestLungs->decreased_Breath_Sounds,
-                'intercostalrib_Clavicular_Retraction'  => $request->payload['intercostalrib_Clavicular_Retraction'] ?? $physicalExamtionChestLungs->intercostalrib_Clavicular_Retraction,
-                'wheezes'                               => $request->payload['wheezes'] ?? $physicalExamtionChestLungs->wheezes,
-                'others_Description'                    => $request->payload['others_Description'] ?? $physicalExamtionChestLungs->others_Description,
+                'essentially_Normal'                    => $request->payload['essentially_Normal'] ?? ($physicalExamtionChestLungs->essentially_Normal ?? null),
+                'lumps_Over_Breasts'                    => $request->payload['lumps_Over_Breasts'] ?? ($physicalExamtionChestLungs->lumps_Over_Breasts ?? null),
+                'asymmetrical_Chest_Expansion'          => $request->payload['asymmetrical_Chest_Expansion'] ?? ($physicalExamtionChestLungs->asymmetrical_Chest_Expansion ?? null),
+                'rales_Crackles_Rhonchi'                => $request->payload['rales_Crackles_Rhonchi'] ?? ($physicalExamtionChestLungs->rales_Crackles_Rhonchi ?? null),
+                'decreased_Breath_Sounds'               => $request->payload['decreased_Breath_Sounds'] ?? ($physicalExamtionChestLungs->decreased_Breath_Sounds ?? null),
+                'intercostalrib_Clavicular_Retraction'  => $request->payload['intercostalrib_Clavicular_Retraction'] ?? ($physicalExamtionChestLungs->intercostalrib_Clavicular_Retraction ?? null),
+                'wheezes'                               => $request->payload['wheezes'] ?? ($physicalExamtionChestLungs->wheezes ?? null),
+                'others_Description'                    => $request->payload['others_Description'] ?? ($physicalExamtionChestLungs->others_Description ?? null),
                 'updatedby'                             => Auth()->user()->idnumber,
                 'updated_at'                            => Carbon::now(),
             ];
 
             $patientCourseInTheWardData = [
-                'patient_Id'                            => $patient_id,
-                'case_No'                               => $registry_id,
-                'doctors_OrdersAction'                  => $request->payload['doctors_OrdersAction'] ?? $courseInTheWard->doctors_OrdersAction,
+                'doctors_OrdersAction'                  => $request->payload['doctors_OrdersAction'] ?? ($courseInTheWard->doctors_OrdersAction ?? null),
                 'updatedby'                             => Auth()->user()->idnumber,
                 'updated_at'                            => Carbon::now(),
             ];
 
             $patientPhysicalExamtionCVSData = [
-                'patient_Id'                => $patient_id,
-                'case_No'                   => $registry_id,
-                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? $physicalExamtionCVS->essentially_Normal,
-                'irregular_Rhythm'          => $request->payload['irregular_Rhythm'] ?? $physicalExamtionCVS->irregular_Rhythm,
-                'displaced_Apex_Beat'       => $request->payload['displaced_Apex_Beat'] ?? $physicalExamtionCVS->displaced_Apex_Beat,
-                'muffled_Heart_Sounds'      => $request->payload['muffled_Heart_Sounds'] ?? $physicalExamtionCVS->muffled_Heart_Sounds,
-                'heaves_AndOR_Thrills'      => $request->payload['heaves_AndOR_Thrills'] ?? $physicalExamtionCVS->heaves_AndOR_Thrills,
-                'murmurs'                   => $request->payload['murmurs'] ?? $physicalExamtionCVS->murmurs,
-                'pericardial_Bulge'         => $request->payload['pericardial_Bulge'] ?? $physicalExamtionCVS->pericardial_Bulge,
-                'others_Description'        => $request->payload['others_Description'] ?? $physicalExamtionCVS->others_Description,
+                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? ($physicalExamtionCVS->essentially_Normal ?? null),
+                'irregular_Rhythm'          => $request->payload['irregular_Rhythm'] ?? ($physicalExamtionCVS->irregular_Rhythm ?? null),
+                'displaced_Apex_Beat'       => $request->payload['displaced_Apex_Beat'] ?? ($physicalExamtionCVS->displaced_Apex_Beat ?? null),
+                'muffled_Heart_Sounds'      => $request->payload['muffled_Heart_Sounds'] ?? ($physicalExamtionCVS->muffled_Heart_Sounds ?? null),
+                'heaves_AndOR_Thrills'      => $request->payload['heaves_AndOR_Thrills'] ?? ($physicalExamtionCVS->heaves_AndOR_Thrills ?? null),
+                'murmurs'                   => $request->payload['murmurs'] ?? ($physicalExamtionCVS->murmurs ?? null),
+                'pericardial_Bulge'         => $request->payload['pericardial_Bulge'] ?? ($physicalExamtionCVS->pericardial_Bulge ?? null),
+                'others_Description'        => $request->payload['others_Description'] ?? ($physicalExamtionCVS->others_Description ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
             ];
 
             $patientPhysicalExamtionGeneralSurveyData = [
-                'patient_Id'            => $patient_id,
-                'case_No'               => $registry_id,
-                'awake_And_Alert'       => $request->payload['awake_And_Alert'] ?? $physicalExamtionGeneralSurvey->awake_And_Alert,
-                'altered_Sensorium'     => $request->payload['altered_Sensorium'] ?? $physicalExamtionGeneralSurvey->altered_Sensorium,
+                'awake_And_Alert'       => $request->payload['awake_And_Alert'] ?? ($physicalExamtionGeneralSurvey->awake_And_Alert ?? null),
+                'altered_Sensorium'     => $request->payload['altered_Sensorium'] ?? ($physicalExamtionGeneralSurvey->altered_Sensorium ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now(),
             ];
 
             $patientPhysicalExamtionHEENTData = [
-                'patient_Id'                    => $patient_id,
-                'case_No'                       => $registry_id,
-                'essentially_Normal'            => $request->payload['essentially_Normal'] ?? $physicalExamtionHEENT->essentially_Normal,
-                'icteric_Sclerae'               => $request->payload['icteric_Sclerae'] ?? $physicalExamtionHEENT->icteric_Sclerae,
-                'abnormal_Pupillary_Reaction'   => $request->payload['abnormal_Pupillary_Reaction'] ?? $physicalExamtionHEENT->abnormal_Pupillary_Reaction,
-                'pale_Conjunctive'              => $request->payload['pale_Conjunctive'] ?? $physicalExamtionHEENT->pale_Conjunctive,
-                'cervical_Lympadenopathy'       => $request->payload['cervical_Lympadenopathy'] ?? $physicalExamtionHEENT->cervical_Lympadenopathy,
-                'sunken_Eyeballs'               => $request->payload['sunken_Eyeballs'] ?? $physicalExamtionHEENT->sunken_Eyeballs,
-                'dry_Mucous_Membrane'           => $request->payload['dry_Mucous_Membrane'] ?? $physicalExamtionHEENT->dry_Mucous_Membrane,
-                'sunken_Fontanelle'             => $request->payload['sunken_Fontanelle'] ?? $physicalExamtionHEENT->sunken_Fontanelle,
-                'others_description'            => $request->payload['others_description'] ?? $physicalExamtionHEENT->others_description,
+                'essentially_Normal'            => $request->payload['essentially_Normal'] ?? ($physicalExamtionHEENT->essentially_Normal ?? null),
+                'icteric_Sclerae'               => $request->payload['icteric_Sclerae'] ?? ($physicalExamtionHEENT->icteric_Sclerae ?? null),
+                'abnormal_Pupillary_Reaction'   => $request->payload['abnormal_Pupillary_Reaction'] ?? ($physicalExamtionHEENT->abnormal_Pupillary_Reaction ?? null),
+                'pale_Conjunctive'              => $request->payload['pale_Conjunctive'] ?? ($physicalExamtionHEENT->pale_Conjunctive ?? null),
+                'cervical_Lympadenopathy'       => $request->payload['cervical_Lympadenopathy'] ?? ($physicalExamtionHEENT->cervical_Lympadenopathy ?? null),
+                'sunken_Eyeballs'               => $request->payload['sunken_Eyeballs'] ?? ($physicalExamtionHEENT->sunken_Eyeballs ?? null),
+                'dry_Mucous_Membrane'           => $request->payload['dry_Mucous_Membrane'] ?? ($physicalExamtionHEENT->dry_Mucous_Membrane ?? null),
+                'sunken_Fontanelle'             => $request->payload['sunken_Fontanelle'] ?? ($physicalExamtionHEENT->sunken_Fontanelle ?? null),
+                'others_description'            => $request->payload['others_description'] ?? ($physicalExamtionHEENT->others_description ?? null),
                 'updatedby'                     => Auth()->user()->idnumber,
                 'updated_at'                    => Carbon::now(),
             ];
 
             $patientPhysicalGUIEData = [
-                'patient_Id'                        => $patient_id,
-                'case_No'                           => $registry_id,
-                'essentially_Normal'                => $request->payload['essentially_Normal'] ?? $physicalGUIE->essentially_Normal,
-                'blood_StainedIn_Exam_Finger'       => $request->payload['blood_StainedIn_Exam_Finger'] ?? $physicalGUIE->blood_StainedIn_Exam_Finger,
-                'cervical_Dilatation'               => $request->payload['cervical_Dilatation'] ?? $physicalGUIE->cervical_Dilatation,
-                'presence_Of_AbnormalDischarge'     => $request->payload['presence_Of_AbnormalDischarge'] ?? $physicalGUIE->presence_Of_AbnormalDischarge,
-                'others_Description'                => $request->payload['others_Description'] ?? $physicalGUIE->others_Description,
-                'updatedby'                         => Auth()->user()->idnumber,
+                'essentially_Normal'                => $request->payload['essentially_Normal'] ?? ($physicalGUIE->essentially_Normal ?? null),
+                'blood_StainedIn_Exam_Finger'       => $request->payload['blood_StainedIn_Exam_Finger'] ?? ($physicalGUIE->blood_StainedIn_Exam_Finger ?? null),
+                'cervical_Dilatation'               => $request->payload['cervical_Dilatation'] ?? ($physicalGUIE->cervical_Dilatation ?? null),
+                'presence_Of_AbnormalDischarge'     => $request->payload['presence_Of_AbnormalDischarge'] ?? ($physicalGUIE->presence_Of_AbnormalDischarge ?? null),
+                'others_Description'                => $request->payload['others_Description'] ?? ($physicalGUIE->others_Description ?? null),
                 'updated_at'                        => Carbon::now(),
             ];
 
             $patientPhysicalNeuroExamData = [
-                'patient_Id'                    => $patient_id,
-                'case_No'                       => $registry_id,
-                'essentially_Normal'            => $request->payload['essentially_Normal'] ?? $physicalNeuroExam->essentially_Normal,
-                'abnormal_Reflexes'             => $request->payload['abnormal_Reflexes'] ?? $physicalNeuroExam->abnormal_Reflexes,
-                'abormal_Gait'                  => $request->payload['abormal_Gait'] ?? $physicalNeuroExam->abormal_Gait,
-                'poor_Altered_Memory'           => $request->payload['poor_Altered_Memory'] ?? $physicalNeuroExam->poor_Altered_Memory,
-                'abnormal_Position_Sense'       => $request->payload['abnormal_Position_Sense'] ?? $physicalNeuroExam->abnormal_Position_Sense,
-                'poor_Muscle_Tone_Strength'     => $request->payload['poor_Muscle_Tone_Strength'] ?? $physicalNeuroExam->poor_Muscle_Tone_Strength,
-                'abnormal_Decreased_Sensation'  => $request->payload['abnormal_Decreased_Sensation'] ?? $physicalNeuroExam->abnormal_Decreased_Sensation,
-                'poor_Coordination'             => $request->payload['poor_Coordination'] ?? $physicalNeuroExam->poor_Coordination,
+                'essentially_Normal'            => $request->payload['essentially_Normal'] ?? ($physicalNeuroExam->essentially_Normal ?? null),
+                'abnormal_Reflexes'             => $request->payload['abnormal_Reflexes'] ?? ($physicalNeuroExam->abnormal_Reflexes ?? null),
+                'abormal_Gait'                  => $request->payload['abormal_Gait'] ?? ($physicalNeuroExam->abormal_Gait ?? null),
+                'poor_Altered_Memory'           => $request->payload['poor_Altered_Memory'] ?? ($physicalNeuroExam->poor_Altered_Memory ?? null),
+                'abnormal_Position_Sense'       => $request->payload['abnormal_Position_Sense'] ?? ($physicalNeuroExam->abnormal_Position_Sense ?? null),
+                'poor_Muscle_Tone_Strength'     => $request->payload['poor_Muscle_Tone_Strength'] ?? ($physicalNeuroExam->poor_Muscle_Tone_Strength ?? null),
+                'abnormal_Decreased_Sensation'  => $request->payload['abnormal_Decreased_Sensation'] ?? ($physicalNeuroExam->abnormal_Decreased_Sensation ?? null),
+                'poor_Coordination'             => $request->payload['poor_Coordination'] ?? ($physicalNeuroExam->poor_Coordination ?? null),
                 'updatedby'                     => Auth()->user()->idnumber,
                 'updated_at'                    => Carbon::now(),
             ];
 
             $patientPhysicalSkinExtremitiesData = [
-                'patient_Id'                => $patient_id,
-                'case_No'                   => $registry_id,
-                'essentially_Normal'        => $request->payload['essentially_Normal'] ?? $physicalSkinExtremities->essentially_Normal,
-                'edema_Swelling'            => $request->payload['edema_Swelling'] ?? $physicalSkinExtremities->edema_Swelling,
-                'rashes_Petechiae'          => $request->payload['rashes_Petechiae'] ?? $physicalSkinExtremities->rashes_Petechiae,
-                'clubbing'                  => $request->payload['clubbing'] ?? $physicalSkinExtremities->clubbing,
-                'decreased_Mobility'        => $request->payload['decreased_Mobility'] ?? $physicalSkinExtremities->decreased_Mobility,
-                'weak_Pulses'               => $request->payload['weak_Pulses'] ?? $physicalSkinExtremities->weak_Pulses,
-                'cold_Clammy_Skin'          => $request->payload['cold_Clammy_Skin'] ?? $physicalSkinExtremities->cold_Clammy_Skin,
-                'pale_Nailbeds'             => $request->payload['pale_Nailbeds'] ?? $physicalSkinExtremities->pale_Nailbeds,
-                'cyanosis_Mottled_Skin'     => $request->payload['cyanosis_Mottled_Skin'] ?? $physicalSkinExtremities->cyanosis_Mottled_Skin,
-                'poor_Skin_Turgor'          => $request->payload['poor_Skin_Turgor'] ?? $physicalSkinExtremities->poor_Skin_Turgor,
-                'others_Description'        => $request->payload['others_Description'] ?? $physicalSkinExtremities->others_Description,
+                'essentially_Normal'        => $request->payload['poor_Coordination'] ?? ($physicalSkinExtremities->poor_Coordination ?? null),
+                'edema_Swelling'            => $request->payload['edema_Swelling'] ?? ($physicalSkinExtremities->edema_Swelling ?? null),
+                'rashes_Petechiae'          => $request->payload['rashes_Petechiae'] ?? ($physicalSkinExtremities->rashes_Petechiae ?? null),
+                'clubbing'                  => $request->payload['clubbing'] ?? ($physicalSkinExtremities->clubbing ?? null),
+                'decreased_Mobility'        => $request->payload['decreased_Mobility'] ?? ($physicalSkinExtremities->decreased_Mobility ?? null),
+                'weak_Pulses'               => $request->payload['weak_Pulses'] ?? ($physicalSkinExtremities->weak_Pulses ?? null),
+                'cold_Clammy_Skin'          => $request->payload['cold_Clammy_Skin'] ?? ($physicalSkinExtremities->cold_Clammy_Skin ?? null),
+                'pale_Nailbeds'             => $request->payload['pale_Nailbeds'] ?? ($physicalSkinExtremities->pale_Nailbeds ?? null),
+                'cyanosis_Mottled_Skin'     => $request->payload['cyanosis_Mottled_Skin'] ?? ($physicalSkinExtremities->cyanosis_Mottled_Skin ?? null),
+                'poor_Skin_Turgor'          => $request->payload['poor_Skin_Turgor'] ?? ($physicalSkinExtremities->poor_Skin_Turgor ?? null),
+                'others_Description'        => $request->payload['others_Description'] ?? ($physicalSkinExtremities->others_Description ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
             ];
             
             $patientOBGYNHistoryData = [
-                'patient_Id'                                            => $patient_id,
-                'case_No'                                               => $registry_id,
-                'obsteric_Code'                                         => $request->payload['obsteric_Code'] ?? $OBGYNHistory->obsteric_Code,
-                'menarchAge'                                            => $request->payload['menarchAge'] ?? $OBGYNHistory->menarchAge,
-                'menopauseAge'                                          => $request->payload['menopauseAge'] ?? $OBGYNHistory->menopauseAge,
-                'cycleLength'                                           => $request->payload['cycleLength'] ?? $OBGYNHistory->cycleLength,
-                'cycleRegularity'                                       => $request->payload['cycleRegularity'] ?? $OBGYNHistory->cycleRegularity,
-                'lastMenstrualPeriod'                                   => $request->payload['lastMenstrualPeriod'] ?? $OBGYNHistory->lastMenstrualPeriod,
-                'contraceptiveUse'                                      => $request->payload['contraceptiveUse'] ?? $OBGYNHistory->contraceptiveUse,
-                'lastPapSmearDate'                                      => $request->payload['lastPapSmearDate'] ?? $OBGYNHistory->lastPapSmearDate,
-                'isVitalSigns_Normal'                                   => $request->payload['isVitalSigns_Normal'] ?? $OBGYNHistory->isVitalSigns_Normal,
-                'isAscertainPresent_PregnancyisLowRisk'                 => $request->payload['isAscertainPresent_PregnancyisLowRisk'] ?? $OBGYNHistory->isAscertainPresent_PregnancyisLowRisk,
-                'riskfactor_MultiplePregnancy'                          => $request->payload['riskfactor_MultiplePregnancy'] ?? $OBGYNHistory->riskfactor_MultiplePregnancy,
-                'riskfactor_OvarianCyst'                                => $request->payload['riskfactor_OvarianCyst'] ?? $OBGYNHistory->riskfactor_OvarianCyst,
-                'riskfactor_MyomaUteri'                                 => $request->payload['riskfactor_MyomaUteri'] ?? $OBGYNHistory->riskfactor_MyomaUteri,
-                'riskfactor_PlacentaPrevia'                             => $request->payload['riskfactor_PlacentaPrevia'] ?? $OBGYNHistory->riskfactor_PlacentaPrevia,
-                'riskfactor_Historyof3Miscarriages'                     => $request->payload['riskfactor_Historyof3Miscarriages'] ?? $OBGYNHistory->riskfactor_Historyof3Miscarriages,
-                'riskfactor_HistoryofStillbirth'                        => $request->payload['riskfactor_HistoryofStillbirth'] ?? $OBGYNHistory->riskfactor_HistoryofStillbirth,
-                'riskfactor_HistoryofEclampsia'                         => $request->payload['riskfactor_HistoryofEclampsia'] ?? $OBGYNHistory->riskfactor_HistoryofEclampsia,
-                'riskfactor_PrematureContraction'                       => $request->payload['riskfactor_PrematureContraction'] ?? $OBGYNHistory->riskfactor_PrematureContraction,
-                'riskfactor_NotApplicableNone'                          => $request->payload['riskfactor_NotApplicableNone'] ?? $OBGYNHistory->riskfactor_NotApplicableNone,
-                'medicalSurgical_Hypertension'                          => $request->payload['medicalSurgical_Hypertension'] ?? $OBGYNHistory->medicalSurgical_Hypertension,
-                'medicalSurgical_HeartDisease'                          => $request->payload['medicalSurgical_HeartDisease'] ?? $OBGYNHistory->medicalSurgical_HeartDisease,
-                'medicalSurgical_Diabetes'                              => $request->payload['medicalSurgical_Diabetes'] ?? $OBGYNHistory->medicalSurgical_Diabetes,
-                'medicalSurgical_ThyroidDisorder'                       => $request->payload['medicalSurgical_ThyroidDisorder'] ?? $OBGYNHistory->medicalSurgical_ThyroidDisorder,
-                'medicalSurgical_Obesity'                               => $request->payload['medicalSurgical_Obesity'] ?? $OBGYNHistory->medicalSurgical_Obesity,
-                'medicalSurgical_ModerateToSevereAsthma'                => $request->payload['medicalSurgical_ModerateToSevereAsthma'] ?? $OBGYNHistory->medicalSurgical_ModerateToSevereAsthma,
-                'medicalSurigcal_Epilepsy'                              => $request->payload['medicalSurigcal_Epilepsy'] ?? $OBGYNHistory->medicalSurigcal_Epilepsy,
-                'medicalSurgical_RenalDisease'                          => $request->payload['medicalSurgical_RenalDisease'] ?? $OBGYNHistory->medicalSurgical_RenalDisease,
-                'medicalSurgical_BleedingDisorder'                      => $request->payload['medicalSurgical_BleedingDisorder'] ?? $OBGYNHistory->medicalSurgical_BleedingDisorder,
-                'medicalSurgical_HistoryOfPreviousCesarianSection'      => $request->payload['medicalSurgical_HistoryOfPreviousCesarianSection'] ?? $OBGYNHistory->medicalSurgical_HistoryOfPreviousCesarianSection,
-                'medicalSurgical_HistoryOfUterineMyomectomy'            => $request->payload['medicalSurgical_HistoryOfUterineMyomectomy'] ?? $OBGYNHistory->medicalSurgical_HistoryOfUterineMyomectomy,
-                'medicalSurgical_NotApplicableNone'                     => $request->payload['medicalSurgical_NotApplicableNone'] ?? $OBGYNHistory->medicalSurgical_NotApplicableNone,
-                'deliveryPlan_OrientationToMCP'                         => $request->payload['deliveryPlan_OrientationToMCP'] ?? $OBGYNHistory->deliveryPlan_OrientationToMCP,
-                'deliveryPlan_ExpectedDeliveryDate'                     => $request->payload['deliveryPlan_ExpectedDeliveryDate'] ?? $OBGYNHistory->deliveryPlan_ExpectedDeliveryDate,
-                'followUp_Prenatal_ConsultationNo_2nd'                  => $request->payload['followUp_Prenatal_ConsultationNo_2nd'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_2nd,
-                'followUp_Prenatal_DateVisit_2nd'                       => $request->payload['followUp_Prenatal_DateVisit_2nd'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_2nd,
-                'followUp_Prenatal_AOGInWeeks_2nd'                      => $request->payload['followUp_Prenatal_AOGInWeeks_2nd'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_2nd,
-                'followUp_Prenatal_Weight_2nd'                          => $request->payload['followUp_Prenatal_Weight_2nd'] ?? $OBGYNHistory->followUp_Prenatal_Weight_2nd,
-                'followUp_Prenatal_CardiacRate_2nd'                     => $request->payload['followUp_Prenatal_CardiacRate_2nd'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_2nd,
-                'followUp_Prenatal_RespiratoryRate_2nd'                 => $request->payload['followUp_Prenatal_RespiratoryRate_2nd'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_2nd,
-                'followUp_Prenatal_BloodPresureSystolic_2nd'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_2nd'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_2nd,
-                'followUp_Prenatal_BloodPresureDiastolic_2nd'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_2nd'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_2nd,
-                'followUp_Prenatal_Temperature_2nd'                     => $request->payload['followUp_Prenatal_Temperature_2nd'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_2nd,
-                'followUp_Prenatal_ConsultationNo_3rd'                  => $request->payload['followUp_Prenatal_ConsultationNo_3rd'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_3rd,
-                'followUp_Prenatal_DateVisit_3rd'                       => $request->payload['followUp_Prenatal_DateVisit_3rd'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_3rd,
-                'followUp_Prenatal_AOGInWeeks_3rd'                      => $request->payload['followUp_Prenatal_AOGInWeeks_3rd'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_3rd,
-                'followUp_Prenatal_Weight_3rd'                          => $request->payload['followUp_Prenatal_Weight_3rd'] ?? $OBGYNHistory->followUp_Prenatal_Weight_3rd,
-                'followUp_Prenatal_CardiacRate_3rd'                     => $request->payload['followUp_Prenatal_CardiacRate_3rd'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_3rd,
-                'followUp_Prenatal_RespiratoryRate_3rd'                 => $request->payload['followUp_Prenatal_RespiratoryRate_3rd'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_3rd,
-                'followUp_Prenatal_BloodPresureSystolic_3rd'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_3rd'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_3rd,
-                'followUp_Prenatal_BloodPresureDiastolic_3rd'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_3rd'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_3rd,
-                'followUp_Prenatal_Temperature_3rd'                     => $request->payload['followUp_Prenatal_Temperature_3rd'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_3rd,
-                'followUp_Prenatal_ConsultationNo_4th'                  => $request->payload['followUp_Prenatal_ConsultationNo_4th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_4th,
-                'followUp_Prenatal_DateVisit_4th'                       => $request->payload['followUp_Prenatal_DateVisit_4th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_4th,
-                'followUp_Prenatal_AOGInWeeks_4th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_4th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_4th,
-                'followUp_Prenatal_Weight_4th'                          => $request->payload['followUp_Prenatal_Weight_4th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_4th,
-                'followUp_Prenatal_CardiacRate_4th'                     => $request->payload['followUp_Prenatal_CardiacRate_4th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_4th,
-                'followUp_Prenatal_RespiratoryRate_4th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_4th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_4th,
-                'followUp_Prenatal_BloodPresureSystolic_4th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_4th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_4th,
-                'followUp_Prenatal_ConsultationNo_5th'                  => $request->payload['followUp_Prenatal_ConsultationNo_5th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_5th,
-                'followUp_Prenatal_DateVisit_5th'                       => $request->payload['followUp_Prenatal_DateVisit_5th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_5th,
-                'followUp_Prenatal_AOGInWeeks_5th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_5th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_5th,
-                'followUp_Prenatal_Weight_5th'                          => $request->payload['followUp_Prenatal_Weight_5th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_5th,
-                'followUp_Prenatal_CardiacRate_5th'                     => $request->payload['followUp_Prenatal_CardiacRate_5th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_5th,
-                'followUp_Prenatal_RespiratoryRate_5th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_5th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_5th,
-                'followUp_Prenatal_BloodPresureSystolic_5th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_5th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_5th,
-                'followUp_Prenatal_BloodPresureDiastolic_5th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_5th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_5th,
-                'followUp_Prenatal_Temperature_5th'                     => $request->payload['followUp_Prenatal_Temperature_5th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_5th,
-                'followUp_Prenatal_ConsultationNo_6th'                  => $request->payload['followUp_Prenatal_ConsultationNo_6th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_6th,
-                'followUp_Prenatal_DateVisit_6th'                       => $request->payload['followUp_Prenatal_DateVisit_6th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_6th,
-                'followUp_Prenatal_AOGInWeeks_6th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_6th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_6th,
-                'followUp_Prenatal_Weight_6th'                          => $request->payload['followUp_Prenatal_Weight_6th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_6th,
-                'followUp_Prenatal_CardiacRate_6th'                     => $request->payload['followUp_Prenatal_CardiacRate_6th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_6th,
-                'followUp_Prenatal_RespiratoryRate_6th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_6th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_6th,
-                'followUp_Prenatal_BloodPresureSystolic_6th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_6th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_6th,
-                'followUp_Prenatal_BloodPresureDiastolic_6th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_6th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_6th,
-                'followUp_Prenatal_Temperature_6th'                     => $request->payload['followUp_Prenatal_Temperature_6th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_6th,
-                'followUp_Prenatal_ConsultationNo_7th'                  => $request->payload['followUp_Prenatal_ConsultationNo_7th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_7th,
-                'followUp_Prenatal_DateVisit_7th'                       => $request->payload['followUp_Prenatal_DateVisit_7th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_7th,
-                'followUp_Prenatal_AOGInWeeks_7th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_7th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_7th,
-                'followUp_Prenatal_Weight_7th'                          => $request->payload['followUp_Prenatal_Weight_7th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_7th,
-                'followUp_Prenatal_CardiacRate_7th'                     => $request->payload['followUp_Prenatal_CardiacRate_7th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_7th,
-                'followUp_Prenatal_RespiratoryRate_7th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_7th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_7th,
-                'followUp_Prenatal_BloodPresureDiastolic_7th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_7th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_7th,
-                'followUp_Prenatal_Temperature_7th'                     => $request->payload['followUp_Prenatal_Temperature_7th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_7th,
-                'followUp_Prenatal_ConsultationNo_8th'                  => $request->payload['followUp_Prenatal_ConsultationNo_8th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_8th,
-                'followUp_Prenatal_DateVisit_8th'                       => $request->payload['followUp_Prenatal_DateVisit_8th'] ?? null,
-                // 'followUp_Prenatal_DateVisit_8th'                       => $request->payload['followUp_Prenatal_DateVisit_8th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_8th,
-                'followUp_Prenatal_AOGInWeeks_8th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_8th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_8th,
-                'followUp_Prenatal_Weight_8th'                          => $request->payload['followUp_Prenatal_Weight_8th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_8th,
-                'followUp_Prenatal_CardiacRate_8th'                     => $request->payload['followUp_Prenatal_CardiacRate_8th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_8th,
-                'followUp_Prenatal_RespiratoryRate_8th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_8th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_8th,
-                'followUp_Prenatal_BloodPresureSystolic_8th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_8th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_8th,
-                'followUp_Prenatal_BloodPresureDiastolic_8th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_8th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_8th,
-                'followUp_Prenatal_Temperature_8th'                     => $request->payload['followUp_Prenatal_Temperature_8th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_8th,
-                'followUp_Prenatal_ConsultationNo_9th'                  => $request->payload['followUp_Prenatal_ConsultationNo_9th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_8th,
-                'followUp_Prenatal_DateVisit_9th'                       => $request->payload['followUp_Prenatal_DateVisit_9th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_9th,
-                'followUp_Prenatal_AOGInWeeks_9th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_9th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_9th,
-                'followUp_Prenatal_Weight_9th'                          => $request->payload['followUp_Prenatal_Weight_9th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_9th,
-                'followUp_Prenatal_CardiacRate_9th'                     => $request->payload['followUp_Prenatal_CardiacRate_9th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_9th,
-                'followUp_Prenatal_RespiratoryRate_9th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_9th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_9th,
-                'followUp_Prenatal_BloodPresureSystolic_9th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_9th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_9th,
-                'followUp_Prenatal_BloodPresureDiastolic_9th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_9th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_9th,
-                'followUp_Prenatal_Temperature_9th'                     => $request->payload['followUp_Prenatal_Temperature_9th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_9th,
-                'followUp_Prenatal_ConsultationNo_10th'                 => $request->payload['followUp_Prenatal_ConsultationNo_10th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_10th,
-                'followUp_Prenatal_DateVisit_10th'                      => $request->payload['followUp_Prenatal_DateVisit_10th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_10th,
-                'followUp_Prenatal_AOGInWeeks_10th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_10th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_10th,
-                'followUp_Prenatal_Weight_10th'                         => $request->payload['followUp_Prenatal_Weight_10th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_10th,
-                'followUp_Prenatal_CardiacRate_10th'                    => $request->payload['followUp_Prenatal_CardiacRate_10th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_10th,
-                'followUp_Prenatal_RespiratoryRate_10th'                => $request->payload['followUp_Prenatal_RespiratoryRate_10th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_10th,
-                'followUp_Prenatal_BloodPresureSystolic_10th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_10th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_10th,
-                'followUp_Prenatal_BloodPresureDiastolic_10th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_10th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_10th,
-                'followUp_Prenatal_Temperature_10th'                    => $request->payload['followUp_Prenatal_Temperature_10th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_10th,
-                'followUp_Prenatal_ConsultationNo_11th'                 => $request->payload['followUp_Prenatal_ConsultationNo_11th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_11th,
-                'followUp_Prenatal_DateVisit_11th'                      => $request->payload['followUp_Prenatal_DateVisit_11th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_11th,
-                'followUp_Prenatal_AOGInWeeks_11th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_11th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_11th,
-                'followUp_Prenatal_Weight_11th'                         => $request->payload['followUp_Prenatal_Weight_11th'] ?? $OBGYNHistory->followUp_Prenatal_Weight_11th,
-                'followUp_Prenatal_CardiacRate_11th'                    => $request->payload['followUp_Prenatal_CardiacRate_11th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_11th,
-                'followUp_Prenatal_RespiratoryRate_11th'                => $request->payload['followUp_Prenatal_RespiratoryRate_11th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_11th,
-                'followUp_Prenatal_BloodPresureSystolic_11th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_11th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_11th,
-                'followUp_Prenatal_BloodPresureDiastolic_11th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_11th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_11th,
-                'followUp_Prenatal_Temperature_11th'                    => $request->payload['followUp_Prenatal_Temperature_11th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_11th,
-                'followUp_Prenatal_ConsultationNo_12th'                 => $request->payload['followUp_Prenatal_ConsultationNo_12th'] ?? $OBGYNHistory->followUp_Prenatal_ConsultationNo_12th,
-                'followUp_Prenatal_DateVisit_12th'                      => $request->payload['followUp_Prenatal_DateVisit_12th'] ?? $OBGYNHistory->followUp_Prenatal_DateVisit_12th,
-                'followUp_Prenatal_AOGInWeeks_12th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_12th'] ?? $OBGYNHistory->followUp_Prenatal_AOGInWeeks_12th,
-                'followUp_Prenatal_Weight_12th'                         => $request->payload['ffollowUp_Prenatal_Weight_12th'] ?? $OBGYNHistory->ffollowUp_Prenatal_Weight_12th,
-                'followUp_Prenatal_CardiacRate_12th'                    => $request->payload['followUp_Prenatal_CardiacRate_12th'] ?? $OBGYNHistory->followUp_Prenatal_CardiacRate_12th,
-                'followUp_Prenatal_RespiratoryRate_12th'                => $request->payload['followUp_Prenatal_RespiratoryRate_12th'] ?? $OBGYNHistory->followUp_Prenatal_RespiratoryRate_12th,
-                'followUp_Prenatal_BloodPresureSystolic_12th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_12th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_12th,
-                'followUp_Prenatal_BloodPresureDiastolic_12th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_12th'] ?? $OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_12th,
-                'followUp_Prenatal_Temperature_12th'                    => $request->payload['followUp_Prenatal_Temperature_12th'] ?? $OBGYNHistory->followUp_Prenatal_Temperature_12th,
-                'followUp_Prenatal_Remarks'                             => $request->payload['followUp_Prenatal_Remarks'] ?? $OBGYNHistory->followUp_Prenatal_Remarks,
+                'obsteric_Code'                                         => $request->payload['others_Description'] ?? ($OBGYNHistory->others_Description ?? null),
+                'menarchAge'                                            => $request->payload['menarchAge'] ?? ($OBGYNHistory->menarchAge ?? null),
+                'menopauseAge'                                          => $request->payload['menopauseAge'] ?? ($OBGYNHistory->menopauseAge ?? null),
+                'cycleLength'                                           => $request->payload['cycleLength'] ?? ($OBGYNHistory->cycleLength ?? null),
+                'cycleRegularity'                                       => $request->payload['cycleRegularity'] ?? ($OBGYNHistory->cycleRegularity ?? null),
+                'lastMenstrualPeriod'                                   => $request->payload['lastMenstrualPeriod'] ?? ($OBGYNHistory->lastMenstrualPeriod ?? null),
+                'contraceptiveUse'                                      => $request->payload['contraceptiveUse'] ?? ($OBGYNHistory->contraceptiveUse ?? null),
+                'lastPapSmearDate'                                      => $request->payload['lastPapSmearDate'] ?? ($OBGYNHistory->lastPapSmearDate ?? null),
+                'isVitalSigns_Normal'                                   => $request->payload['isVitalSigns_Normal'] ?? ($OBGYNHistory->isVitalSigns_Normal ?? null),
+                'isAscertainPresent_PregnancyisLowRisk'                 => $request->payload['isAscertainPresent_PregnancyisLowRisk'] ?? ($OBGYNHistory->isAscertainPresent_PregnancyisLowRisk ?? null),
+                'riskfactor_MultiplePregnancy'                          => $request->payload['riskfactor_MultiplePregnancy'] ?? ($OBGYNHistory->riskfactor_MultiplePregnancy ?? null),
+                'riskfactor_OvarianCyst'                                => $request->payload['riskfactor_OvarianCyst'] ?? ($OBGYNHistory->riskfactor_OvarianCyst ?? null),
+                'riskfactor_MyomaUteri'                                 => $request->payload['riskfactor_MyomaUteri'] ?? ($OBGYNHistory->riskfactor_MyomaUteri ?? null),
+                'riskfactor_PlacentaPrevia'                             => $request->payload['riskfactor_PlacentaPrevia'] ?? ($OBGYNHistory->riskfactor_PlacentaPrevia ?? null),
+                'riskfactor_Historyof3Miscarriages'                     => $request->payload['riskfactor_Historyof3Miscarriages'] ?? ($OBGYNHistory->riskfactor_Historyof3Miscarriages ?? null),
+                'riskfactor_HistoryofStillbirth'                        => $request->payload['riskfactor_HistoryofStillbirth'] ?? ($OBGYNHistory->riskfactor_HistoryofStillbirth ?? null),
+                'riskfactor_HistoryofEclampsia'                         => $request->payload['riskfactor_HistoryofEclampsia'] ?? ($OBGYNHistory->riskfactor_HistoryofEclampsia ?? null),
+                'riskfactor_PrematureContraction'                       => $request->payload['riskfactor_PrematureContraction'] ?? ($OBGYNHistory->riskfactor_PrematureContraction ?? null),
+                'riskfactor_NotApplicableNone'                          => $request->payload['riskfactor_NotApplicableNone'] ?? ($OBGYNHistory->riskfactor_NotApplicableNone ?? null),
+                'medicalSurgical_Hypertension'                          => $request->payload['medicalSurgical_Hypertension'] ?? ($OBGYNHistory->medicalSurgical_Hypertension ?? null),
+                'medicalSurgical_HeartDisease'                          => $request->payload['medicalSurgical_HeartDisease'] ?? ($OBGYNHistory->medicalSurgical_HeartDisease ?? null),
+                'medicalSurgical_Diabetes'                              => $request->payload['medicalSurgical_Diabetes'] ?? ($OBGYNHistory->medicalSurgical_Diabetes ?? null),
+                'medicalSurgical_ThyroidDisorder'                       => $request->payload['medicalSurgical_ThyroidDisorder'] ?? ($OBGYNHistory->medicalSurgical_ThyroidDisorder ?? null),
+                'medicalSurgical_Obesity'                               => $request->payload['medicalSurgical_Obesity'] ?? ($OBGYNHistory->medicalSurgical_Obesity ?? null),
+                'medicalSurgical_ModerateToSevereAsthma'                => $request->payload['medicalSurgical_ModerateToSevereAsthma'] ?? ($OBGYNHistory->medicalSurgical_ModerateToSevereAsthma ?? null),
+                'medicalSurigcal_Epilepsy'                              => $request->payload['medicalSurigcal_Epilepsy'] ?? ($OBGYNHistory->medicalSurigcal_Epilepsy ?? null),
+                'medicalSurgical_RenalDisease'                          => $request->payload['medicalSurgical_RenalDisease'] ?? ($OBGYNHistory->medicalSurgical_RenalDisease ?? null),
+                'medicalSurgical_BleedingDisorder'                      => $request->payload['medicalSurgical_BleedingDisorder'] ?? ($OBGYNHistory->medicalSurgical_BleedingDisorder ?? null),
+                'medicalSurgical_HistoryOfPreviousCesarianSection'      => $request->payload['medicalSurgical_HistoryOfPreviousCesarianSection'] ?? ($OBGYNHistory->medicalSurgical_HistoryOfPreviousCesarianSection ?? null),
+                'medicalSurgical_HistoryOfUterineMyomectomy'            => $request->payload['medicalSurgical_HistoryOfUterineMyomectomy'] ?? ($OBGYNHistory->medicalSurgical_HistoryOfUterineMyomectomy ?? null),
+                'medicalSurgical_NotApplicableNone'                     => $request->payload['medicalSurgical_NotApplicableNone'] ?? ($OBGYNHistory->medicalSurgical_NotApplicableNone ?? null),
+                'deliveryPlan_OrientationToMCP'                         => $request->payload['deliveryPlan_OrientationToMCP'] ?? ($OBGYNHistory->deliveryPlan_OrientationToMCP ?? null),
+                'deliveryPlan_ExpectedDeliveryDate'                     => $request->payload['deliveryPlan_ExpectedDeliveryDate'] ?? ($OBGYNHistory->deliveryPlan_ExpectedDeliveryDate ?? null),
+                'followUp_Prenatal_ConsultationNo_2nd'                  => $request->payload['followUp_Prenatal_ConsultationNo_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_2nd ?? null),
+                'followUp_Prenatal_DateVisit_2nd'                       => $request->payload['followUp_Prenatal_DateVisit_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_2nd ?? null),
+                'followUp_Prenatal_AOGInWeeks_2nd'                      => $request->payload['followUp_Prenatal_AOGInWeeks_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_2nd ?? null),
+                'followUp_Prenatal_Weight_2nd'                          => $request->payload['followUp_Prenatal_Weight_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_2nd ?? null),
+                'followUp_Prenatal_CardiacRate_2nd'                     => $request->payload['followUp_Prenatal_CardiacRate_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_2nd ?? null),
+                'followUp_Prenatal_RespiratoryRate_2nd'                 => $request->payload['followUp_Prenatal_RespiratoryRate_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_2nd ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_2nd'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_2nd ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_2nd'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_2nd ?? null),
+                'followUp_Prenatal_Temperature_2nd'                     => $request->payload['followUp_Prenatal_Temperature_2nd'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_2nd ?? null),
+                'followUp_Prenatal_ConsultationNo_3rd'                  => $request->payload['followUp_Prenatal_ConsultationNo_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_3rd ?? null),
+                'followUp_Prenatal_DateVisit_3rd'                       => $request->payload['followUp_Prenatal_DateVisit_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_3rd ?? null),
+                'followUp_Prenatal_AOGInWeeks_3rd'                      => $request->payload['followUp_Prenatal_AOGInWeeks_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_3rd ?? null),
+                'followUp_Prenatal_Weight_3rd'                          => $request->payload['followUp_Prenatal_Weight_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_3rd ?? null),
+                'followUp_Prenatal_CardiacRate_3rd'                     => $request->payload['followUp_Prenatal_CardiacRate_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_3rd ?? null),
+                'followUp_Prenatal_RespiratoryRate_3rd'                 => $request->payload['followUp_Prenatal_RespiratoryRate_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_3rd ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_3rd'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_3rd ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_3rd'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_3rd ?? null),
+                'followUp_Prenatal_Temperature_3rd'                     => $request->payload['followUp_Prenatal_Temperature_3rd'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_3rd ?? null),
+                'followUp_Prenatal_ConsultationNo_4th'                  => $request->payload['followUp_Prenatal_ConsultationNo_4th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_4th ?? null),
+                'followUp_Prenatal_DateVisit_4th'                       => $request->payload['followUp_Prenatal_DateVisit_4th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_4th ?? null),
+                'followUp_Prenatal_AOGInWeeks_4th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_4th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_4th ?? null),
+                'followUp_Prenatal_Weight_4th'                          => $request->payload['followUp_Prenatal_Weight_4th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_4th ?? null),
+                'followUp_Prenatal_CardiacRate_4th'                     => $request->payload['followUp_Prenatal_CardiacRate_4th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_4th ?? null),
+                'followUp_Prenatal_RespiratoryRate_4th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_4th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_4th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_4th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_4th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_4th ?? null),
+                'followUp_Prenatal_ConsultationNo_5th'                  => $request->payload['followUp_Prenatal_ConsultationNo_5th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_5th ?? null),
+                'followUp_Prenatal_DateVisit_5th'                       => $request->payload['followUp_Prenatal_DateVisit_5th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_5th ?? null),
+                'followUp_Prenatal_AOGInWeeks_5th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_5th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_5th ?? null),
+                'followUp_Prenatal_Weight_5th'                          => $request->payload['followUp_Prenatal_Weight_5th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_5th ?? null),
+                'followUp_Prenatal_CardiacRate_5th'                     => $request->payload['followUp_Prenatal_CardiacRate_5th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_5th ?? null),
+                'followUp_Prenatal_RespiratoryRate_5th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_5th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_5th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_5th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_5th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_5th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_5th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_5th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_5th ?? null),
+                'followUp_Prenatal_Temperature_5th'                     => $request->payload['followUp_Prenatal_Temperature_5th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_5th ?? null),
+                'followUp_Prenatal_ConsultationNo_6th'                  => $request->payload['followUp_Prenatal_ConsultationNo_6th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_6th ?? null),
+                'followUp_Prenatal_DateVisit_6th'                       => $request->payload['followUp_Prenatal_DateVisit_6th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_6th ?? null),
+                'followUp_Prenatal_AOGInWeeks_6th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_6th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_6th ?? null),
+                'followUp_Prenatal_Weight_6th'                          => $request->payload['followUp_Prenatal_Weight_6th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_6th ?? null),
+                'followUp_Prenatal_CardiacRate_6th'                     => $request->payload['followUp_Prenatal_CardiacRate_6th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_6th ?? null),
+                'followUp_Prenatal_RespiratoryRate_6th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_6th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_6th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_6th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_6th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_6th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_6th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_6th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_6th ?? null),
+                'followUp_Prenatal_Temperature_6th'                     => $request->payload['followUp_Prenatal_Temperature_6th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_6th ?? null),
+                'followUp_Prenatal_ConsultationNo_7th'                  => $request->payload['followUp_Prenatal_ConsultationNo_7th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_7th ?? null),
+                'followUp_Prenatal_DateVisit_7th'                       => $request->payload['followUp_Prenatal_DateVisit_7th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_7th ?? null),
+                'followUp_Prenatal_AOGInWeeks_7th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_7th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_7th ?? null),
+                'followUp_Prenatal_Weight_7th'                          => $request->payload['followUp_Prenatal_Weight_7th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_7th ?? null),
+                'followUp_Prenatal_CardiacRate_7th'                     => $request->payload['followUp_Prenatal_CardiacRate_7th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_7th ?? null),
+                'followUp_Prenatal_RespiratoryRate_7th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_7th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_7th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_7th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_7th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_7th ?? null),
+                'followUp_Prenatal_Temperature_7th'                     => $request->payload['followUp_Prenatal_Temperature_7th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_7th ?? null),
+                'followUp_Prenatal_ConsultationNo_8th'                  => $request->payload['followUp_Prenatal_ConsultationNo_8th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_8th ?? null),
+                'followUp_Prenatal_DateVisit_8th'                       => $request->payload['followUp_Prenatal_DateVisit_8th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_8th ?? null),
+                'followUp_Prenatal_AOGInWeeks_8th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_8th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_8th ?? null),
+                'followUp_Prenatal_Weight_8th'                          => $request->payload['followUp_Prenatal_Weight_8th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_8th ?? null),
+                'followUp_Prenatal_CardiacRate_8th'                     => $request->payload['followUp_Prenatal_CardiacRate_8th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_8th ?? null),
+                'followUp_Prenatal_RespiratoryRate_8th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_8th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_8th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_8th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_8th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_8th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_8th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_8th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_8th ?? null),
+                'followUp_Prenatal_Temperature_8th'                     => $request->payload['followUp_Prenatal_Temperature_8th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_8th ?? null),
+                'followUp_Prenatal_ConsultationNo_9th'                  => $request->payload['followUp_Prenatal_ConsultationNo_9th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_9th ?? null),
+                'followUp_Prenatal_DateVisit_9th'                       => $request->payload['followUp_Prenatal_DateVisit_9th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_9th ?? null),
+                'followUp_Prenatal_AOGInWeeks_9th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_9th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_9th ?? null),
+                'followUp_Prenatal_Weight_9th'                          => $request->payload['followUp_Prenatal_Weight_9th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_9th ?? null),
+                'followUp_Prenatal_CardiacRate_9th'                     => $request->payload['followUp_Prenatal_CardiacRate_9th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_9th ?? null),
+                'followUp_Prenatal_RespiratoryRate_9th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_9th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_9th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_9th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_9th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_9th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_9th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_9th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_9th ?? null),
+                'followUp_Prenatal_Temperature_9th'                     => $request->payload['followUp_Prenatal_Temperature_9th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_9th ?? null),
+                'followUp_Prenatal_ConsultationNo_10th'                 => $request->payload['followUp_Prenatal_ConsultationNo_10th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_10th ?? null),
+                'followUp_Prenatal_DateVisit_10th'                      => $request->payload['followUp_Prenatal_DateVisit_10th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_10th ?? null),
+                'followUp_Prenatal_AOGInWeeks_10th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_10th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_10th ?? null),
+                'followUp_Prenatal_Weight_10th'                         => $request->payload['followUp_Prenatal_Weight_10th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_10th ?? null),
+                'followUp_Prenatal_CardiacRate_10th'                    => $request->payload['followUp_Prenatal_CardiacRate_10th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_10th ?? null),
+                'followUp_Prenatal_RespiratoryRate_10th'                => $request->payload['followUp_Prenatal_RespiratoryRate_10th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_10th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_10th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_10th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_10th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_10th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_10th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_10th ?? null),
+                'followUp_Prenatal_Temperature_10th'                    => $request->payload['followUp_Prenatal_Temperature_10th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_10th ?? null),
+                'followUp_Prenatal_ConsultationNo_11th'                 => $request->payload['followUp_Prenatal_ConsultationNo_11th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_11th ?? null),
+                'followUp_Prenatal_DateVisit_11th'                      => $request->payload['followUp_Prenatal_DateVisit_11th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_11th ?? null),
+                'followUp_Prenatal_AOGInWeeks_11th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_11th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_11th ?? null),
+                'followUp_Prenatal_Weight_11th'                         => $request->payload['followUp_Prenatal_Weight_11th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_11th ?? null),
+                'followUp_Prenatal_CardiacRate_11th'                    => $request->payload['followUp_Prenatal_CardiacRate_11th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_11th ?? null),
+                'followUp_Prenatal_RespiratoryRate_11th'                => $request->payload['followUp_Prenatal_RespiratoryRate_11th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_11th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_11th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_11th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_11th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_11th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_11th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_11th ?? null),
+                'followUp_Prenatal_Temperature_11th'                    => $request->payload['followUp_Prenatal_Temperature_11th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_11th ?? null),
+                'followUp_Prenatal_ConsultationNo_12th'                 => $request->payload['followUp_Prenatal_ConsultationNo_12th'] ?? ($OBGYNHistory->followUp_Prenatal_ConsultationNo_12th ?? null),
+                'followUp_Prenatal_DateVisit_12th'                      => $request->payload['followUp_Prenatal_DateVisit_12th'] ?? ($OBGYNHistory->followUp_Prenatal_DateVisit_12th ?? null),
+                'followUp_Prenatal_AOGInWeeks_12th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_12th'] ?? ($OBGYNHistory->followUp_Prenatal_AOGInWeeks_12th ?? null),
+                'followUp_Prenatal_Weight_12th'                         => $request->payload['followUp_Prenatal_Weight_12th'] ?? ($OBGYNHistory->followUp_Prenatal_Weight_12th ?? null),
+                'followUp_Prenatal_CardiacRate_12th'                    => $request->payload['followUp_Prenatal_CardiacRate_12th'] ?? ($OBGYNHistory->followUp_Prenatal_CardiacRate_12th ?? null),
+                'followUp_Prenatal_RespiratoryRate_12th'                => $request->payload['followUp_Prenatal_RespiratoryRate_12th'] ?? ($OBGYNHistory->followUp_Prenatal_RespiratoryRate_12th ?? null),
+                'followUp_Prenatal_BloodPresureSystolic_12th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_12th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureSystolic_12th ?? null),
+                'followUp_Prenatal_BloodPresureDiastolic_12th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_12th'] ?? ($OBGYNHistory->followUp_Prenatal_BloodPresureDiastolic_12th ?? null),
+                'followUp_Prenatal_Temperature_12th'                    => $request->payload['followUp_Prenatal_Temperature_12th'] ?? ($OBGYNHistory->followUp_Prenatal_Temperature_12th ?? null),
+                'followUp_Prenatal_Remarks'                             => $request->payload['followUp_Prenatal_Remarks'] ?? ($OBGYNHistory->followUp_Prenatal_Remarks ?? null),
                 'updatedby'                                             => Auth()->user()->idnumber,
                 'updated_at'                                            => Carbon::now(),
             ];
 
             $patientPregnancyHistoryData = [
-                // 'OBGYNHistoryID'    => $patient_id,
-                'pregnancyNumber'   => $registry_id,
-                'outcome'           => $request->payload['outcome'] ?? $pregnancyHistory->outcome,
-                'deliveryDate'      => $request->payload['deliveryDate'] ?? $pregnancyHistory->deliveryDate,
-                'complications'     => $request->payload['complications'] ?? $pregnancyHistory->complications,
+                'pregnancyNumber'   => null,
+                'outcome'           => $request->payload['outcome'] ?? ($pregnancyHistory->outcome ?? null),
+                'deliveryDate'      => $request->payload['deliveryDate'] ?? ($pregnancyHistory->deliveryDate ?? null),
+                'complications'     => $request->payload['complications'] ?? ($pregnancyHistory->complications ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now(),
             ];
 
             $patientGynecologicalConditionsData = [
-                // 'OBGYNHistoryID'    => $patient_id,
-                'conditionName'     => $registry_id,
-                'diagnosisDate'     => $request->payload['diagnosisDate'] ?? $gynecologicalConditions->diagnosisDate,
+                'conditionName'     => $request->payload['conditionName'] ?? ($gynecologicalConditions->conditionName ?? null),
+                'diagnosisDate'     => $request->payload['diagnosisDate'] ?? ($gynecologicalConditions->diagnosisDate ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now(),
             ];
 
             $patientMedicationsData = [
-                'patient_Id'            => $patient_id,
-                'case_No'               => $registry_id,
-                'item_Id'               => $request->payload['item_Id'] ?? $medications->item_Id,
-                'drug_Description'      => $request->payload['drug_Description'] ?? $medications->drug_Description,
-                'dosage'                => $request->payload['dosage'] ?? $medications->dosage,
-                'reason_For_Use'        => $request->payload['reason_For_Use'] ?? $medications->reason_For_Use,
-                'adverse_Side_Effect'   => $request->payload['adverse_Side_Effect'] ?? $medications->adverse_Side_Effect,
-                'hospital'              => $request->payload['hospital'] ?? $medications->hospital,
-                'isPrescribed'          => $request->payload['isPrescribed'] ?? $medications->isPrescribed,
+                'item_Id'               => $request->payload['item_Id'] ?? ($medications->item_Id ?? null),
+                'drug_Description'      => $request->payload['drug_Description'] ?? ($medications->drug_Description ?? null),
+                'dosage'                => $request->payload['dosage'] ?? ($medications->dosage ?? null),
+                'reason_For_Use'        => $request->payload['reason_For_Use'] ?? ($medications->reason_For_Use ?? null),
+                'adverse_Side_Effect'   => $request->payload['adverse_Side_Effect'] ?? ($medications->adverse_Side_Effect ?? null),
+                'hospital'              => $request->payload['hospital'] ?? ($medications->hospital ?? null),
+                'isPrescribed'          => $request->payload['isPrescribed'] ?? ($medications->isPrescribed ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now(),
             ];
 
             $patientPrivilegedCard = [
-                'patient_Id'            => $patient_id,
-                'card_number'           => $request->payload['card_number'] ?? $privilegedCard->card_number,
-                'card_Type_Id'          => $request->payload['card_Type_Id'] ?? $privilegedCard->card_Type_Id,
-                'card_BenefitLevel'     => $request->payload['card_BenefitLevel'] ?? $privilegedCard->card_BenefitLevel,
-                'card_PIN'              => $request->payload['card_PIN'] ?? $privilegedCard->card_PIN,
-                'card_Bardcode'         => $request->payload['card_Bardcode'] ?? $privilegedCard->card_Bardcode,
-                'card_RFID'             => $request->payload['card_RFID'] ?? $privilegedCard->card_RFID,
-                'card_Balance'          => $request->payload['card_Balance'] ?? $privilegedCard->card_Balance,
-                'issued_Date'           => $request->payload['issued_Date'] ?? $privilegedCard->issued_Date,
-                'expiry_Date'           => $request->payload['expiry_Date'] ?? $privilegedCard->expiry_Date,
-                'points_Earned'         => $request->payload['points_Earned'] ?? $privilegedCard->points_Earned,
-                'points_Transferred'    => $request->payload['points_Transferred'] ?? $privilegedCard->points_Transferred,
-                'points_Redeemed'       => $request->payload['points_Redeemed'] ?? $privilegedCard->points_Redeemed,
-                'points_Forfeited'      => $request->payload['points_Forfeited'] ?? $privilegedCard->points_Forfeited,
-                'card_Status'           => $request->payload['card_Status'] ?? $privilegedCard->card_Status,
+                'card_number'           => $request->payload['card_number'] ?? ($privilegedCard->card_number ?? null),
+                'card_Type_Id'          => $request->payload['card_Type_Id'] ?? ($privilegedCard->card_Type_Id ?? null),
+                'card_BenefitLevel'     => $request->payload['card_BenefitLevel'] ?? ($privilegedCard->card_BenefitLevel ?? null),
+                'card_PIN'              => $request->payload['card_PIN'] ?? ($privilegedCard->card_PIN ?? null),
+                'card_Bardcode'         => $request->payload['card_Bardcode'] ?? ($privilegedCard->card_Bardcode ?? null),
+                'card_RFID'             => $request->payload['card_RFID'] ?? ($privilegedCard->card_RFID ?? null),
+                'card_Balance'          => $request->payload['card_Balance'] ?? ($privilegedCard->card_Balance ?? null),
+                'issued_Date'           => $request->payload['issued_Date'] ?? ($privilegedCard->issued_Date ?? null),
+                'expiry_Date'           => $request->payload['expiry_Date'] ?? ($privilegedCard->expiry_Date ?? null),
+                'points_Earned'         => $request->payload['points_Earned'] ?? ($privilegedCard->points_Earned ?? null),
+                'points_Transferred'    => $request->payload['points_Transferred'] ?? ($privilegedCard->points_Transferred ?? null),
+                'points_Redeemed'       => $request->payload['points_Redeemed'] ?? ($privilegedCard->points_Redeemed ?? null),
+                'points_Forfeited'      => $request->payload['points_Forfeited'] ?? ($privilegedCard->points_Forfeited ?? null),
+                'card_Status'           => $request->payload['card_Status'] ?? ($privilegedCard->card_Status ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now()
             ];
 
             $patientPrivilegedPointTransfers = [
-                // 'fromCard_Id'       => '',
-                'toCard_Id'         => $request->payload['toCard_Id'] ?? $privilegedPointTransfers->toCard_Id,
+                'toCard_Id'         => $request->payload['toCard_Id'] ?? ($privilegedPointTransfers->toCard_Id ?? null),
                 'transaction_Date'  => Carbon::now(),
-                'description'       => $request->payload['description'] ?? $privilegedPointTransfers->description,
-                'points'            => $request->payload['points'] ?? $privilegedPointTransfers->points,
+                'description'       => $request->payload['description'] ?? ($privilegedPointTransfers->description ?? null),
+                'points'            => $request->payload['points'] ?? ($privilegedPointTransfers->points ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now()
             ];
 
             $patientPrivilegedPointTransactions = [
-                // 'card_Id'           => '',
+                'card_Id'           => $request->payload['card_Id'] ?? ($privilegedPointTransactions->card_Id ?? null),
                 'transaction_Date'  => Carbon::now(),
-                'transaction_Type'  => $request->payload['transaction_Type'] ?? $privilegedPointTransactions->transaction_Type,
-                'description'       => $request->payload['description'] ?? $privilegedPointTransactions->description,
-                'points'            => $request->payload['points'] ?? $privilegedPointTransactions->points,
+                'transaction_Type'  => $request->payload['transaction_Type'] ?? ($privilegedPointTransactions->transaction_Type ?? null),
+                'description'       => $request->payload['description'] ?? ($privilegedPointTransactions->description ?? null),
+                'points'            => $request->payload['points'] ?? ($privilegedPointTransactions->points ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now()
             ]; 
 
             $patientDischargeInstructions = [
-                'branch_Id'                         => $request->payload['branch_Id'] ?? $dischargeInstructions->branch_Id,
-                'patient_Id'                        => $patient_id,
-                'case_No'                           => $registry_id,
-                'general_Instructions'              => $request->payload['general_Intructions'] ?? $dischargeInstructions->general_Instructions,
-                'dietary_Instructions'              => $request->payload['dietary_Intructions'] ?? $dischargeInstructions->dietary_Instructions,
-                'medications_Instructions'          => $request->payload['medications_Intructions'] ?? $dischargeInstructions->medications_Instructions,
-                'activity_Restriction'              => $request->payload['activity_Restriction'] ?? $dischargeInstructions->activity_Restriction,
-                'dietary_Restriction'               => $request->payload['dietary_Restriction'] ?? $dischargeInstructions->dietary_Restriction,
-                'addtional_Notes'                   => $request->payload['addtional_Notes'] ?? $dischargeInstructions->addtional_Notes,
-                'clinicalPharmacist_OnDuty'         => $request->payload['clinicalPharmacist_OnDuty'] ?? $dischargeInstructions->clinicalPharmacist_OnDuty,
-                'clinicalPharmacist_CheckTime'      => $request->payload['clinicalPharmacist_CheckTime'] ?? $dischargeInstructions->clinicalPharmacist_CheckTime,
-                'nurse_OnDuty'                      => $request->payload['nurse_OnDuty'] ?? $dischargeInstructions->nurse_OnDuty,
-                'intructedBy_clinicalPharmacist'    => $request->payload['intructedBy_clinicalPharmacist'] ?? $dischargeInstructions->intructedBy_clinicalPharmacist,
-                'intructedBy_Dietitians'            => $request->payload['intructedBy_Dietitians'] ?? $dischargeInstructions->intructedBy_Dietitians,
-                'intructedBy_Nurse'                 => $request->payload['intructedBy_Nurse'] ?? $dischargeInstructions->intructedBy_Nurse,
+                'branch_Id'                         => $request->payload['branch_Id'] ?? ($dischargeInstructions->branch_Id ?? null),
+                'general_Instructions'              => $request->payload['general_Instructions'] ?? ($dischargeInstructions->general_Instructions ?? null),
+                'dietary_Instructions'              => $request->payload['dietary_Instructions'] ?? ($dischargeInstructions->dietary_Instructions ?? null),
+                'medications_Instructions'          => $request->payload['medications_Instructions'] ?? ($dischargeInstructions->medications_Instructions ?? null),
+                'activity_Restriction'              => $request->payload['activity_Restriction'] ?? ($dischargeInstructions->activity_Restriction ?? null),
+                'dietary_Restriction'               => $request->payload['dietary_Restriction'] ?? ($dischargeInstructions->dietary_Restriction ?? null),
+                'addtional_Notes'                   => $request->payload['addtional_Notes'] ?? ($dischargeInstructions->addtional_Notes ?? null),
+                'clinicalPharmacist_OnDuty'         => $request->payload['clinicalPharmacist_OnDuty'] ?? ($dischargeInstructions->clinicalPharmacist_OnDuty ?? null),
+                'clinicalPharmacist_CheckTime'      => $request->payload['clinicalPharmacist_CheckTime'] ?? ($dischargeInstructions->clinicalPharmacist_CheckTime ?? null),
+                'nurse_OnDuty'                      => $request->payload['nurse_OnDuty'] ?? ($dischargeInstructions->nurse_OnDuty ?? null),
+                'intructedBy_clinicalPharmacist'    => $request->payload['intructedBy_clinicalPharmacist'] ?? ($dischargeInstructions->intructedBy_clinicalPharmacist ?? null),
+                'intructedBy_Dietitians'            => $request->payload['intructedBy_Dietitians'] ?? ($dischargeInstructions->intructedBy_Dietitians ?? null),
+                'intructedBy_Nurse'                 => $request->payload['intructedBy_Nurse'] ?? ($dischargeInstructions->intructedBy_Nurse ?? null),
                 'updatedby'                         => Auth()->user()->idnumber,
                 'updated_at'                        => Carbon::now()
             ];
 
             $patientDischargeMedications = [
-                'instruction_Id'        => $dischargeMedications->instruction_Id,
-                'Item_Id'               => $request->payload['Item_Id'] ?? $dischargeMedications->Item_Id,
-                'medication_Name'       => $request->payload['medication_Name'] ?? $dischargeMedications->medication_Name,
-                'medication_Type'       => $request->payload['medication_Type'] ?? $dischargeMedications->medication_Type,
-                'dosage'                => $request->payload['dosage'] ?? $dischargeMedications->dosage,
-                'frequency'             => $request->payload['frequency'] ?? $dischargeMedications->frequency,
-                'purpose'               => $request->payload['purpose'] ?? $dischargeMedications->purpose,
+                'instruction_Id'        => $request->payload['instruction_Id'] ?? ($dischargeMedications->instruction_Id ?? null),
+                'Item_Id'               => $request->payload['Item_Id'] ?? ($dischargeMedications->Item_Id ?? null),
+                'medication_Name'       => $request->payload['medication_Name'] ?? ($dischargeMedications->medication_Name ?? null),
+                'medication_Type'       => $request->payload['medication_Type'] ?? ($dischargeMedications->medication_Type ?? null),
+                'dosage'                => $request->payload['dosage'] ?? ($dischargeMedications->dosage ?? null),
+                'frequency'             => $request->payload['frequency'] ?? ($dischargeMedications->frequency ?? null),
+                'purpose'               => $request->payload['purpose'] ?? ($dischargeMedications->purpose ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now()
             ];
 
             $patientDischargeFollowUpTreatment = [
-                'instruction_Id'        => $dischargeFollowUpTreatment->instruction_Id,
-                'treatment_Description' => $request->payload['treatment_Description'] ?? $dischargeFollowUpTreatment->treatment_Description,
-                'treatment_Date'        => $request->payload['treatment_Date'] ?? $dischargeFollowUpTreatment->treatment_Date,
-                'doctor_Id'             => $request->payload['doctor_Id'] ?? $dischargeFollowUpTreatment->doctor_Id,
-                'doctor_Name'           => $request->payload['doctor_Name'] ?? $dischargeFollowUpTreatment->doctor_Name,
-                'notes'                 => $request->payload['notes'] ?? $dischargeFollowUpTreatment->notes,
+                'instruction_Id'        => $request->payload['instruction_Id'] ?? ($dischargeFollowUpTreatment->instruction_Id ?? null),
+                'treatment_Description' => $request->payload['treatment_Description'] ?? ($dischargeFollowUpTreatment->treatment_Description ?? null),
+                'treatment_Date'        => $request->payload['treatment_Date'] ?? ($dischargeFollowUpTreatment->treatment_Date ?? null),
+                'doctor_Id'             => $request->payload['doctor_Id'] ?? ($dischargeFollowUpTreatment->doctor_Id ?? null),
+                'doctor_Name'           => $request->payload['doctor_Name'] ?? ($dischargeFollowUpTreatment->doctor_Name ?? null),
+                'notes'                 => $request->payload['notes'] ?? ($dischargeFollowUpTreatment->notes ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now()
             ];
 
             $patientDischargeFollowUpLaboratories = [
-                'instruction_Id'    => $dischargeFollowUpLaboratories->instruction_Id,
-                'item_Id'           => $request->payload['item_Id'] ?? $dischargeFollowUpLaboratories->item_Id,
-                'test_Name'         => $request->payload['test_Name'] ?? $dischargeFollowUpLaboratories->test_Name,
-                'test_DateTime'     => $request->payload['test_DateTime'] ?? $dischargeFollowUpLaboratories->test_DateTime,
-                'notes'             => $request->payload['notes'] ?? $dischargeFollowUpLaboratories->notes,
+                'instruction_Id'    => $request->payload['instruction_Id'] ?? ($dischargeFollowUpLaboratories->instruction_Id ?? null),
+                'item_Id'           => $request->payload['item_Id'] ?? ($dischargeFollowUpLaboratories->item_Id ?? null),
+                'test_Name'         => $request->payload['test_Name'] ?? ($dischargeFollowUpLaboratories->test_Name ?? null),
+                'test_DateTime'     => $request->payload['test_DateTime'] ?? ($dischargeFollowUpLaboratories->test_DateTime ?? null),
+                'notes'             => $request->payload['notes'] ?? ($dischargeFollowUpLaboratories->notes ?? null),
                 'updatedby'         => Auth()->user()->idnumber,
                 'updated_at'        => Carbon::now()
             ];
 
             $patientDischargeDoctorsFollowUp = [
-                'instruction_Id'        => $dischargeDoctorsFollowUp->instruction_Id,
-                'doctor_Id'             => $request->payload['doctor_Id'] ?? $dischargeDoctorsFollowUp->doctor_Id,
-                'doctor_Name'           => $request->payload['doctor_Name'] ?? $dischargeDoctorsFollowUp->doctor_Name,
-                'doctor_Specialization' => $request->payload['doctor_Specialization'] ?? $dischargeDoctorsFollowUp->doctor_Specialization,
-                'schedule_Date'         => $request->payload['schedule_Date'] ?? $dischargeDoctorsFollowUp->schedule_Date,
+                'instruction_Id'        => $request->payload['instruction_Id'] ?? ($dischargeDoctorsFollowUp->instruction_Id ?? null),
+                'doctor_Id'             => $request->payload['doctor_Id'] ?? ($dischargeDoctorsFollowUp->doctor_Id ?? null),
+                'doctor_Name'           => $request->payload['doctor_Name'] ?? ($dischargeDoctorsFollowUp->doctor_Name ?? null),
+                'doctor_Specialization' => $request->payload['doctor_Specialization'] ?? ($dischargeDoctorsFollowUp->doctor_Specialization ?? null),
+                'schedule_Date'         => $request->payload['schedule_Date'] ?? ($dischargeDoctorsFollowUp->schedule_Date ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => Carbon::now()
             ];
 
             $patientHistoryData = [
-                'branch_Id'                                 => $request->payload['branch_Id'] ?? 1,
-                'patient_Id'                                => $patient_id,
-                'case_No'                                   => $registry_id,
-                'brief_History'                             => $request->payload['brief_History'] ?? $patientHistory->brief_History,
-                'pastMedical_History'                       => $request->payload['pastMedical_History'] ?? $patientHistory->pastMedical_History,
-                'family_History'                            => $request->payload['family_History'] ?? $patientHistory->family_History,
-                'personalSocial_History'                    => $request->payload['personalSocial_History'] ?? $patientHistory->personalSocial_History,
-                'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description'] ?? $patientHistory->chief_Complaint_Description,
-                'impression'                                => $request->payload['impression'] ?? $patientHistory->impression,
-                'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis'] ?? $patientHistory->admitting_Diagnosis,
-                'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis'] ?? $patientHistory->discharge_Diagnosis,
-                'preOperative_Diagnosis'                    => $request->payload['preOperative_Diagnosis'] ?? $patientHistory->preOperative_Diagnosis,
-                'postOperative_Diagnosis'                   => $request->payload['postOperative_Diagnosis'] ?? $patientHistory->postOperative_Diagnosis,
-                'surgical_Procedure'                        => $request->payload['surgical_Procedure'] ?? $patientHistory->surgical_Procedure,
-                'physicalExamination_Skin'                  => $request->payload['physicalExamination_Skin'] ?? $patientHistory->physicalExamination_Skin,
-                'physicalExamination_HeadEyesEarsNeck'      => $request->payload['physicalExamination_HeadEyesEarsNeck'] ?? $patientHistory->physicalExamination_HeadEyesEarsNeck,
-                'physicalExamination_Neck'                  => $request->payload['physicalExamination_Neck'] ?? $patientHistory->physicalExamination_Neck,
-                'physicalExamination_ChestLungs'            => $request->payload['physicalExamination_ChestLungs'] ?? $patientHistory->physicalExamination_ChestLungs,
-                'physicalExamination_CardioVascularSystem'  => $request->payload['physicalExamination_CardioVascularSystem'] ?? $patientHistory->physicalExamination_CardioVascularSystem,
-                'physicalExamination_Abdomen'               => $request->payload['physicalExamination_Abdomen'] ?? $patientHistory->physicalExamination_Abdomen,
-                'physicalExamination_GenitourinaryTract'    => $request->payload['physicalExamination_GenitourinaryTract'] ?? $patientHistory->physicalExamination_GenitourinaryTract,
-                'physicalExamination_Rectal'                => $request->payload['physicalExamination_Rectal'] ?? $patientHistory->physicalExamination_Rectal,
-                'physicalExamination_Musculoskeletal'       => $request->payload['physicalExamination_Musculoskeletal'] ?? $patientHistory->physicalExamination_Musculoskeletal,
-                'physicalExamination_LympNodes'             => $request->payload['physicalExamination_LympNodes'] ?? $patientHistory->physicalExamination_LympNodes,
-                'physicalExamination_Extremities'           => $request->payload['physicalExamination_Extremities'] ?? $patientHistory->physicalExamination_Extremities,
-                'physicalExamination_Neurological'          => $request->payload['physicalExamination_Neurological'] ?? $patientHistory->physicalExamination_Neurological,
+                'branch_Id'                                 => $request->payload['branch_Id'] ?? ($patientHistory->branch_Id ?? null),
+                'brief_History'                             => $request->payload['brief_History'] ?? ($patientHistory->brief_History ?? null),
+                'pastMedical_History'                       => $request->payload['pastMedical_History'] ?? ($patientHistory->pastMedical_History ?? null),
+                'family_History'                            => $request->payload['family_History'] ?? ($patientHistory->family_History ?? null),
+                'personalSocial_History'                    => $request->payload['personalSocial_History'] ?? ($patientHistory->personalSocial_History ?? null),
+                'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description'] ?? ($patientHistory->chief_Complaint_Description ?? null),
+                'impression'                                => $request->payload['impression'] ?? ($patientHistory->impression ?? null),
+                'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis'] ?? ($patientHistory->admitting_Diagnosis ?? null),
+                'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis'] ?? ($patientHistory->discharge_Diagnosis ?? null),
+                'preOperative_Diagnosis'                    => $request->payload['preOperative_Diagnosis'] ?? ($patientHistory->preOperative_Diagnosis ?? null),
+                'postOperative_Diagnosis'                   => $request->payload['postOperative_Diagnosis'] ?? ($patientHistory->postOperative_Diagnosis ?? null),
+                'surgical_Procedure'                        => $request->payload['surgical_Procedure'] ?? ($patientHistory->surgical_Procedure ?? null),
+                'physicalExamination_Skin'                  => $request->payload['physicalExamination_Skin'] ?? ($patientHistory->physicalExamination_Skin ?? null),
+                'physicalExamination_HeadEyesEarsNeck'      => $request->payload['physicalExamination_HeadEyesEarsNeck'] ?? ($patientHistory->physicalExamination_HeadEyesEarsNeck ?? null),
+                'physicalExamination_Neck'                  => $request->payload['physicalExamination_Neck'] ?? ($patientHistory->physicalExamination_Neck ?? null),
+                'physicalExamination_ChestLungs'            => $request->payload['physicalExamination_ChestLungs'] ?? ($patientHistory->physicalExamination_ChestLungs ?? null),
+                'physicalExamination_CardioVascularSystem'  => $request->payload['physicalExamination_CardioVascularSystem'] ?? ($patientHistory->physicalExamination_CardioVascularSystem ?? null),
+                'physicalExamination_Abdomen'               => $request->payload['physicalExamination_Abdomen'] ?? ($patientHistory->physicalExamination_Abdomen ?? null),
+                'physicalExamination_GenitourinaryTract'    => $request->payload['physicalExamination_GenitourinaryTract'] ?? ($patientHistory->physicalExamination_GenitourinaryTract ?? null),
+                'physicalExamination_Rectal'                => $request->payload['physicalExamination_Rectal'] ?? ($patientHistory->physicalExamination_Rectal ?? null),
+                'physicalExamination_Musculoskeletal'       => $request->payload['physicalExamination_Musculoskeletal'] ?? ($patientHistory->physicalExamination_Musculoskeletal ?? null),
+                'physicalExamination_LympNodes'             => $request->payload['physicalExamination_LympNodes'] ?? ($patientHistory->physicalExamination_LympNodes ?? null),
+                'physicalExamination_Extremities'           => $request->payload['physicalExamination_Extremities'] ?? ($patientHistory->physicalExamination_Extremities ?? null),
+                'physicalExamination_Neurological'          => $request->payload['physicalExamination_Neurological'] ?? ($patientHistory->physicalExamination_Neurological ?? null),
                 'updatedby'                                 => Auth()->user()->idnumber,
                 'updated_at'                                => Carbon::now()
             ];
 
             $patientMedicalProcedureData = [
-                'patient_Id'                    => $patient_id,
-                'case_No'                       => $registry_id,
-                'description'                   => $request->payload['description'] ?? $patientMedicalProcedure->description,
-                'date_Of_Procedure'             => $request->payload['date_Of_Procedure'] ?? $patientMedicalProcedure->date_Of_Procedure,
-                'performing_Doctor_Id'          => $request->payload['performing_Doctor_Id'] ?? $patientMedicalProcedure->performing_Doctor_Id,
-                'performing_Doctor_Fullname'    => $request->payload['performing_Doctor_Fullname'] ?? $patientMedicalProcedure->performing_Doctor_Fullname,
+                'description'                   => $request->payload['description'] ?? ($patientMedicalProcedure->description ?? null),
+                'date_Of_Procedure'             => $request->payload['date_Of_Procedure'] ?? ($patientMedicalProcedure->date_Of_Procedure ?? null),
+                'performing_Doctor_Id'          => $request->payload['performing_Doctor_Id'] ?? ($patientMedicalProcedure->performing_Doctor_Id ?? null),
+                'performing_Doctor_Fullname'    => $request->payload['performing_Doctor_Fullname'] ?? ($patientMedicalProcedure->performing_Doctor_Fullname ?? null),
                 'updatedby'                     => Auth()->user()->idnumber,
                 'updated_at'                    => Carbon::now()
             ];
 
             $patientVitalSignsData = [
                 'branch_Id'                 => 1,
-                'patient_Id'                => $patient_id,
-                'case_No'                   => $registry_id,         
                 'transDate'                 => $today,
-                'bloodPressureSystolic'     => isset($request->payload['bloodPressureSystolic']) ? (int)$request->payload['bloodPressureSystolic'] :  $patientVitalSign->bloodPressureSystolic,
-                'bloodPressureDiastolic'    => isset($request->payload['bloodPressureDiastolic']) ? (int)$request->payload['bloodPressureDiastolic'] : $patientVitalSign->bloodPressureDiastolic,
-                'temperature'               => isset($request->payload['temperatue']) ? (int)$request->payload['temperatue'] : $patientVitalSign->temperature,
-                'pulseRate'                 => isset($request->payload['pulseRate']) ? (int)$request->payload['pulseRate'] : $patientVitalSign->pulseRate,
-                'respiratoryRate'           => isset($request->payload['respiratoryRate']) ? (int)$request->payload['respiratoryRate'] : $patientVitalSign->respiratoryRate,
-                'oxygenSaturation'          => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : $patientVitalSign->oxygenSaturation,
+                'bloodPressureSystolic'     => isset($request->payload['bloodPressureSystolic']) ? (int)$request->payload['bloodPressureSystolic'] :  ($patientVitalSign->bloodPressureSystolic ?? null),
+                'bloodPressureDiastolic'    => isset($request->payload['bloodPressureDiastolic']) ? (int)$request->payload['bloodPressureDiastolic'] :  ($patientVitalSign->bloodPressureDiastolic ?? null),
+                'temperature'               => isset($request->payload['temperature']) ? (int)$request->payload['temperature'] :  ($patientVitalSign->temperature ?? null),
+                'pulseRate'                 => isset($request->payload['pulseRate']) ? (int)$request->payload['pulseRate'] :  ($patientVitalSign->pulseRate ?? null),
+                'respiratoryRate'           => isset($request->payload['respiratoryRate']) ? (int)$request->payload['respiratoryRate'] :  ($patientVitalSign->respiratoryRate ?? null),
+                'oxygenSaturation'          => isset($request->payload['oxygenSaturation']) ? (int)$request->payload['oxygenSaturation'] :  ($patientVitalSign->oxygenSaturation ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => $today
             ];
 
             $patientRegistryData = [
-                'branch_Id'                     => $request->payload['branch_Id'] ?? $patientRegistry->branch_Id,
-                'patient_Id'                    => $request->payload['patient_id'] ?? $patientRegistry->patient_Id,
-                'case_No'                       => $registry_id,     
-                'register_Source'               => $request->payload['register_source'] ?? $patientRegistry->register_Source,
-                'register_Casetype'             => $request->payload['register_Casetype'] ?? $patientRegistry->register_Casetype,
-                'patient_Age'                   => $request->payload['age'] ?? $patientRegistry->patient_Age,
-                'mscAccount_Type'               => $request->payload['mscAccount_type'] ?? $patientRegistry->mscAccount_Type,
-                'mscAccount_Discount_Id'        => $request->payload['mscAccount_discount_id'] ?? $patientRegistry->mscAccount_Discount_Id,
-                'mscAccount_Trans_Types'        => $request->payload['mscAccount_Trans_Types'] ?? $patientRegistry->mscAccount_Trans_Types,  
-                // 'mscPatient_Category'           => $request->payload['mscPatient_category'] ?? $patientRegistry->mscPatient_Category,
-                'mscPrice_Groups'               => $request->payload['mscPrice_Groups'] ?? $patientRegistry->mscPrice_Groups,
-                'mscPrice_Schemes'              => $request->payload['mscPrice_Schemes'] ?? $patientRegistry->mscPrice_Schemes,
-                'mscService_Type'               => $request->payload['mscService_Type'] ?? $patientRegistry->mscService_Type,
-                'queue_Number'                  => $request->payload['queue_number'] ?? $patientRegistry->queue_Number,
-                'arrived_Date'                  => $request->payload['arrived_date'] ?? $patientRegistry->arrived_Date,
+                'branch_Id'                     => $request->payload['branch_Id'] ?? ($patientRegistry->branch_Id ?? null),    
+                'register_Source'               => $request->payload['register_Source'] ?? ($patientRegistry->register_Source ?? null),
+                'register_Casetype'             => $request->payload['register_Casetype'] ?? ($patientRegistry->register_Casetype ?? null),
+                'patient_Age'                   => $request->payload['age'] ?? ($patientRegistry->patient_Age ?? null),
+                'mscAccount_Type'               => $request->payload['mscAccount_type'] ?? ($patientRegistry->mscAccount_Type ?? null),
+                'mscAccount_Discount_Id'        => $request->payload['mscAccount_discount_id'] ?? ($patientRegistry->mscAccount_Discount_Id ?? null),
+                'mscAccount_Trans_Types'        => $request->payload['mscAccount_Trans_Types'] ?? ($patientRegistry->mscAccount_Trans_Types ?? null),  
+                'mscPatient_Category'           => $request->payload['mscPatient_category'] ?? ($patientRegistry->mscPatient_Category ?? null),
+                'mscPrice_Groups'               => $request->payload['mscPrice_Groups'] ?? ($patientRegistry->mscPrice_Groups ?? null),
+                'mscPrice_Schemes'              => $request->payload['mscPrice_Schemes'] ?? ($patientRegistry->mscPrice_Schemes ?? null),
+                'mscService_Type'               => $request->payload['mscService_Type'] ?? ($patientRegistry->mscService_Type ?? null),
+                'queue_Number'                  => $request->payload['queue_number'] ?? ($patientRegistry->queue_Number ?? null),
+                'arrived_Date'                  => $request->payload['arrived_date'] ?? ($patientRegistry->arrived_Date ?? null),
                 'registry_Userid'               => Auth()->user()->idnumber,
                 'registry_Date'                 => $today,
-                'registry_Status'               => $request->payload['registry_Status'] ?? $patientRegistry->registry_Status,
-                'discharged_Userid'             => $request->payload['discharged_Userid'] ?? $patientRegistry->discharged_Userid,
-                'discharged_Date'               => $request->payload['discharged_Date'] ?? $patientRegistry->discharged_Date,
-                'billed_Userid'                 => $request->payload['billed_Userid'] ?? $patientRegistry->billed_Userid,
-                'billed_Date'                   => $request->payload['billed_Date'] ?? $patientRegistry->billed_Date,
-                'mscBroughtBy_Relationship_Id'  => $request->payload['mscBroughtBy_Relationship_Id'] ?? $patientRegistry->mscBroughtBy_Relationship_Id,
-                'mscCase_Indicators_Id'         => $request->payload['mscCase_Indicators_Id'] ?? $patientRegistry->mscCase_Indicators_Id,
-                'billed_Remarks'                => $request->payload['billed_Remarks'] ?? $patientRegistry->billed_Remarks,
-                'mgh_Userid'                    => $request->payload['mgh_Userid'] ?? $patientRegistry->mgh_Userid,
-                'mgh_Datetime'                  => $request->payload['mgh_Datetime'] ?? $patientRegistry->mgh_Datetime,
-                'untag_Mgh_Userid'              => $request->payload['untag_Mgh_Userid'] ?? $patientRegistry->untag_Mgh_Userid,
-                'untag_Mgh_Datetime'            => $request->payload['untag_Mgh_Datetime'] ?? $patientRegistry->untag_Mgh_Datetime,
-                'isHoldReg'                     => $request->payload['isHoldReg'] ?? $patientRegistry->isHoldReg,
-                'hold_Userid'                   => $request->payload['hold_Userid'] ?? $patientRegistry->hold_Userid,
-                'hold_No'                       => $request->payload['hold_No'] ?? $patientRegistry->hold_No,
-                'hold_Date'                     => $request->payload['hold_Date'] ?? $patientRegistry->hold_Date,
-                'hold_Remarks'                  => $request->payload['hold_Remarks'] ?? $patientRegistry->hold_Remarks,
-                'isRevoked'                     => $request->payload['isRevoked'] ?? $patientRegistry->isRevoked,
-                'revokedBy'                     => $request->payload['revokedBy'] ?? $patientRegistry->revokedBy,
-                'revoked_Date'                  => $request->payload['revoked_Date'] ?? $patientRegistry->revoked_Date,
-                'revoked_Remarks'               => $request->payload['revoked_Remarks'] ?? $patientRegistry->revoked_Remarks,
-                'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? $patientRegistry->guarantor_Id,
-                'guarantor_Name'                => $request->payload['selectedGuarantor'][0]['guarantor_name'] ?? $patientRegistry->guarantor_Name,
-                'guarantor_Approval_code'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_code'] ?? $patientRegistry->guarantor_Approval_code,
-                'guarantor_Approval_no'         => $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] ?? $patientRegistry->guarantor_Approval_no,
-                'guarantor_Approval_date'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_date'] ?? $patientRegistry->guarantor_Approval_date,
-                'guarantor_Validity_date'       => $request->payload['selectedGuarantor'][0]['guarantor_Validity_date'] ?? $patientRegistry->guarantor_Validity_date,
-                'guarantor_Approval_remarks'    => $request->payload['guarantor_approval_remarks'] ?? $patientRegistry->guarantor_Approval_remarks,
-                'isWithCreditLimit'             => !empty($request->payload['selectedGuarantor'][0]['guarantor_code']) ? true : ($request->payload['isWithCreditLimit'] ?? false) ?? $patientRegistry->isWithCreditLimit,
-                'guarantor_Credit_Limit'        => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? $patientRegistry->guarantor_Credit_Limit,
-                'isWithPhilHealth'              => $request->payload['isWithPhilHealth'] ?? $patientRegistry->isWithPhilHealth,
-                'philhealth_Number'             => $request->payload['philhealth_Number'] ?? $patientRegistry->philhealth_Number,
-                'isWithMedicalPackage'          => $request->payload['isWithMedicalPackage'] ?? $patientRegistry->isWithMedicalPackage,
-                'medical_Package_Id'            => $request->payload['Medical_Package_id'] ?? $patientRegistry->medical_Package_Id,
-                'medical_Package_Name'          => $request->payload['medical_Package_Name'] ?? $patientRegistry->medical_Package_Name,
-                'medical_Package_Amount'        => $request->payload['medical_Package_Amount'] ?? $patientRegistry->medical_Package_Amount,
+                'registry_Status'               => $request->payload['registry_Status'] ?? ($patientRegistry->registry_Status ?? null),
+                'discharged_Userid'             => $request->payload['discharged_Userid'] ?? ($patientRegistry->discharged_Userid ?? null),
+                'discharged_Date'               => $request->payload['discharged_Date'] ?? ($patientRegistry->discharged_Date ?? null),
+                'billed_Userid'                 => $request->payload['billed_Userid'] ?? ($patientRegistry->billed_Userid ?? null),
+                'billed_Date'                   => $request->payload['billed_Date'] ?? ($patientRegistry->billed_Date ?? null),
+                'mscBroughtBy_Relationship_Id'  => $request->payload['mscBroughtBy_Relationship_Id'] ?? ($patientRegistry->mscBroughtBy_Relationship_Id ?? null),
+                'mscCase_Indicators_Id'         => $request->payload['mscCase_Indicators_Id'] ?? ($patientRegistry->mscCase_Indicators_Id ?? null),
+                'billed_Remarks'                => $request->payload['billed_Remarks'] ?? ($patientRegistry->billed_Remarks ?? null),
+                'mgh_Userid'                    => $request->payload['mgh_Userid'] ?? ($patientRegistry->mgh_Userid ?? null),
+                'mgh_Datetime'                  => $request->payload['mgh_Datetime'] ?? ($patientRegistry->mgh_Datetime ?? null),
+                'untag_Mgh_Userid'              => $request->payload['untag_Mgh_Userid'] ?? ($patientRegistry->untag_Mgh_Userid ?? null),
+                'untag_Mgh_Datetime'            => $request->payload['untag_Mgh_Datetime'] ?? ($patientRegistry->untag_Mgh_Datetime ?? null),
+                'isHoldReg'                     => $request->payload['isHoldReg'] ?? ($patientRegistry->isHoldReg ?? null),
+                'hold_Userid'                   => $request->payload['hold_Userid'] ?? ($patientRegistry->hold_Userid ?? null),
+                'hold_No'                       => $request->payload['hold_No'] ?? ($patientRegistry->hold_No ?? null),
+                'hold_Date'                     => $request->payload['hold_Date'] ?? ($patientRegistry->hold_Date ?? null),
+                'hold_Remarks'                  => $request->payload['hold_Remarks'] ?? ($patientRegistry->hold_Remarks ?? null),
+                'isRevoked'                     => $request->payload['isRevoked'] ?? ($patientRegistry->isRevoked ?? null),
+                'revokedBy'                     => $request->payload['revokedBy'] ?? ($patientRegistry->revokedBy ?? null),
+                'revoked_Date'                  => $request->payload['revoked_Date'] ?? ($patientRegistry->revoked_Date ?? null),
+                'revoked_Remarks'               => $request->payload['revoked_Remarks'] ?? ($patientRegistry->revoked_Remarks ?? null),
+                'guarantor_Id'                  => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? ($patientRegistry->guarantor_Id ?? null),
+                'guarantor_Name'                => $request->payload['selectedGuarantor'][0]['guarantor_name'] ?? ($patientRegistry->guarantor_Name ?? null),
+                'guarantor_Approval_code'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_code'] ?? ($patientRegistry->guarantor_Approval_code ?? null),
+                'guarantor_Approval_no'         => $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] ?? ($patientRegistry->guarantor_Approval_no ?? null),
+                'guarantor_Approval_date'       => $request->payload['selectedGuarantor'][0]['guarantor_Approval_date'] ?? ($patientRegistry->guarantor_Approval_date ?? null),
+                'guarantor_Validity_date'       => $request->payload['selectedGuarantor'][0]['guarantor_Validity_date'] ?? ($patientRegistry->guarantor_Validity_date ?? null),
+                'guarantor_Approval_remarks'    => $request->payload['guarantor_approval_remarks'] ?? ($patientRegistry->guarantor_Approval_remarks ?? null),
+                'isWithCreditLimit'             => !empty($request->payload['selectedGuarantor'][0]['guarantor_code']) ? true : ($request->payload['isWithCreditLimit'] ?? false) ?? ($patientRegistry->isWithCreditLimit ?? null),
+                'guarantor_Credit_Limit'        => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? ($patientRegistry->guarantor_Credit_Limit ?? null),
+                'isWithPhilHealth'              => $request->payload['isWithPhilHealth'] ?? ($patientRegistry->isWithPhilHealth ?? null),
+                'philhealth_Number'             => $request->payload['philhealth_Number'] ?? ($patientRegistry->philhealth_Number ?? null),
+                'isWithMedicalPackage'          => $request->payload['isWithMedicalPackage'] ?? ($patientRegistry->isWithMedicalPackage ?? null),
+                'medical_Package_Id'            => $request->payload['Medical_Package_id'] ?? ($patientRegistry->medical_Package_Id ?? null),
+                'medical_Package_Name'          => $request->payload['medical_Package_Name'] ?? ($patientRegistry->medical_Package_Name ?? null),
+                'medical_Package_Amount'        => $request->payload['medical_Package_Amount'] ?? ($patientRegistry->medical_Package_Amount ?? null),
                 // 'chief_Complaint_Description'   => $request->payload['clinical_chief_complaint'] ?? $patientRegistry->chief_Complaint_Description,
-                'impression'                    => $request->payload['impression'] ?? $patientRegistry->impression,
-                'isCriticallyIll'               => $request->payload['isCriticallyIll'] ?? $patientRegistry->isCriticallyIll,
-                'illness_Type'                  => $request->payload['illness_Type'] ?? $patientRegistry->illness_Type,
-                'isHemodialysis'                => $isHemodialysis ?? $patientRegistry->isHemodialysis,
-                'isPeritoneal'                  => $isPeritoneal ?? $patientRegistry->isPeritoneal,
-                'isLINAC'                       => $isLINAC ?? $patientRegistry->isLINAC,
-                'isCOBALT'                      => $isCOBALT ?? $patientRegistry->isCOBALT,
-                'isBloodTrans'                  => $isBloodTrans ?? $patientRegistry->isBloodTrans,
-                'isChemotherapy'                => $isChemotherapy ?? $patientRegistry->isChemotherapy,
-                'isBrachytherapy'               => $isBrachytherapy ?? $patientRegistry->isBrachytherapy,
-                'isDebridement'                 => $isDebridement ?? $patientRegistry->isDebridement,
-                'isTBDots'                      => $isTBDots ?? $patientRegistry->isTBDots,
-                'isPAD'                         => $isPAD ?? $patientRegistry->isPAD,
-                'isRadioTherapy'                => $isRadioTherapy ?? $patientRegistry->isRadioTherapy,
-                'attending_Doctor'              => $request->payload['selectedConsultant'][0]['attending_Doctor'] ?? $patientRegistry->attending_Doctor,
-                'attending_Doctor_fullname'     => $request->payload['selectedConsultant'][0]['attending_Doctor_fullname'] ?? $patientRegistry->attending_Doctor_fullname,
-                'bmi'                           => isset($request->payload['bmi']) ? (float)$request->payload['bmi'] : $patientRegistry->bmi,
-                'weight'                        => isset($request->payload['weight']) ? (float)$request->payload['weight'] : $patientRegistry->weight,
-                'weightUnit'                    => $request->payload['weightUnit'] ?? $patientRegistry->weightUnit,
-                'height'                        => isset($request->payload['height']) ? (float)$request->payload['height'] : $patientRegistry->height,
-                'heightUnit'                    => $request->payload['height_Unit'] ?? $patientRegistry->heightUnit,
-                'bloodPressureSystolic'         => isset($request->payload['bloodPressureSystolic']) ? (int)$request->payload['bloodPressureSystolic'] : $patientRegistry->bloodPressureSystolic,
-                'bloodPressureDiastolic'        => isset($request->payload['bloodPressureDiastolic']) ? (int)$request->payload['bloodPressureDiastolic'] : $patientRegistry->bloodPressureDiastolic,
-                'pulseRate'                     => isset($request->payload['pulseRate']) ? (int)$request->payload['pulseRate'] : $patientRegistry->pulseRate,
-                'respiratoryRate'               => isset($request->payload['respiratoryRate']) ? (int)$request->payload['respiratoryRate'] : $patientRegistry->respiratoryRate,
-                'oxygenSaturation'              => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : $patientRegistry->oxygenSaturation,
-                'isOpenLateCharges'             => $request->payload['LateCharges'] ?? $patientRegistry->isOpenLateCharges,
-                'mscCase_Result_Id'             => $request->payload['mscCase_result_id'] ?? $patientRegistry->mscCase_Result_Id,
-                'isAutopsy'                     => $request->payload['isAutopsy'] ?? $patientRegistry->isAutopsy,
-                'barcode_Image'                 => $request->payload['barcode_Image'] ?? $patientRegistry->barcode_Image,
-                'barcode_Code_Id'               => $request->payload['barcode_Code_Id'] ?? $patientRegistry->barcode_Code_Id,
-                'barcode_Code_String'           => $request->payload['barcode_Code_String'] ?? $patientRegistry->barcode_Code_String,
-                'isWithConsent_DPA'              => $request->payload['isWithConsent_DPA'] ?? $patientRegistry->isWithConsent_DPA,
-                'registry_Remarks'              => $request->payload['registry_Remarks'] ?? $patientRegistry->registry_Remarks, 
+                'impression'                    => $request->payload['impression'] ?? ($patientRegistry->impression ?? null),
+                'isCriticallyIll'               => $request->payload['isCriticallyIll'] ?? ($patientRegistry->isCriticallyIll ?? null),
+                'illness_Type'                  => $request->payload['illness_Type'] ?? ($patientRegistry->illness_Type ?? null),
+                'isHemodialysis'                => $isHemodialysis ?? ($patientRegistry->isHemodialysis ?? null),
+                'isPeritoneal'                  => $isPeritoneal ?? ($patientRegistry->isPeritoneal ?? null),
+                'isLINAC'                       => $isLINAC ?? ($patientRegistry->isLINAC ?? null),
+                'isCOBALT'                      => $isCOBALT ?? ($patientRegistry->isCOBALT ?? null),
+                'isBloodTrans'                  => $isBloodTrans ?? ($patientRegistry->isBloodTrans ?? null),
+                'isChemotherapy'                => $isChemotherapy ?? ($patientRegistry->isChemotherapy ?? null),
+                'isBrachytherapy'               => $isBrachytherapy ?? ($patientRegistry->isBrachytherapy ?? null),
+                'isDebridement'                 => $isDebridement ?? ($patientRegistry->isDebridement ?? null),
+                'isTBDots'                      => $isTBDots ?? ($patientRegistry->isTBDots ?? null),
+                'isPAD'                         => $isPAD ?? ($patientRegistry->isPAD ?? null),
+                'isRadioTherapy'                => $isRadioTherapy ?? ($patientRegistry->isRadioTherapy ?? null),
+                'attending_Doctor'              => $request->payload['selectedConsultant'][0]['attending_Doctor'] ?? ($patientRegistry->attending_Doctor ?? null),
+                'attending_Doctor_fullname'     => $request->payload['selectedConsultant'][0]['attending_Doctor_fullname'] ?? ($patientRegistry->attending_Doctor_fullname ?? null),
+                'bmi'                           => isset($request->payload['bmi']) ? (float)$request->payload['bmi'] : ($patientRegistry->bmi ?? null),
+                'weight'                        => isset($request->payload['weight']) ? (float)$request->payload['weight'] : ($patientRegistry->weight ?? null),
+                'weightUnit'                    => $request->payload['weightUnit'] ?? ($patientRegistry->weightUnit ?? null),
+                'height'                        => isset($request->payload['height']) ? (float)$request->payload['height'] : ($patientRegistry->height ?? null),
+                'heightUnit'                    => $request->payload['height_Unit'] ?? ($patientRegistry->heightUnit ?? null),
+                'bloodPressureSystolic'         => isset($request->payload['bloodPressureSystolic']) ? (int)$request->payload['bloodPressureSystolic'] : ($patientRegistry->bloodPressureSystolic ?? null),
+                'bloodPressureDiastolic'        => isset($request->payload['bloodPressureDiastolic']) ? (int)$request->payload['bloodPressureDiastolic'] : ($patientRegistry->bloodPressureDiastolic ?? null),
+                'pulseRate'                     => isset($request->payload['pulseRate']) ? (int)$request->payload['pulseRate'] : ($patientRegistry->pulseRate ?? null),
+                'respiratoryRate'               => isset($request->payload['respiratoryRate']) ? (int)$request->payload['respiratoryRate'] : ($patientRegistry->respiratoryRate ?? null),
+                'oxygenSaturation'              => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : ($patientRegistry->oxygenSaturation ?? null),
+                'isOpenLateCharges'             => $request->payload['LateCharges'] ?? ($patientRegistry->isOpenLateCharges ?? null),
+                'mscCase_Result_Id'             => $request->payload['mscCase_result_id'] ?? ($patientRegistry->mscCase_Result_Id ?? null),
+                'isAutopsy'                     => $request->payload['isAutopsy'] ?? ($patientRegistry->isAutopsy ?? null),
+                'barcode_Image'                 => $request->payload['barcode_Image'] ?? ($patientRegistry->barcode_Image ?? null),
+                'barcode_Code_Id'               => $request->payload['barcode_Code_Id'] ?? ($patientRegistry->barcode_Code_Id ?? null),
+                'barcode_Code_String'           => $request->payload['barcode_Code_String'] ?? ($patientRegistry->barcode_Code_String ?? null),
+                'isWithConsent_DPA'              => $request->payload['isWithConsent_DPA'] ?? ($patientRegistry->isWithConsent_DPA ?? null),
+                'registry_Remarks'              => $request->payload['registry_Remarks'] ?? ($patientRegistry->registry_Remarks ?? null), 
                 'updatedby'                     => Auth()->user()->idnumber,
                 'updated_at'                    => $today
             ];   
 
             $patientImmunizationsData = [
                 'branch_id'             => 1,
-                'patient_id'            => $patient_id,
-                'case_No'               => $registry_id,          
-                'vaccine_Id'            => $request->payload['vaccine_Id'] ?? $patientImmunization->vaccine_Id,
-                'administration_Date'   => $request->payload['administration_Date'] ?? $patientImmunization->administration_Date,
-                'dose'                  => $request->payload['dose'] ?? $patientImmunization->dose,
-                'site'                  => $request->payload['site'] ?? $patientImmunization->site,
-                'administrator_Name'    => $request->payload['administrator_Name'] ?? $patientImmunization->administrator_Name,
-                'Notes'                 => $request->payload['Notes'] ?? $patientImmunization->Notes,
+                'vaccine_Id'            => $request->payload['vaccine_Id'] ?? ($patientImmunization->vaccine_Id ?? null),
+                'administration_Date'   => $request->payload['administration_Date'] ?? ($patientImmunization->administration_Date ?? null),
+                'dose'                  => $request->payload['dose'] ?? ($patientImmunization->dose ?? null),
+                'site'                  => $request->payload['site'] ?? ($patientImmunization->site ?? null),
+                'administrator_Name'    => $request->payload['administrator_Name'] ?? ($patientImmunization->administrator_Name ?? null),
+                'Notes'                 => $request->payload['Notes'] ?? ($patientImmunization->Notes ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => $today
             ];
 
             $patientAdministeredMedicineData = [
-                'patient_Id'            => $patient_id,
-                'case_No'               => $registry_id,
-                'item_Id'               => $request->payload['item_Id'] ?? $patientAdministeredMedicine->item_Id,
-                'quantity'              => $request->payload['quantity'] ?? $patientAdministeredMedicine->quantity,
-                'administered_Date'     => $request->payload['administered_Date'] ?? $patientAdministeredMedicine->administered_Date,
-                'administered_By'       => $request->payload['administered_By'] ?? $patientAdministeredMedicine->administered_By,
-                'reference_num'         => $request->payload['reference_num'] ?? $patientAdministeredMedicine->reference_num,
-                'transaction_num'       => $request->payload['transaction_num'] ?? $patientAdministeredMedicine->transaction_num,
+                'item_Id'               => $request->payload['item_Id'] ?? ($patientAdministeredMedicine->item_Id ?? null),
+                'quantity'              => $request->payload['quantity'] ?? ($patientAdministeredMedicine->quantity ?? null),
+                'administered_Date'     => $request->payload['administered_Date'] ?? ($patientAdministeredMedicine->administered_Date ?? null),
+                'administered_By'       => $request->payload['administered_By'] ?? ($patientAdministeredMedicine->administered_By ?? null),
+                'reference_num'         => $request->payload['reference_num'] ?? ($patientAdministeredMedicine->reference_num ?? null),
+                'transaction_num'       => $request->payload['transaction_num'] ?? ($patientAdministeredMedicine->transaction_num ?? null),
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => $today,
-            ];
-
-
-            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id);
-            $existingPatientRecord = Patient::where('patient_Id', $patient_id)
-                ->whereDate('created_at', $today)
-                ->exists();
+            ]; 
             
-            
-            if ($existingPatientRecord) { 
+            if ($isPatientRegistered) { 
+                echo 'Patient is registered';
                 $patient->update($patientData);
                 $pastImmunization->update($patientPastImmunizationData);
                 $pastMedicalHistory->update($patientPastMedicalHistoryData);
@@ -1833,30 +1928,7 @@ class OutpatientRegistrationController extends Controller
                 $privilegedCard->update($patientPrivilegedCard);
                 $privilegedPointTransfers->update($patientPrivilegedPointTransfers);
                 $privilegedPointTransactions->update($patientPrivilegedPointTransactions);
-            } else {
-                $patient->update($patientData);
-                $pastMedicalProcedure->create($registerData['patientPastMedicalProcedureData']);
-                $pastMedicalHistory->create($registerData['patientPastMedicalHistoryData']);
-                $pastImmunization->create($registerData['patientPastImmunizationData']);
-                $pastBadHabits->create($registerData['patientPastBadHabitsData']);
-                $drugUsedForAllergy->create($registerData['patientDrugUsedForAllergyData']);
 
-                $newPrivelgedCard = $privilegedCard->create($registerData['patientPrivilegedCard']);
-                $registerData['patientPrivilegedPointTransfers']['fromCard_Id'] = $newPrivelgedCard->id;
-                $registerData['patientPrivilegedPointTransfers']['toCard_Id'] = $newPrivelgedCard->id;
-                $registerData['patientPrivilegedPointTransactions']['card_Id'] = $newPrivelgedCard->id;
-                $privilegedPointTransfers->create($registerData['patientPrivilegedPointTransfers']);
-                $privilegedPointTransactions->create($registerData['patientPrivilegedPointTransactions']);
-
-                $newPastAllergyHistory = $pastAllergyHistory->create($registerData['patientPastAllergyHistoryData']);
-                $registerData['patientPastCauseOfAllergyData']['history_Id'] = $newPastAllergyHistory->id;
-                $registerData['patientPastSymptomsOfAllergyData']['history_Id'] = $newPastAllergyHistory->id;
-                $pastCauseOfAllergy->create($registerData['patientPastCauseOfAllergyData']);
-                $pastSymtomsOfAllergy->create($registerData['patientPastSymptomsOfAllergyData']);
-            }
-
-            $existingPatientRegistry = PatientRegistry::where('patient_Id', $patient_id)->whereDate('created_at', $today)->exists();
-            if ($existingPatientRegistry) {
                 $patientRegistry->update($patientRegistryData);
                 $patientHistory->update($patientHistoryData);
                 $patientMedicalProcedure->update($patientMedicalProcedureData);
@@ -1867,9 +1939,7 @@ class OutpatientRegistrationController extends Controller
                 $pregnancyHistory->update($patientPregnancyHistoryData);
                 $gynecologicalConditions->update($patientGynecologicalConditionsData);
                 $allergy->update($patientAllergyData);
-                // $causeOfAllergy->update($patientCauseOfAllergyData);
                 updateIfNotNull($causeOfAllergy, $patientCauseOfAllergyData);
-                // $symptomsOfAllergy->update($patientSymptomsOfAllergyData);
                 updateIfNotNull($symptomsOfAllergy, $patientSymptomsOfAllergyData);
                 $badHabits->update($patientBadHabitsData);
                 $patientDoctors->update($patientDoctorsData);
@@ -1889,67 +1959,89 @@ class OutpatientRegistrationController extends Controller
                 $dischargeFollowUpLaboratories->update($patientDischargeFollowUpLaboratories);
                 $dischargeDoctorsFollowUp->update($patientDischargeDoctorsFollowUp);
             } else {
-                $patientRegistry->create($patientRegistryData);
-                $patientHistory->create($registerData['patientHistoryData']);
-                $patientImmunization->create($registerData['patientImmunizationsData']);
-                $patientVitalSign->create($registerData['patientVitalSignsData']);
-                $patientMedicalProcedure->create($registerData['patientMedicalProcedureData']);
-                $patientAdministeredMedicine->create($registerData['patientAdministeredMedicineData']);
-                $badHabits->create($registerData['patientBadHabitsData']);
-                $patientDoctors->create($registerData['patientDoctorsData']);
-                $pertinentSignAndSymptoms->create($registerData['patientPertinentSignAndSymptomsData']);
-                $physicalExamtionChestLungs->create($registerData['patientPhysicalExamtionChestLungsData']);
-                $courseInTheWard->create($registerData['patientCourseInTheWardData']);
-                $physicalExamtionCVS->create($registerData['patientPhysicalExamtionCVSData']);
-                $medications->create($registerData['patientMedicationsData']);
-                $physicalExamtionHEENT->create($registerData['patientPhysicalExamtionHEENTData']);
-                $physicalSkinExtremities->create($registerData['patientPhysicalSkinExtremitiesData']);
-                $physicalAbdomen->create($registerData['patientPhysicalAbdomenData']);
-                $physicalNeuroExam->create($registerData['patientPhysicalNeuroExamData']);
-                $physicalGUIE->create($registerData['patientPhysicalGUIEData']);
-                $physicalExamtionGeneralSurvey->create($registerData['patientPhysicalExamtionGeneralSurveyData']);
+                echo 'Patient is not registered';
+                $patient->past_medical_procedures()->create($registerData['patientPastMedicalProcedureData']);
+                $patient->past_medical_history()->create($registerData['patientPastMedicalHistoryData']);
+                $patient->past_immunization()->create($registerData['patientPastImmunizationData']);
+                $patient->past_bad_habits()->create($registerData['patientPastBadHabitsData']);
+                $patient->drug_used_for_allergy()->create($registerData['patientDrugUsedForAllergyData']);
 
-                $newOBGYNHistory = $OBGYNHistory->create($registerData['patientOBGYNHistory']);
+                $newPrivelgedCard = $patient->privilegedCard()->create($registerData['patientPrivilegedCard']);
+                $registerData['patientPrivilegedPointTransfers']['fromCard_Id'] = $newPrivelgedCard->id;
+                $registerData['patientPrivilegedPointTransfers']['toCard_Id'] = $newPrivelgedCard->id;
+                $registerData['patientPrivilegedPointTransactions']['card_Id'] = $newPrivelgedCard->id;
+                $newPrivelgedCard->pointTransfers()->create($registerData['patientPrivilegedPointTransfers']);
+                $newPrivelgedCard->pointTransactions()->create($registerData['patientPrivilegedPointTransactions']);
+
+                $newPastAllergyHistory = $patient->past_allergy_history()->create($registerData['patientPastAllergyHistoryData']);
+                $registerData['patientPastCauseOfAllergyData']['history_Id'] = $newPastAllergyHistory->patient_Id;
+                $registerData['patientPastSymptomsOfAllergyData']['history_Id'] = $newPastAllergyHistory->patient_Id;
+                $newPastAllergyHistory->pastCauseOfAllergy()->create($registerData['patientPastCauseOfAllergyData']);
+                $newPastAllergyHistory->pastSymptomsOfAllergy()->create($registerData['patientPastSymptomsOfAllergyData']);
+
+                $patientRegistry = $patient->patientRegistry()->create($registerData['patientRegistryData']);
+                $patientRegistry->history()->create($registerData['patientHistoryData']);
+                $patientRegistry->immunizations()->create($registerData['patientImmunizationsData']);
+                $patientRegistry->vitals()->create($registerData['patientVitalSignsData']);
+                $patientRegistry->medical_procedures()->create($registerData['patientMedicalProcedureData']);
+                $patientRegistry->administered_medicines()->create($registerData['patientAdministeredMedicineData']);
+                $patientRegistry->bad_habits()->create($registerData['patientBadHabitsData']);
+                $patientRegistry->patientDoctors()->create($registerData['patientDoctorsData']);
+                $patientRegistry->pertinentSignAndSymptoms()->create($registerData['patientPertinentSignAndSymptomsData']);
+                $patientRegistry->physicalExamtionChestLungs()->create($registerData['patientPhysicalExamtionChestLungsData']);
+                $patientRegistry->courseInTheWard()->create($registerData['patientCourseInTheWardData']);
+                $patientRegistry->physicalExamtionCVS()->create($registerData['patientPhysicalExamtionCVSData']);
+                $patientRegistry->medications()->create($registerData['patientMedicationsData']);
+                $patientRegistry->physicalExamtionHEENT()->create($registerData['patientPhysicalExamtionHEENTData']);
+                $patientRegistry->physicalSkinExtremities()->create($registerData['patientPhysicalSkinExtremitiesData']);
+                $patientRegistry->physicalAbdomen()->create($registerData['patientPhysicalAbdomenData']);
+                $patientRegistry->physicalNeuroExam()->create($registerData['patientPhysicalNeuroExamData']);
+                $patientRegistry->physicalGUIE()->create($registerData['patientPhysicalGUIEData']);
+                $patientRegistry->PhysicalExamtionGeneralSurvey()->create($registerData['patientPhysicalExamtionGeneralSurveyData']);
+
+                $newOBGYNHistory = $patientRegistry->oBGYNHistory()->create($registerData['patientOBGYNHistory']);
                 $registerData['patientPregnancyHistoryData']['OBGYNHistoryID'] = $newOBGYNHistory->id;
                 $registerData['patientGynecologicalConditions']['OBGYNHistoryID'] = $newOBGYNHistory->id;
-                $pregnancyHistory->create($registerData['patientPregnancyHistoryData']);
-                $gynecologicalConditions->create($registerData['patientGynecologicalConditions']);
+                $newOBGYNHistory->PatientPregnancyHistory()->create($registerData['patientPregnancyHistoryData']);
+                $newOBGYNHistory->gynecologicalConditions()->create($registerData['patientGynecologicalConditions']);
 
-                $newAllergy = $allergy->create($registerData['patientAllergyData']);
-                $registerData['patientCauseAllergyData']['allergies_Id'] = $newAllergy->id;
-                $registerData['patientSymptomsOfAllergy']['allergies_Id'] = $newAllergy->id;
-                createIfNotNull($causeOfAllergy, $registerData['patientCauseAllergyData']);
-                createIfNotNull($symptomsOfAllergy, $registerData['patientSymptomsOfAllergy']);
+                $newAllergy = $patientRegistry->allergies()->create($registerData['patientAllergyData']);
+                $registerData['patientCauseAllergyData']['allergies_Id'] = $newAllergy->patient_Id;
+                $registerData['patientSymptomsOfAllergy']['allergies_Id'] = $newAllergy->patient_Id;
+                $newAllergy->cause_of_allergy()->create($registerData['patientCauseAllergyData']);
+                $newAllergy->symptoms_allergy()->create($registerData['patientSymptomsOfAllergy']);
 
-                $newDischargeInstructions = $dischargeInstructions->create($registerData['patientDischargeInstructions']);
+                $newDischargeInstructions = $patient->dischargeInstructions()->create($registerData['patientDischargeInstructions']);
                 $registerData['patientDischargeMedications']['instruction_Id'] = $newDischargeInstructions->id;
                 $registerData['patientDischargeFollowUpLaboratories']['instruction_Id'] = $newDischargeInstructions->id;
                 $registerData['patientDischargeFollowUpTreatment']['instruction_Id'] = $newDischargeInstructions->id;
                 $registerData['patientDischargeDoctorsFollowUp']['instruction_Id'] = $newDischargeInstructions->id;
-                $dischargeMedications->create($registerData['patientDischargeMedications']);
-                $dischargeFollowUpTreatment->create($registerData['patientDischargeFollowUpTreatment']);
-                $dischargeFollowUpLaboratories->create($registerData['patientDischargeFollowUpLaboratories']);
-                $dischargeDoctorsFollowUp->create($registerData['patientDischargeDoctorsFollowUp']);
+                $newDischargeInstructions->dischargeMedications()->create($registerData['patientDischargeMedications']);
+                $newDischargeInstructions->dischargeFollowUpTreatment()->create($registerData['patientDischargeFollowUpTreatment']);
+                $newDischargeInstructions->dischargeFollowUpLaboratories()->create($registerData['patientDischargeFollowUpLaboratories']);
+                $newDischargeInstructions->dischargeDoctorsFollowUp()->create($registerData['patientDischargeDoctorsFollowUp']);
             }
 
             DB::connection('sqlsrv_patient_data')->commit();
-            $registry_sequence->update([
-                'seq_no' => $registry_sequence->seq_no + 1,
-                'recent_generated' => $registry_sequence->seq_no,
-            ]);
+            DB::connection('sqlsrv_medsys_patient_data')->commit();
+            DB::connection('sqlsrv')->commit();
+
             return response()->json([
-                'message' => $existingPatientRecord && $existingPatientRegistry ? 'Outpatient data updated successfully' : 'Outpatient data created successfully',
+                'message' => "Patient data updated successfully",
                 'patient' => $patient,
                 'patientRegistry' => $patientRegistry
             ], 200);
 
-        // } catch(\Exception $e) {
-        //     DB::connection('sqlsrv_patient_data')->rollBack();
-        //     return response()->json([
-        //         'message' => 'Failed to update outpatient data',
-        //         'error' => $e->getMessage(), $e->getTraceAsString()
-        //     ], 500);
-        // }
+        } catch(\Exception $e) {
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            DB::connection('sqlsrv_medsys_patient_data')->rollBack();
+            DB::connection('sqlsrv')->rollBack(); 
+
+            return response()->json([
+                'message' => 'Failed to update outpatient data',
+                'error' => $e->getMessage(), $e->getTraceAsString()
+            ], 500);
+        }
     }
 
     public function getrevokedoutpatient() {

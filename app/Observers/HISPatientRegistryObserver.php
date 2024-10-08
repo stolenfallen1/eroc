@@ -41,6 +41,11 @@ class HISPatientRegistryObserver
                         'AccountNum'    =>  $patientRegistry->guarantor_Id   
                                             ?  $patientRegistry->guarantor_Id 
                                             :  $patientRegistry->patient_Id,
+                        'OpdStatus'             => 'E',
+                        'OpdType'               => 'O',
+                        'HosPlan'               => 'C',
+                        'ServiceID1'            => 10,
+                        'PatientClassification'   => 'C',
                         'DoctorID1'         => $patientRegistry->attending_Doctor   ?? '',
                         'ReasonOfReferral'  => $patientRegistry->referral_Reason    ?? '',
                         'ReferredFrom'      => $patientRegistry->referred_From_HCI  ?? '',
@@ -55,6 +60,11 @@ class HISPatientRegistryObserver
                         'AdmDate'       =>  $patientRegistry->registry_Date 
                                         ?   $patientRegistry->registry_Date 
                                         :   Carbon::now(),
+                        'ServiceID1'    => 10,          
+                        'OpdStatus'     => 'E',
+                        'OpdType'       => 'O',
+                        'HosPlan'       => 'C',
+                        'PatientType'   => 'C',
                         'DoctorID1'     =>  $patientRegistry->attending_Doctor   ?? '',
                         'AccountNum'    =>  $patientRegistry->guarantor_Id   ? $patientRegistry->guarantor_Id : $patientRegistry->patient_Id,
                         'UserID'        => $patientRegistry->createdBy
@@ -84,12 +94,17 @@ class HISPatientRegistryObserver
                 } elseif(intval($patientRegistry->mscAccount_Trans_Types) === 2) {
 
                     $OPD_Patient_Data = [
-                        'HospNum'       =>  $patientRegistry->patient_Id,
-                        'IDNum'         =>  $patientRegistry->case_No . 'B',
-                        'ERNum'         =>  $patientRegistry->er_Case_No     ?? '',
-                        'AdmDate'       =>  $patientRegistry->registry_Date 
-                                        ?   $patientRegistry->registry_Date 
-                                        :   Carbon::now(),
+                        'HospNum'               =>  $patientRegistry->patient_Id,
+                        'IDNum'                 =>  $patientRegistry->case_No . 'B',
+                        'ERNum'                 =>  $patientRegistry->er_Case_No     ?? '',
+                        'AdmDate'               =>  $patientRegistry->registry_Date 
+                                                ?   $patientRegistry->registry_Date 
+                                                :   Carbon::now(),
+                        'ServiceID1'    => 10,          
+                        'OpdStatus'     => 'E',
+                        'OpdType'       => 'O',
+                        'HosPlan'       => 'C',
+                        'PatientType'   => 'C',
                         'DoctorID1'     =>  $patientRegistry->attending_Doctor   ?? '',
                         'AccountNum'    =>  $patientRegistry->guarantor_Id   ? $patientRegistry->guarantor_Id : $patientRegistry->patient_Id,
                         'UserID'        => $patientRegistry->createdBy
@@ -163,6 +178,11 @@ class HISPatientRegistryObserver
                             'AccountNum'    =>  $patientRegistry->guarantor_Id   
                                             ?   $patientRegistry->guarantor_Id 
                                             :   $patientRegistry->patient_Id,
+                            'OpdStatus'             => 'E',
+                            'OpdType'               => 'O',
+                            'HosPlan'               => 'C',
+                            'ServiceID1'            => 10,
+                            'PatientClassification'   => 'C',
                             'DoctorID1'         => $patientRegistry->attending_Doctor,
                             'ReasonOfReferral'  =>  $patientRegistry->referral_Reason,
                             'ReferredFrom'      =>  $patientRegistry->referred_From_HCI,
@@ -178,7 +198,11 @@ class HISPatientRegistryObserver
                             'AdmDate'       =>  $patientRegistry->registry_Date  
                                             ?   $patientRegistry->registry_Date 
                                             :   Carbon::now(),
-
+                            'ServiceID1'    => 10,          
+                            'OpdStatus'     => 'E',
+                            'OpdType'       => 'O',
+                            'HosPlan'       => 'C',
+                            'PatientType'   => 'C',
                             'DoctorID1'     => $patientRegistry->attending_Doctor,                
                             'AccountNum'    =>  $patientRegistry->guarantor_Id   
                                             ?   $patientRegistry->guarantor_Id 
@@ -222,7 +246,11 @@ class HISPatientRegistryObserver
                         'AdmDate'       =>  $patientRegistry->registry_Date  
                                         ?   $patientRegistry->registry_Date 
                                         :   Carbon::now(),
-
+                        'ServiceID1'    => 10,          
+                        'OpdStatus'     => 'E',
+                        'OpdType'       => 'O',
+                        'HosPlan'       => 'C',
+                        'PatientType'   => 'C',
                         'DoctorID1'     => $patientRegistry->attending_Doctor,                
                         'AccountNum'    =>  $patientRegistry->guarantor_Id   
                                         ?   $patientRegistry->guarantor_Id 

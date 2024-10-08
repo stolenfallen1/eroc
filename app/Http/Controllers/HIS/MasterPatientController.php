@@ -105,13 +105,19 @@ class MasterPatientController extends Controller
     public function list()
     {
         try {
+            $today = Carbon::now();
+
             if($this->check_is_allow_medsys) {
 
-                $query = ViewMedsysPatientMaster::orderBy('id','desc')->offset(0)->limit(100);
+                $query = ViewMedsysPatientMaster::orderBy('id','desc')
+                    // ->where('updated_at', $today)
+                    ->offset(0)
+                    ->limit(100);
 
             } else {
 
                 $query = PatientMaster::orderBy('id','desc');
+                    // ->where('updated_at', $today);
             }
                 if(Request()->lastname) {
 
@@ -134,7 +140,6 @@ class MasterPatientController extends Controller
                 }
             
             $data = $query->get(); 
-      
             return response()->json($data, 200);
 
         } catch (\Exception $e) {

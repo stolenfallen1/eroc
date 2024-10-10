@@ -94,13 +94,15 @@ class HISCashAssestmentController extends Controller
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
-            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
-            
-            if(!$checkUser):
-                return response()->json([
-                    'message' => 'Incorrect Username or Password',
-                ], 404);
-            endif;
+            $checkUser = null;
+            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
+                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+                if (!$checkUser) {
+                    return response()->json([
+                        'message' => 'Incorrect Username or Password',
+                    ], 404);
+                }
+            }
 
             $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
@@ -157,9 +159,9 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
                         'Barcode' => $barcode,
-                        'userId' => $checkUser->idnumber,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => $checkUser->idnumber,
+                        'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
                 }
@@ -189,9 +191,9 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorID' => $requesting_doctor_id,
                         'requestDoctorName' => $requesting_doctor_name,
                         'departmentID' => $revenueID,
-                        'userId' => $checkUser->idnumber,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => $checkUser->idnumber,
+                        'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
                 }
@@ -218,13 +220,15 @@ class HISCashAssestmentController extends Controller
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
         try {
-            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
-            
-            if(!$checkUser):
-                return response()->json([
-                    'message' => 'Incorrect Username or Password',
-                ], 404);
-            endif;
+            $checkUser = null;
+            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
+                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+                if (!$checkUser) {
+                    return response()->json([
+                        'message' => 'Incorrect Username or Password',
+                    ], 404);
+                }
+            }
 
             $items = $request->items;
             foreach ($items as $item) {
@@ -264,10 +268,10 @@ class HISCashAssestmentController extends Controller
                         'requestDoctorID' => $existingData->requestDoctorID,
                         'requestDoctorName' => $existingData->requestDoctorName,
                         'departmentID' => $existingData->departmentID,
-                        'userId' => $checkUser->idnumber,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'Barcode' => null,
                         'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => $checkUser->idnumber,
+                        'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
                 }

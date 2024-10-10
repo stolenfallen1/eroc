@@ -12,8 +12,8 @@ use App\Models\HIS\services\PatientRegistry;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Helpers\GetIP;
-use Log;
 
 class OutpatientRegistrationController extends Controller
 {
@@ -24,7 +24,8 @@ class OutpatientRegistrationController extends Controller
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
     }
 
-    protected function getRegisterPatientData(Request $request, $patient_id = null, $registry_id = null, $patientIdentifier = null, $patient_category = null) {
+    // TODO: Create Helper for this soon but make it functional first
+    protected function getRegisterPatientData(Request $request, $patient_id = null, $registry_id = null, $patientIdentifier = null, $patient_category = null, $item = null, $symptom = null) {
         return [
             'patientData' => [
                 'patient_Id'                => $patient_id,
@@ -224,32 +225,6 @@ class OutpatientRegistrationController extends Controller
                 'createdby'                 => Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ],
-            'patientPastAllergyHistoryData' => [
-                'patient_Id'                => $patient_id,
-                'family_History'            => '',
-                'createdby'                 => Auth()->user()->idnumber,
-                'created_at'                => Carbon::now(),
-            ],
-            'patientPastCauseOfAllergyData' => [
-                'history_Id'            => '',
-                'allergy_Type_Id'       => '',
-                'duration'              => '',
-                'createdby'             => Auth()->user()->idnumber,
-                'created_at'            => Carbon::now(),
-            ],
-            'patientPastSymptomsOfAllergyData' => [
-                'history_Id'            => '',
-                'symptom_Description'   => '',
-                'createdby'             => Auth()->user()->idnumber,
-                'created_at'            => Carbon::now(),
-            ],
-            'patientDrugUsedForAllergyData' => [
-                'patient_Id'        => $patient_id,
-                'drug_Description'  => '',
-                'hospital'          => '',
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now(),
-            ],
             'patientPastBadHabitsData' => [
                 'patient_Id'                    => $patient_id,
                 'description'                   => null,
@@ -336,24 +311,42 @@ class OutpatientRegistrationController extends Controller
                 'updatedby'             => Auth()->user()->idnumber,
             ],
             'patientAllergyData' => [
-                'patient_Id'        => $patient_id,
-                'case_No'           => $registry_id,
-                'family_History'    => '',
-                'createdby'         => Auth()->user()->idnumber,
-                'created_at'        => Carbon::now(),
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'allergy_type_id'       => $item['allergy_id'] ?? null,
+                'allergy_description'   => $item['allergy_name'] ?? null,
+                'family_History'        => null,
+                'createdby'             => Auth()->user()->idnumber,
+                'created_at'            => Carbon::now(),
             ],
             'patientCauseAllergyData' => [
-                'allergies_Id'      => '',
-                'allergy_Type_Id'   => '',
-                'duration'          => '',
+                'patient_Id'        => $patient_id,
+                'case_No'           => $registry_id,
+                'assessID'          => '',
+                'allergy_Type_Id'   => $item['allergy_id'] ?? null,
+                'description'       => $item['cause'] ?? null,
+                'duration'          => null,
                 'createdby'         => Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
             ],
             'patientSymptomsOfAllergy' => [
-                'allergies_Id'          => '',
-                'symptom_Description'   => '',
+                'patient_Id'            => $patient_id,
+                'case_No'               => $registry_id,
+                'assessID'              => '',
+                'allergy_Type_Id'       => $item['allergy_id'] ?? null,
+                'symptom_id'            => $symptom['id'] ?? null,
+                'symptom_Description'   => $symptom['description'] ?? null,
                 'createdby'             => Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
+            ],
+            'patientDrugUsedForAllergyData' => [
+                'patient_Id'        => $patient_id,
+                'case_No'           => $registry_id,
+                'assessID'          => '',
+                'allergy_Type_Id'       => $item['allergy_id'] ?? null,
+                'drug_Description'  => $item['drugUsed'] ?? null,
+                'createdby'         => Auth()->user()->idnumber,
+                'created_at'        => Carbon::now(),
             ],
             'patientImmunizationsData' => [
                 'branch_id'             => 1,
@@ -789,12 +782,36 @@ class OutpatientRegistrationController extends Controller
         ];
     }
 
+    // TODO: Create Helper for this soon but make it functional first
+    protected function getUniqueAllergy($records) 
+    {
+        $uniqueRecords = [];
+        foreach ($records as $record) {
+            if (!in_array($record['assessID'], array_column($uniqueRecords, 'assessID'))) {
+                $uniqueRecords[] = $record;
+            }
+        }
+        return $uniqueRecords;
+    }
     public function index() {
         try { 
-            $data = Patient::query();
-            $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
             $today = Carbon::now()->format('Y-m-d');
-            
+            $data = Patient::query();
+            $data->with([
+                'sex', 
+                'civilStatus', 
+                'region', 
+                'provinces', 
+                'municipality', 
+                'barangay', 
+                'countries',
+                'patientRegistry.allergies' => function ($query)use ($today) {
+                    $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
+                    $query->where('isDeleted', '!=', 1);
+                    $query->whereDate('created_at', $today);
+                }
+            ]);
+
             $data->whereHas('patientRegistryToday', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2); 
                 $query->where('isRevoked', 0);
@@ -886,9 +903,33 @@ class OutpatientRegistrationController extends Controller
                 'birthdate' => $request->payload['birthdate']
             ];
             
-            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category);
-            $patient = Patient::updateOrCreate($patientRule, $registerData['patientData']);
+            $allergyResults = [
+                'patientAllergyData' => [],
+                'patientCauseAllergyData' => [],
+                'patientSymptomsOfAllergy' => [],
+                'patientDrugUsedForAllergyData' => [],
+            ];
             
+            if ($request->payload['selectedAllergy'] == null) {
+                $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category);
+            } else {
+                foreach ($request->payload['selectedAllergy'] as $item) {
+                    $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category, $item);
+                    
+                    $allergyResults['patientAllergyData'][] = $registerData['patientAllergyData'];
+                    $allergyResults['patientCauseAllergyData'][] = $registerData['patientCauseAllergyData'];
+                    $allergyResults['patientDrugUsedForAllergyData'][] = $registerData['patientDrugUsedForAllergyData'];
+
+                    if (isset($item['symptoms']) && is_array($item['symptoms'])) {
+                        foreach ($item['symptoms'] as $symptom) {
+                                $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category, $item, $symptom);
+                                $allergyResults['patientSymptomsOfAllergy'][] = $registerData['patientSymptomsOfAllergy'];
+                        }
+                    }
+                }
+            }
+            
+            $patient = Patient::updateOrCreate($patientRule, $registerData['patientData']);
             if (!$patient) {
                 throw new \Exception('Failed to create patient master data');
             } else {
@@ -896,7 +937,6 @@ class OutpatientRegistrationController extends Controller
                 $patient->past_medical_history()->create($registerData['patientPastMedicalHistoryData']);
                 $patient->past_immunization()->create($registerData['patientPastImmunizationData']);
                 $patient->past_bad_habits()->create($registerData['patientPastBadHabitsData']);
-                $patient->drug_used_for_allergy()->create($registerData['patientDrugUsedForAllergyData']);
 
                 $patientPriviledgeCard = $patient->privilegedCard()->create($registerData['patientPrivilegedCard']);
                 $registerData['patientPrivilegedPointTransfers']['fromCard_Id'] = $patientPriviledgeCard->id;
@@ -904,12 +944,6 @@ class OutpatientRegistrationController extends Controller
                 $registerData['patientPrivilegedPointTransactions']['card_Id'] = $patientPriviledgeCard->id;
                 $patientPriviledgeCard->pointTransactions()->create($registerData['patientPrivilegedPointTransactions']);
                 $patientPriviledgeCard->pointTransfers()->create($registerData['patientPrivilegedPointTransfers']);
-    
-                $pastHistory = $patient->past_allergy_history()->create($registerData['patientPastAllergyHistoryData']);
-                $registerData['patientPastCauseOfAllergyData']['history_Id'] = $pastHistory->id;
-                $registerData['patientPastSymptomsOfAllergyData']['history_Id'] = $pastHistory->id;
-                $pastHistory->pastCauseOfAllergy()->create($registerData['patientPastCauseOfAllergyData']);
-                $pastHistory->pastSymptomsOfAllergy()->create($registerData['patientPastSymptomsOfAllergyData']);
             }
 
             $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
@@ -943,11 +977,41 @@ class OutpatientRegistrationController extends Controller
                 $OBG->PatientPregnancyHistory()->create($registerData['patientPregnancyHistoryData']);
                 $OBG->gynecologicalConditions()->create($registerData['patientGynecologicalConditions']);
 
-                $patientAllergy = $patientRegistry->allergies()->create($registerData['patientAllergyData']);
-                $registerData['patientCauseAllergyData']['allergies_Id'] = $patientAllergy->id;
-                $registerData['patientSymptomsOfAllergy']['allergies_Id'] = $patientAllergy->id;
-                $patientAllergy->cause_of_allergy()->create($registerData['patientCauseAllergyData']);
-                $patientAllergy->symptoms_allergy()->create($registerData['patientSymptomsOfAllergy']);
+                $allergies = $patientRegistry->allergies()->createMany($allergyResults['patientAllergyData']);
+                $arrayCause = [];
+                $arraySymptoms = [];
+                $arrayDrugs = [];
+                
+                foreach ($allergies as $allergy) {
+                    $assessID = $allergy->id;
+                    if (!empty($allergyResults['patientCauseAllergyData'])) {
+                        $cause = array_shift($allergyResults['patientCauseAllergyData']);
+                        $cause['assessID'] = $assessID; 
+                        $arrayCause[] = $cause; 
+                    }
+                    if (!empty($allergyResults['patientDrugUsedForAllergyData'])) {
+                        $drug = array_shift($allergyResults['patientDrugUsedForAllergyData']);
+                        $drug['assessID'] = $assessID; 
+                        $arrayDrugs[] = $drug; 
+                    }
+                    if (!empty($allergyResults['patientSymptomsOfAllergy'])) {
+                        foreach ($allergyResults['patientSymptomsOfAllergy'] as $symptom) {
+                            if ($symptom['allergy_Type_Id'] == $cause['allergy_Type_Id']) { 
+                                $symptom['assessID'] = $assessID; 
+                                $arraySymptoms[] = $symptom; 
+                            }
+                        }
+                    }
+                }
+                
+                $uniqueCauses = [];
+                $uniqueDrugs = [];
+                $uniqueCauses = $this->getUniqueAllergy($arrayCause);
+                $uniqueDrugs = $this->getUniqueAllergy($arrayDrugs);
+
+                $allergy->cause_of_allergy()->insert($uniqueCauses);
+                $allergy->symptoms_allergy()->insert(array_values($arraySymptoms)); 
+                $allergy->drug_used_for_allergy()->insert($uniqueDrugs);                
 
                 $patientDischarge = $patientRegistry->dischargeInstructions()->create($registerData['patientDischargeInstructions']);
                 $registerData['patientDischargeMedications']['instruction_Id'] = $patientDischarge->id;
@@ -985,7 +1049,8 @@ class OutpatientRegistrationController extends Controller
 
             return response()->json([
                 'message' => 'Failed to register outpatient data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTrace()
             ], 500);
         }
     }
@@ -1054,14 +1119,6 @@ class OutpatientRegistrationController extends Controller
             $pastImmunization                   = $patient->past_immunization()->whereDate('created_at', $today)->first() ?? null;
             $pastMedicalHistory                 = $patient->past_medical_history()->whereDate('created_at', $today)->first() ?? null;
             $pastMedicalProcedure               = $patient->past_medical_procedures()->whereDate('created_at', $today)->first() ?? null;
-            $pastAllergyHistory                 = $patient->past_allergy_history()->whereDate('created_at', $today)->first() ?? null; 
-
-            $pastCauseOfAllergy                 = $pastAllergyHistory && $pastAllergyHistory->pastCauseOfAllergy()
-                                                    ? $pastAllergyHistory->pastCauseOfAllergy()->whereDate('created_at', $today)->first() 
-                                                    : null;
-            $pastSymtomsOfAllergy               = $pastAllergyHistory && $pastAllergyHistory->pastSymptomsOfAllergy() 
-                                                    ? $pastAllergyHistory->pastSymptomsOfAllergy()->whereDate('created_at', $today)->first() 
-                                                    : null;
 
             $drugUsedForAllergy                 = $patient->drug_used_for_allergy()->whereDate('created_at', $today)->first() ?? null;
             $pastBadHabits                      = $patient->past_bad_habits()->whereDate('created_at', $today)->first() ?? null;
@@ -1277,44 +1334,6 @@ class OutpatientRegistrationController extends Controller
                 'date_Of_Procedure'         => $request->payload['date_Of_Procedure'] ?? ($pastMedicalProcedure->date_Of_Procedure ?? null),
                 'updatedby'                 => Auth()->user()->idnumber,
                 'updated_at'                => Carbon::now(),
-            ];
-
-            $patientPastAllergyHistoryData = [
-                'family_History'            => $request->payload['family_History'] ?? ($pastAllergyHistory->family_History ?? null),
-                'updatedby'                 => Auth()->user()->idnumber, 
-                'updated_at'                => Carbon::now(),
-            ];
-
-            $patientPastCauseOfAllergyData = [
-                'allergy_Type_Id'       => $request->payload['allergy_Type_Id'] ?? ($pastCauseOfAllergy->allergy_Type_Id ?? null),
-                'duration'              => $request->payload['duration'] ?? ($pastCauseOfAllergy->duration ?? null),
-                'updatedby'             => Auth()->user()->idnumber,
-                'updated_at'            => Carbon::now(),
-            ];
-
-            $patientPastSymptomsOfAllergyData = [
-                'symptom_Description'   => $request->payload['symptom_Description'] ?? ($pastSymtomsOfAllergy->symptom_Description ?? null),
-                'updatedby'             => Auth()->user()->idnumber,
-                'updated_at'            => Carbon::now(),
-            ];
-
-            $patientAllergyData = [
-                'family_History'    => $request->payload['family_History'] ?? ($allergy->family_History ?? null),
-                'updatedby'         => Auth()->user()->idnumber,
-                'updated_at'        => Carbon::now(),
-            ];
-
-            $patientCauseOfAllergyData = [
-                'allergy_Type_Id'   => $request->payload['allergy_Type_Id'] ?? ($causeOfAllergy->allergy_Type_Id ?? null),
-                'duration'          => $request->payload['duration'] ?? ($causeOfAllergy->duration ?? null),
-                'updatedby'         => Auth()->user()->idnumber,
-                'updated_at'        => Carbon::now(),
-            ];
-
-            $patientSymptomsOfAllergyData = [
-                'symptom_Description'   => $request->payload['symptom_Description'] ?? ($symptomsOfAllergy->symptom_Description ?? null),
-                'updatedby'             => Auth()->user()->idnumber,
-                'updated_at'            => Carbon::now(),
             ];
 
             $patientBadHabitsData = [
@@ -1913,23 +1932,109 @@ class OutpatientRegistrationController extends Controller
                 'updatedby'             => Auth()->user()->idnumber,
                 'updated_at'            => $today,
             ]; 
+
+            $allergyResults = [
+                'patientAllergyData' => [],
+                'patientCauseAllergyData' => [],
+                'patientSymptomsOfAllergy' => [],
+                'patientDrugUsedForAllergyData' => [],
+            ];
+            
+            if ($request->payload['selectedAllergy'] == null) {
+                $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier);
+            } else {
+                foreach ($request->payload['selectedAllergy'] as $item) {
+                    $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category = null, $item);
+                    
+                    $allergyResults['patientAllergyData'][] = $registerData['patientAllergyData'];
+                    $allergyResults['patientCauseAllergyData'][] = $registerData['patientCauseAllergyData'];
+                    $allergyResults['patientDrugUsedForAllergyData'][] = $registerData['patientDrugUsedForAllergyData'];
+
+                    if (isset($item['symptoms']) && is_array($item['symptoms'])) {
+                        foreach ($item['symptoms'] as $symptom) {
+                                $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category = null, $item, $symptom);
+                                $allergyResults['patientSymptomsOfAllergy'][] = $registerData['patientSymptomsOfAllergy'];
+                        }
+                    }
+                }
+            }
             
             if ($isPatientRegistered) { 
-                echo 'Patient is registered';
                 $patient->update($patientData);
                 $pastImmunization->update($patientPastImmunizationData);
                 $pastMedicalHistory->update($patientPastMedicalHistoryData);
                 $pastMedicalProcedure->update($patientPastMedicalProcedureData);
-                $pastAllergyHistory->update($patientPastAllergyHistoryData);
-                $pastCauseOfAllergy->update($patientPastCauseOfAllergyData);
-                $pastSymtomsOfAllergy->update($patientPastSymptomsOfAllergyData);
-                $drugUsedForAllergy->update($patientDrugUsedForAllergyData);
                 $pastBadHabits->update($patientPastBadHabitsData);
                 $privilegedCard->update($patientPrivilegedCard);
                 $privilegedPointTransfers->update($patientPrivilegedPointTransfers);
                 $privilegedPointTransactions->update($patientPrivilegedPointTransactions);
-
+                
                 $patientRegistry->update($patientRegistryData);
+
+                $deleteAllergy = $patientRegistry->allergies()
+                    ->where('patient_Id', $patientRegistry->patient_Id)
+                    ->where('case_No', $patientRegistry->case_No)
+                    ->whereDate('created_at', $today)
+                    ->update(['isDeleted' => 1]);
+                
+                if ($deleteAllergy) {
+                    $deletedAllergyID = $patientRegistry->allergies()
+                        ->where('patient_Id', $patientRegistry->patient_Id)
+                        ->where('case_No', $patientRegistry->case_No)
+                        ->where('isDeleted', 1)
+                        ->whereDate('created_at', $today)
+                        ->pluck('id');
+                    foreach ($deletedAllergyID as $allergyID) {
+                        $allergies = $patientRegistry->allergies()->find($allergyID);
+                        if ($allergies) {
+                            $allergies->cause_of_allergy()
+                                ->where('assessID', $allergyID)
+                                ->update(['isDeleted' => 1]);
+                            $allergies->symptoms_allergy()
+                                ->where('assessID', $allergyID)
+                                ->update(['isDeleted' => 1]);
+                            $allergies->drug_used_for_allergy()
+                                ->where('assessID', $allergyID)
+                                ->update(['isDeleted' => 1]);
+                        }
+                    }
+                }
+            
+                $allergies = $patientRegistry->allergies()->createMany($allergyResults['patientAllergyData']);
+                $arrayCause = [];
+                $arraySymptoms = [];
+                $arrayDrugs = [];
+                foreach ($allergies as $allergy) {
+                    $assessID = $allergy->id;
+                    if (!empty($allergyResults['patientCauseAllergyData'])) {
+                        $cause = array_shift($allergyResults['patientCauseAllergyData']);
+                        $cause['assessID'] = $assessID; 
+                        $arrayCause[] = $cause; 
+                    }
+                    if (!empty($allergyResults['patientDrugUsedForAllergyData'])) {
+                        $drug = array_shift($allergyResults['patientDrugUsedForAllergyData']);
+                        $drug['assessID'] = $assessID; 
+                        $arrayDrugs[] = $drug; 
+                    }
+                    if (!empty($allergyResults['patientSymptomsOfAllergy'])) {
+                        foreach ($allergyResults['patientSymptomsOfAllergy'] as $symptom) {
+                            if ($symptom['allergy_Type_Id'] == $cause['allergy_Type_Id']) { 
+                                $symptom['assessID'] = $assessID; 
+                                $arraySymptoms[] = $symptom; 
+                            }
+                        }
+                    }
+                }
+                
+                $uniqueCauses = [];
+                $uniqueDrugs = [];
+                $uniqueCauses = $this->getUniqueAllergy($arrayCause);
+                $uniqueDrugs = $this->getUniqueAllergy($arrayDrugs);
+
+                $allergy->cause_of_allergy()->insert($uniqueCauses);
+                $allergy->symptoms_allergy()->insert(array_values($arraySymptoms)); 
+                $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+
                 $patientHistory->update($patientHistoryData);
                 $patientMedicalProcedure->update($patientMedicalProcedureData);
                 $patientVitalSign->update($patientVitalSignsData);
@@ -1938,9 +2043,6 @@ class OutpatientRegistrationController extends Controller
                 $OBGYNHistory->update($patientOBGYNHistoryData);
                 $pregnancyHistory->update($patientPregnancyHistoryData);
                 $gynecologicalConditions->update($patientGynecologicalConditionsData);
-                $allergy->update($patientAllergyData);
-                updateIfNotNull($causeOfAllergy, $patientCauseOfAllergyData);
-                updateIfNotNull($symptomsOfAllergy, $patientSymptomsOfAllergyData);
                 $badHabits->update($patientBadHabitsData);
                 $patientDoctors->update($patientDoctorsData);
                 $physicalAbdomen->update($patientPhysicalAbdomenData);
@@ -1964,7 +2066,6 @@ class OutpatientRegistrationController extends Controller
                 $patient->past_medical_history()->create($registerData['patientPastMedicalHistoryData']);
                 $patient->past_immunization()->create($registerData['patientPastImmunizationData']);
                 $patient->past_bad_habits()->create($registerData['patientPastBadHabitsData']);
-                $patient->drug_used_for_allergy()->create($registerData['patientDrugUsedForAllergyData']);
 
                 $newPrivelgedCard = $patient->privilegedCard()->create($registerData['patientPrivilegedCard']);
                 $registerData['patientPrivilegedPointTransfers']['fromCard_Id'] = $newPrivelgedCard->id;
@@ -1973,13 +2074,43 @@ class OutpatientRegistrationController extends Controller
                 $newPrivelgedCard->pointTransfers()->create($registerData['patientPrivilegedPointTransfers']);
                 $newPrivelgedCard->pointTransactions()->create($registerData['patientPrivilegedPointTransactions']);
 
-                $newPastAllergyHistory = $patient->past_allergy_history()->create($registerData['patientPastAllergyHistoryData']);
-                $registerData['patientPastCauseOfAllergyData']['history_Id'] = $newPastAllergyHistory->patient_Id;
-                $registerData['patientPastSymptomsOfAllergyData']['history_Id'] = $newPastAllergyHistory->patient_Id;
-                $newPastAllergyHistory->pastCauseOfAllergy()->create($registerData['patientPastCauseOfAllergyData']);
-                $newPastAllergyHistory->pastSymptomsOfAllergy()->create($registerData['patientPastSymptomsOfAllergyData']);
-
                 $patientRegistry = $patient->patientRegistry()->create($registerData['patientRegistryData']);
+
+                $allergies = $patientRegistry->allergies()->createMany($allergyResults['patientAllergyData']);
+                $arrayCause = [];
+                $arraySymptoms = [];
+                $arrayDrugs = [];
+                foreach ($allergies as $allergy) {
+                    $assessID = $allergy->id;
+                    if (!empty($allergyResults['patientCauseAllergyData'])) {
+                        $cause = array_shift($allergyResults['patientCauseAllergyData']);
+                        $cause['assessID'] = $assessID; 
+                        $arrayCause[] = $cause; 
+                    }
+                    if (!empty($allergyResults['patientDrugUsedForAllergyData'])) {
+                        $drug = array_shift($allergyResults['patientDrugUsedForAllergyData']);
+                        $drug['assessID'] = $assessID; 
+                        $arrayDrugs[] = $drug; 
+                    }
+                    if (!empty($allergyResults['patientSymptomsOfAllergy'])) {
+                        foreach ($allergyResults['patientSymptomsOfAllergy'] as $symptom) {
+                            if ($symptom['allergy_Type_Id'] == $cause['allergy_Type_Id']) { 
+                                $symptom['assessID'] = $assessID; 
+                                $arraySymptoms[] = $symptom; 
+                            }
+                        }
+                    }
+                }
+                
+                $uniqueCauses = [];
+                $uniqueDrugs = [];
+                $uniqueCauses = $this->getUniqueAllergy($arrayCause);
+                $uniqueDrugs = $this->getUniqueAllergy($arrayDrugs);
+
+                $allergy->cause_of_allergy()->insert($uniqueCauses);
+                $allergy->symptoms_allergy()->insert(array_values($arraySymptoms)); 
+                $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+
                 $patientRegistry->history()->create($registerData['patientHistoryData']);
                 $patientRegistry->immunizations()->create($registerData['patientImmunizationsData']);
                 $patientRegistry->vitals()->create($registerData['patientVitalSignsData']);
@@ -2004,12 +2135,6 @@ class OutpatientRegistrationController extends Controller
                 $registerData['patientGynecologicalConditions']['OBGYNHistoryID'] = $newOBGYNHistory->id;
                 $newOBGYNHistory->PatientPregnancyHistory()->create($registerData['patientPregnancyHistoryData']);
                 $newOBGYNHistory->gynecologicalConditions()->create($registerData['patientGynecologicalConditions']);
-
-                $newAllergy = $patientRegistry->allergies()->create($registerData['patientAllergyData']);
-                $registerData['patientCauseAllergyData']['allergies_Id'] = $newAllergy->patient_Id;
-                $registerData['patientSymptomsOfAllergy']['allergies_Id'] = $newAllergy->patient_Id;
-                $newAllergy->cause_of_allergy()->create($registerData['patientCauseAllergyData']);
-                $newAllergy->symptoms_allergy()->create($registerData['patientSymptomsOfAllergy']);
 
                 $newDischargeInstructions = $patient->dischargeInstructions()->create($registerData['patientDischargeInstructions']);
                 $registerData['patientDischargeMedications']['instruction_Id'] = $newDischargeInstructions->id;

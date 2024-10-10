@@ -3,12 +3,14 @@
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 use App\Http\Controllers\HIS\services\OutpatientRegistrationController;
 use App\Http\Controllers\HIS\services\InpatientRegistrationController;
+use App\Http\Controllers\HIS\AllergyTypeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 
 Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);
+Route::post('get-patient-allergy-history', [AllergyTypeController::class, 'getPatientAllergyHistory']);
 
 Route::controller(OutpatientRegistrationController::class)->group(function () {
     Route::get('get-outpatient', 'index');

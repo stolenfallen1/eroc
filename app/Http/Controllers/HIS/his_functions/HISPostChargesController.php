@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\HIS\his_functions;
 
+use App\Helpers\HIS\SysGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\BuildFile\SystemSequence;
@@ -16,6 +17,12 @@ use Illuminate\Support\Facades\DB;
 
 class HISPostChargesController extends Controller
 {
+    protected $check_is_allow_medsys;
+
+    public function __construct() 
+    {
+        $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+    }
     public function getLabItems($item_id) 
     {
         try {
@@ -109,13 +116,15 @@ class HISPostChargesController extends Controller
         DB::connection('sqlsrv_billingOut')->beginTransaction();
         DB::connection('sqlsrv_laboratory')->beginTransaction();
         try {
-            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
-            
-            if(!$checkUser):
-                return response()->json([
-                    'message' => 'Incorrect Username or Password',
-                ], 404);
-            endif;
+            $checkUser = null;
+            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
+                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+                if (!$checkUser) {
+                    return response()->json([
+                        'message' => 'Incorrect Username or Password',
+                    ], 404);
+                }
+            }
 
             $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
             if (!$chargeslip_sequence) {
@@ -163,7 +172,7 @@ class HISPostChargesController extends Controller
                         'refNum' => $sequence,
                         'ChargeSlip' => $sequence,
                         'amount' => $amount,
-                        'userId' => $checkUser->idnumber,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'request_doctors_id' => $request_doctors_id,
                         'net_amount' => $amount,
                         'hostName' => (new GetIP())->getHostname(),
@@ -189,15 +198,15 @@ class HISPostChargesController extends Controller
                                         'NetAmount'             => 0,
                                         'doctor_Id'             => $request_doctors_id,
                                         'specimen_Id'           => $exam->map_specimen_id,
-                                        'processed_By'          => Auth()->user()->idnumber,
+                                        'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         'processed_Date'        => $transDate,
                                         'isrush'                => $charge_type == 1 ? 'N' : 'Y',
                                         'request_Status'        => 'X', // Pending
                                         'result_Status'         => 'X', // Pending
-                                        'userId'                => Auth()->user()->idnumber,
+                                        'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         'barcode'               => $barcode,
                                         'created_at'            => Carbon::now(),
-                                        'createdby'             => Auth()->user()->idnumber,
+                                        'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                     ]);
                                 }
                             }
@@ -216,15 +225,15 @@ class HISPostChargesController extends Controller
                             'NetAmount'             => 0,
                             'doctor_Id'             => $request_doctors_id,
                             'specimen_Id'           => $specimenId ?? 1, // BLOOD BY DEFAULT if no specimen
-                            'processed_By'          => Auth()->user()->idnumber,
+                            'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'processed_Date'        => $transDate,
                             'isrush'                => $charge_type == 1 ? 'N' : 'Y',
                             'request_Status'        => 'X', // Pending
                             'result_Status'         => 'X', // Pending
-                            'userId'                => Auth()->user()->idnumber,
+                            'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'barcode'               => $barcode,
                             'created_at'            => Carbon::now(),
-                            'createdby'             => Auth()->user()->idnumber,
+                            'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
                     }
                 }
@@ -253,7 +262,7 @@ class HISPostChargesController extends Controller
                         'refNum' => $sequence,
                         'ChargeSlip' => $sequence,
                         'amount' => $amount,
-                        'userId' => $checkUser->idnumber,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'net_amount' => $amount,
                         'hostName' => (new GetIP())->getHostname(),
                         'accountnum' => $guarantor_Id,
@@ -311,7 +320,7 @@ class HISPostChargesController extends Controller
                         'quantity' => -1,
                         'refNum' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
-                        'userId' => $checkUser->idnumber,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,
                         'HostName' => (new GetIP())->getHostname(),
                         'accountnum' => $existingData->accountnum,

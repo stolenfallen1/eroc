@@ -5,6 +5,7 @@ namespace App\Http\Controllers\HIS;
 use App\Http\Controllers\Controller;
 use App\Models\HIS\AllergySymptoms;
 use App\Models\HIS\AllergyType;
+use App\Models\HIS\PatientAllergies;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -109,6 +110,24 @@ class AllergyTypeController extends Controller
         try {
             $data = AllergySymptoms::get();
             return response()->json($data, 200);
+        } catch (\Exception $e) {
+            return response()->json(["message" => $e->getMessage()], 500);
+        }
+    }
+
+    public function getPatientAllergyHistory (Request $request) 
+    {
+        try {
+            $patient_Id = $request->items['patient_Id'];
+
+            $data = PatientAllergies::query();
+            $data->with('cause_of_allergy', 'drug_used_for_allergy', 'symptoms_allergy');
+            $data->where('patient_Id', $patient_Id)
+                ->where('isDeleted', '!=', 1)
+                ->orderBy('id', 'desc');
+
+            return response()->json($data->get(), 200);
+
         } catch (\Exception $e) {
             return response()->json(["message" => $e->getMessage()], 500);
         }

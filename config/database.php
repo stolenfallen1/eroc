@@ -286,7 +286,33 @@ return [
             'prefix_indexes' => true,
         ],
 
-         'sqlsrv_medsys_buildfile' => [
+        'sqlsrv_medsys_laboratory' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDYS_LABORATORY', '10.4.15.200'),
+            'port' => env('DB_PORT_MEDYS_LABORATORY', '1433'),
+            'database' => env('DB_DATABASE_MEDYS_LABORATORY', ''),
+            'username' => env('DB_USERNAME_MEDYS_LABORATORY', ''),
+            'password' => env('DB_PASSWORD_MEDYS_LABORATORY', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_medsys_radiology' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDYS_RADIOLOGY', '10.4.15.200'),
+            'port' => env('DB_PORT_MEDYS_RADIOLOGY', '1433'),
+            'database' => env('DB_DATABASE_MEDYS_RADIOLOGY', ''),
+            'username' => env('DB_USERNAME_MEDYS_RADIOLOGY', ''),
+            'password' => env('DB_PASSWORD_MEDYS_RADIOLOGY', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        'sqlsrv_medsys_buildfile' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST_MEDSYS_BUILDFILE_DB', '10.4.15.200'),

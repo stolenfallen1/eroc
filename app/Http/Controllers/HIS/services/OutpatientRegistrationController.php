@@ -812,10 +812,11 @@ class OutpatientRegistrationController extends Controller
                 }
             ]);
 
-            $data->whereHas('patientRegistryToday', function($query) use ($today) {
+            $data->whereHas('patientRegistry', function($query) use ($today) {
+            // $data->whereHas('patientRegistryToday', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2); 
                 $query->where('isRevoked', 0);
-                $query->whereDate('registry_Date', $today);
+                // $query->whereDate('registry_Date', $today);
                 $query->whereNull('discharged_Date');
 
                 if(Request()->keyword) {
@@ -910,9 +911,9 @@ class OutpatientRegistrationController extends Controller
                 'patientDrugUsedForAllergyData' => [],
             ];
             
-            if ($request->payload['selectedAllergy'] == null) {
-                $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category);
-            } else {
+            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category);
+
+            if (isset($request->payload['selectedAllergy']) && is_array($request->payload['selectedAllergy'])) {
                 foreach ($request->payload['selectedAllergy'] as $item) {
                     $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category, $item);
                     
@@ -1009,9 +1010,15 @@ class OutpatientRegistrationController extends Controller
                 $uniqueCauses = $this->getUniqueAllergy($arrayCause);
                 $uniqueDrugs = $this->getUniqueAllergy($arrayDrugs);
 
-                $allergy->cause_of_allergy()->insert($uniqueCauses);
-                $allergy->symptoms_allergy()->insert(array_values($arraySymptoms)); 
-                $allergy->drug_used_for_allergy()->insert($uniqueDrugs);                
+                if (!empty($uniqueCauses)) {
+                    $allergy->cause_of_allergy()->insert($uniqueCauses);
+                }
+                if (!empty($arraySymptoms)) {
+                    $allergy->symptoms_allergy()->insert(array_values($arraySymptoms));
+                }
+                if (!empty($uniqueDrugs)) {
+                    $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+                }
 
                 $patientDischarge = $patientRegistry->dischargeInstructions()->create($registerData['patientDischargeInstructions']);
                 $registerData['patientDischargeMedications']['instruction_Id'] = $patientDischarge->id;
@@ -1940,9 +1947,9 @@ class OutpatientRegistrationController extends Controller
                 'patientDrugUsedForAllergyData' => [],
             ];
             
-            if ($request->payload['selectedAllergy'] == null) {
-                $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier);
-            } else {
+            $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier);
+
+            if (isset($request->payload['selectedAllergy']) && is_array($request->payload['selectedAllergy'])) {
                 foreach ($request->payload['selectedAllergy'] as $item) {
                     $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id, $patientIdentifier, $patient_category = null, $item);
                     
@@ -2107,9 +2114,15 @@ class OutpatientRegistrationController extends Controller
                 $uniqueCauses = $this->getUniqueAllergy($arrayCause);
                 $uniqueDrugs = $this->getUniqueAllergy($arrayDrugs);
 
-                $allergy->cause_of_allergy()->insert($uniqueCauses);
-                $allergy->symptoms_allergy()->insert(array_values($arraySymptoms)); 
-                $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+                if (!empty($uniqueCauses)) {
+                    $allergy->cause_of_allergy()->insert($uniqueCauses);
+                }
+                if (!empty($arraySymptoms)) {
+                    $allergy->symptoms_allergy()->insert(array_values($arraySymptoms));
+                }
+                if (!empty($uniqueDrugs)) {
+                    $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+                }
 
                 $patientRegistry->history()->create($registerData['patientHistoryData']);
                 $patientRegistry->immunizations()->create($registerData['patientImmunizationsData']);

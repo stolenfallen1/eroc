@@ -103,7 +103,7 @@ class PatientRegistry extends Model
     }
 
     public function allergies() {
-        return $this->hasOne(PatientAllergies::class,'case_No', 'case_No');
+        return $this->hasMany(PatientAllergies::class,'case_No', 'case_No');
     }
 
     public function PhysicalExamtionGeneralSurvey() {

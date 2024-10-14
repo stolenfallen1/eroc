@@ -9,9 +9,12 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\LaboratoryMaster;
+use App\Models\HIS\medsys\MedSysDailyOut;
+use App\Models\HIS\medsys\tbLABMaster;
 use Auth;
 use Carbon\Carbon;
 use App\Models\User;
+use GlobalChargingSequences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -113,8 +116,11 @@ class HISPostChargesController extends Controller
     }
     public function charge(Request $request)
     {
+        DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_billingOut')->beginTransaction();
         DB::connection('sqlsrv_laboratory')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
         try {
             $checkUser = null;
             if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
@@ -126,11 +132,30 @@ class HISPostChargesController extends Controller
                 }
             }
 
-            $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
-            if (!$chargeslip_sequence) {
-                throw new \Exception('Chargeslip sequence not found');
+            if ($this->check_is_allow_medsys) {
+                $chargeSlipSequences = new GlobalChargingSequences();
+            } else {
+                $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
+                if ($chargeslip_sequence) {
+                    $chargeslip_sequence->increment('seq_no');
+                    $chargeslip_sequence->increment('recent_generated');
+                } else {
+                    throw new \Exception('Sequence not found');
+                }
             }
 
+            $revenueCodeSequences = [
+                'LB'    => 'MedSysLabSequence',
+                'XR'    => 'MedSysXrayUltraSoundSequence',
+                'US'    => 'MedSysXrayUltraSoundSequence',
+                'CT'    => 'MedSysCTScanSequence',
+                'MI'    => 'MedSysMRISequence',
+                'MM'    => 'MedSysMammoSequence',
+                'WC'    => 'MedSysCentreForWomenSequence',
+                'NU'    => 'MedSysNuclearMedSequence',
+            ];
+
+            $sequenceGenerated = [];
             $patient_id = $request->payload['patient_Id'];
             $case_no = $request->payload['case_No'];
             $transDate = Carbon::now();
@@ -138,9 +163,10 @@ class HISPostChargesController extends Controller
             $request_doctors_id = $request->payload['attending_Doctor'];
             $guarantor_Id = $request->payload['guarantor_Id'];
             $refnum = [];
+
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
-                    $revenue_id = $charge['code'];
+                    $revenueID = $charge['code'];
                     $item_id = $charge['map_item_id'];
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
@@ -149,22 +175,34 @@ class HISPostChargesController extends Controller
                     $form = $charge['form'] ?? null;
                     $specimenId = $charge['specimen'];
                     $charge_type = $charge['charge_type'];
-                    $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
                     $barcode_prefix = $charge['barcode_prefix'] ?? null;
+
+                    if (!isset($sequenceGenerated[$revenueID])) {
+                        $chargeSlipSequences->incrementSequence($revenueID);
+                        $chargeslip_sequence = $chargeSlipSequences->getSequence();
+                        $sequenceGenerated[$revenueID] = true;
+                    }
+
+                    if (array_key_exists($revenueID, $revenueCodeSequences)) {
+                        $sequenceType = $revenueCodeSequences[$revenueID];
+                        $sequence = $revenueID . ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType]) 
+                            ? $chargeslip_sequence[$sequenceType] 
+                            : $chargeslip_sequence['seq_no']);
+                    }
 
                     if ($barcode_prefix === null) {
                         $barcode = '';
                     } else {
                         $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
                     }
-
                     $refnum[] = $sequence;
-                    HISBillingOut::create([
+
+                    $saveCharges = HISBillingOut::create([
                         'patient_Id' => $patient_id,
                         'case_No' => $case_no,
                         'transDate' => $transDate,
                         'msc_price_scheme_id' => $msc_price_scheme_id,
-                        'revenueID' => $revenue_id,
+                        'revenueID' => $revenueID,
                         'drcr' => $drcr,
                         'lgrp' => $lgrp,
                         'itemID' => $item_id,
@@ -179,7 +217,22 @@ class HISPostChargesController extends Controller
                         'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
                     ]);
-                    if ($revenue_id == 'LB' && $form == 'C') {
+                    if ($saveCharges && $this->check_is_allow_medsys) {
+                        MedSysDailyOut::create([
+                            'HospNum'           => $patient_id,
+                            'IDNum'             => $case_no,
+                            'TransDate'         => $transDate,
+                            'RevenueID'         => $revenueID,
+                            'DrCr'              => $drcr,
+                            'Quantity'          => $quantity,
+                            'RefNum'            => $sequence,
+                            'Amount'            => $amount,
+                            'UserID'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'HostName'          => (new GetIP())->getHostname(),
+                            'AutoDiscount'      => 0,
+                        ]);
+                    }
+                    if ($revenueID == 'LB' && $form == 'C') {
                         $labProfileData = $this->getLabItems($item_id);
                         if ($labProfileData->getStatusCode() === 200) {
                             $labItems = $labProfileData->getData()->data;
@@ -208,10 +261,30 @@ class HISPostChargesController extends Controller
                                         'created_at'            => Carbon::now(),
                                         'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                     ]);
+                                    if ($this->check_is_allow_medsys) {
+                                        tbLABMaster::create([
+                                            'HospNum'           => $patient_id,
+                                            // 'RequestNum'        => $sequence,
+                                            'IdNum'             => $case_no,
+                                            'RefNum'            => $sequence,
+                                            'RequestStatus'     => 'X',
+                                            'ItemId'            => $exam->map_exam_id,
+                                            'Amount'            => 0,
+                                            'Transdate'         => $transDate,
+                                            'DoctorId'          => $request_doctors_id,
+                                            'SpecimenId'        => $exam->map_specimen_id,
+                                            'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                            'Quantity'          => 1,
+                                            'ResultStatus'      => 'X',
+                                            'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
+                                            'ProfileId'         => $exam->map_profile_id,
+                                            'ItemCharged'       => $exam->map_profile_id,
+                                        ]);
+                                    }
                                 }
                             }
                         }
-                    } else if ($revenue_id == 'LB') {
+                    } else if ($revenueID == 'LB') {
                         LaboratoryMaster::create([
                             'patient_Id'            => $patient_id,
                             'case_No'               => $case_no,
@@ -235,51 +308,76 @@ class HISPostChargesController extends Controller
                             'created_at'            => Carbon::now(),
                             'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
+                        if ($this->check_is_allow_medsys) {
+                            tbLABMaster::create([
+                                'HospNum'           => $patient_id,
+                                // 'RequestNum'        => $sequence,
+                                'IdNum'             => $case_no,
+                                'RefNum'            => $sequence,
+                                'RequestStatus'     => 'X',
+                                'ItemId'            => $item_id,
+                                'Amount'            => 0,
+                                'Transdate'         => $transDate,
+                                'DoctorId'          => $request_doctors_id,
+                                'SpecimenId'        => $specimenId ?? 1,
+                                'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'Quantity'          => 1,
+                                'ResultStatus'      => 'X',
+                                'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
+                                'ProfileId'         => $item_id,
+                                'ItemCharged'       => $item_id,
+                            ]);
+                        }
                     }
                 }
             }
 
-            if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
-                foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
-                    $revenue_id = $doctorcharges['code'];
-                    $item_id = $doctorcharges['doctor_code'];
-                    $quantity = 1;
-                    $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-                    $drcr = $doctorcharges['drcr'];
-                    $lgrp = $doctorcharges['lgrp'];
-                    $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
-                    $refnum[] = $sequence;
-                    HISBillingOut::create([
-                        'patient_Id' => $patient_id,
-                        'case_No' => $case_no,
-                        'transDate' => $transDate,
-                        'msc_price_scheme_id' => $msc_price_scheme_id,
-                        'revenueID' => $revenue_id,
-                        'drcr' => $drcr,
-                        'lgrp' => $lgrp,
-                        'itemID' => $item_id,
-                        'quantity' => $quantity,
-                        'refNum' => $sequence,
-                        'ChargeSlip' => $sequence,
-                        'amount' => $amount,
-                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'net_amount' => $amount,
-                        'hostName' => (new GetIP())->getHostname(),
-                        'accountnum' => $guarantor_Id,
-                        'auto_discount' => 0,
-                    ]);
-                }
-            }
+            // if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
+            //     foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
+            //         $revenueID = $doctorcharges['code'];
+            //         $item_id = $doctorcharges['doctor_code'];
+            //         $quantity = 1;
+            //         $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
+            //         $drcr = $doctorcharges['drcr'];
+            //         $lgrp = $doctorcharges['lgrp'];
+            //         $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
+            //         $refnum[] = $sequence;
+            //         HISBillingOut::create([
+            //             'patient_Id' => $patient_id,
+            //             'case_No' => $case_no,
+            //             'transDate' => $transDate,
+            //             'msc_price_scheme_id' => $msc_price_scheme_id,
+            //             'revenueID' => $revenueID,
+            //             'drcr' => $drcr,
+            //             'lgrp' => $lgrp,
+            //             'itemID' => $item_id,
+            //             'quantity' => $quantity,
+            //             'refNum' => $sequence,
+            //             'ChargeSlip' => $sequence,
+            //             'amount' => $amount,
+            //             'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+            //             'net_amount' => $amount,
+            //             'hostName' => (new GetIP())->getHostname(),
+            //             'accountnum' => $guarantor_Id,
+            //             'auto_discount' => 0,
+            //         ]);
+            //     }
+            // }
 
-            $chargeslip_sequence->update(['seq_no' => $chargeslip_sequence->seq_no + 1]);
+            DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_billingOut')->commit();
             DB::connection('sqlsrv_laboratory')->commit();
+            DB::connection('sqlsrv_medsys_billing')->commit();
+            DB::connection('sqlsrv_medsys_laboratory')->commit();
             $data['charges'] =  $this->history($patient_id, $case_no, 'all', $refnum);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
 
         } catch (\Exception $e) {
+            DB::connection('sqlsrv')->rollBack();
             DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_laboratory')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_medsys_laboratory')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

@@ -128,10 +128,6 @@ class Patient extends Model
         return $this->hasMany(PatientPastBadHabits::class, 'patient_Id', 'patient_Id');
     }
 
-    public function past_allergy_history() {
-        return $this->hasMany(PatientPastAllergyHistory::class,'patient_Id', 'patient_Id');
-    }
-
     public function allergies() {
         return $this->belongsTo(PatientAllergies::class,'patient_Id', 'patient_Id');
     }

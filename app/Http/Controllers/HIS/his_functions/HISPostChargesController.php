@@ -156,6 +156,8 @@ class HISPostChargesController extends Controller
             ];
 
             $sequenceGenerated = [];
+            $xr_us_codes = ['XR', 'US'];
+            $xr_us_incremented = false;
             $patient_id = $request->payload['patient_Id'];
             $case_no = $request->payload['case_No'];
             $transDate = Carbon::now();
@@ -177,10 +179,18 @@ class HISPostChargesController extends Controller
                     $charge_type = $charge['charge_type'];
                     $barcode_prefix = $charge['barcode_prefix'] ?? null;
 
-                    if (!isset($sequenceGenerated[$revenueID])) {
-                        $chargeSlipSequences->incrementSequence($revenueID);
-                        $chargeslip_sequence = $chargeSlipSequences->getSequence();
-                        $sequenceGenerated[$revenueID] = true;
+                    if (in_array($revenueID, $xr_us_codes)) {
+                        if (!$xr_us_incremented) {
+                            $chargeSlipSequences->incrementSequence('XR'); // Increment XR and US sequence once only for both
+                            $chargeslip_sequence = $chargeSlipSequences->getSequence();
+                            $xr_us_incremented = true;
+                        }
+                    } else {
+                        if (!isset($sequenceGenerated[$revenueID])) {
+                            $chargeSlipSequences->incrementSequence($revenueID);
+                            $chargeslip_sequence = $chargeSlipSequences->getSequence();
+                            $sequenceGenerated[$revenueID] = true;
+                        }
                     }
 
                     if (array_key_exists($revenueID, $revenueCodeSequences)) {

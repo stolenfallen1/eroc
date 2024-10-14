@@ -146,6 +146,8 @@ class HISCashAssestmentController extends Controller
             ];
 
             $sequenceGenerated = [];
+            $xr_us_codes = ['XR', 'US'];
+            $xr_us_incremented = false;
             $patient_id = $request->payload['patient_Id'];
             $case_no = $request->payload['case_No'];
             $patient_name = $request->payload['patient_Name'];
@@ -164,10 +166,18 @@ class HISCashAssestmentController extends Controller
                     $charge_type = $charge['charge_type'] ?? null;
                     $barcode_prefix = $charge['barcode_prefix'] ?? null;
 
-                    if (!isset($sequenceGenerated[$revenueID])) {
-                        $cashAssessmentSequences->incrementSequence($revenueID);
-                        $chargeslip_sequence = $cashAssessmentSequences->getSequence();
-                        $sequenceGenerated[$revenueID] = true;
+                    if (in_array($revenueID, $xr_us_codes)) {
+                        if (!$xr_us_incremented) {
+                            $cashAssessmentSequences->incrementSequence('XR'); // Increment XR and US sequence once only for both
+                            $chargeslip_sequence = $cashAssessmentSequences->getSequence();
+                            $xr_us_incremented = true;
+                        }
+                    } else {
+                        if (!isset($sequenceGenerated[$revenueID])) {
+                            $cashAssessmentSequences->incrementSequence($revenueID);
+                            $chargeslip_sequence = $cashAssessmentSequences->getSequence();
+                            $sequenceGenerated[$revenueID] = true;
+                        }
                     }
 
                     if (array_key_exists($revenueID, $revenueCodeSequences)) {

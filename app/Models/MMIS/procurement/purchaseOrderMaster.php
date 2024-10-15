@@ -19,14 +19,21 @@ class purchaseOrderMaster extends Model
     protected $connection = 'sqlsrv_mmis';
     protected $table = 'purchaseOrderMaster';
 
-    protected $appends = ['code','encrypted_key_id'];
+    protected $appends = ['code','encrypted_key_id','currency'];
     
     protected $guarded = [];
 
     public function details(){
-        return $this->hasMany(PurchaseOrderDetails::class, 'po_id', 'id');
+        return $this->hasMany(PurchaseOrderDetails::class, 'po_id', 'id')
+                ->where(function($query) {
+                    $query->whereNull('isFreeGoods')
+                        ->orWhere('isFreeGoods', 0);
+                });
     }
 
+    public function podetails(){
+        return $this->hasMany(PurchaseOrderDetails::class, 'po_id', 'id')->where('isFreeGoods',1);
+    }
     public function deliveryItems(){
         return $this->hasManyThrough(
             DeliveryItems::class, 
@@ -89,9 +96,16 @@ class purchaseOrderMaster extends Model
     public function getCodeAttribute(){
         return generateCompleteSequence($this->po_Document_prefix, $this->po_Document_number, $this->po_Document_suffix, "-");
     }
+
+    public function getCurrencyAttribute(){
+        $currency = $this->po_Document_currency_id == 1 ? "₱" :"$";
+        return $currency;
+    }
+
     public function setKeyIdAttribute($value){
         $this->attributes['id'] = Crypt::encrypt($value);
     }
+
     public function getEncryptedKeyIdAttribute()
     {
         return Crypt::encrypt($this->attributes['id']);

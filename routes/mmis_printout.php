@@ -2,203 +2,428 @@
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Route;
-use App\Models\MMIS\inventory\Delivery;
 use App\Models\MMIS\inventory\Consignment;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Models\MMIS\inventory\VwDeliveryMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\inventory\StockTransferMaster;
+use App\Models\MMIS\inventory\VwConsignmentMaster;
+use App\Models\MMIS\inventory\VwConsignmentDelivery;
+use App\Models\MMIS\inventory\VwPurchaseOrderMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Contracts\Encryption\DecryptException;
+use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
+
+
+// <!====================================== PURCHASE ORDER  ====================================== !> 
 
 Route::get('/print-purchase-order/{id}', function ($pid) {
-    
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $pid);
-    try{
-        $id = Crypt::decrypt($pid);
-        $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor','warehouse', 'details' => function ($q) {
-            $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas.canvaser');
-        }])->findOrfail($id);
-       
-        $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-        $imageData = base64_encode(file_get_contents($imagePath));
-        $qrData = base64_encode($qrCode);
-        $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-        $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-        $total_amount = 0;
+    $id = Crypt::decrypt($pid);
 
-        foreach ($purchase_order['details'] as $key => $detail) {
-            $total_amount += $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'];
-        }
+    $purchase_order = VwPurchaseOrderMaster::with('items')->findOrFail($id);
+    // Generate the QR code for the purchase-order
+    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
 
-        if($purchase_order->id == 6948){
-            $sortKeys = [8805, 8798, 8803, 8804, 8800, 8801, 8796, 8797, 8802, 8795, 8799];
-            $temp = [];
-            $index = 0;
-            foreach ($sortKeys as $sortkey) {
-                foreach ($purchase_order['details'] as $detail) {
-                    if($sortkey == $detail['id']){
-                        $temp[$index] = $detail;
-                        $index++;
-                    }
-                }
-            }
-            $purchase_order['details'] = $temp;
-        }
+    // Load the logo image and encode it in base64
+    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
+    $imageData = base64_encode(file_get_contents($imagePath));
+    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
 
-        $pdf_data = [
-            'logo' => $imageSrc,
-            'qr' => $qrSrc,
-            'purchase_order' => $purchase_order,
-            'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d'),
-            'canvaser' =>  $purchase_order['details'][0]['purchaseRequestDetail']['recommendedCanvas']['canvaser']['name'],
-            'total_amount' => $total_amount
-        ];
-        $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
-        $viewers = explode(',' , $purchase_order->viewers);
-        $is_viewer = false;
-        if(sizeof($viewers)){
-            foreach ($viewers as $viewer) {
-                if($viewer == Request()->id){
-                    $is_viewer = true;
-                }
-            }
+    // Encode the QR code in base64
+    $qrData = base64_encode($qrCode);
+    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+    // 12% VAT rate and a discount (adjust as needed)
+    $vatAmount = 0;
+    $discount = 0;
+    $Nondiscount = 0;
+    $subTotalNonFreeGoods = 0;
+    $grandTotalNonFreeGoods = 0;
+    $currency = '₱';
+
+    // Filter items where isfreegood = 1 and isfreegood = 0
+    $freeGoods = $purchase_order->items->filter(function ($item) {
+        return $item->isFreeGoods == 1;
+    });
+
+    $nonFreeGoods = $purchase_order->items->filter(function ($item) {
+        return $item->isFreeGoods == 0;
+    });
+
+
+
+    // Calculate totals for non-free goods
+    foreach ($nonFreeGoods as $item) {
+        $itemTotal = $item->order_qty * $item->price;
+        $subTotalNonFreeGoods += (float)$itemTotal;
+        $Nondiscount += (float)$item->discount;
+        $vatAmount += (float)$item->vat;
+        $grandTotalNonFreeGoods += (float)$item->net_amount;
+        if ($item->currency_id == 2) {
+            $currency = '$';
         }
-        if($is_viewer == false){
-            array_push($viewers, Request()->id);
-            $purchase_order->update([
-                'viewers' => implode(',', $viewers),
-                'isprinted'=>1
-            ]);
-        }
-        return $pdf->stream('PO-' . $purchase_order['vendor']['vendor_Name'] . '-' . Carbon::now()->format('m-d-Y') . '-' . $purchase_order['po_Document_number'] . '.pdf');
-    } catch (DecryptException $e) {
-        // If decryption fails, return the original value or handle the error
-        return response()->json(['data'=>'No match found'],200); // Return unencrypted value or handle error
     }
+    // Calculate overall total
+    // Prepare the data for the PDF
+    $pdf_data = [
+        'logo' => $imageSrc,
+        'qr' => $qrSrc,
+        'purchase_order' => $purchase_order,
+        'purchase_order_items' => $nonFreeGoods,
+        'free_goods_purchase_order_items' => $freeGoods,
+        'sub_total' => $subTotalNonFreeGoods,
+        'discount' => $Nondiscount,
+        'vat_amount' => $vatAmount,
+        'grand_total' => $grandTotalNonFreeGoods,
+        'currency' => $currency,
+    ];
+
+    $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
+    // Render the PDF
+    $pdf->render();
+
+    // Add page numbers to the PDF
+    $dompdf = $pdf->getDomPDF();
+    $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
+    $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, [0, 0, 0]);
+    return $pdf->stream('PO-' . $purchase_order['vendor_Name'] . '-' . now()->format('m-d-Y') . '-' . $purchase_order['poNumber'] . '.pdf');
 });
+
+// <!====================================== END PURCHASE ORDER  ====================================== !> 
+
+
+// <!====================================== PURCHASE REQUEST  ====================================== !> 
 
 Route::get('/print-purchase-request/{id}', function ($prid) {
     $id = Crypt::decrypt($prid);
-    try{
-        $purchase_request = PurchaseRequest::with(['warehouse', 'administrator', 'category', 'itemGroup', 'branch', 'user', 'purchaseRequestDetails' => function ($q) {
+    try {
+        $purchase_request = PurchaseRequest::with(['warehouse', 'administrator', 'consultantApprovedBy', 'category', 'itemGroup', 'branch', 'user', 'purchaseRequestDetails' => function ($q) {
             $q->with('itemMaster', 'unit', 'unit2');
-        }])->findOrfail($id);
+        }])->findOrFail($id);
+
+        if (!$purchase_request) {
+            return response()->json(['data' => 'Purchase request not found'], 404);
+        }
+
         $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
         $imageData = base64_encode(file_get_contents($imagePath));
-        $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+        $mimeType = mime_content_type($imagePath);
+        $imageSrc = 'data:' . $mimeType . ';base64,' . $imageData;
+
         $pdf_data = [
             'logo' => $imageSrc,
             'purchase_request' => $purchase_request,
             'requested_date' => Carbon::parse($purchase_request->pr_Transaction_Date)->format('Y-m-d'),
             'Required_date' => Carbon::parse($purchase_request->pr_Transaction_Date_Required)->format('Y-m-d')
         ];
+
         $pdf = PDF::loadView('pdf_layout.purchaser_request', ['pdf_data' => $pdf_data]);
 
-        return $pdf->stream('Purchase order-' . $id . '.pdf');
+        return $pdf->stream('Purchase_order-' . $id . '.pdf');
     } catch (DecryptException $e) {
-        // If decryption fails, return the original value or handle the error
-        return response()->json(['data'=>'No match found'],200); // Return unencrypted value or handle error
+        Log::error('Decryption error: ' . $e->getMessage());
+        return response()->json(['data' => 'No match found'], 200); // Return unencrypted value or handle error
     }
 });
 
+// <!====================================== END PURCHASE REQUEST  ====================================== !> 
+
+
+
+// <!====================================== STOCK TRANSFER  ====================================== !> 
+
 Route::get('/print-stock-transfer/{id}', function ($id) {
-    $stock_transfer = StockTransferMaster::with('branch','stockTransferDetails','warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy','status')->findOrfail($id);
+    // Fetch the stock transfer details along with related models
+    $stock_transfer = StockTransferMaster::with([
+        'branch',
+        'stockTransferDetails',
+        'warehouseSender',
+        'warehouseReceiver',
+        'tranferBy',
+        'receivedBy',
+        'status'
+    ])->findOrFail($id);
+
+    // Generate the QR code for the stock transfer
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-stock-transfer/' . $id);
+
+    // Load the logo image and encode it in base64
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+
+    // Encode the QR code in base64
+    $qrData = base64_encode($qrCode);
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+
+    // Prepare the data for the PDF
     $pdf_data = [
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'stock_transfer' => $stock_transfer,
         'transaction_date' => Carbon::parse($stock_transfer->created_at)->format('Y-m-d'),
-        'delivery_date' => Carbon::parse($stock_transfer['transfer_date'])->format('Y-m-d')
+        'delivery_date' => Carbon::parse($stock_transfer->transfer_date)->format('Y-m-d')
     ];
+
+    // Generate the PDF using the prepared data
     $pdf = PDF::loadView('pdf_layout.stock_transfer', ['pdf_data' => $pdf_data]);
 
+    // Stream the generated PDF to the browser
     return $pdf->stream('stock_transfer-' . $id . '.pdf');
 });
 
-Route::get('/print-delivery/{id}', function ($id) {
-    $delivery = Delivery::with(['branch', 'vendor', 'receiver', 'purchaseOrder.purchaseRequest', 'items' => function ($q) {
-        $q->with('item', 'unit');
-    }])->findOrfail($id);
+// <!====================================== END STOCK TRANSFER  ====================================== !> 
+
+
+
+// <!====================================== DELIVERY  ====================================== !> 
+Route::get('/print-delivery/{id}', function ($pid) {
+    // Decrypt the ID from the encrypted parameter
+    $id = Crypt::decrypt($pid);
+    // Fetch the delivery details along with related models
+    $delivery = VwDeliveryMaster::with('items')->where('id', $id)->first();
+
+    // Generate the QR code for the delivery
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
+
+    // Load the logo image and encode it in base64
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+
+    // Encode the QR code in base64
+    $qrData = base64_encode($qrCode);
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+
+
+    // 12% VAT rate and a discount (adjust as needed)
+    $vatAmount = 0; // 12% VAT
+    $discount = 0; // 10% discount
+
+    // Calculate item totals, discount, VAT, and overall total
+    $subTotal = 0;
+    $NetTotal = 0;
+    $grandTotal = 0;
+    $currency = '₱';
+
+     // Filter items where isfreegood = 1 and isfreegood = 0
+    $freeGoods = $delivery->items->filter(function ($item) {
+        return $item->isFreeGoods == 1;
+    });
+
+    $nonFreeGoods = $delivery->items->filter(function ($item) {
+        return $item->isFreeGoods == 0;
+    });
+
+    foreach ($nonFreeGoods as $item) {
+        $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
+        $subTotal += (float)$itemTotal;
+        $discount += (float)$item->discount;
+        $vatAmount += (float)$item->vat;
+        $grandTotal += (float)$item->net_amount;
+        if ($item->currency_id == 2) {
+            $currency = '$';
+        }
+    }
+
+    // Calculate overall total
+
+    // Prepare the data for the PDF
     $pdf_data = [
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
-        'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
+        'delivery_items' => $nonFreeGoods,
+        'free_goods_delivery_items' => $freeGoods,
+        'sub_total' => $subTotal,
+        'discount' => $discount,
+        'vat_amount' => $vatAmount,
+        'grand_total' => $grandTotal,
+        'currency' => $currency
     ];
-    $pdf = PDF::loadView('pdf_layout.delivery', ['pdf_data' => $pdf_data]);
 
+    // Generate the PDF using the prepared data
+    $pdf = PDF::loadView('pdf_layout.delivery-landscape', ['pdf_data' => $pdf_data])->setPaper('letter', 'landscape');
+
+    // Render the PDF
+    $pdf->render();
+
+    // Add page numbers to the PDF
+    $dompdf = $pdf->getDomPDF();
+    $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
+    $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, [0, 0, 0]);
+
+    // Stream the generated PDF to the browser
     return $pdf->stream('delivery-' . $id . '.pdf');
 });
 
+// <!====================================== END DELIVERY  ====================================== !> 
 
+
+
+// <!====================================== CONSIGNMENT DELIVERY  ====================================== !> 
 Route::get('/print-consignment-delivery/{id}', function ($id) {
-    $delivery = Consignment::with(['branch', 'vendor', 'receiver', 'purchaseOrder.purchaseRequest', 'items' => function ($q) {
-        $q->with('item', 'unit');
-    }])->findOrfail($id);
+    // Retrieve the RR ID from the request
 
+    // $id = Crypt::decrypt($pid);
+    // Fetch the delivery details along with related models
+    $delivery = VwConsignmentDelivery::with('items')->where('id', $id)->first();
+    // Generate the QR code for the delivery
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
+
+    // Load the logo image and encode it in base64
     $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
     $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
     $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+
+    // Encode the QR code in base64
+    $qrData = base64_encode($qrCode);
     $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+
+
+    // 12% VAT rate and a discount (adjust as needed)
+    $vatAmount = 0; // 12% VAT
+    $discount = 0; // 10% discount
+
+    // Calculate item totals, discount, VAT, and overall total
+    $subTotal = 0;
+    $NetTotal = 0;
+    $grandTotal = 0;
+    $currency = '₱';
+    foreach ($delivery->items as $item) {
+        $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
+        $subTotal += (float)$itemTotal;
+        $discount += (float)$item->discount;
+        $vatAmount += (float)$item->vat;
+        $grandTotal += (float)$item->net_amount;
+        if ($item->currency_id == 2) {
+            $currency = '$';
+        }
+    }
+    // Calculate overall total
+
+    // Prepare the data for the PDF
     $pdf_data = [
         'logo' => $imageSrc,
         'qr' => $qrSrc,
         'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
-        // 'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
+        'sub_total' => $subTotal,
+        'discount' => $discount,
+        'vat_amount' => $vatAmount,
+        'grand_total' => $grandTotal,
+        'currency' => $currency
     ];
-    $pdf = PDF::loadView('pdf_layout.consignment-delivery', ['pdf_data' => $pdf_data])->setPaper('letter', 'landscape');
+    // Generate the PDF using the prepared data and set the paper size to letter in landscape
+    $pdf = PDF::loadView('pdf_layout.consignment-delivery', ['pdf_data' => $pdf_data])
+        ->setPaper('letter', 'landscape');
+
+    // Render the PDF
     $pdf->render();
 
+    // Add page numbers to the PDF
     $dompdf = $pdf->getDomPDF();
     $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
-    $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
+    $dompdf->get_canvas()->page_text(760, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, [0, 0, 0]);
 
-    return $pdf->stream('consignment-delivery-' . $id . '.pdf');
+    // Stream the generated PDF to the browser
+    return $pdf->stream('purchase-order-consignment-' . $id . '.pdf');
 });
+// <!====================================== END CONSIGNMENT DELIVERY  ====================================== !> 
 
+
+
+// <!====================================== CONSIGNMENT PO  ====================================== !> 
 Route::get('/print-purchase-order-consignment', function (Request $request) {
-    $rrid = Request()->rr_id;
-    $delivery = Consignment::with(['branch', 'vendor', 'receiver', 'ConsignmentPurchaseOrder','ConsignmentPurchaseOrder.purchaseOrder','ConsignmentPurchaseOrder.purchaseRequest', 'ConsignmentPurchaseOrder.items' => function ($q) {
-            $q->with('itemdetails', 'unit');
-        }])->where('id', $rrid)->first();
 
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $rrid);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
-        // 'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
-    ];
-    $pdf = PDF::loadView('pdf_layout.purchase-order-consignment', ['pdf_data' => $pdf_data])->setPaper('letter', 'landscape');
-    $pdf->render();
+    try {
+        // Retrieve the RR ID from the request
+        $id = $request->input('rr_id');
+        $po_id = $request->input('po_id');
+        // $id = Crypt::decrypt($pid);
+        // Fetch the delivery details along with related models
+        $delivery = VwConsignmentMaster::with('items')->where('id', $id)->first();
+        // Generate the QR code for the delivery
+        $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
 
-    $dompdf = $pdf->getDomPDF();
-    $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
-    $dompdf->get_canvas()->page_text(760, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-    // return $delivery;
-    return $pdf->stream('purchase-order-consignment-' . $rrid . '.pdf');
+        // Load the logo image and encode it in base64
+        $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
+        $imageData = base64_encode(file_get_contents($imagePath));
+        $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+
+        // Encode the QR code in base64
+        $qrData = base64_encode($qrCode);
+        $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+
+
+        // 12% VAT rate and a discount (adjust as needed)
+        $vatAmount = 0; // 12% VAT
+        $discount = 0; // 10% discount
+
+        // Calculate item totals, discount, VAT, and overall total
+        $subTotal = 0;
+        $NetTotal = 0;
+        $grandTotal = 0;
+        $currency = '₱';
+        foreach ($delivery->items as $item) {
+            $itemTotal = $item->qty * $item->price; // Modify field names based on your structure
+            $subTotal += (float)$itemTotal;
+            $discount += (float)$item->discount;
+            $vatAmount += (float)$item->vat;
+            $grandTotal += (float)$item->net_amount;
+            if ($item->currency_id == 2) {
+                $currency = '$';
+            }
+        }
+
+        // Calculate overall total
+
+        // Prepare the data for the PDF
+        $pdf_data = [
+            'logo' => $imageSrc,
+            'qr' => $qrSrc,
+            'delivery' => $delivery,
+            'sub_total' => $subTotal,
+            'discount' => $discount,
+            'vat_amount' => $vatAmount,
+            'grand_total' => $grandTotal,
+            'currency' => $currency
+        ];
+
+        // // Prepare the data for the PDF
+        // $pdf_data = [
+        //     'logo' => $imageSrc,
+        //     'qr' => $qrSrc,
+        //     'delivery' => $delivery,
+        //     'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
+        //     // Uncomment the next line if purchase order date is needed
+        //     // 'po_date' => Carbon::parse($delivery->purchaseOrder->po_Document_transaction_date)->format('Y-m-d')
+        // ];
+
+        // Generate the PDF using the prepared data and set the paper size to letter in landscape
+        $pdf = PDF::loadView('pdf_layout.purchase-order-consignment', ['pdf_data' => $pdf_data])
+            ->setPaper('letter', 'landscape');
+
+        // Render the PDF
+        $pdf->render();
+
+        // Add page numbers to the PDF
+        $dompdf = $pdf->getDomPDF();
+        $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
+        $dompdf->get_canvas()->page_text(760, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, [0, 0, 0]);
+
+        // Stream the generated PDF to the browser
+        return $pdf->stream('purchase-order-consignment-' . $id . '.pdf');
+    } catch (Exception $e) {
+        return $e->getMessage();
+    }
 });
+
+
+
+
+Route::controller(PurchaseSubsidiaryReportController::class)->group(function () {
+    Route::get('print-all-supplier', 'printAllSupplier');  
+});
+// <!====================================== END CONSIGNMENT PO  ====================================== !> 

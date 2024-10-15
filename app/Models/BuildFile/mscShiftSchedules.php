@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class mscShiftSchedules extends Model
 {
     use HasFactory;
-    protected $table = 'CDG_CORE.dbo.mscShiftSchedules';
+    protected $table = 'mscShiftSchedules';
     protected $connection = "sqlsrv";
 }

@@ -9,6 +9,6 @@ class CashierPaymentCode extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscCashierPaymentCode';
+    protected $table = 'mscCashierPaymentCode';
     protected $guarded = [];
 }

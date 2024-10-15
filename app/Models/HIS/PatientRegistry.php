@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class PatientRegistry extends Model
 {
     use HasFactory;
-    protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
+    protected $connection = 'sqlsrv_patient_data_v1';
+    protected $table = 'CDG_PATIENT_DATAv1.dbo.PatientRegistry';
     protected $guarded = [];
 
     public function patient_details( ) {

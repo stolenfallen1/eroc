@@ -38,7 +38,7 @@ class Consignment extends Model
     }
 
     public function ConsignmentPurchaseOrder(){
-        return $this->hasOne(PurchaseOrderConsignment::class, 'rr_id','id')->where('po_id',Request()->po_id);
+        return $this->hasOne(PurchaseOrderConsignment::class, 'rr_id','id');
     }
    
     public function warehouse(){

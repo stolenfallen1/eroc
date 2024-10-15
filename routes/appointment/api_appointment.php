@@ -22,10 +22,18 @@ Route::middleware('auth.patient')->group(function () {
     Route::post('confirmed-appointment', [AppointmentRegistrationController::class, 'register']);
     Route::post('checked-in', [AppointmentController::class, 'checkedIn']);
     Route::post('transfer', [AppointmentController::class, 'transfer']);
+    Route::get('get-schedules', [AppointmentController::class, 'getschedules']);
+    Route::get('manage-slots', [AppointmentController::class, 'getslots']);
+    Route::get('appointment-type', [AppointmentController::class, 'getAppointmentType']);
+    Route::post('save-slot', [AppointmentController::class, 'saveSlot']);
+    Route::get('reserved-slot', [AppointmentController::class, 'reserveSlots']);
+    Route::post('save-reserved-slot', [AppointmentController::class, 'saveReserveSlots']);
+    Route::get('check-slot', [PatientAppointmentController::class, 'checkSlots']);
     
     Route::get('get-centers', [AppointmentController::class, 'getCenters']);
     Route::post('store-center', [AppointmentController::class, 'storeCenter']);
     Route::post('store-section', [AppointmentController::class, 'storeSection']);
+    Route::post('send-message', [AppointmentController::class, 'sendMessage']);
     
     Route::get('get-branchs', [AppointmentController::class, 'branches']);
     // Route::get('get-centers', [AppointmentController::class, 'centers']);

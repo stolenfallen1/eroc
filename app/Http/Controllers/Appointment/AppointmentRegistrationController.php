@@ -103,10 +103,10 @@ class AppointmentRegistrationController extends Controller
                 'patient_Age'                   => $request->payload['age'] ?? null,
                 'mscAccount_type'               => $request->payload['mscAccount_type'] ?? '',
                 'mscAccount_Discount_Id'        => $request->payload['mscAccount_discount_id'] ?? null,
-                'mscAccount_Trans_Types'        => $request->payload['mscAccount_Trans_Types'] ?? 5, 
+                'mscAccount_Trans_Types'        => $request->payload['mscAccount_Trans_Types'] ?? 2, 
                 'mscPatient_Category'           => $patient_category,
-                'mscPrice_Groups'               => 2,
-                'mscPrice_Schemes'              => $request->payload['mscPrice_Schemes'] ?? 100,
+                'mscPrice_Groups'               => 1,
+                'mscPrice_Schemes'              => 1,
                 'mscService_Type'               => $request->payload['mscService_Type'] ?? null,
                 'queue_number'                  => $request->payload['queue_number'] ?? null,
                 'arrived_date'                  => $request->payload['arrived_date'] ?? null,
@@ -787,6 +787,8 @@ class AppointmentRegistrationController extends Controller
             $existingMedsysPatient  = MedsysPatientMaster::where('lastname', $request->payload['lastname'])->where('firstname', $request->payload['firstname'])->whereDate('birthdate', $request->payload['birthdate'])->first();
           
             $today                  = $request->schedule ? $request->schedule : Carbon::now();
+            SystemSequence::whereIn('code', ['MPID', 'MOPD'])->increment('seq_no');
+
             $sequence               = SystemSequence::where('code','MPID')->where('branch_id', 1)->first();
             $registry_sequence      = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
             $chargeslip_sequence    = SystemSequence::where('code', 'GCN')->first();
@@ -807,7 +809,7 @@ class AppointmentRegistrationController extends Controller
                 $patient_id = $existingMedsysPatient ? $existingMedsysPatient->HospNum : $sequence->seq_no;
                 
                 $sequence->update([
-                    'seq_no'           => $sequence->seq_no + 1,
+                    // 'seq_no'           => $sequence->seq_no + 1,
                     'recent_generated' => $sequence->seq_no,
                 ]);
             }
@@ -898,7 +900,7 @@ class AppointmentRegistrationController extends Controller
                 throw new \Exception('Registration failed, rollback transaction');
             } else {
                 $registry_sequence->update([
-                    'seq_no' => $registry_sequence->seq_no + 1,
+                    // 'seq_no' => $registry_sequence->seq_no + 1, 
                     'recent_generated' => $registry_sequence->seq_no,
                 ]);
 
@@ -980,9 +982,9 @@ class AppointmentRegistrationController extends Controller
                     'date_schedule' => $schedule,
                     'reference_no' => $refno,
                 ];
-                // $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
-                // $helpersms = new SMSHelper();
-                // $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::confirmed_message($data));
+                $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
+                $helpersms = new SMSHelper();
+                $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::confirmed_message($data));
                 return response()->json([
                     'message' => 'Outpatient data registered successfully',
                     'patient' => $patient,

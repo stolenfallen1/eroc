@@ -475,7 +475,7 @@ class PurchaseRequestController extends Controller
                             'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                             'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                             'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                            'is_submitted' => 1,
+                            // 'is_submitted' => 1, 
                         ]);
                     } else{
                         $prd->update([

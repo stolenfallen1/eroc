@@ -10,6 +10,6 @@ class ORRoomsModel extends Model
     use HasFactory;
 
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscOperatingRooms';
+    protected $table = 'mscOperatingRooms';
     protected $guarded = [];
 }

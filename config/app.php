@@ -14,6 +14,7 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
     'pos_server_ip'=>env('DB_HOST_POS'),
+    'pos_key' => env('POS_KEY'),
 
     /*
     |--------------------------------------------------------------------------

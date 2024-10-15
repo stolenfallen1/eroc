@@ -16,6 +16,7 @@ use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
 use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
+use App\Models\MMIS\procurement\CanvasMaster;
 
 class PurchaseOrderController extends Controller
 {
@@ -89,7 +90,11 @@ class PurchaseOrderController extends Controller
             $q->where('rr_Detail_Item_Qty_BackOrder', '!=', 0);
         }, 'details'=>function($q){
             $q->with('item.authWarehouseItem', 'unit', 'purchaseRequestDetail.recommendedCanvas');
-        }, 'purchaseRequest' => function($q){
+        },
+        'podetails'=>function($q){
+            $q->with('item.authWarehouseItem', 'unit', 'purchaseRequestDetail.recommendedCanvas');
+        },
+        'purchaseRequest' => function($q){
             $q->with('user', 'itemGroup', 'category');
         }, 'vendor', 'warehouse', 'user'])
         ->where(function($q){
@@ -328,8 +333,41 @@ class PurchaseOrderController extends Controller
                         
                      
                 }
-
-                
+                $getFreeGoods = CanvasMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->where('isFreeGoods',1)->get();
+              
+                if(count($getFreeGoods) > 0){
+                    $PurchaseOrderDetails = PurchaseOrderDetails::where('po_id',$po->id)->first();
+                    foreach ($getFreeGoods as $item) {
+                        $po->details()->updateOrCreate(
+                            [
+                                'pr_detail_id'=>  $item['pr_request_details_id'],
+                                'canvas_id'=>  $item['id'],
+                            ],
+                            [
+                            'po_Detail_item_id' => $item['canvas_Item_Id'],
+                            'po_detail_currency_id' => $item['currency_id'],
+                            'po_Detail_item_listcost' => $item['canvas_item_net_amount'],
+                            'po_Detail_item_qty' => $item['canvas_Item_Qty'],
+                            'po_Detail_item_unitofmeasurement_id' => $item['canvas_Item_UnitofMeasurement_Id'],
+                            'po_Detail_item_discount_percent' => $item['canvas_item_discount_percent'],
+                            'po_Detail_item_discount_amount' => $item['canvas_item_discount_amount'],
+                            'po_Detail_vat_percent' => $item['canvas_item_vat_rate'],
+                            'po_Detail_vat_amount' => $item['canvas_item_vat_amount'],
+                            'po_Detail_net_amount' => round($item['canvas_item_net_amount'], 4),
+                            'pr_detail_id' => $item['id'],
+                            'canvas_id' => $item['id'],
+                            'comptroller_approved_by' =>$PurchaseOrderDetails->comptroller_approved_by,
+                            'comptroller_approved_date' => $PurchaseOrderDetails->comptroller_approved_date,
+                            'admin_approved_by' =>$PurchaseOrderDetails->admin_approved_by,
+                            'admin_approved_date' => $PurchaseOrderDetails->admin_approved_date,
+                            'corp_admin_approved_by' =>$PurchaseOrderDetails->corp_admin_approved_by,
+                            'corp_admin_approved_date' => $PurchaseOrderDetails->corp_admin_approved_date,
+                            'ysl_approved_by' =>$PurchaseOrderDetails->ysl_approved_by,
+                            'ysl_approved_date' => $PurchaseOrderDetails->ysl_approved_date,
+                            'isFreeGoods' => $item['isFreeGoods'],
+                        ]);
+                    }
+                }
             }
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();
@@ -362,11 +400,22 @@ class PurchaseOrderController extends Controller
     {
         $isdecline = true;
         foreach ($request['details'] as $key => $detail) {
+            $freegoods = PurchaseOrderDetails::where('po_id',$detail['po_id'])->where('isFreeGoods',1)->first();
             if($detail['isapproved'] == true){
+                
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
                     'comptroller_approved_by' => auth()->user()->idnumber,
                     'comptroller_approved_date' => Carbon::now()
                 ]);
+
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'comptroller_approved_by' => auth()->user()->idnumber,
+                            'comptroller_approved_date' => Carbon::now()
+                        ]
+                    );
+                }
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
@@ -374,6 +423,16 @@ class PurchaseOrderController extends Controller
                     'comptroller_cancelled_date' => Carbon::now(),
                     'comptroller_cancelled_remarks' => $request->remarks
                 ]);
+
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'comptroller_cancelled_by' => auth()->user()->idnumber,
+                            'comptroller_cancelled_date' => Carbon::now(),
+                            'comptroller_cancelled_remarks' => $request->remarks
+                        ]
+                    );
+                }
             }
         }
         if($isdecline){
@@ -393,11 +452,21 @@ class PurchaseOrderController extends Controller
     private function approvedByAdmin($request){
         $isdecline = true;
         foreach ($request['details'] as $key => $detail) {
+            $freegoods = PurchaseOrderDetails::where('po_id',$detail['po_id'])->where('isFreeGoods',1)->first();
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
                     'admin_approved_by' => auth()->user()->idnumber,
                     'admin_approved_date' => Carbon::now()
                 ]);
+
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'admin_approved_by' => auth()->user()->idnumber,
+                            'admin_approved_date' => Carbon::now()
+                        ]
+                    );
+                }
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
@@ -405,6 +474,15 @@ class PurchaseOrderController extends Controller
                     'admin_cancelled_date' => Carbon::now(),
                     'admin_cancelled_remarks' => $request->remarks
                 ]);
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'admin_cancelled_by' => auth()->user()->idnumber,
+                            'admin_cancelled_date' => Carbon::now(),
+                            'admin_cancelled_remarks' => $request->remarks
+                        ]
+                    );
+                }
             }
         }
         if($isdecline){
@@ -424,11 +502,21 @@ class PurchaseOrderController extends Controller
     private function approvedByCorpAdmin($request){
         $isdecline = true;
         foreach ($request['details'] as $key => $detail) {
+            $freegoods = PurchaseOrderDetails::where('po_id',$detail['po_id'])->where('isFreeGoods',1)->first();
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
                     'corp_admin_approved_by' => auth()->user()->idnumber,
                     'corp_admin_approved_date' => Carbon::now()
                 ]);
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'corp_admin_approved_by' => auth()->user()->idnumber,
+                            'corp_admin_approved_date' => Carbon::now()
+                        ]
+                    );
+                }
+
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
@@ -436,6 +524,15 @@ class PurchaseOrderController extends Controller
                     'corp_admin_cancelled_date' => Carbon::now(),
                     'corp_admin_cancelled_remarks' => $request->remarks
                 ]);
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'corp_admin_cancelled_by' => auth()->user()->idnumber,
+                            'corp_admin_cancelled_date' => Carbon::now(),
+                            'corp_admin_cancelled_remarks' => $request->remarks
+                        ]
+                    );
+                }
             }
         }
         if($isdecline){
@@ -455,11 +552,21 @@ class PurchaseOrderController extends Controller
     private function approvedByPresident($request){
         $isdecline = true;
         foreach ($request['details'] as $key => $detail) {
+            $freegoods = PurchaseOrderDetails::where('po_id',$detail['po_id'])->where('isFreeGoods',1)->first();
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
                     'ysl_approved_by' => auth()->user()->idnumber,
                     'ysl_approved_date' => Carbon::now()
                 ]);
+
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'ysl_approved_by' => auth()->user()->idnumber,
+                            'ysl_approved_date' => Carbon::now()
+                        ]
+                    );
+                }
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
@@ -467,6 +574,16 @@ class PurchaseOrderController extends Controller
                     'ysl_cancelled_date' => Carbon::now(),
                     'ysl_cancelled_remarks' => $request->remarks
                 ]);
+
+                if($freegoods){
+                    $freegoods->update(
+                        [
+                            'ysl_cancelled_by' => auth()->user()->idnumber,
+                            'ysl_cancelled_date' => Carbon::now(),
+                            'ysl_cancelled_remarks' => $request->remarks
+                        ]
+                    );
+                }
             }
         }
         if($isdecline){

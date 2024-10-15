@@ -10,7 +10,6 @@ use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\Schedules\SchedulingDashboard;
 use App\Http\Controllers\POS\TerminalSettingsController;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -34,6 +33,7 @@ Route::controller(TerminalSettingsController::class)->group(function () {
 
 Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
 Route::post('login', [AuthController::class, 'login']);
+Route::post('check-pos-terminal', [AuthPOSController::class, 'posterminal']);
 Route::post('pos/login', [AuthPOSController::class, 'login']);
 Route::get('get-schedule', [SettingController::class, 'schedule']);
 Route::post('create-account', [UserController::class, 'createdoctor']);

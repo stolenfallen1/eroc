@@ -19,6 +19,7 @@ use App\Http\Controllers\MMIS\StockRequisitionController;
 use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
 use App\Http\Controllers\MMIS\InventoryStocksAlertController;
 use App\Http\Controllers\MMIS\InventoryTransactionController;
+use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 
 Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
@@ -51,6 +52,7 @@ Route::controller(CanvasController::class)->group(function () {
   Route::get('canvas', 'index');
   Route::get('count-for-po', 'countForPO');
   Route::post('canvas', 'store');
+  Route::post('add-free-goods', 'store');
   Route::delete('canvas/{id}', 'destroy');
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');
   Route::post('submit-canvas', 'submitCanvasItem');
@@ -173,5 +175,9 @@ Route::controller(PurchaseReturnController::class)->group(function () {
   Route::get('get-purchase-items', 'list');  
   Route::post('save-returned-purchased', 'store');  
  
+});
+
+Route::controller(PurchaseSubsidiaryReportController::class)->group(function () {
+  Route::post('subsidiary-report', 'allsupplier');  
 });
 

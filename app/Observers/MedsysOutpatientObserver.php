@@ -30,7 +30,7 @@ class MedsysOutpatientObserver
                 'IDNum'   => $patientRegistry->case_No.'B',
                 'AdmDate'   => Carbon::now(),
             ]);
-            DB::connection('sqlsrv_medsys_patient_data')->commit();
+            // DB::connection('sqlsrv_medsys_patient_data')->commit();
         } catch(\Exception $e) {
             DB::connection('sqlsrv_medsys_patient_data')->rollBack();
             return response()->json([

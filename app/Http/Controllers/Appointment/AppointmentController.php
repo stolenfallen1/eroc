@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers\Appointment;
 
+use DB;
 use Carbon\Carbon;
+use App\Helpers\SMSHelper;
 use Illuminate\Http\Request;
+use App\Models\BuildFile\Branchs;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Appointments\PatientAppointment;
-use App\Models\Appointments\PatientAppointmentsTemporary;
+use App\Models\Appointments\VwSchedules;
+use App\Models\Appointments\ReservedSlot;
+use App\Models\Appointments\AppointmentSlot;
+use App\Models\Appointments\AppointmentType;
 use App\Models\Appointments\AppointmentUser;
-use DB;
-use App\Models\BuildFile\Branchs;
 use App\Models\Appointments\AppointmentCenter;
+use App\Models\Appointments\PatientAppointment;
 use App\Models\Appointments\PatientAppointmentCheckIn;
 use App\Models\Appointments\AppointmentCenterSectection;
-use App\Helpers\SMSHelper;
+use App\Models\Appointments\PatientAppointmentsTemporary;
 
 class AppointmentController extends Controller
 {
@@ -161,9 +165,12 @@ class AppointmentController extends Controller
             
             $id = $request->payload['id'];
             $details = PatientAppointment::where('id', $id)->first();
+
             $details->update(
                 [
                     'appointment_section_id'=>$request->payload['transfer_section_id'],
+                    'status_Id'=>isset($request->payload['status_id']) ? $request->payload['status_id'] : 3,
+                    'isSmsSend'=>0,
                     'updated_at'=>Carbon::now()
                 ]
             );
@@ -176,7 +183,20 @@ class AppointmentController extends Controller
         }
     }
 
-    
+    public function sendMessage(Request $request){
+        $data = [
+            'patient_name' => $request->patient_name,
+        ];
+        $phoneNumberWithoutLeadingZero = ltrim($request->mobileno, '0');
+
+        $helpersms = new SMSHelper();
+        $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::sendTextMessage($data));
+        PatientAppointment::where('id',$request->id)->update(['isSmsSend',1]);
+
+        return response()->json([
+            'message' => 'Outpatient data registered successfully',
+        ], 200);
+    }
 
     public function storeUser(Request $request)
     {
@@ -224,7 +244,112 @@ class AppointmentController extends Controller
         }
     }
 
+    public function getslots(Request $request){
+        $slots = AppointmentSlot::where('isactive',1)->get();
+        return response()->json(['data' => $slots]);
+    }
 
+    public function getAppointmentType(Request $request){
+        $type = AppointmentType::where('isactive',1)->get();
+        return response()->json($type,200);
+    }
+    
+    public function reserveSlots(Request $request){
+        $reservedSlots = ReservedSlot::with('slot')->get();
+        return response()->json(['data' => $reservedSlots]);
+    }
+
+    public function saveSlot(Request $request)
+    {
+        DB::connection('sqlsrv')->beginTransaction();
+        try {
+
+            $payload = $request->payload;
+            if(isset($payload['id'])){
+                AppointmentSlot::where('id',$payload['id'])->update(
+                    [
+                        'branch_id'             =>1,
+                        'isactive'              =>$payload['isactive'],
+                        'period'                =>$payload['period'],
+                        'center_id'             =>$payload['center_id'],
+                        'no'                    =>$payload['no'],
+                        'appointment_type'      =>$payload['appointment_type'],
+                        'updated_at'            =>Carbon::now(),
+                    ]
+                );
+            }else{
+                AppointmentSlot::updateOrCreate(
+                    [
+                        'center_id'         =>$payload['center_id'],
+                        'no'                =>$payload['no'],
+                        'appointment_type'  =>$payload['appointment_type'],
+                        'period'            =>$payload['period'],
+                    ],
+                    [
+                        'branch_id'             =>1,
+                        'isactive'              =>$payload['isactive'],
+                        'period'                =>$payload['period'],
+                        'center_id'             =>$payload['center_id'],
+                        'no'                    =>$payload['no'],
+                        'appointment_type'      =>$payload['appointment_type'],
+                        'created_at'            =>Carbon::now(),
+                    ]
+                );
+            }
+            
+            DB::connection('sqlsrv')->commit();
+            return response()->json(['details' => 'sucess'], 201);
+        } catch (\Exception $e) {
+
+            DB::connection('sqlsrv')->rollBack();
+            return response()->json($e->getMessage(), 200);
+        }
+    }
+
+    public function saveReserveSlots(Request $request)
+    {
+        DB::connection('sqlsrv')->beginTransaction();
+        try {
+            $payload = $request->payload;
+            $slotsQuery = AppointmentSlot::where('isactive',1)->where('id',$payload['slot_id'])->first();
+            if(isset($payload['id'])){
+                ReservedSlot::where('id',$payload['id'])->update(
+                    [
+                        'isactive'              =>$payload['isactive'],
+                        'center_id'             =>$payload['center_id'],
+                        'slot_id'               =>$payload['slot_id'],
+                        'slot_no'               =>$slotsQuery->no,
+                        'date'                  =>$payload['date'],
+                        'updated_at'            =>Carbon::now(),
+                    ]
+                );
+            }else{
+                ReservedSlot::updateOrCreate(
+                    [
+                        'slot_id'               =>$payload['slot_id'],
+                        'center_id'             =>$payload['center_id'],
+                        'date'                  =>$payload['date'],
+                    ],
+                    [
+                        'isactive'              =>$payload['isactive'],
+                        'slot_no'               =>$slotsQuery->no,
+                        'center_id'             =>$payload['center_id'],
+                        'slot_id'               =>$payload['slot_id'],
+                        'date'                  =>$payload['date'],
+                        'created_at'            =>Carbon::now(),
+                    ]
+                );
+            }
+            
+            DB::connection('sqlsrv')->commit();
+            return response()->json(['details' => 'sucess'], 201);
+        } catch (\Exception $e) {
+
+            DB::connection('sqlsrv')->rollBack();
+            return response()->json($e->getMessage(), 200);
+        }
+    }
+    
     public function branches()
     {
         $data = Branchs::all();
@@ -236,6 +361,19 @@ class AppointmentController extends Controller
         $centers = AppointmentCenter::get();
         return response()->json($centers, 200);
     }
+
+    public function getschedules(Request $request)
+    {
+        $schedules = VwSchedules::where('isOnline',1);
+        if(Auth()->guard('patient')->user()->role_id !== 5){
+            $schedules->where('appointment_center_id',Auth()->guard('patient')->user()->center_id)->where('appointment_section_id',Auth()->guard('patient')->user()->section_id);
+        }
+        
+        $data = $schedules->get();
+        return response()->json($data, 200);
+    }
+    
+
 
     public function getCenters(Request $request)
     {
@@ -259,21 +397,20 @@ class AppointmentController extends Controller
         try {
 
             $payload = $request->payload;
-            $center = AppointmentCenter::where('isactive',1);
+            $center = AppointmentCenter::where('revenueID',$payload['revenueID']);
             if(isset($payload['id'])){
                 $center->where('id',$payload['id']);
             }
             $center->first();
             $center->updateOrCreate(
                 [
-                    'title'      => $payload['title'],
                     'revenueID'      => $payload['revenueID'],
                 ],
                 [
                     'title'         => $payload['title'],
                     'revenueID'     => $payload['revenueID'],
-                    'icon'     => $payload['icon'],
-                    'isactive'      => 1,
+                    'icon'          => $payload['icon'],
+                    'isactive'      => $payload['isactive'] == true ? 1 : 0,
                     'created_at'    => Carbon::now(),
                 ]
             );
@@ -301,11 +438,10 @@ class AppointmentController extends Controller
             $section->updateOrCreate(
                 [
                     'appointment_center_id' => $payload['id'],
-                    'section_name'          => $payload['section_name'],
                 ],
                 [
                     'section_name'  => $payload['section_name'],
-                    'isactive'      => 1,
+                    'isactive'      => $payload['isactive'] == true ? 1 : 0,
                     'created_at'    => Carbon::now(),
                 ]
             );

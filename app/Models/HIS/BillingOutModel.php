@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class BillingOutModel extends Model
 {
     use HasFactory;
-    protected $connection = 'sqlsrv_billingOut';
+    protected $connection = 'sqlsrv_billingOut_v1';
     protected $table = 'BillingOut';
     protected $guarded = [];
     public $timestamps = false;

@@ -163,7 +163,19 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-
+ 
+        'sqlsrv_patient_data_v1' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_PATIENT_DATA_V1', '10.4.15.251'),
+            'port' => env('DB_PORT_PATIENT_DATA_V1', '1433'),
+            'database' => env('DB_DATABASE_PATIENT_DATA_V1', ''),
+            'username' => env('DB_USERNAME_PATIENT_DATA_V1', ''),
+            'password' => env('DB_PASSWORD_PATIENT_DATA_V1', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
         'sqlsrv_medsys_patient_data' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -176,6 +188,20 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+        'sqlsrv_medsys_patient_data_clearances' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDYS_PATIENT_DATA_CLEARANCE', '10.4.15.253'),
+            'port' => env('DB_PORT_MEDYS_PATIENT_DATA_CLEARANCE', '1433'),
+            'database' => env('DB_DATABASE_MEDYS_PATIENT_DATA_CLEARANCE', ''),
+            'username' => env('DB_USERNAME_MEDYS_PATIENT_DATA_CLEARANCE', ''),
+            'password' => env('DB_PASSWORD_MEDYS_PATIENT_DATA_CLEARANCE', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
+        
         'sqlsrv_medsys_hemodialysis' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -221,6 +247,18 @@ return [
             'database' => env('DB_DATABASE_BILLINGOUT_DB', ''),
             'username' => env('DB_USERNAME_BILLINGOUT_DB', ''),
             'password' => env('DB_PASSWORD_BILLINGOUT_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+        'sqlsrv_billingOut_v1' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_BILLINGOUT_DB_V1', '10.4.15.251'),
+            'port' => env('DB_PORT_BILLINGOUT_DB_V1', '1433'),
+            'database' => env('DB_DATABASE_BILLINGOUT_DB_V1', ''),
+            'username' => env('DB_USERNAME_BILLINGOUT_DB_V1', ''),
+            'password' => env('DB_PASSWORD_BILLINGOUT_DB_V1', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,

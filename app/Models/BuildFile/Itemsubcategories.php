@@ -12,7 +12,7 @@ class Itemsubcategories extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.invItemSubCategories";
+    protected $table = "invItemSubCategories";
     protected $with = ['children'];
     protected $guarded = [];
 

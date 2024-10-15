@@ -9,6 +9,6 @@ class CaseIndicators extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscCaseIndicators';
+    protected $table = 'mscCaseIndicators';
     protected $guarded = [];
 }

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class SidebarGroup extends Model
 {
     use HasFactory;
-    protected $table = 'CDG_CORE.dbo.sidebar_group';
+    protected $table = 'sidebar_group';
     protected $connection = "sqlsrv";
     protected $guarded = [];
     // protected $with = ['modules'];

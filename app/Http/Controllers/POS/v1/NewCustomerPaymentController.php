@@ -97,29 +97,7 @@ class NewCustomerPaymentController extends Controller
             $payment->orders()->update([
                'order_status_id' => '9'
             ]);
-            $orders = OrderItems::where('order_id', $payload['order_id'])->get();
-            $transaction = FmsTransactionCode::where('code', 'PY')->where('isActive', 1)->first();
-            foreach ($orders as $row) {
-                $warehouse = Warehouseitems::where("item_Id",$row['order_item_id'])->where('warehouse_Id',Auth()->user()->warehouse_id)->where('branch_id',Auth()->user()->branch_id)->first();
-                $batch = ItemBatchModelMaster::where("id", $row['order_item_batchno'])->first();
-                InventoryTransaction::create([
-                    'branch_Id' => Auth()->user()->branch_id,
-                    'warehouse_Group_Id' => '',
-                    'warehouse_Id' => Auth()->user()->warehouse_id,
-                    'transaction_Item_Id' =>  $row['order_item_id'],
-                    'transaction_Date' => Carbon::now(),
-                    'trasanction_Reference_Number' => $generate_trans_series,
-                    'transaction_ORNumber' => $generate_or_series,
-                    'transaction_Item_UnitofMeasurement_Id' => $batch->item_UnitofMeasurement_Id,
-                    'transaction_Qty' => $row['order_item_qty'],
-                    'transaction_Item_OnHand' => $warehouse->item_OnHand,
-                    'transaction_Item_ListCost' => $row['order_item_total_amount'],
-                    'transaction_UserID' =>  Auth()->user()->idnumber,
-                    'createdBy' => Auth()->user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
-                ]);
-            }
-
+           
             if($or_sequenceno->isSystem == '0') {
                 $or_sequenceno->update([
                   'manual_seq_no' => (int)$or_sequenceno->manual_seq_no + 1,

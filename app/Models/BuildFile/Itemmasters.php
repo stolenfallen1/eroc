@@ -18,9 +18,16 @@ class Itemmasters extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = 'CDG_CORE.dbo.invItemMaster';
+    protected $table = 'invItemMaster';
     protected $guarded = [];
     
+    protected $appends = ['name'];
+
+    public function getNameAttribute()
+    {
+        $description = $this->isMedicines ? $this->item_Description : '';
+        return $this->item_name . ' ' .$description;
+    }
     public function wareHouseItems(){
         return $this->hasMany(Warehouseitems::class, 'item_Id', 'id');
     }

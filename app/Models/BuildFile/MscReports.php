@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class MscReports extends Model
 {
     use HasFactory;   
-    protected $table = 'CDG_CORE.dbo.mscReports';
+    protected $table = 'mscReports';
     protected $connection = "sqlsrv";
     protected $guarded =[];
 }

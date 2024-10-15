@@ -9,7 +9,7 @@ class PriceScheme extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.mscPriceSchemes";
+    protected $table = "mscPriceSchemes";
     protected $guarded = [];
 
     public function priceGroups(){

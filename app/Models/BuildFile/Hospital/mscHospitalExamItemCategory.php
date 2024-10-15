@@ -11,7 +11,7 @@ class mscHospitalExamItemCategory extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscExamItemCategory';
+    protected $table = 'mscExamItemCategory';
     protected $guarded = [];
 
 

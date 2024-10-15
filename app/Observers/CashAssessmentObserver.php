@@ -34,7 +34,7 @@ class CashAssessmentObserver
                 'RevenueID' => $cashAssessment->revenueID,
                 'RequestDocID' => $cashAssessment->requestDoctorID,
             ]);
-            DB::connection('sqlsrv_medsys_billing')->commit();
+            // DB::connection('sqlsrv_medsys_billing')->commit();
         } catch(\Exception $e) {
             DB::connection('sqlsrv_medsys_billing')->rollBack();
             return response()->json([

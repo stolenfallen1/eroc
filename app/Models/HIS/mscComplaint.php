@@ -9,7 +9,7 @@ class mscComplaint extends Model
 {
     use HasFactory;
 
-    protected $table = "CDG_CORE.dbo.mscComplaints";
+    protected $table = "mscComplaints";
 
     protected $connection = "sqlsrv";
 

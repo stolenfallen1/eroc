@@ -10,7 +10,7 @@ class ORRoomTimeSlotModel extends Model
     use HasFactory;
 
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscOperatingRoomTimeSlot';
+    protected $table = 'mscOperatingRoomTimeSlot';
     protected $guarded = [];
 
     public function scheduleAnesthesia()

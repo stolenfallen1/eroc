@@ -275,6 +275,8 @@ class ConsignmentDeliveryController extends Controller
             $delivery = Consignment::find($id);
             $delivery->where('id',$id)->update([
                 'rr_Document_Vendor_Id' => $vendor->id,
+                'rr_Document_Invoice_No' => $payload['rr_Document_Invoice_No'],
+                'rr_Document_Invoice_Date' => $payload['rr_Document_Invoice_Date'],
                 'rr_Document_Delivery_Receipt_No' => $payload['rr_Document_Delivery_Receipt_No'],
                 'rr_Document_TotalGrossAmount' => $payload['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $payload['rr_Document_TotalDiscountAmount'],

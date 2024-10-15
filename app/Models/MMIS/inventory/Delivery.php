@@ -2,15 +2,16 @@
 
 namespace App\Models\MMIS\inventory;
 
-use App\Models\Approver\InvStatus;
+use App\Models\User;
+use App\Models\MMIS\Audit;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\Vendors;
+use App\Models\Approver\InvStatus;
 use App\Models\BuildFile\Warehouses;
-use App\Models\MMIS\Audit;
-use App\Models\MMIS\procurement\purchaseOrderMaster;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\MMIS\procurement\purchaseOrderMaster;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Delivery extends Model
 {
@@ -20,7 +21,7 @@ class Delivery extends Model
 
     protected $guarded = [];
 
-    protected $appends = ['po_number', 'code', 'audit_code'];
+    protected $appends = ['po_number', 'code', 'audit_code','encrypted_key_id'];
 
     public function audit(){
         return $this->hasOne(Audit::class, 'delivery_id');
@@ -73,5 +74,13 @@ class Delivery extends Model
 
     public function getAuditCodeAttribute(){
         return generateCompleteSequence($this->rr_Document_Prefix, $this->rr_Document_Number, $this->rr_Document_Suffix, "-"). ' - ' . generateCompleteSequence($this->po_Document_Prefix, $this->po_Document_Number, $this->po_Document_Suffix, "-").'- INVOICE - '.$this->rr_Document_Invoice_No;
+    }
+
+    public function setKeyIdAttribute($value){
+        $this->attributes['id'] = Crypt::encrypt($value);
+    }
+    public function getEncryptedKeyIdAttribute()
+    {
+        return Crypt::encrypt($this->attributes['id']);
     }
 }

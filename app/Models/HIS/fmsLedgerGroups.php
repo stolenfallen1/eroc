@@ -9,7 +9,7 @@ class fmsLedgerGroups extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.fmsLedgerGroups';
+    protected $table = 'fmsLedgerGroups';
     protected $guarded = [];
     public $timestamps = false;
 }

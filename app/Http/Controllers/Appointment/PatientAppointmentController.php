@@ -2,25 +2,29 @@
 
 namespace App\Http\Controllers\Appointment;
 
+use DB;
 use Carbon\Carbon;
+use App\Helpers\SMSHelper;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\HIS\services\Patient;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\BuildFile\FmsProcedures;
+use App\Models\HIS\MedsysPatientMaster;
 use App\Models\BuildFile\SystemSequence;
-use App\Models\Appointments\PatientAppointment;
+use App\Models\Appointments\ReservedSlot;
 use App\Models\BuildFile\address\Zipcode;
-use App\Models\BuildFile\address\Barangay;
-use App\Models\Appointments\PatientAppointmentsTemporary;
-use App\Models\Appointments\AppointmentCenter;
-use App\Models\Appointments\AppointmentUser;
-use App\Models\BuildFile\Hospital\Nationalities;
-use App\Models\BuildFile\Hospital\CivilStatus;
-use DB;
 use App\Models\BuildFile\Hospital\Doctor;
-use Illuminate\Support\Facades\Auth;
+use App\Models\BuildFile\address\Barangay;
+use App\Models\Appointments\AppointmentSlot;
+use App\Models\Appointments\AppointmentUser;
 
-use App\Helpers\SMSHelper;
+use App\Models\Appointments\AppointmentCenter;
+use App\Models\BuildFile\Hospital\CivilStatus;
+use App\Models\Appointments\PatientAppointment;
+use App\Models\BuildFile\Hospital\Nationalities;
+use App\Models\Appointments\PatientAppointmentsTemporary;
 
 class PatientAppointmentController extends Controller
 {
@@ -54,7 +58,7 @@ class PatientAppointmentController extends Controller
         if ($date) {
             $query->whereDate('appointment_Date', $date);
         }
-        if(in_array(Auth()->guard('patient')->user()->role_id, ['1', '2','3'])){
+        if(in_array(Auth()->guard('patient')->user()->role_id, ['2','3'])){
             $query->where('appointment_section_id',Auth()->guard('patient')->user()->section_id);
         }else if(Auth()->guard('patient')->user()->role_id == '4'){
 
@@ -73,22 +77,45 @@ class PatientAppointmentController extends Controller
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
 
+
+            $existingMedsysPatient  = MedsysPatientMaster::where('lastname', $request->payload['lastName'])->where('firstname', $request->payload['firstName'])->whereDate('birthdate', $request->payload['birthdate'])->first();
+            SystemSequence::whereIn('code', ['MOPD'])->increment('seq_no');
+            $sequence               = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
+            if (!$sequence) {
+                throw new \Exception('Sequence not found');
+            }
+
+            $existingPatient    = Patient::where('lastname', $request->payload['lastName'])->where('firstname', $request->payload['firstName'])->whereDate('birthdate', $request->payload['birthdate'])->first();
+            if ($existingPatient) {
+                $patient_id = $existingMedsysPatient ? $existingMedsysPatient->HospNum : $existingPatient->patient_Id;
+            } else {
+                $patient_id = $existingMedsysPatient ? $existingMedsysPatient->HospNum : $sequence->seq_no;
+                $sequence->update([
+                    'recent_generated' => $sequence->seq_no,
+                ]);
+            }
+            
             $payload = $request->payload;
+            $firstLetter = strtoupper(substr($payload['lastName'], 0, 1));
+            $username = $firstLetter.'-'.$patient_id;
+            $birthdate =Carbon::parse($payload['birthdate'])->format('Ymd');
+            $password = Hash::make($birthdate);
             $userLogin = AppointmentUser::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
                 [
                     'lastname'      => $payload['lastName'],
                     'firstname'     => $payload['firstName'],
                 ],
                 [
+                    
                     'lastname'      => $payload['lastName'],
                     'firstname'     => $payload['firstName'],
                     'middlename'    => $payload['middleName'],
                     'birthdate'     => $payload['birthdate'],
                     'name'          => $payload['lastName'] . ', ' . $payload['firstName'] . ' ' . $payload['middleName'],
                     'mobileno'      => $payload['contactNumber'],
-                    'portal_UID'    => $payload['portal_UID'],
-                    'passcode'      => $payload['portal_PWD'],
-                    'portal_PWD'    => Hash::make($payload['portal_PWD']),
+                    'passcode'      =>  $birthdate,
+                    'portal_UID'    => $username,
+                    'portal_PWD'    => $password,
                     'role_id'       => 4,
                     'branch_id'     => 1,
                     'email'         => $payload['email'],
@@ -97,34 +124,37 @@ class PatientAppointmentController extends Controller
                     'isonline'      => 1,
                 ]
             );
+           
             $patientLogin = PatientAppointmentsTemporary::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
                 [
                     'lastname'      => $payload['lastName'],
                     'firstname'     => $payload['firstName'],
                 ],
                 [
-                    'lastname'          => $payload['lastName'],
-                    'firstname'         => $payload['firstName'],
-                    'middlename'        => $payload['middleName'],
-                    'email_Address'     => $payload['email'],
-                    'birthdate'         => $payload['birthdate'],
-                    'branch_Id'         => 1,
-                    'user_id'           => $userLogin->id,
-                    'suffix'            => $payload['suffix'],
-                    'sex_Id'            => $payload['gender'],
-                    'birthplace'        => $payload['birthPlace'],
-                    'age'               => $payload['age'],
-                    'region_Id'         => $payload['region_code'],
-                    'bldgstreet'        => $payload['currentAddress'],
-                    'province_Id'       => $payload['province_id'],
-                    'municipality_Id'   => $payload['municipality_id'],
-                    'barangay_Id'       => $payload['barangay'],
-                    'zipcode_Id'        => $payload['zipcode']['id'],
-                    'mobile_Number'     => $payload['contactNumber'],
-                    'civil_Status_Id'   => $payload['civilStatus'],
-                    'nationality_Id'    => $payload['nationality'],
-                    'portal_UID'        => $payload['portal_UID'],
-                    'portal_PWD'        => Hash::make($payload['portal_PWD']),
+                    'Type_Id'            => $payload['type'],
+                    'patient_id'         => $patient_id,
+                    'lastname'           => $payload['lastName'],
+                    'firstname'          => $payload['firstName'],
+                    'middlename'         => $payload['middleName'],
+                    'email_Address'      => $payload['email'],
+                    'birthdate'          => $payload['birthdate'],
+                    'branch_Id'          => 1,
+                    'user_id'            => $userLogin->id,
+                    'suffix'             => $payload['suffix'],
+                    'sex_Id'             => $payload['gender'],
+                    'birthplace'         => $payload['birthPlace'],
+                    'age'                => $payload['age'],
+                    'region_Id'          => $payload['region_code'],
+                    'bldgstreet'         => $payload['currentAddress'],
+                    'province_Id'        => $payload['province_id'],
+                    'municipality_Id'    => $payload['municipality_id'],
+                    'barangay_Id'        => $payload['barangay'],
+                    'zipcode_Id'         => $payload['zipcode']['id'],
+                    'mobile_Number'      => $payload['contactNumber'],
+                    'civil_Status_Id'    => $payload['civilStatus'],
+                    'nationality_Id'     => $payload['nationality'],
+                    'portal_UID'         => $username,
+                    'portal_PWD'         => $password,
                 ]
             );
 
@@ -332,9 +362,9 @@ class PatientAppointmentController extends Controller
                 'amount' => $totalAmount,
                 'reference_no' => $refno,
             ];
-            // $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
-            // $helpersms = new SMSHelper();
-            // $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::message($data));
+            $phoneNumberWithoutLeadingZero = ltrim($mobileno, '0');
+            $helpersms = new SMSHelper();
+            $helpersms->sendSms($phoneNumberWithoutLeadingZero,SMSHelper::message($data));
 
             return response()->json(['data' => 'success'], 201);
         } catch (\Exception $e) {
@@ -345,31 +375,68 @@ class PatientAppointmentController extends Controller
         }
     }
 
+    public function checkSlots(Request $request){
+        $selectedDate = Carbon::parse($request->date)->format('Y-m-d');
+        $center_id = $request->center_id;
+        $notAvailableSlots = PatientAppointment::select('slot_Number')
+                            ->where('appointment_center_id',$center_id)
+                            ->whereDate('appointment_Date', $selectedDate)->pluck('slot_Number')
+                            ->toArray();
+        $slots = [];
+        $slotsQuery = AppointmentSlot::where('isactive',1)->where('center_id',$center_id);
+        if($request->type){
+            $slotsQuery->where('appointment_type',$request->type);
+        }
+        $slotsData = $slotsQuery->get();
+        foreach($slotsData as $row){
+            if(!in_array($row['no'], $notAvailableSlots)){
+                $slots[] = [
+                    'id' => $row['id'],
+                    'no' => $row['no'],
+                    'period' => $row['period'],
+                    'name' => $row['name'],
+                    'available' => !in_array($row['no'], $notAvailableSlots),
+                ];
+            }
+            
+        }
+
+        return response()->json($slots, 200);
+    }
+
+
     public function slots(Request $request)
     {
         $selectedDate = Carbon::parse($request->date)->format('Y-m-d');
         $center_id = $request->center_id;
-        $notAvailableSlots = PatientAppointment::select('slot_Number')->where('appointment_center_id',$center_id)->whereDate('appointment_Date', $selectedDate)->pluck('slot_Number')->toArray();
-        $slots = [];
-        for ($i = 1; $i < 50; $i++) {
-            $slots[] = [
-                'id' => $i,
-                'available' => !in_array($i, $notAvailableSlots),
-            ];
-        }
-        $selectedSlots = [];
-        foreach ($notAvailableSlots as $value) {
-            $selectedSlots[] = [
-                'id' => (int)$value,
-                'available' => false,
-            ];
-        }
-        // Call the updateSlotsAvailability method and pass the slots and selectedSlots arrays
-        $updatedSlots = $this->updateSlotsAvailability($slots, $selectedSlots);
+        $notAvailableSlots = PatientAppointment::select('slot_Number')
+                        ->where('appointment_center_id',$center_id)
+                        ->whereDate('appointment_Date', $selectedDate)->pluck('slot_Number')
+                        ->toArray();
 
-        // Return the updated slots as a JSON response
+        $ReservedSlots = ReservedSlot::whereDate('date',$selectedDate)->where('center_id',$center_id)->pluck('slot_no')->toArray();
+
+        // Merge notAvailableSlots and ReservedSlots and remove duplicates
+        $unavailableSlots = array_unique(array_merge($notAvailableSlots, $ReservedSlots));
+       
+        $slots = [];
+        $slotsQuery = AppointmentSlot::where('isactive',1)->where('center_id',$center_id)->orderBy('id','asc');
+        if($request->type){
+            $slotsQuery->where('appointment_type',$request->type);
+        }
+        $slotsData = $slotsQuery->get();
+        foreach($slotsData as $row){
+            $slots[] = [
+                'id' => $row['no'],
+                'period' => $row['period'],
+                'available' => !in_array($row['no'], $unavailableSlots),
+            ];
+        }
+       
         return response()->json($slots, 200);
     }
+
+
 
     public function getZipCode()
     {

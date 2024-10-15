@@ -1,5 +1,9 @@
 @if($type=='doctor')
-<img src="{{asset('storage/'.$data->doctors_Request_Path)}}" />
+<center>
+    <img src="{{asset('storage/'.$data->doctors_Request_Path)}}" width="60%" />
+</center>
 @else
-<img src="{{asset('storage/'.$data->payments->payment_UploadPath)}}" />
+<center>
+    <img src="{{asset('storage/'.$data->payments->payment_UploadPath)}}" width="60%" />
+</center>
 @endif

@@ -9,47 +9,47 @@ class SMSHelper {
 
     public function sendSms($mobile,$message){
         // Set the recipients and message
-        $contact = '63'.$mobile;
-        $url = 'https://api.m360.com.ph/v3/api/broadcast';
-        $API_KEY = 'fxkeZFC21wJmBAKL';
-        $API_secret = '3iMuiQu2jIOTYkIZ8kWJbmhoU83pbl4R';
-        $payload = [
-            'app_key' => $API_KEY,
-            'app_secret' => $API_secret,
-            'msisdn' => $contact,
-            'shortcode_mask' => 'CebuDoc',
-            'content' => $message,
-            'rcvd_transid' => '',
-            'is_intl' => false,
-            'dcs'=>0
-        ];
+        // $contact = '63'.$mobile;
+        // $url = 'https://api.m360.com.ph/v3/api/broadcast';
+        // $API_KEY = 'fxkeZFC21wJmBAKL';
+        // $API_secret = '3iMuiQu2jIOTYkIZ8kWJbmhoU83pbl4R';
+        // $payload = [
+        //     'app_key' => $API_KEY,
+        //     'app_secret' => $API_secret,
+        //     'msisdn' => $contact,
+        //     'shortcode_mask' => 'CebuDoc',
+        //     'content' => $message,
+        //     'rcvd_transid' => '',
+        //     'is_intl' => false,
+        //     'dcs'=>0
+        // ];
 
-        try {
+        // try {
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-            ]);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        //     $ch = curl_init();
+        //     curl_setopt($ch, CURLOPT_URL, $url);
+        //     curl_setopt($ch, CURLOPT_POST, true);
+        //     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        //     curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        //         'Content-Type: application/json',
+        //     ]);
+        //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         
-            $response = curl_exec($ch);
+        //     $response = curl_exec($ch);
         
-            if (curl_errno($ch)) {
-                $error_message = curl_error($ch);
-                curl_close($ch);
-                return "cURL Error: " . $error_message;
-            }
+        //     if (curl_errno($ch)) {
+        //         $error_message = curl_error($ch);
+        //         curl_close($ch);
+        //         return "cURL Error: " . $error_message;
+        //     }
         
-            curl_close($ch);
+        //     curl_close($ch);
         
-            return $response;
-        } catch (\Exception $e) {
-            // Handle exceptions (e.g., logging, throwing custom exceptions)
-            return $e->getMessage();
-        }
+        //     return $response;
+        // } catch (\Exception $e) {
+        //     // Handle exceptions (e.g., logging, throwing custom exceptions)
+        //     return $e->getMessage();
+        // }
     }
 
     public static function message($data){
@@ -81,7 +81,7 @@ class SMSHelper {
         $message =  $name."!\n\n";
         $message .= "Your booking with reference number $referenceno has been confirmed.";
         $message .= "\n\n";
-        $message .= "We'd be happy to serve you on your scheduled date  $dateSchedule\n\n";
+        $message .= "We' be happy to serve you on your scheduled date  $dateSchedule\n\n";
         $message .= '';
         return $message;
     }
@@ -94,7 +94,16 @@ class SMSHelper {
         $message =  $name."!\n\n";
         $message .= "Your booking with reference number $referenceno has been confirmed.";
         $message .= "\n\n";
-        $message .= "We'd be happy to serve you on your scheduled date  $dateSchedule\n\n";
+        $message .= "We be happy to serve you on your scheduled date  $dateSchedule\n\n";
+        $message .= '';
+        return $message;
+    }
+
+
+    public static function sendTextMessage($data){
+        $name           = ucwords($data['patient_name']);
+        $message =  "Dear ". $name."!\n\n";
+        $message .= "This is a reminder of your appointment at Center for Women on . Please arrive at least 30 minutes before your scheduled time to complete necessary preparations. Thank you!";
         $message .= '';
         return $message;
     }

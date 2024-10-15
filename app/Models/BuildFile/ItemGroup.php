@@ -11,7 +11,7 @@ class ItemGroup extends Model
     use HasFactory;
 
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.invItemInventoryGroup";
+    protected $table = "invItemInventoryGroup";
     protected $guarded = [];
 
     public function categories(){

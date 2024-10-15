@@ -115,7 +115,7 @@ class PurchaseReturnController extends Controller
                 );
 
                 $batch = ItemBatchModelMaster::where('id',$row['batchID'])->first();
-                $transaction = FmsTransactionCode::where('code', 'IPR')->where('isActive', 1)->first();
+                $transaction = FmsTransactionCode::where('description', 'like','%INVENTORY PURCHASE RETURNS%')->where('isActive', 1)->first();
                 $batch->update([
                     'item_Qty_Used'=> $row['qty']
                 ]);

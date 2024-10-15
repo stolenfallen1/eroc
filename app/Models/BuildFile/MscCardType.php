@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class MscCardType extends Model
 {
     use HasFactory;
-    protected $table = 'CDG_CORE.dbo.mscBanks';
+    protected $table = 'mscBanks';
     protected $connection = "sqlsrv";
 }

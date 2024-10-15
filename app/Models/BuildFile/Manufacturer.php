@@ -9,6 +9,6 @@ class Manufacturer extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.invItemManufacturers";
+    protected $table = "invItemManufacturers";
     protected $guarded = [];
 }

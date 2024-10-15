@@ -32,7 +32,7 @@ class PurchaseRequest extends Model
     }
 
     public function purchaseRequestDetails(){
-        return $this->hasMany(PurchaseRequestDetails::class, 'pr_request_id', 'id');
+        return $this->hasMany(PurchaseRequestDetails::class, 'pr_request_id', 'id')->whereNull('IsFreeGoods');
     }
 
     public  function status(){
@@ -58,7 +58,11 @@ class PurchaseRequest extends Model
     public  function administratorApprovedBy(){
         return $this->belongsTo(User::class, 'pr_Branch_Level1_ApprovedBy', 'idnumber');
     }
+    public  function consultantApprovedBy(){
+        return $this->belongsTo(User::class, 'pr_Branch_Level2_ApprovedBy', 'idnumber');
+    }
 
+    
     public  function departmentDeclinedBy(){
         return $this->belongsTo(User::class, 'pr_DepartmentHead_CancelledBy', 'idnumber');
     }

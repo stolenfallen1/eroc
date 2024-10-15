@@ -16,8 +16,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class PatientMaster extends Model
 {
     use HasFactory;
-    protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
+    protected $connection = 'sqlsrv_patient_data_v1';
+    protected $table = 'CDG_PATIENT_DATAv1.dbo.PatientMaster';
     protected $guarded = [];
     protected $with = ['sex','civilstatus','nationality','religion','suffix','tittles','patient_registry_details'];
     protected $appends = ['patient_name'];

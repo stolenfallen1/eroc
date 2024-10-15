@@ -81,12 +81,20 @@ class CanvasController extends Controller
         DB::connection('sqlsrv_mmis')->beginTransaction();
 
         try {
-            $canvas = CanvasMaster::create([
+            $itemid = isset($request->canvas_Old_Item_Id) ? $request->canvas_Old_Item_Id : $request->canvas_Item_Id;
+            $canvas = CanvasMaster::updateOrCreate(
+                [
+                    'pr_request_id' => $request->pr_request_id,
+                    'canvas_Item_Id' => $itemid,
+                    'vendor_id' => $request->vendor_id
+                ],
+                [
                 'canvas_Document_Number' => $number,
                 'canvas_Document_Prefix' => $prefix,
                 'canvas_Document_Suffix' => $suffix,
                 'canvas_Document_CanvassBy' => Auth::user()->idnumber,
                 'canvas_Document_Transaction_Date' => Carbon::now(),
+                'created_at' => Carbon::now(),
                 'requested_date' => Carbon::parse($request->requested_date),
                 'canvas_Branch_Id' => $authUser->branch_id,
                 'canvas_Warehouse_Group_Id' => $authUser->warehouse->warehouse_Group_Id,
@@ -107,7 +115,7 @@ class CanvasController extends Controller
                 'currency_id' => $request->currency_id,
                 'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
                 'canvas_item_vat_amount' => $vat_amount,
-                'isFreeGoods' => $request->isFreeGoods,
+                'isFreeGoods' => $request->isFreeGoods == true ? 1 : 0,
                 'isRecommended' => 0,
             ]);
     
@@ -121,6 +129,75 @@ class CanvasController extends Controller
                 }
             }
 
+            if($request->isFreeGoods == true){
+                $prDetails = PurchaseRequestDetails::where('pr_request_id',$request->pr_request_id)->first();
+                // $prDetails->updateOrCreate(
+                //     [
+                //         'pr_request_id' => $request->pr_request_id,
+                //         'item_Id' => $itemid
+                //     ],
+                //     [
+                //         'item_Id' => $request->canvas_Item_Id,
+                //         'item_ListCost' => 0,
+                //         'discount' => 0,
+                //         'item_Request_Qty' => $request->canvas_Item_Qty,
+                //         'prepared_supplier_id' => $request->vendor_id,
+                //         'lead_time' => 0,
+                //         'vat_rate' => 0,
+                //         'vat_type' => 0,
+                //         'isFreeGoods'=>1,
+                //         'item_Request_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
+                //         'item_Request_Department_Approved_Qty' => $request->canvas_Item_Qty,
+                //         'item_Request_Department_Approved_UnitofMeasurement_Id' => $prDetails->item_Request_Department_Approved_UnitofMeasurement_Id,
+                //         'item_Branch_Level1_Approved_Qty' => $request->canvas_Item_Qty,
+                //         'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level1_Approved_UnitofMeasurement_Id,
+                //         'item_Branch_Level2_Approved_Qty' => $request->canvas_Item_Qty,
+                //         'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level2_Approved_UnitofMeasurement_Id,
+                //         'item_Branch_Level3_Approved_Qty' => $request->canvas_Item_Qty,
+                //         'item_Branch_Level3_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level3_Approved_UnitofMeasurement_Id,
+                //         'item_Branch_Level4_Approved_Qty' => $request->canvas_Item_Qty,
+                //         'item_Branch_Level4_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level4_Approved_UnitofMeasurement_Id,
+                //         'pr_DepartmentHead_ApprovedBy' => $prDetails->pr_DepartmentHead_ApprovedBy,
+                //         'pr_DepartmentHead_ApprovedDate' => $prDetails->pr_DepartmentHead_ApprovedDate,
+                //         'pr_DepartmentHead_CancelledBy' => $prDetails->pr_DepartmentHead_CancelledBy,
+                //         'pr_DepartmentHead_CancelledDate' => $prDetails->pr_DepartmentHead_CancelledDate,
+                //         'pr_DepartmentHead_Cancelled_Remarks' => $prDetails->pr_DepartmentHead_Cancelled_Remarks,
+                //         'pr_Branch_Level1_ApprovedBy' => $prDetails->pr_Branch_Level1_ApprovedBy,
+                //         'pr_Branch_Level1_ApprovedDate' => $prDetails->pr_Branch_Level1_ApprovedDate,
+                //         'pr_Branch_Level1_CancelledBy' => $prDetails->pr_Branch_Level1_CancelledBy,
+                //         'pr_Branch_Level1_CancelledDate' => $prDetails->pr_Branch_Level1_CancelledDate,
+                //         'pr_Branch_Level1_Cancelled_Remarks' => $prDetails->pr_Branch_Level1_Cancelled_Remarks,
+                //         'pr_Branch_Level2_ApprovedBy' => $prDetails->pr_Branch_Level2_ApprovedBy,
+                //         'pr_Branch_Level2_ApprovedDate' => $prDetails->pr_Branch_Level2_ApprovedDate,
+                //         'pr_Branch_Level2_CancelledBy' => $prDetails->pr_Branch_Level2_CancelledBy,
+                //         'pr_Branch_Level2_CancelledDate' => $prDetails->pr_Branch_Level2_CancelledDate,
+                //         'pr_Branch_Level2_Cancelled_Remarks' => $prDetails->pr_Branch_Level2_Cancelled_Remarks,
+                //         'pr_Branch_Level3_ApprovedBy' => $prDetails->pr_Branch_Level3_ApprovedBy,
+                //         'pr_Branch_Level3_ApprovedDate' => $prDetails->pr_Branch_Level3_ApprovedDate,
+                //         'pr_Branch_Level3_CancelledBy' => $prDetails->pr_Branch_Level3_CancelledBy,
+                //         'pr_Branch_Level3_CancelledDate' => $prDetails->pr_Branch_Level3_CancelledDate,
+                //         'pr_Branch_Level3_Cancelled_Remarks' => $prDetails->pr_Branch_Level3_Cancelled_Remarks,
+                //         'pr_Branch_Level4_ApprovedBy' => $prDetails->pr_Branch_Level4_ApprovedBy,
+                //         'pr_Branch_Level4_ApprovedDate' => $prDetails->pr_Branch_Level4_ApprovedDate,
+                //         'pr_Branch_Level4_CancelledBy' => $prDetails->pr_Branch_Level4_CancelledBy,
+                //         'pr_Branch_Level4_CancelledDate' => $prDetails->pr_Branch_Level4_CancelledDate,
+                //         'pr_Branch_Level4_Cancelled_Remarks' => $prDetails->pr_Branch_Level4_Cancelled_Remarks,
+                //         'item_Last_PR_Date' => $prDetails->item_Last_PR_Date,
+                //         'item_Last_PR_Qty' => $prDetails->item_Last_PR_Qty,
+                //         'item_Last_PR_UnitofMeasurement_Id' => $prDetails->item_Last_PR_UnitofMeasurement_Id,
+                //         'filename' => $prDetails->filename,
+                //         'filepath' => $prDetails->filepath,
+                //         'item_status_id' => $prDetails->item_status_id,
+                //         'is_submitted' => $prDetails->is_submitted,
+                //         'prepared_supplier_id' => $prDetails->prepared_supplier_id,
+                //         'approved_by_purchaser' => $prDetails->approved_by_purchaser,
+                //         'cancelled_by_purchaser' => $prDetails->cancelled_by_purchaser,
+                //         'approved_date_purchaser' => $prDetails->approved_date_purchaser,
+                //         'cancelled_date_purchaser' => $prDetails->cancelled_date_purchaser,
+                //         'cancelled_remarks_purchaser' => $prDetails->cancelled_remarks_purchaser,
+                //     ]
+                // );
+            }
             $sequence->update([
                 'seq_no' => (int) $sequence->seq_no + 1,
                 'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
@@ -151,6 +228,12 @@ class CanvasController extends Controller
             $attachment->delete();
         }
         $canvas->delete();
+
+        if($canvas->isFreeGoods == 1){
+            $prDetails = PurchaseRequestDetails::where('pr_request_id',$canvas->pr_request_id)->where('item_Id',$canvas->canvas_Item_Id)->first();
+            $prDetails->delete();
+        }
+        
         return response()->json(['message' => 'success'], 200);
     }
     

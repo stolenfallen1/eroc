@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class SysConfigGeneral extends Model
 {
     use HasFactory;
-    protected $table = 'CDG_CORE.dbo.sysConfigGeneral';
+    protected $table = 'sysConfigGeneral';
     protected $connection = "sqlsrv";
 
     protected $fillable = [

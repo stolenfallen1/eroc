@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class MscRefundType extends Model
 {
     use HasFactory;   
-    protected $table = 'CDG_CORE.dbo.mscPosRefundType';
+    protected $table = 'mscPosRefundType';
     protected $connection = "sqlsrv";
 }

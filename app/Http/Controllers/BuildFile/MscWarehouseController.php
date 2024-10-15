@@ -30,6 +30,10 @@ class MscWarehouseController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+    
+    public function warehouselist(){
+        return response()->json(['data' =>Warehouses::get()], 200);
+    }
 
     public function branch_warehouse(Request $request)
     {

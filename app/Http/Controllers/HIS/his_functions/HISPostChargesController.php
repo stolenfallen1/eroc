@@ -274,7 +274,6 @@ class HISPostChargesController extends Controller
                                     if ($this->check_is_allow_medsys) {
                                         tbLABMaster::create([
                                             'HospNum'           => $patient_id,
-                                            // 'RequestNum'        => $sequence,
                                             'IdNum'             => $case_no,
                                             'RefNum'            => $sequence,
                                             'RequestStatus'     => 'X',
@@ -394,14 +393,19 @@ class HISPostChargesController extends Controller
     public function revokecharge(Request $request) 
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_laboratory')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
         try {
-            $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
-            
-            if(!$checkUser):
-                return response()->json([
-                    'message' => 'Incorrect Username or Password',
-                ], 404);
-            endif;
+            $checkUser = null;
+            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
+                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+                if (!$checkUser) {
+                    return response()->json([
+                        'message' => 'Incorrect Username or Password',
+                    ], 404);
+                }
+            }
 
             $items = $request->items;
             foreach ($items as $item) {
@@ -415,7 +419,7 @@ class HISPostChargesController extends Controller
                     ->where('refNum', $refnum)
                     ->where('itemID', $item_id)
                     ->first();
-
+                
                 if ($existingData) {
                     HISBillingOut::create([
                         'patient_Id' => $existingData->patient_Id,
@@ -425,7 +429,7 @@ class HISPostChargesController extends Controller
                         'revenueID' => $existingData->revenueID,
                         'drcr' => 'C',
                         'itemID' => $existingData->itemID,
-                        'quantity' => -1,
+                        'quantity' => $existingData->quantity * -1,
                         'refNum' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
                         'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
@@ -434,14 +438,56 @@ class HISPostChargesController extends Controller
                         'accountnum' => $existingData->accountnum,
                         'auto_discount' => 0,
                     ]);
+                    if ($this->check_is_allow_medsys) {
+                        MedSysDailyOut::create([
+                            'HospNum'           => $existingData->patient_Id,
+                            'IDNum'             => $existingData->case_No,
+                            'TransDate'         => Carbon::now(),
+                            'RevenueID'         => $existingData->revenueID,
+                            'DrCr'              => 'C',
+                            'Quantity'          => $existingData->quantity * -1,
+                            'RefNum'            => $existingData->refNum,
+                            'Amount'            => $existingData->amount * -1,
+                            'UserID'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'HostName'          => (new GetIP())->getHostname(),
+                            'AutoDiscount'      => 0,
+                        ]);
+                    }
+
+                    if ($existingData->revenueID == 'LB') {
+                        LaboratoryMaster::where('patient_Id', $patient_id)
+                            ->where('case_No', $case_no)
+                            ->where('refNum', $refnum)
+                            ->where('itemID', $item_id)
+                            ->update([
+                                'request_Status'    => 'R',
+                                'result_Status'     => 'R',
+                        ]);
+                        if ($this->check_is_allow_medsys) {
+                            tbLABMaster::where('HospNum', $patient_id)
+                                ->where('IdNum', $case_no)
+                                ->where('RefNum', $refnum)
+                                ->where('ItemId', $item_id)
+                                ->update([
+                                    'RequestStatus'     => 'R',
+                                    'ResultStatus'      => 'R',
+                            ]);
+                        }
+                    } 
                 }
             }
 
             DB::connection('sqlsrv_billingOut')->commit();
+            DB::connection('sqlsrv_laboratory')->commit();
+            DB::connection('sqlsrv_medsys_billing')->commit();
+            DB::connection('sqlsrv_medsys_laboratory')->commit();
             return response()->json(['message' => 'Charges revoked successfully'], 200);
 
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_laboratory')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_medsys_laboratory')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

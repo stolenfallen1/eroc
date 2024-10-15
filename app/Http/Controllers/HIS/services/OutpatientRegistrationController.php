@@ -808,7 +808,7 @@ class OutpatientRegistrationController extends Controller
                 'patientRegistry.allergies' => function ($query)use ($today) {
                     $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
                     $query->where('isDeleted', '!=', 1);
-                    $query->whereDate('created_at', $today);
+                    // $query->whereDate('created_at', $today);
                 }
             ]);
 

@@ -40,12 +40,16 @@ class PatientDischarge extends Controller
             $patient_registry = PatientRegistry::where('case_No', $id)->first();
 
             if($patient_registry) {
+
                 $updated_registry   = $patient_registry->update($registry_data);
                 $updated_history    = $patient_registry->history()->update($history_data);
+
                 if(!$updated_registry && !$updated_history) {
                     throw new \Exception('Error');
                 } 
+
                 DB::connection('sqlsrv_patient_data')->commit();
+
                 return response()->json([
                     'message' => 'Patient is tagged as may go home successfully'
                 ], 200);
@@ -64,6 +68,7 @@ class PatientDischarge extends Controller
     public function dischargePatient(Request $request, $id) {
 
         DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
 
         try {
 
@@ -73,9 +78,9 @@ class PatientDischarge extends Controller
                 return response()->json([$message='Incorrect Username or Password'], 404);
             endif;
 
-            $isTagMGH = PatientRegistry::where('case_No', $id)->first();
+            $patientRegistry = PatientRegistry::where('case_No', $id)->first();
 
-            if(!$isTagMGH && $isTagMGH->mgh_Userid === '') {
+            if(!$patientRegistry && $patientRegistry->mgh_Userid === '' && intval($patientRegistry->isHoldReg) === 1 ) {
                 return response()->json([
                     'message' => 'This patient has not yet been tagged as eligible for discharge.'
                 ], 404);
@@ -85,9 +90,9 @@ class PatientDischarge extends Controller
                 'discharged_Userid'         => $checkUser->idnumber,
                 'discharged_Date'           => Carbon::now(),
                 'discharged_Hostname'       => (new GetIP())->getHostname(),
-                'dischargeNotice_UserId'    => $isTagMGH->mgh_Userid,
-                'dischargeNotice_Date'      => $isTagMGH->mgh_Datetime,
-                'dischargeNotice_Hostname'  => $isTagMGH->mgh_Hostname,
+                'dischargeNotice_UserId'    => $patientRegistry->mgh_Userid,
+                'dischargeNotice_Date'      => $patientRegistry->mgh_Datetime,
+                'dischargeNotice_Hostname'  => $patientRegistry->mgh_Hostname,
                 'discharge_Diagnosis'       => $request->payload['discharge_Diagnosis'],
                 'updatedBy'                 => $checkUser->idnumber,
                 'updated_at'                => Carbon::now()
@@ -105,6 +110,7 @@ class PatientDischarge extends Controller
             }
 
             DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_medsys_patient_data')->commit();
 
             return response()->json([
                 'message' => 'Patient has been discharged successfuly'
@@ -113,6 +119,7 @@ class PatientDischarge extends Controller
         } catch(\Exception $e) {
 
             DB::connection('sqlsrv_patient_data')->rollBack();
+            DB::connection('sqlsrv_medsys_patient_data')->rollBack();
 
             return response()->json([
                 'message' => 'Failed to Discharged Patient, Pleas call IT Department'
@@ -140,4 +147,63 @@ class PatientDischarge extends Controller
             ], 500);
         }
     }
+
+    public function untagMGH(Request $request, $id) {
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
+        
+        try {
+            $checkUser = User::where([
+                ['idnumber', '=', $request->payload['user_userid']], 
+                ['passcode', '=', $request->payload['user_passcode']]
+            ])->first();
+    
+            if (!$checkUser) {
+                return response()->json(['message' => 'Incorrect Username or Password'], 404);
+            }
+    
+            $patientRegistry = PatientRegistry::where('case_No', $id)->first();
+            
+            if ($patientRegistry && !$patientRegistry->discharged_Userid) {
+
+                $registry_data = [
+                    'queue_Number'          => 0,
+                    'mscDisposition_Id'     => '',
+                    'mgh_Userid'            => '',
+                    'mgh_Datetime'          => '',
+                    'mgh_Hostname'          => '',
+                    'untag_Mgh_Userid'      => $checkUser->idnumber,
+                    'untag_Mgh_Datetime'    => Carbon::now(),
+                    'untag_Mgh_Hostname'    => (new GetIP())->getHostname(),
+                    'updatedBy'             => $checkUser->idnumber,
+                    'updated_at'            => Carbon::now()
+                ];
+        
+                $history_data = [
+                    'impression'            => '',
+                    'discharge_Diagnosis'   => '',
+                    'updatedby'             => $checkUser->idnumber,
+                    'updated_at'            => Carbon::now()
+                ];
+    
+                $updated_registry = $patientRegistry->update($registry_data);
+                $updated_history  = $patientRegistry->history()->where('case_No', $id)->update($history_data);
+                
+                if ($updated_registry && $updated_history) {
+                    DB::connection('sqlsrv_patient_data')->commit();
+                    DB::connection('sqlsrv_medsys_patient_data')->commit();
+        
+                    return response()->json(['message' => 'Patient discharge approval has been successfully canceled.'], 200);
+                }
+            } else {
+                return response()->json(['message' => 'Patient has already been discharged.'], 400);
+            }
+    
+        } catch(\Exception $e) {
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            DB::connection('sqlsrv_medsys_patient_data')->rollBack();
+            return response()->json(['message' => 'Error! ' . $e->getMessage()], 500);
+        }
+    }
+    
 }

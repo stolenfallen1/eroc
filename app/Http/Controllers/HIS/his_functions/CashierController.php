@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\HIS\his_functions;
 
+use App\Helpers\HIS\SysGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\BuildFile\FMS\TransactionCodes;
@@ -13,6 +14,8 @@ use App\Models\HIS\his_functions\CashORMaster;
 use App\Models\HIS\his_functions\CashReceiptTerminal;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\LaboratoryMaster;
+use App\Models\HIS\medsys\MedSysDailyOut;
+use App\Models\HIS\medsys\tbCashORMaster;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use Auth;
@@ -22,6 +25,12 @@ use Illuminate\Support\Facades\DB;
 
 class CashierController extends Controller
 {
+    protected $check_is_allow_medsys;
+
+    public function __construct() 
+    {
+        $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+    }
     //
     public function getLabItems($item_id) 
     {
@@ -190,7 +199,7 @@ class CashierController extends Controller
                         $billingOut = BillingOutModel::create([
                             'patient_Id'            => $patient_Id,
                             'case_No'               => $case_No,
-                            'accountnum'            => $patient_Id,
+                            'accountnum'            => 'CASH',
                             'transDate'             => $transDate,
                             'msc_price_scheme_id'   => 1,
                             'revenueID'             => $revenueID,
@@ -200,7 +209,7 @@ class CashierController extends Controller
                             'refNum'                => $ORNum,
                             'ChargeSlip'            => $refNum,
                             'ornumber'              => $ORNum,
-                            'withholdingTax'         => $withholding_tax,
+                            'withholdingTax'        => $withholding_tax,
                             'amount'                => $total_payment,
                             'net_amount'            => $total_payment,
                             'request_doctors_id'    => $request_doctors_id,
@@ -216,11 +225,11 @@ class CashierController extends Controller
                             'HospNum'                   => $patient_Id,
                             'case_no'                   => $case_No,
                             'TransDate'                 => $transDate,
-                            // 'transaction_code'          => , 
+                            // 'transaction_code'          => '?', 
                             'TIN'                       => $tin,
                             'BusinessStyle'             => $business_style,
                             'SCPWDId'                   => $osca_pwd_id,
-                            // 'Revenueid'                 => , 
+                            // 'Revenueid'                 => '?', 
                             'PaymentType'               => $PaymentType,
                             'PaymentFor'                => $ORNum,
                             'Particulars'               => $Particulars,
@@ -325,6 +334,7 @@ class CashierController extends Controller
     public function saveOPDBill(Request $request) 
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         try {
             $patient_Id             = $request->payload['patient_Id'];
             $case_No                = $request->payload['case_No'];
@@ -378,52 +388,104 @@ class CashierController extends Controller
                         'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         'withholdingTax'        => $withholding_tax,
-                        // 'discount'              => $discount,
                         'auto_discount'         => 0,
                         'userId'                => Auth()->user()->idnumber,
                         'hostName'              => (new GetIP())->getHostname(),
                         'createdby'             => Auth()->user()->idnumber,
                         'created_at'            => Carbon::now(),
                     ]);
-
-                    if (!$billingOut) throw new \Exception('Failed to save billing out');
-                    CashORMaster::create([
-                        'branch_id'                 => 1,
-                        'RefNum'                    => $ORNum,
-                        'HospNum'                   => $patient_Id,
-                        'case_no'                   => $case_No,
-                        'TransDate'                 => $transDate,
-                        'transaction_code'          => $itemID, // PY
-                        'TIN'                       => $tin,
-                        'BusinessStyle'             => $business_style,
-                        'SCPWDId'                   => $osca_pwd_id,
-                        'Revenueid'                 => $itemID, // PY
-                        'PaymentType'               => $PaymentType,
-                        'PaymentFor'                => $ORNum,
-                        'Particulars'               => $Particulars,
-                        'PaymentFrom'               => $PaymentFrom,
-                        'Discount_type'             => $discount_type,
-                        'Discount'                  => $discount,
-                        'NetAmount'                 => $total_payment,
-                        'CashAmount'                => $cash_amount,
-                        'CashTendered'              => $cash_tendered,
-                        'ChangeAmount'              => $cash_change,
-                        'card_type_id'              => $card_type_id,
-                        'card_id'                   => $card_id,
-                        'CardAmount'                => $card_amount,
-                        'CardApprovalNum'           => $card_approval_number,
-                        'CardDate'                  => $card_date,
-                        'BankCheck'                 => $bank_check,
-                        'Checknum'                  => $check_no,
-                        'CheckAmount'               => $check_amount,
-                        'CheckDate'                 => $check_date,
-                        'UserID'                    => Auth()->user()->idnumber,
-                        'Shift'                     => $Shift,
-                        'Hostname'                  => (new GetIP())->getHostname(),
-                        'createdby'                 => Auth()->user()->idnumber,
-                        'created_at'                => Carbon::now(),
-                    ]);
+                    if ($billingOut) {
+                        CashORMaster::create([
+                            'branch_id'                 => 1,
+                            'RefNum'                    => $ORNum,
+                            'HospNum'                   => $patient_Id,
+                            'case_no'                   => $case_No,
+                            'TransDate'                 => $transDate,
+                            'transaction_code'          => $itemID, // PY
+                            'TIN'                       => $tin,
+                            'BusinessStyle'             => $business_style,
+                            'SCPWDId'                   => $osca_pwd_id,
+                            'Revenueid'                 => $itemID, // PY
+                            'PaymentType'               => $PaymentType,
+                            'PaymentFor'                => $ORNum,
+                            'Particulars'               => $Particulars,
+                            'PaymentFrom'               => $PaymentFrom,
+                            'Discount_type'             => $discount_type,
+                            'Discount'                  => $discount,
+                            'NetAmount'                 => $total_payment,
+                            'CashAmount'                => $cash_amount,
+                            'CashTendered'              => $cash_tendered,
+                            'ChangeAmount'              => $cash_change,
+                            'card_type_id'              => $card_type_id,
+                            'card_id'                   => $card_id,
+                            'CardAmount'                => $card_amount,
+                            'CardApprovalNum'           => $card_approval_number,
+                            'CardDate'                  => $card_date,
+                            'BankCheck'                 => $bank_check,
+                            'Checknum'                  => $check_no,
+                            'CheckAmount'               => $check_amount,
+                            'CheckDate'                 => $check_date,
+                            'UserID'                    => Auth()->user()->idnumber,
+                            'Shift'                     => $Shift,
+                            'Hostname'                  => (new GetIP())->getHostname(),
+                            'createdby'                 => Auth()->user()->idnumber,
+                            'created_at'                => Carbon::now(),
+                        ]);
+                        
+                        if ($this->check_is_allow_medsys) {
+                            MedSysDailyOut::create([
+                                'HospNum'           => $patient_Id,
+                                'IDNum'             => $case_No,
+                                'TransDate'         => $transDate,
+                                'RevenueID'         => $itemID, // PY
+                                'DrCr'              => 'C',
+                                'RefNum'            => $ORNum,
+                                'ChargeSlip'        => $ORNum,
+                                'Payment'           => $PaymentType,
+                                'Amount'            => $total_payment,
+                                'NetAmount'         => $total_payment,
+                                'DiscountType'      => $discount_type,
+                                'withholdingtax'    => $withholding_tax,
+                                'AutoDiscount'      => 0,
+                                'HostName'          => (new GetIP())->getHostname(),
+                                'CashierID'         => Auth()->user()->idnumber,
+                                'CashierShift'      => $Shift,
+                            ]);
+                            tbCashORMaster::create([
+                                'HospNum'           => $patient_Id,
+                                'IDNum'             => $case_No,
+                                'PaymentFrom'       => $PaymentFrom,
+                                'PaymentType'       => $PaymentType,
+                                'PaymentFor'        => $ORNum,
+                                'RefNum'            => $ORNum,
+                                'Revenueid'         => $itemID, // PY
+                                'Particulars'       => $Particulars,
+                                'TransDate'         => $transDate,
+                                'Amount'            => $total_payment,
+                                'UserID'            => Auth()->user()->idnumber,
+                                'Host_Name'         => (new GetIP())->getHostname(),
+                                'Shift'             => $Shift,
+                                'Discount'          => $discount,
+                                'TIN'               => $tin,
+                                'BusinessStyle'     => $business_style,
+                                'PWDID'             => $osca_pwd_id,
+                                'CashAmount'        => $cash_amount,
+                                'CashTendered'      => $cash_tendered,
+                                'ChangeAmount'      => $cash_change,
+                                'Checknum'          => $check_no,
+                                'Bank'              => $bank_check,
+                                'CheckAmount'       => $check_amount,
+                                'CheckDate'         => $check_date,
+                                'CardName'          => $card_id,
+                                'ApprovalNum'       => $card_approval_number,
+                                'CardAmount'        => $card_amount,
+                                'CardDate'          => $card_date,
+                            ]);
+                        }
+            
+                    }
                     DB::connection('sqlsrv_billingOut')->commit();
+                    DB::connection('sqlsrv_medsys_billing')->commit();
                     return response()->json([
                         'message' => 'Successfully saved payment',
                     ], 200);
@@ -431,6 +493,7 @@ class CashierController extends Controller
             }
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -438,6 +501,7 @@ class CashierController extends Controller
     public function saveCompanyTransaction(Request $request) 
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         try {
             $patient_Id             = $request->payload['patient_Id'];
             $case_No                = $request->payload['case_No'];
@@ -491,52 +555,103 @@ class CashierController extends Controller
                         'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         'withholdingTax'        => $withholding_tax,
-                        // 'discount'              => $discount,
                         'auto_discount'         => 0,
                         'userId'                => Auth()->user()->idnumber,
                         'hostName'              => (new GetIP())->getHostname(),
                         'createdby'             => Auth()->user()->idnumber,
                         'created_at'            => Carbon::now(),
                     ]);
+                    if ($billingOut) {
+                        CashORMaster::create([
+                            'branch_id'                 => 1,
+                            'RefNum'                    => $ORNum,
+                            'HospNum'                   => $patient_Id,
+                            'case_no'                   => $case_No,
+                            'TransDate'                 => $transDate,
+                            'transaction_code'          => $itemID, // CP
+                            'TIN'                       => $tin,
+                            'BusinessStyle'             => $business_style,
+                            'SCPWDId'                   => $osca_pwd_id,
+                            'Revenueid'                 => $itemID, // CP
+                            'PaymentType'               => $PaymentType,
+                            'PaymentFor'                => $ORNum,
+                            'Particulars'               => $Particulars,
+                            'PaymentFrom'               => $PaymentFrom,
+                            'Discount_type'             => $discount_type,
+                            'Discount'                  => $discount,
+                            'NetAmount'                 => $total_payment,
+                            'CashAmount'                => $cash_amount,
+                            'CashTendered'              => $cash_tendered,
+                            'ChangeAmount'              => $cash_change,
+                            'card_type_id'              => $card_type_id,
+                            'card_id'                   => $card_id,
+                            'CardAmount'                => $card_amount,
+                            'CardApprovalNum'           => $card_approval_number,
+                            'CardDate'                  => $card_date,
+                            'BankCheck'                 => $bank_check,
+                            'Checknum'                  => $check_no,
+                            'CheckAmount'               => $check_amount,
+                            'CheckDate'                 => $check_date,
+                            'UserID'                    => Auth()->user()->idnumber,
+                            'Shift'                     => $Shift,
+                            'Hostname'                  => (new GetIP())->getHostname(),
+                            'createdby'                 => Auth()->user()->idnumber,
+                            'created_at'                => Carbon::now(),
+                        ]);
 
-                    if (!$billingOut) throw new \Exception('Failed to save billing out');
-                    CashORMaster::create([
-                        'branch_id'                 => 1,
-                        'RefNum'                    => $ORNum,
-                        'HospNum'                   => $patient_Id,
-                        'case_no'                   => $case_No,
-                        'TransDate'                 => $transDate,
-                        'transaction_code'          => $itemID, // CP
-                        'TIN'                       => $tin,
-                        'BusinessStyle'             => $business_style,
-                        'SCPWDId'                   => $osca_pwd_id,
-                        'Revenueid'                 => $itemID, // CP
-                        'PaymentType'               => $PaymentType,
-                        'PaymentFor'                => $ORNum,
-                        'Particulars'               => $Particulars,
-                        'PaymentFrom'               => $PaymentFrom,
-                        'Discount_type'             => $discount_type,
-                        'Discount'                  => $discount,
-                        'NetAmount'                 => $total_payment,
-                        'CashAmount'                => $cash_amount,
-                        'CashTendered'              => $cash_tendered,
-                        'ChangeAmount'              => $cash_change,
-                        'card_type_id'              => $card_type_id,
-                        'card_id'                   => $card_id,
-                        'CardAmount'                => $card_amount,
-                        'CardApprovalNum'           => $card_approval_number,
-                        'CardDate'                  => $card_date,
-                        'BankCheck'                 => $bank_check,
-                        'Checknum'                  => $check_no,
-                        'CheckAmount'               => $check_amount,
-                        'CheckDate'                 => $check_date,
-                        'UserID'                    => Auth()->user()->idnumber,
-                        'Shift'                     => $Shift,
-                        'Hostname'                  => (new GetIP())->getHostname(),
-                        'createdby'                 => Auth()->user()->idnumber,
-                        'created_at'                => Carbon::now(),
-                    ]);
+                        if ($this->check_is_allow_medsys) {
+                            MedSysDailyOut::create([
+                                'HospNum'           => $patient_Id,
+                                'IDNum'             => $case_No,
+                                'TransDate'         => $transDate,
+                                'RevenueID'         => $itemID, // CP
+                                'DrCr'              => 'C',
+                                'RefNum'            => $ORNum,
+                                'ChargeSlip'        => $ORNum,
+                                'Payment'           => $PaymentType,
+                                'Amount'            => $total_payment,
+                                'NetAmount'         => $total_payment,
+                                'DiscountType'      => $discount_type,
+                                'withholdingtax'    => $withholding_tax,
+                                'AutoDiscount'      => 0,
+                                'HostName'          => (new GetIP())->getHostname(),
+                                'CashierID'         => Auth()->user()->idnumber,
+                                'CashierShift'      => $Shift,
+                            ]);
+                            tbCashORMaster::create([
+                                'HospNum'           => $patient_Id,
+                                'IDNum'             => $case_No,
+                                'PaymentFrom'       => $PaymentFrom,
+                                'PaymentType'       => $PaymentType,
+                                'PaymentFor'        => $ORNum,
+                                'RefNum'            => $ORNum,
+                                'Revenueid'         => $itemID, // CP
+                                'Particulars'       => $Particulars,
+                                'TransDate'         => $transDate,
+                                'Amount'            => $total_payment,
+                                'UserID'            => Auth()->user()->idnumber,
+                                'Host_Name'         => (new GetIP())->getHostname(),
+                                'Shift'             => $Shift,
+                                'Discount'          => $discount,
+                                'TIN'               => $tin,
+                                'BusinessStyle'     => $business_style,
+                                'PWDID'             => $osca_pwd_id,
+                                'CashAmount'        => $cash_amount,
+                                'CashTendered'      => $cash_tendered,
+                                'ChangeAmount'      => $cash_change,
+                                'Checknum'          => $check_no,
+                                'Bank'              => $bank_check,
+                                'CheckAmount'       => $check_amount,
+                                'CheckDate'         => $check_date,
+                                'CardName'          => $card_id,
+                                'ApprovalNum'       => $card_approval_number,
+                                'CardAmount'        => $card_amount,
+                                'CardDate'          => $card_date,
+                            ]);
+                        }
+                    }
                     DB::connection('sqlsrv_billingOut')->commit();
+                    DB::connection('sqlsrv_medsys_billing')->commit();
                     return response()->json([
                         'message' => 'Successfully saved payment',
                     ], 200);
@@ -544,6 +659,7 @@ class CashierController extends Controller
             }
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

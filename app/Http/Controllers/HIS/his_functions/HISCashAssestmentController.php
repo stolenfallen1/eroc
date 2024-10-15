@@ -294,6 +294,7 @@ class HISCashAssestmentController extends Controller
     public function revokecashassessment(Request $request) 
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         try {
             $checkUser = null;
             if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
@@ -318,14 +319,13 @@ class HISCashAssestmentController extends Controller
                     ->where('itemID', $itemID)
                     ->first();
 
-                $existingData->updateOrFail([
-                    'dateRevoked'   => Carbon::now(),
-                    'revokedBy'     => Auth()->user()->idnumber,
-                    'updatedBy'     => Auth()->user()->idnumber,
-                    'updated_at'    => Carbon::now(),
-                ]);
-
                 if ($existingData) {
+                    $existingData->update([
+                        'dateRevoked'   => Carbon::now(),
+                        'revokedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'updatedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'updated_at'    => Carbon::now(),
+                    ]);
                     CashAssessment::create([
                         'branch_id' => 1,
                         'patient_Id' => $existingData->patient_Id,
@@ -349,14 +349,46 @@ class HISCashAssestmentController extends Controller
                         'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
+
+                    if ($this->check_is_allow_medsys) {
+                        MedSysCashAssessment::where('HospNum', $patient_id)
+                            ->where('IdNum', $case_no)
+                            ->where('RefNum', $refNum)
+                            ->where('ItemID', $itemID)
+                            ->update([
+                                'DateRevoked'   => Carbon::now(),
+                                'RevokedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        ]);
+                        MedSysCashAssessment::create([
+                            'HospNum'           => $existingData->patient_Id,
+                            'IdNum'             => $existingData->case_No,
+                            'Name'              => $existingData->patient_Name,
+                            'TransDate'         => Carbon::now(),
+                            'AssessNum'         => $existingData->assessnum,
+                            'DrCr'              => 'C',
+                            'ItemID'            => $existingData->itemID,
+                            'Quantity'          => $existingData->quantity * -1,
+                            'RefNum'            => $existingData->refNum,
+                            'Amount'            => $existingData->amount * -1,
+                            'Barcode'           => null,
+                            'STAT'              => null,
+                            'SpecimenId'        => $existingData->specimenId,
+                            'DoctorName'        => $existingData->requestDoctorName,
+                            'UserID'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'RevenueID'         => $existingData->revenueID,
+                            'DepartmentID'      => $existingData->departmentID,
+                        ]);
+                    }
                 }
             }
 
             DB::connection('sqlsrv_billingOut')->commit();
+            DB::connection('sqlsrv_medsys_billing')->commit();
             return response()->json(['message' => 'Charges revoked successfully'], 200);
 
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     } 

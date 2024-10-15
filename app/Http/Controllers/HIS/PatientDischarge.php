@@ -25,7 +25,7 @@ class PatientDischarge extends Controller
             endif;
 
             $registry_data = [
-                'queue_Number'      => $request->payload['mgh_queue_no'],
+                'queue_Number'      => 0,
                 'mscDisposition_Id' => $request->payload['mscDisposition_Id'],
                 'mgh_Userid'        => $checkUser->idnumber,
                 'mgh_Datetime'      => Carbon::now(),

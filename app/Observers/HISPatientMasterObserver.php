@@ -23,8 +23,7 @@ class HISPatientMasterObserver
         
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
      }
-    public function created(Patient $patient)
-    {
+    public function created(Patient $patient){
         try {
         
             if($this->check_is_allow_medsys) {
@@ -46,6 +45,7 @@ class HISPatientMasterObserver
                     'LastName'      => $patient->lastname     ?? '',
                     'FirstName'     => $patient->firstname    ?? '',
                     'MiddleName'    => $patient->middlename   ?? '',
+                    'AccountNum'    => '',
                     'HouseStreet'   => $patient->bldgstreet   ?? '',
                     'Barangay'      => $patient->barangay_id  ?? '',
                     'Sex'           => $patient->sex_id       ?? '',
@@ -94,7 +94,6 @@ class HISPatientMasterObserver
         try {
 
             if($this->check_is_allow_medsys && $patient) {
-                echo 'I am in the updated function';
                 $patientInfo    = MedsysPatientMaster::findOrFail($patient->patient_Id);
                 $patientInfo2   = MedsysPatientMaster2::findOrFail($patient->patient_Id);
 
@@ -140,8 +139,8 @@ class HISPatientMasterObserver
                         'MotherAddress'     => $patient->motherAddress          ?? $patientInfo2->MotherAddress,
                         'MotherTelNum'      => $patient->mothertelephone_number ?? $patientInfo2->MotherTelNum,
                     ];
-        
-                    MedsysPatientMaster::where('HospNum', $patient->patient_Id)->update($patient_Data);
+
+                    MedsysPatientMaster::where('HospNum', $patient->patient_Id)->update( $patient_Data);
                     MedsysPatientMaster2::where('HospNum', $patient->patient_Id)->update($pstient_Data_Master2);
 
                     Log::info('Patient data from Medsys updated  successfully.');

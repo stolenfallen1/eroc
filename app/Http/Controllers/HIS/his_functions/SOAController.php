@@ -165,7 +165,6 @@ class SOAController extends Controller
                         $totalCharges = $charges;
                         $firstRow = false;
 
-
                     } elseif($firstRow && $billing->drcr === 'C') {
 
                         $runningBalance = 0;

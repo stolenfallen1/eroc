@@ -42,6 +42,7 @@ Route::controller(SOAController::class)->group(function() {
 
 Route::controller(PatientDischarge::class)->group(function(){
     Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
+    Route::put('untag-patient-maygohome/{id}', 'untagMGH');
     Route::put('discharge-patient/{id}', 'dischargePatient');
     Route::get('get-er-result', 'erResult');
 });

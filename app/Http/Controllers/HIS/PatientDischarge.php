@@ -149,10 +149,12 @@ class PatientDischarge extends Controller
     }
 
     public function untagMGH(Request $request, $id) {
+
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
         
         try {
+
             $checkUser = User::where([
                 ['idnumber', '=', $request->payload['user_userid']], 
                 ['passcode', '=', $request->payload['user_passcode']]
@@ -163,15 +165,15 @@ class PatientDischarge extends Controller
             }
     
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
-            
+       
             if ($patientRegistry && !$patientRegistry->discharged_Userid) {
-
+                
                 $registry_data = [
                     'queue_Number'          => 0,
-                    'mscDisposition_Id'     => '',
-                    'mgh_Userid'            => '',
-                    'mgh_Datetime'          => '',
-                    'mgh_Hostname'          => '',
+                    'mscDisposition_Id'     => null,
+                    'mgh_Userid'            => null,
+                    'mgh_Datetime'          => null,
+                    'mgh_Hostname'          => null,
                     'untag_Mgh_Userid'      => $checkUser->idnumber,
                     'untag_Mgh_Datetime'    => Carbon::now(),
                     'untag_Mgh_Hostname'    => (new GetIP())->getHostname(),
@@ -180,8 +182,8 @@ class PatientDischarge extends Controller
                 ];
         
                 $history_data = [
-                    'impression'            => '',
-                    'discharge_Diagnosis'   => '',
+                    'impression'            => null,
+                    'discharge_Diagnosis'   => null,
                     'updatedby'             => $checkUser->idnumber,
                     'updated_at'            => Carbon::now()
                 ];
@@ -190,18 +192,22 @@ class PatientDischarge extends Controller
                 $updated_history  = $patientRegistry->history()->where('case_No', $id)->update($history_data);
                 
                 if ($updated_registry && $updated_history) {
+
                     DB::connection('sqlsrv_patient_data')->commit();
                     DB::connection('sqlsrv_medsys_patient_data')->commit();
         
                     return response()->json(['message' => 'Patient discharge approval has been successfully canceled.'], 200);
                 }
             } else {
+
                 return response()->json(['message' => 'Patient has already been discharged.'], 400);
             }
     
         } catch(\Exception $e) {
+
             DB::connection('sqlsrv_patient_data')->rollBack();
             DB::connection('sqlsrv_medsys_patient_data')->rollBack();
+
             return response()->json(['message' => 'Error! ' . $e->getMessage()], 500);
         }
     }

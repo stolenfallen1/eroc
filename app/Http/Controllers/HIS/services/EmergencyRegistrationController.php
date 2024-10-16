@@ -53,7 +53,7 @@ class EmergencyRegistrationController extends Controller
     public function index() {
         try {
             $today = Carbon::now()->format('Y-m-d'); 
-            // $today = '2024-10-14'; 
+            // $today = '2024-10-15'; 
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
@@ -84,7 +84,7 @@ class EmergencyRegistrationController extends Controller
 
             $data->with([
                 'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-                'patientRegistry.allergies' => function ($query)use ($today) {
+                'patientRegistry.allergies' => function ($query) use ($today) {
                     $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
                     $query->where('isDeleted', '!=', 1);
                     $query->whereDate('created_at', $today);
@@ -173,8 +173,11 @@ class EmergencyRegistrationController extends Controller
                     'description'   => $item->description
                 ];
             });
+
             return response()->json($mscServiceType, 200);
+
         } catch(\Exception $e) {
+
             return response()->json(['msg'=> $e->getMessage()], 500);
         }
     }
@@ -1072,62 +1075,64 @@ class EmergencyRegistrationController extends Controller
                 $OBG->PatientPregnancyHistory()->create($patientPregnancyHistoryData);
                 $OBG->gynecologicalConditions()->create($patientGynecologicalConditions);
 
-                foreach($request->payload['selectedAllergy'] as $allergy) {
+                if(isset($request->payload['selectedAllergy']) && !empty($request->payload['selectedAllergy'])) {
+                    foreach($request->payload['selectedAllergy'] as $allergy) {
 
-                    $commonData = [
-                        'patient_Id'            => $patient_id,
-                        'case_No'               => $registry_id,
-                        'createdby'             => $checkUser->idnumber,
-                        'created_at'            => Carbon::now(),
-                        'isDeleted'             => 0,
-                    ];
-    
-                    $patientAllergyData         = array_merge($commonData, [
+                        $commonData = [
+                            'patient_Id'            => $patient_id,
+                            'case_No'               => $registry_id,
+                            'createdby'             => $checkUser->idnumber,
+                            'created_at'            => Carbon::now(),
+                            'isDeleted'             => 0,
+                        ];
+        
+                        $patientAllergyData         = array_merge($commonData, [
 
-                        'allergy_type_id'       => $allergy['allergy_id'],
-                        'allergy_description'   => $allergy['allergy_name'] ?? null,
-                        'family_History'        => $request->payload['family_History'] ?? null,
-    
-                    ]);
+                            'allergy_type_id'       => $allergy['allergy_id'],
+                            'allergy_description'   => $allergy['allergy_name'] ?? null,
+                            'family_History'        => $request->payload['family_History'] ?? null,
+        
+                        ]);
 
-                    $patientAllergy             = $patientRegistry->allergies()->create($patientAllergyData);
-                    $last_inserted_id           = $patientAllergy->id;
+                        $patientAllergy             = $patientRegistry->allergies()->create($patientAllergyData);
+                        $last_inserted_id           = $patientAllergy->id;
 
-                    $patientCauseAllergyData    = array_merge($commonData, [
+                        $patientCauseAllergyData    = array_merge($commonData, [
 
-                        'assessID'              => $last_inserted_id,
-                        'allergy_Type_Id'       => $allergy['allergy_id'],
-                        'description'           => $allergy['cause'],
-                        'duration'              => $request->payload['duration'] ?? null,
+                            'assessID'              => $last_inserted_id,
+                            'allergy_Type_Id'       => $allergy['allergy_id'],
+                            'description'           => $allergy['cause'],
+                            'duration'              => $request->payload['duration'] ?? null,
 
-                    ]);
+                        ]);
+                        
+                        $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
                     
-                    $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
-                   
-                    if (isset($allergy['symptoms']) && is_array($allergy['symptoms'])) {
-                        foreach ($allergy['symptoms'] as $symptom) {
-                            $patientSymptomsOfAllergy   = array_merge($commonData,  [
+                        if (isset($allergy['symptoms']) && is_array($allergy['symptoms'])) {
+                            foreach ($allergy['symptoms'] as $symptom) {
+                                $patientSymptomsOfAllergy   = array_merge($commonData,  [
 
-                                'assessID'              => $last_inserted_id,
-                                'allergy_Type_Id'       => $allergy['allergy_id'],
-                                'symptom_id'            => $symptom['id'],
-                                'symptom_Description'   => $symptom['description'] ?? null,
+                                    'assessID'              => $last_inserted_id,
+                                    'allergy_Type_Id'       => $allergy['allergy_id'],
+                                    'symptom_id'            => $symptom['id'],
+                                    'symptom_Description'   => $symptom['description'] ?? null,
 
-                            ]);
-    
-                            $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
+                                ]);
+        
+                                $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
+                            }
                         }
+
+                        $patientDrugUsedForAllergyData  = array_merge($commonData, [
+
+                            'assessID'                  => $last_inserted_id,
+                            'allergy_Type_Id'           => $allergy['allergy_id'],
+                            'drug_Description'          => $request->payload['drug_Description'] ?? null,
+
+                        ]);
+
+                        $patientAllergy->drug_used_for_allergy()->create($patientDrugUsedForAllergyData);
                     }
-
-                    $patientDrugUsedForAllergyData  = array_merge($commonData, [
-
-                        'assessID'                  => $last_inserted_id,
-                        'allergy_Type_Id'           => $allergy['allergy_id'],
-                        'drug_Description'          => $request->payload['drug_Description'] ?? null,
-
-                    ]);
-
-                    $patientAllergy->drug_used_for_allergy()->create($patientDrugUsedForAllergyData);
                 }
 
                 $patientDischarge = $patientRegistry->dischargeInstructions()->create($patientDischargeInstructions);
@@ -2255,51 +2260,53 @@ class EmergencyRegistrationController extends Controller
                     $OBGYNHistory->PatientPregnancyHistory()->create(array_merge(['OBGYNHistoryID' => $OBGYNHistory->id, 'createdby' => $userId, 'created_at' => $currentTimestamp], $patientPregnancyHistoryData));
                     $OBGYNHistory->gynecologicalConditions()->create(array_merge(['OBGYNHistoryID' => $OBGYNHistory->id, 'createdby' => $userId, 'created_at' => $currentTimestamp], $patientGynecologicalConditions));
                     
-                    foreach ($request->payload['selectedAllergy'] as $allergy) {
+                    if(isset($request->payload['selectedAllergy']) && !empty($request->payload['selectedAllergy'])) {
+                        foreach ($request->payload['selectedAllergy'] as $allergy) {
 
-                        $commonData = [
-                            'patient_Id'            => $patient_id,
-                            'case_No'               => $registry_id,
-                            'allergy_Type_Id'       => $allergy['allergy_id'],
-                            'createdby'             => $checkUser->idnumber,
-                            'created_at'            => Carbon::now(),
-                            'isDeleted'             => 0,
-                        ];
-    
-                        $patientAllergyData = array_merge($commonData, [
-                            'allergy_description'   => $allergy['allergy_name'] ?? null,
-                            'family_History'        => $request->payload['family_History'] ?? null,
-                        ]);
-                
-                        $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
-                        $last_inserted_id = $patientAllergy->id;
+                            $commonData = [
+                                'patient_Id'            => $patient_id,
+                                'case_No'               => $registry_id,
+                                'allergy_Type_Id'       => $allergy['allergy_id'],
+                                'createdby'             => $checkUser->idnumber,
+                                'created_at'            => Carbon::now(),
+                                'isDeleted'             => 0,
+                            ];
+        
+                            $patientAllergyData = array_merge($commonData, [
+                                'allergy_description'   => $allergy['allergy_name'] ?? null,
+                                'family_History'        => $request->payload['family_History'] ?? null,
+                            ]);
                     
-                        $patientCauseAllergyData = [
-                            'assessID'          => $last_inserted_id,
-                            'description'       => $allergy['cause'],
-                            'duration'          => $request->payload['duration'] ?? null,
-                        ];
+                            $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
+                            $last_inserted_id = $patientAllergy->id;
+                        
+                            $patientCauseAllergyData = [
+                                'assessID'          => $last_inserted_id,
+                                'description'       => $allergy['cause'],
+                                'duration'          => $request->payload['duration'] ?? null,
+                            ];
+                        
+                            $patientAllergy->cause_of_allergy()->create(array_merge($commonData, $patientCauseAllergyData));
                     
-                        $patientAllergy->cause_of_allergy()->create(array_merge($commonData, $patientCauseAllergyData));
-                
-                        if (!empty($allergy['symptoms']) && is_array($allergy['symptoms'])) {
-                            $symptomsData = [];
-                            foreach ($allergy['symptoms'] as $symptom) {
-                                $symptomsData[] = array_merge($commonData, [
-                                    'assessID'              => $last_inserted_id,
-                                    'symptom_id'            => $symptom['id'],
-                                    'symptom_Description'   => $symptom['description'] ?? null,
-                                ]);
+                            if (!empty($allergy['symptoms']) && is_array($allergy['symptoms'])) {
+                                $symptomsData = [];
+                                foreach ($allergy['symptoms'] as $symptom) {
+                                    $symptomsData[] = array_merge($commonData, [
+                                        'assessID'              => $last_inserted_id,
+                                        'symptom_id'            => $symptom['id'],
+                                        'symptom_Description'   => $symptom['description'] ?? null,
+                                    ]);
+                                }
+                                $patientAllergy->symptoms_allergy()->insert($symptomsData);
                             }
-                            $patientAllergy->symptoms_allergy()->insert($symptomsData);
+
+                            $patientDrugUsedForAllergyData = [
+                                'assessID'          => $last_inserted_id,
+                                'drug_Description'  => $request->payload['drug_Description'] ?? null,
+                            ];
+
+                            $patient->drug_used_for_allergy()->create(array_merge($commonData, $patientDrugUsedForAllergyData));
                         }
-
-                        $patientDrugUsedForAllergyData = [
-                            'assessID'          => $last_inserted_id,
-                            'drug_Description'  => $request->payload['drug_Description'] ?? null,
-                        ];
-
-                        $patient->drug_used_for_allergy()->create(array_merge($commonData, $patientDrugUsedForAllergyData));
                     }
 
                     $patientRegistry->bad_habits()->create(array_merge($mergeToRegistryRelatedTable, $patientBadHabitsData));

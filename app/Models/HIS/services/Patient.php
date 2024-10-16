@@ -45,6 +45,7 @@ use App\Models\HIS\PatientPrivilegedCard;
 use App\Models\HIS\PatientAppointments;
 use App\Models\HIS\PatientVitalSigns;
 use App\Models\HIS\PatientAllergies;
+use App\Models\HIS\MedsysPatientMaster;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
@@ -54,14 +55,21 @@ class Patient extends Model
     use HasFactory;
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $connection = "sqlsrv_patient_data";
-    // protected $primaryKey = 'patient_Id'; 
     protected $guarded = [];
 
+
     // Relationships
-    public function patientRegistry(){
+    public function medsysPatientInfo() {
+        return $this->belongsTo(MedsysPatientMaster::class, 'HospNum', 'patient_Id');
+    }
+    public function patientRegistryToday(){
         return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id')
             ->whereDate('registry_Date', Carbon::now()->format('Y-m-d'))
             ->whereDate('created_at', Carbon::now()->format('Y-m-d'));
+    }
+
+    public function patientRegistry() {
+        return $this->hasMany(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
 
     public function billingOut() {
@@ -118,10 +126,6 @@ class Patient extends Model
 
     public function past_bad_habits() {
         return $this->hasMany(PatientPastBadHabits::class, 'patient_Id', 'patient_Id');
-    }
-
-    public function past_allergy_history() {
-        return $this->hasMany(PatientPastAllergyHistory::class,'patient_Id', 'patient_Id');
     }
 
     public function allergies() {

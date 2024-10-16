@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\HIS\PatientPastCauseofAllergy;
 
-class PatientPastAllergyHistory extends Model
+class MedsysOPDMaster extends Model
 {
     use HasFactory;
 
-    protected $connection = 'sqlsrv_patient_data';
-    protected $table = 'CDG_PATIENT_DATA.dbo.PatientPastAllergyHistory';
+    protected $connection = 'sqlsrv_medsys_patient_data';
+    protected $table = 'tbOutPatient';
     protected $guarded = [];
     // protected $primaryKey = 'id';
     
@@ -23,5 +23,6 @@ class PatientPastAllergyHistory extends Model
         return $this->hasMany(PatientPastSymptomsofAllergy::class,'history_Id', 'id');
     }
 
+    public $timestamps = false;
 }
 

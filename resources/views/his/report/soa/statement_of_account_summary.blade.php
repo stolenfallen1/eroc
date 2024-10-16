@@ -59,7 +59,6 @@
             .body-content {
                 display: inline-block;
                 position: relative;
-                top: 20%;
                 left: 0;
                 right: 0;
                 box-sizing: border-box;
@@ -205,83 +204,150 @@
         </style>
     </head>
     <body>
+        @php
+            $grossTotal = 0;
+            $lessAmount = 0;
+            $lessDiscount = 0;
+            $netAmount = 0;
+            $doctorsFee = 0;
+            $count = 0;
+            $isFirst = true;
+            $prevID = '';
+            $currentID = '';
+            $currentID = '';
+            $sub_total = 0;
+            $totalPHIC = 0;
+            $totalDiscount = 0;
+            $totalPayment = 0;
+
+            $mainHeader = function($Run_Date, $Run_Time) {
+                return "
+                    <div class='header'>
+                        <div class='header-column' style='width: 25%;'>
+                            <div class='header-position-logo'>
+                                <img src='../public/images/CDUH_logo.jpg' width='80' height='80' class='logo' />
+                            </div>
+                        </div>
+                        <div class='header-column' style='width: 40%;'>
+                            <p class='upper-center-text'>Cebu Doctors University Hospital, Inc.</p>
+                            <p class='center-text-sub-content'>Osmeña Boulevard. Cebu City 6000</p>
+                            <p class='center-text-sub-content'>000-309-308-000-NV</p>
+                            <p class='center-text-sub-content'>Tel#: 2555555 Fax#: 2536021</p>
+                            <p class='lower-center-text'>Patient`s Statement of Account</p>
+                        </div>
+                        <div class='header-column' style='width: 25%;'>
+                            <div class='header-position'>
+                                <p class='left-text'>Page No: Page</p>
+                                <p class='left-text'>Run Date: {$Run_Date}</p>
+                                <p class='left-text'>Run Time: {$Run_Time}</p>
+                            </div>
+                        </div>
+                    </div>
+                ";
+            };
+
+            $pageHeaderPatientInfo = function() use($Patient_Info) {
+                $patient = $Patient_Info[0];
+                return "
+                    <table>
+                        <tbody style='border-bottom: 1px solid #000;'>
+                            <tr>
+                                <th>Patient  </th>
+                                <td style='width: 40%;'>: {$patient['Patient_Name']}</td>
+                                <th>Admission #</th>
+                                <td style='width: 10%;'>: {$patient['Admission_No']}</td>
+                                <th>Room</th>
+                                <td style='width: 20%;'>: EMERGENCY</td>
+                            </tr>
+
+                            <tr>
+                                <th>Address  </th>
+                                <td>:  {$patient['Patient_Address']}</td>
+                                <th>Hospital #</th>
+                                <td>: {$patient['Hospital_Name']}</td>
+                                <th>Rate</th>
+                                <td>: 1000.00</td>
+                            </tr>
+
+                            <tr>
+                                <th>Company</th>
+                                <td style='width: 40%;'>:  {$patient['Guarantor']}</td>
+                                <th style='width: 20%;'>Discharged Date</th>
+                                <td>:</td>
+                                <th>Time</th>
+                                <td>:</td>
+                            </tr>
+                            
+                            <tr>
+                                <th>Acct. #  </th>
+                                <td>:  {$patient['Account_No']}</td>
+                                <th>Admitted</th>
+                                <td>: 1136918</td>
+                                <th>Time</th>
+                                <td>:  {$patient['Time_Admitted']}</td>
+                            </tr>
+
+                            <tr>
+                                <th>Credit L  </th>
+                                <td>:  {$patient['Credit_Limit']}</td>
+                                <th>Billed Date</th>
+                                <td>: {$patient['Billed_Date']}</td>
+                                <th>Time</th>
+                                <td>:  {$patient['Billed_Time']}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                ";
+            };
+
+            $sectionTotalSummary = function($bill) {
+                return "
+                    <tr>
+                        <td class='dot-cell' style='text-indent: 20px; width: 60%;' colspan='2'>
+                            <span>{$bill['Description']}</span>
+                        </t>
+                        <td class='solid-line'>
+                            " . number_format($bill['Total'], 2) ."
+                        </td>
+                        <td style='width: 30%;'></td>
+                    </tr>
+                ";
+            };
+
+            $creditTotalSummary = function($bill) {
+                return "
+                    <tr>
+                        <td class='dot-cell' style='text-indent: 20px;' colspan='2'>
+                            {$bill['Description']}
+                        </t>
+                        <td class='solid-line'>
+                            ( " . number_format($bill['Credit'], 2) . " )
+                        </td>
+                        <td style='width: 30%;'></td>
+                    </tr>
+                ";
+            };
+
+            $renderElement = function($bill) {
+                return "
+                    <tr>
+                        <td>{$bill['Date']}</td>
+                        <td>{$bill['Reference_No']}</td>
+                        <td>{$bill['Description']}</td>
+                        <td style='text-align:right;'>{$bill['Quantity']}</td>
+                        <td style='text-align:right;'>{$bill['Charges']}</td>
+                        <td style='text-align:right;'>{$bill['Credit']}</td>
+                        <td style='text-align:right;'>{$bill['Balance']}</td>
+                    </tr>
+                ";
+            };
+
+        @endphp
         <div class="container">
-            <div class="header">
-                <div class="header-column" style="width: 25%;">
-                    <div class="header-position-logo">
-                        <img src="../public/images/CDUH_logo.jpg" width="80" height="80" class="logo" />
-                    </div>
-                </div>
-                <div class="header-column" style="width: 40%;">
-                    <p class="upper-center-text">Cebu Doctors University Hospital, Inc.</p>
-                    <p class="center-text-sub-content">Osmeña Boulevard. Cebu City 6000</p>
-                    <p class="center-text-sub-content">000-309-308-000-NV</p>
-                    <p class="center-text-sub-content">Tel#: 2555555 Fax#: 2536021</p>
-                    <p class="lower-center-text">Patient's Statement of Account</p>
-                </div>
-                <div class="header-column" style="width: 25%;">
-                    <div class="header-position">
-                        <p class="left-text">Page No: Page</p>
-                        <p class="left-text">Run Date: {{ $Run_Date }}</p>
-                        <p class="left-text">Run Time: {{ $Run_Time }}</p>
-                    </div>
-                </div>
-            </div>
-            <table>
-                <tbody style="border-bottom: 1px solid #000;">
-                    <tr>
-                        <th>Patient  </th>
-                        <td style="width: 40%;">: {{ $Patient_Info[0]['Patient_Name'] }}</td>
-                        <th>Admission #</th>
-                        <td style="width: 10%;">: {{ $Patient_Info[0]['Admission_No'] }}</td>
-                        <th>Room</th>
-                        <td style="width: 20%;">: EMERGENCY</td>
-                    </tr>
 
-                    <tr>
-                        <th>Address  </th>
-                        <td>:  {{ $Patient_Info[0]['Patient_Address'] }}</td>
-                        <th>Hospital #</th>
-                        <td>: {{ $Patient_Info[0]['Hospital_Name'] }}</td>
-                        <th>Rate</th>
-                        <td>: 1000.00</td>
-                    </tr>
+            {!! $mainHeader($Run_Date, $Run_Time) !!}
+            {!! $pageHeaderPatientInfo() !!}
 
-                    <tr>
-                        <th>Company</th>
-                        <td style="width: 40%;">:  {{ $Patient_Info[0]['Guarantor'] }}</td>
-                        <th style="width: 20%;">Discharged Date</th>
-                        <td>:</td>
-                        <th>Time</th>
-                        <td>:</td>
-                    </tr>
-                    
-                    <tr>
-                        <th>Acct. #  </th>
-                        <td>:  {{ $Patient_Info[0]['Account_No'] }}</td>
-                        <th>Admitted</th>
-                        <td>: 1136918</td>
-                        <th>Time</th>
-                        <td>:  {{ $Patient_Info[0]['Time_Admitted'] }}</td>
-                    </tr>
-
-                    <tr>
-                        <th>Credit L  </th>
-                        <td>:  {{ $Patient_Info[0]['Credit_Limit'] }}</td>
-                        <th>Billed Date</th>
-                        <td>: {{ $Patient_Info[0]['Billed_Date'] }}</td>
-                        <th>Time</th>
-                        <td>:  {{ $Patient_Info[0]['Billed_Time'] }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            @php
-                $grossTotal = 0;
-                $lessAmount = 0;
-                $lessDiscount = 0;
-                $netAmount = 0;
-                $doctorsFee = 0;
-            @endphp
             <table class="custom-table">
                 <thead style=" border: none;">
                     <tr>
@@ -295,15 +361,7 @@
                     @foreach ($PatientBilSummary as $bill)
                         {{ $grossTotal += floatval($bill['Total']) }}
                         @if (($bill['AccountType'] === 'D' || $bill['AccountType'] === 'P') && $bill['RevenueID'] !== 'MD')
-                            <tr>
-                                <td class="dot-cell" style="text-indent: 20px;" colspan="2">
-                                    <span>{{ $bill['Description'] }}</span>
-                                </t>
-                                <td class="solid-line">
-                                    {{ number_format($bill['Total'], 2) }}
-                                </td>
-                                <td style="width: 30%;"></td>
-                            </tr>
+                            {!! $sectionTotalSummary($bill) !!}
                         @else
                             {{ $grossTotal -= floatval($bill['Total']) }}
                             @continue
@@ -343,15 +401,8 @@
                         @if ($bill['AccountType'] === 'C')
 
                             {{ $lessAmount += floatval($bill['Credit']) }}
-                            <tr>
-                                <td class="dot-cell" style="text-indent: 20px;" colspan="2">
-                                    {{ $bill['Description'] }}
-                                </t>
-                                <td class="solid-line">
-                                    ( {{ number_format($bill['Credit'], 2) }} )
-                                </td>
-                                <td style="width: 30%;"></td>
-                            </tr>
+                            {!! $creditTotalSummary($bill) !!}
+
                         @else
                             @continue
                         @endif
@@ -428,11 +479,6 @@
                     </tr>
                 </thead>
                 <tbody style="border-bottom: none;">
-                    @php
-                        $totalPHIC = 0;
-                        $totalDiscount = 0;
-                        $totalPayment = 0;
-                    @endphp
                     @foreach ($DoctorsFee as $bill)
                         @if ($bill->RevenueID === "MD")
                             @php   
@@ -442,14 +488,13 @@
                                 $totalPayment += floatval($bill->Credit);
                                 $lessDiscount += floatval($bill->PHIC_MD) + floatval($bill->Discount) + floatval($bill->Credit_MD);
                             @endphp
-                        <tr>
-                            <td style="text-indent: 20px;">{{ $bill->Description }}</td>
-                            <td style="text-align: right;">{{ number_format($bill->Charges,2) }}</td>
-                            <td style="text-align: right;">{{ number_format($bill->PHIC_MD, 2) }}</td>
-                            <td style="text-align: right;">{{ number_format($bill->Discount, 2) }}</td>
-                            <td style="text-align: right;">{{ number_format($bill->Credit, 2)}}</td>
-                        </tr>
-             
+                            <tr>
+                                <td style="text-indent: 20px;">{{ $bill->Description }}</td>
+                                <td style="text-align: right;">{{ number_format($bill->Charges,2) }}</td>
+                                <td style="text-align: right;">{{ number_format($bill->PHIC_MD, 2) }}</td>
+                                <td style="text-align: right;">{{ number_format($bill->Discount, 2) }}</td>
+                                <td style="text-align: right;">{{ number_format($bill->Credit, 2)}}</td>
+                            </tr>
                         @endif
                     @endforeach
                      <tr>
@@ -511,77 +556,12 @@
                     <p>Controller</p>
                 </div>
             </div>
-            <p style="position: relative; top: 18%;">NOTE: An interest of 3% per month will be cahrged if account us not paid within 15 days from date of receipt of Statement of Account</p>
+            <p>NOTE: An interest of 3% per month will be cahrged if account us not paid within 15 days from date of receipt of Statement of Account</p>
+
             <div class="page-break"></div>
-            <div class="header">
-                <div class="header-column" style="width: 25%;">
-                    <div class="header-position-logo">
-                        <img src="../public/images/CDUH_logo.jpg" width="80" height="80" class="logo" />
-                    </div>
-                </div>
-                <div class="header-column" style="width: 40%;">
-                    <p class="upper-center-text">Cebu Doctors University Hospital, Inc.</p>
-                    <p class="center-text-sub-content">Osmeña Boulevard. Cebu City 6000</p>
-                    <p class="center-text-sub-content">000-309-308-000-NV</p>
-                    <p class="center-text-sub-content">Tel#: 2555555 Fax#: 2536021</p>
-                    <p class="lower-center-text">Patient's Statement of Account</p>
-                </div>
-                <div class="header-column" style="width: 25%;">
-                    <div class="header-position">
-                        <p class="left-text">Page No: Page</p>
-                        <p class="left-text">Run Date: {{ $Run_Date }}</p>
-                        <p class="left-text">Run Time: {{ $Run_Time }}</p>
-                    </div>
-                </div>
-            </div>
-            <table>
-                <tbody style="border-bottom: 1px solid #000;">
-                    <tr>
-                        <th>Patient  </th>
-                        <td style="width: 40%;">: {{ $Patient_Info[0]['Patient_Name'] }}</td>
-                        <th>Admission #</th>
-                        <td style="width: 10%;">: {{ $Patient_Info[0]['Admission_No'] }}</td>
-                        <th>Room</th>
-                        <td style="width: 20%;">: EMERGENCY</td>
-                    </tr>
+            {!! $mainHeader($Run_Date, $Run_Time) !!}
+            {!! $pageHeaderPatientInfo() !!}
 
-                    <tr>
-                        <th>Address  </th>
-                        <td>:  {{ $Patient_Info[0]['Patient_Address'] }}</td>
-                        <th>Hospital #</th>
-                        <td>: {{ $Patient_Info[0]['Hospital_Name'] }}</td>
-                        <th>Rate</th>
-                        <td>: 1000.00</td>
-                    </tr>
-
-                    <tr>
-                        <th>Company</th>
-                        <td style="width: 40%;">:  {{ $Patient_Info[0]['Guarantor'] }}</td>
-                        <th style="width: 20%;">Discharged Date</th>
-                        <td>:</td>
-                        <th>Time</th>
-                        <td>:</td>
-                    </tr>
-                    
-                    <tr>
-                        <th>Acct. #  </th>
-                        <td>:  {{ $Patient_Info[0]['Account_No'] }}</td>
-                        <th>Admitted</th>
-                        <td>: {{ $Patient_Info[0]['Date_Admitted'] }}</td>
-                        <th>Time</th>
-                        <td>:  {{ $Patient_Info[0]['Time_Admitted'] }}</td>
-                    </tr> 
-
-                    <tr>
-                        <th>Credit L  </th>
-                        <td>:  {{ $Patient_Info[0]['Credit_Limit'] }}</td>
-                        <th>Billed Date</th>
-                        <td>: {{ $Patient_Info[0]['Billed_Date'] }}</td>
-                        <th>Time</th>
-                        <td>:  {{ $Patient_Info[0]['Billed_Time'] }}</td>
-                    </tr>
-                </tbody>
-            </table>
             <table>
                 <thead>
                     <tr>
@@ -595,48 +575,42 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php
-                        $count = 0;
-                    @endphp
                     @foreach ($Patient_Bill as $bill)
-                        <tr>
-                            <td>{{ $bill['Date'] }}</td>
-                            <td>{{ $bill['Reference_No'] }}</td>
-                            <td>{{ $bill['Description'] }}</td>
-                            <td style="text-align:right;">{{ $bill['Quantity'] }}</td>
-                            <td style="text-align:right;">{{ $bill['Charges'] }}</td> 
-                            <td style="text-align:right;">{{ $bill['Credit'] }}</td>
-                            <td style="text-align:right;">{{ $bill['Balance'] }}</td>
-                        </tr>
+                        @if ($isFirst && $bill['RevenueID'])
+                            @php
+                                $isFirst = false;
+                                $currentID = $bill['RevenueID'];
+                            @endphp
+                            <tr>
+                                <td colspan="7" style="font-weight: bold; padding-top: 5px;">{{ $bill['RevenueID'] . ' - ' . $bill['RevenueDesc'] }}</td>
+                            </tr>
+                            {!! $renderElement($bill) !!}
+
+                        @elseif($bill['RevenueID'] === $prevID)
+                            {!! $renderElement($bill) !!}
+                        @else
+                            <tr>
+                                <td colspan="5" style="text-align: right; font-weight: bold;">Sub Total : </td>
+                                <td style="text-align: right;">=====></td>
+                                <td style="border-top: 1px solid #000; text-align: right; font-weight: bold;"">{{ $sub_total }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="7" style="font-weight: bold; padding-top: 5px;">{{ $bill['RevenueID'] . ' - ' . $bill['RevenueDesc'] }}</td>
+                            </tr>
+                            {!! $renderElement($bill) !!}
+                        @endif
                         @php
+                            $prevID = $bill['RevenueID'];
+                            $sub_total = $bill['Balance'];
                             $count++;
                         @endphp
-
-                        @if ($count % 38 == 0)
-                            </tbody>
+                        @if ($count % 26 == 0)
+                                </tbody>
                             </table>
+
                             <div class="page-break"></div>
-                            <div class="header">
-                                <div class="header-column" style="width: 25%;">
-                                    <div class="header-position-logo">
-                                        <img src="../public/images/CDUH_logo.jpg" width="80" height="80" class="logo" />
-                                    </div>
-                                </div>
-                                <div class="header-column" style="width: 40%;">
-                                    <p class="upper-center-text">Cebu Doctors University Hospital, Inc.</p>
-                                    <p class="center-text-sub-content">Osmeña Boulevard. Cebu City 6000</p>
-                                    <p class="center-text-sub-content">000-309-308-000-NV</p>
-                                    <p class="center-text-sub-content">Tel#: 2555555 Fax#: 2536021</p>
-                                    <p class="lower-center-text">Patient's Statement of Account</p>
-                                </div>
-                                <div class="header-column" style="width: 25%;">
-                                    <div class="header-position">
-                                        <p class="left-text">Page No: Page</p>
-                                        <p class="left-text">Run Date: {{ $Run_Date }}</p>
-                                        <p class="left-text">Run Time: {{ $Run_Time }}</p>
-                                    </div>
-                                </div>
-                            </div>
+                            {!! $mainHeader($Run_Date, $Run_Time) !!}
+
                             <table style="paddting-top: 10px;">
                                 <thead>
                                     <tr>
@@ -667,7 +641,13 @@
             <table>
                 <tbody style="border: none;">
                     <tr>
-                        <td style="width: 100%; text-align: right;">Total Due to Hospital : =========> {{ $Total_Charges }}</td>
+                        <td style="width: 100%; text-align: right; font-weight: bold;">
+                            Total Due to Hospital : =========> 
+                            <span style="font-weight: bold; padding-right: 10px; position: relative; left: 10;">
+                                P
+                            </span>
+                            {{ $Total_Charges }}
+                        </td>
                     </tr>
                 </tbody>
             </table>

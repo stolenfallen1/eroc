@@ -2,7 +2,9 @@
 
 namespace App\Models\HIS\services;
 
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\HospitalPatientCategories;
+use App\Models\HIS\his_functions\LaboratoryMaster;
 use App\Models\HIS\PatientAdministeredMedicines;
 use App\Models\HIS\PatientAllergies;
 use App\Models\HIS\PatientHistory;
@@ -26,6 +28,7 @@ use App\Models\HIS\PatientMedications;
 use App\Models\HIS\PatientDischargeInstructions;
 use App\Models\HIS\PatientGynecologicalConditions;
 use App\Models\HIS\PatientAppointments;
+use App\Models\HIS\MedsysPatientMaster;
 use App\Models\HIS\services\Patient;
 use App\Models\BuildFile\Branchs;
 use App\Models\BuildFile\FMS\AccountType;
@@ -41,16 +44,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PatientRegistry extends Model
 {
     use HasFactory;
+    // protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientRegistry';
     protected $connection = "sqlsrv_patient_data";
     protected $guarded = [];
 
     // Relationships
+    public function medsysErMaster() {
+        return $this->belongsTo(MedsysPatientMaster::class, 'IDnum', 'case_No');
+    }
     public function patient_details(){
         return $this->belongsTo(Patient::class, 'patient_Id', 'patient_Id');
     }    
     public function branch() {
         return $this->belongsTo(Branchs::class, 'branch_id', 'id');
+    }
+    public function lab_services() {
+        return $this->hasMany(LaboratoryMaster::class, 'case_No', 'case_No');
     }
     public function accountType() {
         return $this->belongsTo(AccountType::class, 'mscAccount_type', 'id');
@@ -93,7 +103,7 @@ class PatientRegistry extends Model
     }
 
     public function allergies() {
-        return $this->hasOne(PatientAllergies::class,'case_No', 'case_No');
+        return $this->hasMany(PatientAllergies::class,'case_No', 'case_No');
     }
 
     public function PhysicalExamtionGeneralSurvey() {

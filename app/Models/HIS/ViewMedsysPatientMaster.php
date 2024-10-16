@@ -11,12 +11,13 @@ use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class MedsysPatientMaster extends Model
+class ViewMedsysPatientMaster extends Model
 {
     use HasFactory;
-    protected $connection = 'sqlsrv_medsys_patient_data';
-    protected $table = 'PATIENT_DATA.dbo.tbmaster'; 
-    protected $primaryKey = 'HospNum';
+
+    protected $connection = 'sqlsrv_medsys_core_db';
+    protected $table = 'CDG_CORE_Live.dbo.vwMedsysPatientMaster'; 
+    protected $primaryKey = 'id';
     protected $guarded = [];
     public $timestamps = false;
     protected $appends = ['patient_name'];
@@ -31,7 +32,7 @@ class MedsysPatientMaster extends Model
 
     public function getPatientNameAttribute()
     {
-        return $this->LastName . ', ' .$this->FirstName. ' ' .$this->MiddleName;
+        return $this->lastname . ', ' .$this->firstname. ' ' .$this->middlename;
     }
     public function opd_registry(){
         return $this->belongsTo(MedsysOutpatient::class,'HospNum', 'HospNum')->whereNull('DcrDate');

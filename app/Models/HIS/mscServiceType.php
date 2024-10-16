@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class mscServiceType extends Model
 {
     use HasFactory;
-    protected $table = "mscServiceType";
+    protected $table = "CDG_CORE.dbo.mscServiceType";
 
     protected $connection = "sqlsrv";
 

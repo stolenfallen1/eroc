@@ -5,11 +5,15 @@ namespace App\Models\HIS;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class fmsLedgerGroups extends Model
+class MedsysERMaster extends Model
 {
     use HasFactory;
-    protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.fmsLedgerGroups';
+
+    protected $connection = 'sqlsrv_medsys_patient_data';
+    protected $table = 'tbERMaster';
+    protected $primaryKey = 'IDnum';
     protected $guarded = [];
     public $timestamps = false;
+
+    
 }

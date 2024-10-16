@@ -48,3 +48,4 @@ Route::get('/get-indicator', [CaseIndicatorController::class, 'list']);
 Route::get('/get-emergency', [EmergencyRegistrationController::class, 'index']);
 Route::get('/generate-statement', [SOAController::class, 'createStatmentOfAccount']);
 Route::get('/generate-statement-summary', [SOAController::class, 'createStatmentOfAccountSummary']);
+Route::get('/get-staff-id', [EmergencyRegistrationController::class, 'getStaffId']);

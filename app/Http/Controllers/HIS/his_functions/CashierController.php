@@ -177,9 +177,11 @@ class CashierController extends Controller
             $total_payment          = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
+                $ORCashInsertOnce = true;
                 foreach ($request->payload['Items'] as $item) {
                     $id = $item['id']; 
                     $itemID = $item['itemID'];
+                    $item_amount = $item['amount'];
                     $form = $item['form'];
                     $revenueID = $item['revenueID'];
                     $specimen = $item['specimen'];
@@ -212,8 +214,7 @@ class CashierController extends Controller
                             'ChargeSlip'            => $refNum,
                             'ornumber'              => $ORNum,
                             'withholdingTax'        => $withholding_tax,
-                            'amount'                => $total_payment,
-                            'net_amount'            => $total_payment,
+                            'amount'                => $item_amount,
                             'request_doctors_id'    => $request_doctors_id,
                             'userid'                => Auth()->user()->idnumber,
                             'HostName'              => (new GetIP())->getHostname(),
@@ -221,43 +222,7 @@ class CashierController extends Controller
                             'created_at'            => Carbon::now(),
                             'createdby'             => Auth()->user()->idnumber,
                         ]);
-                        $cashORMaster = CashORMaster::create([
-                            'branch_id'                 => 1,
-                            'RefNum'                    => $ORNum,
-                            'HospNum'                   => $patient_Id,
-                            'case_no'                   => $case_No,
-                            'TransDate'                 => $transDate,
-                            'transaction_code'          => $revenueID, 
-                            'TIN'                       => $tin,
-                            'BusinessStyle'             => $business_style,
-                            'SCPWDId'                   => $osca_pwd_id,
-                            'Revenueid'                 => $revenueID, 
-                            'PaymentType'               => $PaymentType,
-                            'PaymentFor'                => $ORNum,
-                            'Particulars'               => $Particulars,
-                            'PaymentFrom'               => $PaymentFrom,
-                            'Discount_type'             => $discount_type,
-                            'Discount'                  => $discount,
-                            'NetAmount'                 => $total_payment,
-                            'CashAmount'                => $cash_amount,
-                            'CashTendered'              => $cash_tendered,
-                            'ChangeAmount'              => $cash_change,
-                            'card_type_id'              => $card_type_id,
-                            'card_id'                   => $card_id,
-                            'CardAmount'                => $card_amount,
-                            'CardApprovalNum'           => $card_approval_number,
-                            'CardDate'                  => $card_date,
-                            'BankCheck'                 => $bank_check,
-                            'Checknum'                  => $check_no,
-                            'CheckAmount'               => $check_amount,
-                            'CheckDate'                 => $check_date,
-                            'UserID'                    => Auth()->user()->idnumber,
-                            'Shift'                     => $Shift,
-                            'Hostname'                  => (new GetIP())->getHostname(),
-                            'createdby'                 => Auth()->user()->idnumber,
-                            'created_at'                => Carbon::now(),
-                        ]);
-                        if ($this->check_is_allow_medsys) {
+                        if ($this->check_is_allow_medsys):
                             MedSysCashAssessment::where('HospNum', $patient_Id)
                                 ->where('IdNum', $case_No)
                                 ->where('RefNum', $refNum)
@@ -266,7 +231,7 @@ class CashierController extends Controller
                                 ->update([
                                     'ORNumber'          => $ORNum,
                             ]);
-                            MedSysDailyOut::create([
+                            $medsysbilling = MedSysDailyOut::create([
                                 'HospNum'               => $patient_Id,
                                 'IDNum'                 => 'CASH',
                                 'TransDate'             => $transDate,
@@ -276,7 +241,7 @@ class CashierController extends Controller
                                 'Quantity'              => 1,
                                 'RefNum'                => $ORNum,
                                 'ChargeSlip'            => $refNum,
-                                'Amount'                => $total_payment,
+                                'Amount'                => $item_amount,
                                 'DiscountType'          => $discount_type,
                                 'withholdingtax'        => $withholding_tax, 
                                 'AutoDiscount'          => 0,
@@ -284,38 +249,80 @@ class CashierController extends Controller
                                 'CashierID'             => Auth()->user()->idnumber,
                                 'CashierShift'          => $Shift,
                             ]);
-                            tbCashORMaster::create([
-                                'HospNum'               => $patient_Id,
-                                'IDNum'                 => $case_No,
-                                'TransDate'             => $transDate,
-                                'PaymentFrom'           => $PaymentFrom,
-                                'PaymentType'           => $PaymentType,
-                                'PaymentFor'            => $ORNum,
-                                'Revenueid'             => $revenueID,
-                                'RefNum'                => $ORNum,
-                                'Particulars'           => $Particulars,
-                                'Amount'                => $total_payment,
-                                'UserID'                => Auth()->user()->idnumber,
-                                'Host_Name'             => (new GetIP())->getHostname(),
-                                'Shift'                 => $Shift,
-                                'Discount'              => $discount,
-                                'TIN'                   => $tin,
-                                'BusinessStyle'         => $business_style,
-                                'PWDID'                 => $osca_pwd_id,
-                                'CashAmount'            => $cash_amount,
-                                'CashTendered'          => $cash_tendered,
-                                'ChangeAmount'          => $cash_change,
-                                'Checknum'              => $check_no,
-                                'Bank'                  => $bank_check,
-                                'CheckAmount'           => $check_amount,
-                                'CheckDate'             => $check_date,
-                                'CardName'              => $card_id,
-                                'ApprovalNum'           => $card_approval_number,
-                                'CardAmount'            => $card_amount,
-                                'CardDate'              => $card_date,
+                        endif;
+
+                        if ($ORCashInsertOnce) {
+                            CashORMaster::create([
+                                'branch_id'                 => 1,
+                                'RefNum'                    => $ORNum,
+                                'HospNum'                   => $patient_Id,
+                                'case_no'                   => $case_No,
+                                'TransDate'                 => $transDate,
+                                'transaction_code'          => $revenueID, 
+                                'TIN'                       => $tin,
+                                'BusinessStyle'             => $business_style,
+                                'SCPWDId'                   => $osca_pwd_id,
+                                'Revenueid'                 => $revenueID, 
+                                'PaymentType'               => $PaymentType,
+                                'PaymentFor'                => $ORNum,
+                                'Particulars'               => $Particulars,
+                                'PaymentFrom'               => $PaymentFrom,
+                                'Discount_type'             => $discount_type,
+                                'Discount'                  => $discount,
+                                'CashAmount'                => $cash_amount,
+                                'CashTendered'              => $cash_tendered,
+                                'ChangeAmount'              => $cash_change,
+                                'card_type_id'              => $card_type_id,
+                                'card_id'                   => $card_id,
+                                'CardAmount'                => $card_amount,
+                                'CardApprovalNum'           => $card_approval_number,
+                                'CardDate'                  => $card_date,
+                                'BankCheck'                 => $bank_check,
+                                'Checknum'                  => $check_no,
+                                'CheckAmount'               => $check_amount,
+                                'CheckDate'                 => $check_date,
+                                'UserID'                    => Auth()->user()->idnumber,
+                                'Shift'                     => $Shift,
+                                'Hostname'                  => (new GetIP())->getHostname(),
+                                'createdby'                 => Auth()->user()->idnumber,
+                                'created_at'                => Carbon::now(),
                             ]);
+                            if ($this->check_is_allow_medsys):
+                                tbCashORMaster::create([
+                                    'HospNum'               => $patient_Id,
+                                    'IDNum'                 => $case_No,
+                                    'TransDate'             => $transDate,
+                                    'PaymentFrom'           => $PaymentFrom,
+                                    'PaymentType'           => $PaymentType,
+                                    'PaymentFor'            => $ORNum,
+                                    'Revenueid'             => $revenueID,
+                                    'RefNum'                => $ORNum,
+                                    'Particulars'           => $Particulars,
+                                    'Amount'                => $total_payment,
+                                    'UserID'                => Auth()->user()->idnumber,
+                                    'Host_Name'             => (new GetIP())->getHostname(),
+                                    'Shift'                 => $Shift,
+                                    'Discount'              => $discount,
+                                    'TIN'                   => $tin,
+                                    'BusinessStyle'         => $business_style,
+                                    'PWDID'                 => $osca_pwd_id,
+                                    'CashAmount'            => $cash_amount,
+                                    'CashTendered'          => $cash_tendered,
+                                    'ChangeAmount'          => $cash_change,
+                                    'Checknum'              => $check_no,
+                                    'Bank'                  => $bank_check,
+                                    'CheckAmount'           => $check_amount,
+                                    'CheckDate'             => $check_date,
+                                    'CardName'              => $card_id,
+                                    'ApprovalNum'           => $card_approval_number,
+                                    'CardAmount'            => $card_amount,
+                                    'CardDate'              => $card_date,
+                                ]);
+                            endif;
+                            $ORCashInsertOnce = false;
                         }
-                        if ($billingOut && $cashORMaster) {
+
+                        if ($billingOut) {
                             if ($revenueID == 'LB' && $form == 'C') {
                                 $labProfileData = $this->getLabItems($itemID);
                                 if ($labProfileData->getStatusCode() === 200) {
@@ -333,7 +340,6 @@ class CashierController extends Controller
                                                 'itemId'                => $exam->map_exam_id,
                                                 'quantity'              => 1,
                                                 'amount'                => 0,
-                                                'NetAmount'             => 0,
                                                 'doctor_Id'             => $request_doctors_id,
                                                 'specimen_Id'           => $exam->map_specimen_id,
                                                 'processed_By'          => Auth()->user()->idnumber,
@@ -346,7 +352,7 @@ class CashierController extends Controller
                                                 'created_at'            => Carbon::now(),
                                                 'createdby'             => Auth()->user()->idnumber,
                                             ]);
-                                            if ($this->check_is_allow_medsys) {
+                                            if ($this->check_is_allow_medsys):
                                                 tbLABMaster::create([
                                                     'HospNum'           => $patient_Id,
                                                     'IdNum'             => $case_No,
@@ -364,7 +370,7 @@ class CashierController extends Controller
                                                     'ProfileId'         => $exam->map_profile_id,
                                                     'ItemCharged'       => $exam->map_profile_id,
                                                 ]);
-                                            }
+                                            endif;
                                         }
                                     }
                                 }
@@ -380,7 +386,6 @@ class CashierController extends Controller
                                     'itemId'                => $itemID,
                                     'quantity'              => 1,
                                     'amount'                => 0,
-                                    'NetAmount'             => 0,
                                     'doctor_Id'             => $request_doctors_id,
                                     'specimen_Id'           => $specimen ?? 1, // BLOOD BY DEFAULT if no specimen
                                     'processed_By'          => Auth()->user()->idnumber,
@@ -393,7 +398,7 @@ class CashierController extends Controller
                                     'created_at'            => Carbon::now(),
                                     'createdby'             => Auth()->user()->idnumber,
                                 ]);
-                                if ($this->check_is_allow_medsys) {
+                                if ($this->check_is_allow_medsys):
                                     tbLABMaster::create([
                                         'HospNum'           => $patient_Id,
                                         'IdNum'             => $case_No,
@@ -411,7 +416,7 @@ class CashierController extends Controller
                                         'ProfileId'         => $itemID,
                                         'ItemCharged'       => $itemID,
                                     ]);
-                                }
+                                endif;
                             }
                         }
                     }
@@ -485,7 +490,6 @@ class CashierController extends Controller
                         'refNum'                => $ORNum,
                         'ChargeSlip'            => $ORNum,
                         'amount'                => $total_payment,
-                        'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         'withholdingTax'        => $withholding_tax,
                         'auto_discount'         => 0,
@@ -512,7 +516,6 @@ class CashierController extends Controller
                             'PaymentFrom'               => $PaymentFrom,
                             'Discount_type'             => $discount_type,
                             'Discount'                  => $discount,
-                            'NetAmount'                 => $total_payment,
                             'CashAmount'                => $cash_amount,
                             'CashTendered'              => $cash_tendered,
                             'ChangeAmount'              => $cash_change,
@@ -543,7 +546,6 @@ class CashierController extends Controller
                                 'ChargeSlip'        => $ORNum,
                                 'Payment'           => $PaymentType,
                                 'Amount'            => $total_payment,
-                                'NetAmount'         => $total_payment,
                                 'DiscountType'      => $discount_type,
                                 'withholdingtax'    => $withholding_tax,
                                 'AutoDiscount'      => 0,
@@ -651,7 +653,6 @@ class CashierController extends Controller
                         'refNum'                => $ORNum,
                         'ChargeSlip'            => $ORNum,
                         'amount'                => $total_payment,
-                        'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         'withholdingTax'        => $withholding_tax,
                         'auto_discount'         => 0,
@@ -678,7 +679,6 @@ class CashierController extends Controller
                             'PaymentFrom'               => $PaymentFrom,
                             'Discount_type'             => $discount_type,
                             'Discount'                  => $discount,
-                            'NetAmount'                 => $total_payment,
                             'CashAmount'                => $cash_amount,
                             'CashTendered'              => $cash_tendered,
                             'ChangeAmount'              => $cash_change,
@@ -709,7 +709,6 @@ class CashierController extends Controller
                                 'ChargeSlip'        => $ORNum,
                                 'Payment'           => $PaymentType,
                                 'Amount'            => $total_payment,
-                                'NetAmount'         => $total_payment,
                                 'DiscountType'      => $discount_type,
                                 'withholdingtax'    => $withholding_tax,
                                 'AutoDiscount'      => 0,
@@ -842,7 +841,6 @@ class CashierController extends Controller
                     $item->drcr = 'C';
                     $item->quantity = $data->quantity * -1;
                     $item->amount = $data->amount * -1;
-                    $item->net_amount = $data->net_amount * -1;
                     $item->userId = Auth()->user()->idnumber;
                     $item->created_at = Carbon::now();
                     $item->createdby = Auth()->user()->idnumber;

@@ -15,6 +15,7 @@ use App\Models\MMIS\inventory\VwConsignmentDelivery;
 use App\Models\MMIS\inventory\VwPurchaseOrderMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Contracts\Encryption\DecryptException;
+use App\Http\Controllers\MMIS\PriceList\PriceListController;
 use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 
 
@@ -425,5 +426,9 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
 
 Route::controller(PurchaseSubsidiaryReportController::class)->group(function () {
     Route::get('print-all-supplier', 'printAllSupplier');  
+});
+
+Route::controller(PriceListController::class)->group(function () {
+    Route::get('price-all-report', 'printAllLocation');  
 });
 // <!====================================== END CONSIGNMENT PO  ====================================== !> 

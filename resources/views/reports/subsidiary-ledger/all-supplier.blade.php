@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Delivery</title>
+    <title>Purchase Subsidiary Ledger</title>
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
@@ -238,117 +238,134 @@
         </table>
     </div>
     <table class="item-section">
-        <tbody>
+    <tbody>
+        @php
+            $grandTotal = 0; // Initialize grand total
+            $supplierTypeTotals = []; // Initialize an array to hold totals for each supplier type
+            $supplierTotals = []; // Initialize an array to hold totals for each supplier
+        @endphp
+
+        @foreach($pdf_data['groupedSuppliers'] as $group)
+            <tr style="border: none;">
+                <td colspan="10" style="border: none; font-size: 15px !important;">
+                    <div class="double-underline">{{ $group['supplierType'] }}</div>
+                </td>
+            </tr>
+            <thead>
+                <tr style="border: none;">
+                    <th class="border-none text-left border-bottom" width="40">Code</th>
+                    <th class="border-none text-left border-bottom" width="30%">Item Description</th>
+                    <th class="border-none text-left border-bottom">PO #</th>
+                    <th class="border-none text-left border-bottom">RR #</th>
+                    <th class="border-none text-left border-bottom">INV #</th>
+                    <th class="border-none text-left border-bottom">DATE</th>
+                    <th class="border-none text-left border-bottom">PACKING</th>
+                    <th class="border-none text-left border-bottom">QUANTITY</th>
+                    <th class="border-none text-left border-bottom">LIST COST</th>
+                    <th class="border-none text-left border-bottom">NETCOST</th>
+                </tr>
+            </thead>
+
             @php
-                $grandTotal = 0; // Initialize grand total
-                $supplierTypeTotals = []; // Initialize an array to hold totals for each supplier type
+                $supplierTypeSubtotal = 0; // Initialize subtotal for supplier type
             @endphp
 
-            @foreach($pdf_data['groupedSuppliers'] as $group)
+            @foreach ($group['suppliers'] as $supplier)
+                @php
+                    $supplierSubtotal = 0; // Initialize supplier subtotal
+                @endphp
+
                 <tr style="border: none;">
-                    <td colspan="10" style="border: none; font-size: 15px !important;">
-                        <div class="double-underline">{{ $group['supplierType'] }}</div>
-                    </td>
+                    <td class="border-none text-left border-bottom" style="font-weight: bold;" colspan="10">{{ $supplier['supplierName'] }}</td>
                 </tr>
-                <thead>
-                    <tr style="border: none;">
-                        <th class="border-none text-left border-bottom" width="40">Code</th>
-                        <th class="border-none text-left border-bottom">Item Description</th>
-                        <th class="border-none text-left border-bottom">PO #</th>
-                        <th class="border-none text-left border-bottom">RR #</th>
-                        <th class="border-none text-left border-bottom">INV #</th>
-                        <th class="border-none text-left border-bottom">DATE</th>
-                        <th class="border-none text-left border-bottom">PACKING</th>
-                        <th class="border-none text-left border-bottom">QUANTITY</th>
-                        <th class="border-none text-left border-bottom">LIST COST</th>
-                        <th class="border-none text-left border-bottom">NETCOST</th>
+
+                @foreach($supplier['items'] as $row)
+                    <tr>
+                        <td class="border-none">{{ $row->code }}</td>
+                        <td class="border-none">{{ $row->itemname }} {{ $row->ismedicine ? $row->Description : '' }}</td>
+                        <td class="border-none">{{ $row->ponumber }}</td>
+                        <td class="border-none">{{ $row->RRNumber }}</td>
+                        <td class="border-none">{{ $row->InvoiceNo }}</td>
+                        <td class="border-none">{{ date('m/d/Y', strtotime($row->InvoiceDate)) }}</td>
+                        <td class="border-none">1</td>
+                        <td class="border-none">{{ floatval($row->qty) }}</td>
+                        <td class="border-none">{{ number_format($row->price, 2) }}</td>
+                        <td class="border-none">{{ number_format($row->NetCost, 2) }}</td>
                     </tr>
-                </thead>
-
-                @php
-                    $supplierTypeSubtotal = 0; // Initialize subtotal for supplier type
-                @endphp
-
-                @foreach ($group['suppliers'] as $supplier)
+                    
                     @php
-                        $supplierSubtotal = 0; // Initialize supplier subtotal
+                        $supplierSubtotal += $row->NetCost; // Accumulate the supplier subtotal
+                        $supplierTypeSubtotal += $row->NetCost; // Accumulate the supplier type subtotal
                     @endphp
-
-                    <tr style="border: none;">
-                        <td class="border-none text-left border-bottom " style="font-weight: bold;" colspan="10">{{ $supplier['supplierName'] }}</td>
-                    </tr>
-
-                    @foreach($supplier['items'] as $row)
-                        <tr>
-                            <td class="border-none">{{ $row->code }}</td>
-                            <td class="border-none">{{ $row->itemname }}  {{ $row->ismedicine ? $row->Description : '' }}</td>
-                            <td class="border-none">{{ $row->ponumber }}</td>
-                            <td class="border-none">{{ $row->RRNumber }}</td>
-                            <td class="border-none">{{ $row->InvoiceNo }}</td>
-                            <td class="border-none">{{ date('m/d/Y', strtotime($row->InvoiceDate)) }}</td>
-                            <td class="border-none">1</td>
-                            <td class="border-none">{{ floatval($row->qty) }}</td>
-                            <td class="border-none">{{ number_format($row->price, 2) }}</td>
-                            <td class="border-none">{{ number_format($row->NetCost, 2) }}</td>
-                        </tr>
-                        
-                        @php
-                            $supplierSubtotal += $row->NetCost; // Accumulate the supplier subtotal
-                            $supplierTypeSubtotal += $row->NetCost; // Accumulate the supplier type subtotal
-                        @endphp
-                    @endforeach
-                    <tr>
-                        <td colspan="10" class="border-none border-bottom"></td>
-                    </tr>
-                    <tr>
-                        <td class="border-none" colspan="7" style="text-align: right;">{{ $supplier['supplierName'] }}</td>
-                        <td class="border-none" style="text-align: right; font-weight: bold;">Subtotal:</td>
-                        <td class="border-none">{{ number_format($supplierSubtotal, 2) }}</td>
-                        <td class="border-none"></td>
-                    </tr>
-
-                    @php
-                        $grandTotal += $supplierSubtotal; // Accumulate the grand total
-                    @endphp
-
-                    <tr>
-                        <td class="border-none" colspan="8"></td>
-                        <td class="border-none"></td>
-                        <td class="border-none"></td>
-                    </tr>
                 @endforeach
+                <tr>
+                    <td colspan="10" class="border-none border-bottom"></td>
+                </tr>
+                <tr>
+                    <td class="border-none" colspan="7" style="text-align: right;">{{ $supplier['supplierName'] }}</td>
+                    <td class="border-none" style="text-align: right; font-weight: bold;">Subtotal:</td>
+                    <td class="border-none">{{ number_format($supplierSubtotal, 2) }}</td>
+                    <td class="border-none"></td>
+                </tr>
 
                 @php
-                    // Store the subtotal for this supplier type
-                    $supplierTypeTotals[$group['supplierType']] = $supplierTypeSubtotal;
+                    $grandTotal += $supplierSubtotal; // Accumulate the grand total
+                    $supplierTotals[$supplier['supplierName']] = $supplierSubtotal; // Store supplier total
                 @endphp
 
+                <tr>
+                    <td class="border-none" colspan="8"></td>
+                    <td class="border-none"></td>
+                    <td class="border-none"></td>
+                </tr>
             @endforeach
 
-            <tr>
-                <td class="border-none" colspan="8" style="text-align: right; font-weight: bold;">Grand Total:</td>
-                <td class="border-none">{{ number_format($grandTotal, 2) }}</td>
-                <td class="border-none"></td>
-            </tr>
-        </tbody>
-    </table>
-    <div style="width: 30%;">
-    <table >
+            @php
+                // Store the subtotal for this supplier type
+                $supplierTypeTotals[$group['supplierType']] = $supplierTypeSubtotal;
+            @endphp
+        @endforeach
+
         <tr>
-            <th colspan="2" class="text-left border-bottom">Summary</th>
+            <td class="border-none" colspan="8" style="text-align: right; font-weight: bold;">Grand Total:</td>
+            <td class="border-none">{{ number_format($grandTotal, 2) }}</td>
+            <td class="border-none"></td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="width: 50%;">
+    <table>
+        <tr>
+            <th colspan="3" class="text-left border-bottom">Summary</th>
         </tr>
         @foreach($supplierTypeTotals as $type => $total)
             <tr>
-                <td>{{ $type }}</td>
+                <td colspan="2">{{ $type }}</td>
                 <td>{{ number_format($total, 2) }}</td>
             </tr>
         @endforeach
+
         <tr>
-            <td style="font-weight: bold;" class="text-right">Grand Total:</td>
+            <th colspan="3" class="text-left border-bottom">Supplier Totals</th>
+        </tr>
+        @foreach($supplierTotals as $supplierName => $supplierTotal)
+            <tr>
+                <td></td>
+                <td>{{ $supplierName }}</td>
+                <td>{{ number_format($supplierTotal, 2) }}</td>
+            </tr>
+        @endforeach
+        <tr>
+            <td colspan="3" class="border-bottom"><div class="spacer"></div></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="font-weight: bold;" class="text-right">Grand Total:</td>
             <td style="font-weight: bold;">{{ number_format($grandTotal, 2) }}</td>
         </tr>
     </table>
-    </div>
+</div>
+
    
 
     <!-- <p class="csstransforms">THIS DOCUMENT IS NOT VALID <br/> FOR CLAIM OF INPUT TAXES</p> -->

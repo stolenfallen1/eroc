@@ -9,29 +9,22 @@ use App\Http\Controllers\Controller;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\MMIS\Reports\VwPurchaseSubsidiaryLedger;
 use App\Models\MMIS\Reports\InventoryReportPurchaseSubsidiaryLedger;
+use App\Models\MMIS\Reports\InventoryReportPurchaseSubsidiaryLedgerAll;
 
 class PurchaseSubsidiaryReportController extends Controller
 {
     public function allsupplier(Request $request)
     {
-        $query = VwPurchaseSubsidiaryLedger::orderBy('rr_id', 'asc');
-
-        if ($request->payload['warehouse_id']) {
-            $query->where('locationID', $request->payload['warehouse_id']);
+        $location_id = $request->payload['warehouse_id'] ?? '';
+        $supplier_id = $request->payload['vendor_id'] ?? '';
+        $purchase_type = $request->payload['purchase_type'] ?? '';
+        $dateFrom = $request->payload['dateFrom'];
+        $dateTo = $request->payload['dateTo'];
+        if($supplier_id){
+            $data  = InventoryReportPurchaseSubsidiaryLedger::getReport($location_id, $supplier_id, $purchase_type, $dateFrom, $dateTo);
+        }else{
+            $data  = InventoryReportPurchaseSubsidiaryLedgerAll::getReport($location_id,$purchase_type, $dateFrom, $dateTo);
         }
-        if ($request->payload['vendor_id']) {
-
-            $query->where('SupplierCode', $request->payload['vendor_id']);
-        }
-        if ($request->payload['purchase_type']) {
-
-            $query->where('Type', $request->payload['purchase_type']);
-        }
-        if ($request->payload['dateFrom'] && $request->payload['dateTo']) {
-            $query->whereDate('TransDate', '>=', $request->payload['dateFrom'])
-                ->whereDate('TransDate', '<=', $request->payload['dateTo']);
-        }
-        $data = $query->get();
         return response()->json($data, 200);
     }
 
@@ -39,7 +32,7 @@ class PurchaseSubsidiaryReportController extends Controller
     {
         ini_set('memory_limit', '2048M');
         $location_id = $request->input('location_id');
-        $supplier_id = $request->input('vendor_id');
+        $supplier_id = $request->input('supplier_id');
         $purchase_type = $request->input('purchase_type');
         $dateFrom = $request->input('dateFrom');
         $dateTo = $request->input('dateTo');
@@ -59,9 +52,11 @@ class PurchaseSubsidiaryReportController extends Controller
 
         $branch = Branchs::where('id',1)->first();
 
-
-       
-        $data  = InventoryReportPurchaseSubsidiaryLedger::getReport($location_id, $supplier_id, $purchase_type, $dateFrom, $dateTo);
+        if($supplier_id){
+            $data  = InventoryReportPurchaseSubsidiaryLedger::getReport($location_id, $supplier_id, $purchase_type, $dateFrom, $dateTo);
+        }else{
+            $data  = InventoryReportPurchaseSubsidiaryLedgerAll::getReport($location_id,  $purchase_type, $dateFrom, $dateTo);
+        }
 
         $groupedData = collect($data)->groupBy('SupplierType');
 

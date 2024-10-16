@@ -17,6 +17,7 @@ use App\Http\Controllers\MMIS\PurchaseReturnController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
 use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
+use App\Http\Controllers\MMIS\PriceList\PriceListController;
 use App\Http\Controllers\MMIS\InventoryStocksAlertController;
 use App\Http\Controllers\MMIS\InventoryTransactionController;
 use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
@@ -179,5 +180,9 @@ Route::controller(PurchaseReturnController::class)->group(function () {
 
 Route::controller(PurchaseSubsidiaryReportController::class)->group(function () {
   Route::post('subsidiary-report', 'allsupplier');  
+});
+
+Route::controller(PriceListController::class)->group(function () {
+  Route::post('price-list-report', 'allPriceList');  
 });
 

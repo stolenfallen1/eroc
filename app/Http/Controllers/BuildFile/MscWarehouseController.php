@@ -2,14 +2,23 @@
 
 namespace App\Http\Controllers\BuildFile;
 
-use App\Http\Controllers\Controller;
-use App\Models\BuildFile\Branchs;
-use App\Models\BuildFile\Warehousegroups;
-use App\Models\BuildFile\Warehouses;
+use App\Helpers\ParentRole;
 use Illuminate\Http\Request;
-
+use App\Models\BuildFile\Branchs;
+use App\Http\Controllers\Controller;
+use App\Models\BuildFile\Warehouses;
+use App\Models\BuildFile\Warehousegroups;
+use Illuminate\Support\Facades\Auth;
 class MscWarehouseController extends Controller
 {
+    protected $authUser;
+    protected $role;
+  
+    public function __construct()
+    {
+      $this->authUser = Auth()->user();
+      $this->role = new ParentRole();
+    }
     public function list()
     {
         try {
@@ -32,7 +41,11 @@ class MscWarehouseController extends Controller
     }
     
     public function warehouselist(){
-        return response()->json(['data' =>Warehouses::get()], 200);
+        if ($this->role->department_head() || $this->role->staff()) {
+            return response()->json(['data' =>Warehouses::whereIn('id',Auth()->user()->departments)->get()], 200);
+        }else{
+            return response()->json(['data' =>Warehouses::get()], 200);
+        }
     }
 
     public function branch_warehouse(Request $request)

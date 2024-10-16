@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\BuildFile\Branchs;
 use App\Http\Controllers\Controller;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use App\Models\MMIS\Reports\InventoryReportPurchaseSubsidiaryLedger;
-use App\Models\MMIS\Reports\InventoryReportPurchaseSubsidiaryLedgerAll;
+use App\Models\MMIS\reports\InventoryReportPurchaseSubsidiaryLedger;
+use App\Models\MMIS\reports\InventoryReportPurchaseSubsidiaryLedgerAll;
 
 class PurchaseSubsidiaryReportController extends Controller
 {

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class InvStatus extends Model
 {
-    protected $table = 'CDG_CORE.dbo.mscStatus';
+    protected $table = 'mscStatus';
     
     protected $connection = "sqlsrv";
     protected $guarded = [];

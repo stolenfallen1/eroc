@@ -315,7 +315,7 @@ class PostChargeController extends Controller
                     'auto_discount' => ''
                 ]);
 
-                DB::connection('sqlsrv_medsys_hemodialysis')->statement("SET NOCOUNT ON;EXEC spKidney_UpdateCharging ?,?,?,?,?,?,?,?,?,?,?,?,?",
+                DB::connection('sqlsrv_medsys_hemodialysis')->statment("SET NOCOUNT ON;EXEC spKidney_UpdateCharging ?,?,?,?,?,?,?,?,?,?,?,?,?",
                     [
                         $Hospnum,
                         $IDNum,

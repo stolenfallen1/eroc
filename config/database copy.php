@@ -141,7 +141,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
-
+       
         'sqlsrv_medsys_patient_data' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

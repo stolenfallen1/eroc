@@ -137,6 +137,7 @@ Route::controller(HospitalModalityController::class)->group(function () {
 
 Route::controller(VendorController::class)->group(function () {
     Route::get('vendors', 'index');
+    Route::get('get-vendors', 'vendorList');
     Route::post('vendors', 'store');
     Route::put('vendors/{vendor}', 'update');
     Route::delete('vendors/{vendor}', 'destroy');
@@ -144,6 +145,7 @@ Route::controller(VendorController::class)->group(function () {
 
 Route::controller(ItemController::class)->group(function () {
     Route::get('items', 'searchItem');
+    Route::get('item-list', 'searchItems');
     Route::get('warehouse-location-items', 'searchwarehouseItem');
     Route::get('items-group', 'getItemGroup');
     Route::get('services-items-group', 'getServicesItemGroup');
@@ -266,6 +268,7 @@ Route::controller(ClassificationController::class)->group(function () {
 
 Route::controller(MscWarehouseController::class)->group(function () {
     Route::get('get-warehouse', 'list');
+    Route::get('warehouse-list', 'warehouselist');
     Route::get('get-branch-warehouse', 'branch_warehouse');
     Route::get('get-branch', 'branch');
     Route::get('get-warehouse-list', 'warehousegroup');

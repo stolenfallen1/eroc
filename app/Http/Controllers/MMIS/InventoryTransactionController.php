@@ -14,7 +14,7 @@ class InventoryTransactionController extends Controller
     public function index()
     {
         $warehouse_id = Request()->warehouse_Id ?? Auth::user()->warehouse_id;
-        $data['purchase'] = InventoryTransaction::with('unit')->where('transaction_Acctg_TransType','PU')->where(['warehouse_Id' => $warehouse_id, 'transaction_Item_Id' => Request()->item_id])->get();
+        $data['purchase'] = InventoryTransaction::with('unit')->where('transaction_Acctg_TransType','IPU')->where(['warehouse_Id' => $warehouse_id, 'transaction_Item_Id' => Request()->item_id])->get();
         $data['beginning'] = InventoryTransaction::with('unit')->where('transaction_Acctg_TransType','BI')->where(['warehouse_Id' => $warehouse_id, 'transaction_Item_Id' => Request()->item_id])->get();
         return response()->json($data, 200);
     }

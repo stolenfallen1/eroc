@@ -68,6 +68,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
 
         return response()->json(['access_token' => $newAccessToken]);
     }
+
     public function userDetails()
     {
         // get user details
@@ -137,6 +138,7 @@ class AuthController extends \TCG\Voyager\Http\Controllers\Controller
         }
         return response()->json(["message" => 'Incorrect passcode'], 403);
     }
+    
     protected function guard()
     {
         return Auth::guard('web');

@@ -11,9 +11,13 @@ use App\Models\BuildFile\Warehouses;
 class Items
 {
   protected $model;
+  protected $authUser;
+  protected $role;
+
   public function __construct()
   {
     $this->model = Itemmasters::query();
+    $this->authUser = Auth()->user();
   }
 
   public function searchable()
@@ -71,8 +75,8 @@ class Items
 
   private function forStockRequisition(){
     if(Request()->for_sr){
-      $ids = Warehouseitems::where('branch_id', Auth::user()->branch_id)->where('warehouse_Id', Auth::user()->warehouse_id)->get()->pluck('item_Id');
-      $this->model->whereIn('id', $ids);
+      $ids = Warehouseitems::where('branch_id', Auth::user()->branch_id)->where('warehouse_Id', Auth::user()->warehouse_id)->pluck('item_Id');
+      $this->model->whereIn('id', ['1']);
       // ->whereHas('wareHouseItem', function($q){
       //   $q->where('item_OnHand', '>', 0);
       // });
@@ -138,9 +142,15 @@ class Items
   private function byCategory()
   {
     $category_id = Request()->category_id;
-    if ($category_id) {
-      $this->model->where('item_Category_Id', $category_id);
-    }
+    // if ($category_id) {
+    //   $this->model->where('item_Category_Id', $category_id);
+    // }
+    // if ($this->authUser->warehouse_id != '78' || !$this->authUser->warehouse_id != '66') {
+    //   $category_id = Request()->category_id;
+    //   if ($category_id) {
+    //     $this->model->where('item_Category_Id', $category_id);
+    //   }
+    // } 
   }
 
   private function bySubCategory()

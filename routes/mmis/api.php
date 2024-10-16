@@ -13,10 +13,14 @@ use App\Http\Controllers\MMIS\AuditTrailController;
 use App\Http\Controllers\MMIS\ExportDataController;
 use App\Http\Controllers\MMIS\PurchaseOrderController;
 use App\Http\Controllers\MMIS\StockTransferController;
+use App\Http\Controllers\MMIS\PurchaseReturnController;
 use App\Http\Controllers\MMIS\PurchaseRequestController;
 use App\Http\Controllers\MMIS\StockRequisitionController;
 use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
+use App\Http\Controllers\MMIS\PriceList\PriceListController;
+use App\Http\Controllers\MMIS\InventoryStocksAlertController;
 use App\Http\Controllers\MMIS\InventoryTransactionController;
+use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 
 Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
@@ -49,6 +53,7 @@ Route::controller(CanvasController::class)->group(function () {
   Route::get('canvas', 'index');
   Route::get('count-for-po', 'countForPO');
   Route::post('canvas', 'store');
+  Route::post('add-free-goods', 'store');
   Route::delete('canvas/{id}', 'destroy');
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');
   Route::post('submit-canvas', 'submitCanvasItem');
@@ -154,3 +159,30 @@ Route::controller(ManualUpdateController::class)->group(function () {
   Route::post('update-pr-details', 'update_purchaserequest');
   Route::post('update-pr-canvas-details', 'update_purchasecanvass');
 });
+
+
+
+
+
+Route::controller(InventoryStocksAlertController::class)->group(function () {
+  Route::get('inventory-alert', 'index');  
+  Route::get('/sales-per-vendor', 'GenerateSalesPerVendor');
+});
+
+
+
+Route::controller(PurchaseReturnController::class)->group(function () {
+  Route::get('purchase-returned', 'index');  
+  Route::get('get-purchase-items', 'list');  
+  Route::post('save-returned-purchased', 'store');  
+ 
+});
+
+Route::controller(PurchaseSubsidiaryReportController::class)->group(function () {
+  Route::post('subsidiary-report', 'allsupplier');  
+});
+
+Route::controller(PriceListController::class)->group(function () {
+  Route::post('price-list-report', 'allPriceList');  
+});
+

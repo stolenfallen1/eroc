@@ -9,6 +9,7 @@ class ParentRole{
     public function staff(){
         return $this->parent_role('STAFF');
     }
+    
     public function department_head(){
         return $this->parent_role('DEPARTMENT HEAD');
     }
@@ -41,8 +42,21 @@ class ParentRole{
         return $this->parent_role('AUDIT');
     }
 
+
+    public function pharmacyCashier(){
+        return $this->parent_role('PHARMACIST CASHIER');
+    }
+
+    public function pharmacyTakeOrder(){
+        return $this->parent_role('PHARMACIST TAKE ORDER');
+    }
+
+    public function pharmacyHead(){
+        return $this->parent_role('PHARMACIST HEAD');
+    }
+
     public function parent_role($role = null){
-        $parent = Auth::user()->approvaldetail->approver_designation ?? Auth::user()->role->name;
+        $parent = Auth::user()->approvaldetail ? Auth::user()->approvaldetail->approver_designation : Auth::user()->role->name;
         if(strtoupper($parent) === strtoupper($role)){
             return true;
         }else{

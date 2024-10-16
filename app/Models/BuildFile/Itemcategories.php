@@ -12,7 +12,7 @@ class Itemcategories extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.invItemCategories";
+    protected $table = "invItemCategories";
     protected $guarded = [];
 
     public function purchaseRequest(){

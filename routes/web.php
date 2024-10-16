@@ -1,28 +1,15 @@
 <?php
 
-use App\Models\HIS\mscPatientBroughtBy;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\OldMMIS\Branch;
 use App\Models\BuildFile\Warehouses;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Models\MMIS\inventory\Delivery;
 use App\Http\Controllers\AuthController;
-use App\Models\MMIS\inventory\Consignment;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use App\Models\MMIS\inventory\StockTransfer;
-use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Http\Controllers\POS\Report_ZController;
-use App\Models\MMIS\procurement\PurchaseRequest;
-use App\Models\MMIS\inventory\StockTransferMaster;
-use App\Models\MMIS\procurement\purchaseOrderMaster;
-use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
-use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
-use App\Http\Controllers\UserManager\UserManagerController;
-use App\Http\Controllers\BuildFile\ItemandServicesController;
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
+use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\HIS\CaseIndicatorController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 
@@ -37,232 +24,24 @@ use App\Http\Controllers\HIS\his_functions\SOAController;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+
+Route::get('view-image', [AppointmentController::class, 'image']);
 Route::controller(Report_ZController::class)->group(function () {
     Route::get('get-z-report-all-shift', 'generate_z_report');
 });
 
-
-
-Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthController@login',     'as' => 'login']);
-
+// Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthController@login',     'as' => 'login']);
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
 });
 
-Route::get('/print-purchase-order/{id}', function ($id) {
-    $purchase_order = purchaseOrderMaster::with(['administrator', 'comptroller', 'corporateAdmin', 'purchaseRequest.user', 'branch', 'vendor','warehouse', 'details' => function ($q) {
-        $q->with('item', 'unit', 'purchaseRequestDetail.recommendedCanvas.canvaser');
-    }])->findOrfail($id);
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    $total_amount = 0;
-
-
-    foreach ($purchase_order['details'] as $key => $detail) {
-        $total_amount += $detail['purchaseRequestDetail']['recommendedCanvas']['canvas_item_net_amount'];
-    }
-
-    if($purchase_order->id == 6948){
-        $sortKeys = [8805, 8798, 8803, 8804, 8800, 8801, 8796, 8797, 8802, 8795, 8799];
-        $temp = [];
-        $index = 0;
-        foreach ($sortKeys as $sortkey) {
-            foreach ($purchase_order['details'] as $detail) {
-                if($sortkey == $detail['id']){
-                    $temp[$index] = $detail;
-                    $index++;
-                }
-            }
-        }
-        $purchase_order['details'] = $temp;
-    }
-
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'purchase_order' => $purchase_order,
-        'transaction_date' => Carbon::parse($purchase_order->po_Document_transaction_date)->format('Y-m-d'),
-        'canvaser' =>  $purchase_order['details'][0]['purchaseRequestDetail']['recommendedCanvas']['canvaser']['name'],
-        'total_amount' => $total_amount
-    ];
-    $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
-    $viewers = explode(',' , $purchase_order->viewers);
-    $is_viewer = false;
-    if(sizeof($viewers)){
-        foreach ($viewers as $viewer) {
-            if($viewer == Request()->id){
-                $is_viewer = true;
-            }
-        }
-    }
-    if($is_viewer == false){
-        array_push($viewers, Request()->id);
-        $purchase_order->update([
-            'viewers' => implode(',', $viewers),
-            'isprinted'=>1
-        ]);
-    }
-
-    return $pdf->stream('PO-' . $purchase_order['vendor']['vendor_Name'] . '-' . Carbon::now()->format('m-d-Y') . '-' . $purchase_order['po_Document_number'] . '.pdf');
-});
-
-Route::get('/print-purchase-request/{id}', function ($id) {
-    $purchase_request = PurchaseRequest::with(['warehouse', 'administrator', 'category', 'itemGroup', 'branch', 'user', 'purchaseRequestDetails' => function ($q) {
-        $q->with('itemMaster', 'unit', 'unit2');
-    }])->findOrfail($id);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'purchase_request' => $purchase_request,
-        'requested_date' => Carbon::parse($purchase_request->pr_Transaction_Date)->format('Y-m-d'),
-        'Required_date' => Carbon::parse($purchase_request->pr_Transaction_Date_Required)->format('Y-m-d')
-    ];
-    $pdf = PDF::loadView('pdf_layout.purchaser_request', ['pdf_data' => $pdf_data]);
-
-    return $pdf->stream('Purchase order-' . $id . '.pdf');
-});
-
-Route::get('/print-stock-transfer/{id}', function ($id) {
-    $stock_transfer = StockTransferMaster::with('branch','stockTransferDetails','warehouseSender', 'warehouseReceiver', 'tranferBy', 'receivedBy','status')->findOrfail($id);
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-stock-transfer/' . $id);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'stock_transfer' => $stock_transfer,
-        'transaction_date' => Carbon::parse($stock_transfer->created_at)->format('Y-m-d'),
-        'delivery_date' => Carbon::parse($stock_transfer['transfer_date'])->format('Y-m-d')
-    ];
-    $pdf = PDF::loadView('pdf_layout.stock_transfer', ['pdf_data' => $pdf_data]);
-
-    return $pdf->stream('stock_transfer-' . $id . '.pdf');
-});
-
-Route::get('/print-delivery/{id}', function ($id) {
-    $delivery = Delivery::with(['branch', 'vendor', 'receiver', 'purchaseOrder.purchaseRequest', 'items' => function ($q) {
-        $q->with('item', 'unit');
-    }])->findOrfail($id);
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
-        'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
-    ];
-    $pdf = PDF::loadView('pdf_layout.delivery', ['pdf_data' => $pdf_data]);
-
-    return $pdf->stream('delivery-' . $id . '.pdf');
-});
-
-
-
-
-
-Route::get('/print-consignment-delivery/{id}', function ($id) {
-    $delivery = Consignment::with(['branch', 'vendor', 'receiver', 'purchaseOrder.purchaseRequest', 'items' => function ($q) {
-        $q->with('item', 'unit');
-    }])->findOrfail($id);
-
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
-        // 'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
-    ];
-    $pdf = PDF::loadView('pdf_layout.consignment-delivery', ['pdf_data' => $pdf_data])->setPaper('letter', 'landscape');
-    $pdf->render();
-
-    $dompdf = $pdf->getDomPDF();
-    $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
-    $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-
-    return $pdf->stream('consignment-delivery-' . $id . '.pdf');
-});
-
-Route::get('/print-purchase-order-consignment', function (Request $request) {
-    $rrid = Request()->rr_id;
-    $delivery = Consignment::with(['branch', 'vendor', 'receiver', 'ConsignmentPurchaseOrder','ConsignmentPurchaseOrder.purchaseOrder','ConsignmentPurchaseOrder.purchaseRequest', 'ConsignmentPurchaseOrder.items' => function ($q) {
-            $q->with('itemdetails', 'unit');
-        }])->where('id', $rrid)->first();
-
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $rrid);
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $qrData = base64_encode($qrCode);
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'delivery' => $delivery,
-        'transaction_date' => Carbon::parse($delivery->rr_Document_Invoice_Date)->format('Y-m-d'),
-        // 'po_date' => Carbon::parse($delivery['purchaseOrder']['po_Document_transaction_date'])->format('Y-m-d')
-    ];
-    $pdf = PDF::loadView('pdf_layout.purchase-order-consignment', ['pdf_data' => $pdf_data])->setPaper('letter', 'landscape');
-    $pdf->render();
-
-    $dompdf = $pdf->getDomPDF();
-    $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
-    $dompdf->get_canvas()->page_text(760, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-    // return $delivery;
-    return $pdf->stream('purchase-order-consignment-' . $rrid . '.pdf');
-});
-
-
-Route::get('test-pdfx', function () {
-    $po_items = PurchaseOrderDetails::with('item', 'purchaseOrder.purchaseRequest', 'purchaseRequestDetail.recommendedCanvas.vendor')
-        ->whereHas('purchaseOrder', function ($q1) {
-            $q1->where('po_Document_branch_id', 1)->where('po_Document_warehouse_id', 47)->whereDoesntHave('delivery');
-        })->get();
-    $branch = Branch::find(1);
-    $warehouse = Warehouses::find(1);
-    $pdf_data = [
-        'items' => $po_items,
-        'branch_name' => $branch->companyname,
-        'warehouse_name' => $warehouse->warehouse_description,
-    ];
-    $pdf = PDF::loadView('reports.undeliveredPO', ['pdf_data' => $pdf_data]);
-
-    return $pdf->stream('Purchase order-' . '.pdf');
-});
-
+require_once('inventory_printout.php');
+require_once('mmis_printout.php');
 Route::group(['middleware' => 'admin.user'], function () {
     require_once('mmis/mmismainroute.php');
     Route::get('user-details', [AuthController::class, 'userDetails']);
-    // Route::get('/{any}', function () {
-    //     return view('layouts.main');
-    // })->where('any', '.*');
 });
-// Route::group(['middleware' => 'admin.user'], function () {
-//     // require_once ('mmis/mmismainroute.php');
-//     // Route::get('user-details', [AuthController::class, 'userDetails']);
-//     // Route::get('/{any}', function () {
-//     //     return view('layouts.main');
-//     // })->where('any', '.*');
-// });
 
 Route::get('/fetch-data', [EmergencyRegistrationController::class, 'fetchData'])->where('id', '[0-9]+');
 Route::get('/get-indicator', [CaseIndicatorController::class, 'list']);

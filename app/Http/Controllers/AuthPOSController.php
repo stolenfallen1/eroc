@@ -28,7 +28,7 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
         }
 
         if ($this->guard()->attempt($credentials, $request->has('remember'))) {
-            $ipaddress = $request['clientIP'] ? $request['clientIP'] : (new GetIP())->value();
+            $ipaddress = (new GetIP())->value();
             if ((new Terminal())->check_terminal($ipaddress) == 0) {
                 return response()->json(["message" => 'You are not allowed to access'], 401);
             }
@@ -150,5 +150,10 @@ class AuthPOSController extends \TCG\Voyager\Http\Controllers\Controller
     protected function guard()
     {
         return Auth::guard('web');
+    }
+
+    public function posterminal(Request $request){
+       $appPosKey = config('app.pos_key');
+       return $appPosKey == $request->key;
     }
 }

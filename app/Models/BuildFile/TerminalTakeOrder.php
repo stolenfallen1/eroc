@@ -9,6 +9,6 @@ class TerminalTakeOrder extends Model
 {
     use HasFactory;   
     protected $connection = "sqlsrv";
-    protected $table = 'CDG_CORE.dbo.sysTerminalTakeOrder';
+    protected $table = 'sysTerminalTakeOrder';
     protected $guarded = [];
 }

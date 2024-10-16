@@ -70,7 +70,6 @@ Route::controller(CompanySettingsController::class)->group(function () {
 Route::controller(TerminalSettingsController::class)->group(function () {
     Route::get('get-terminal', 'index');
     Route::put('update-terminal/{id}', 'update');
-    Route::post('store-terminal', 'store');
     Route::delete('delete-terminal-settings/{id}', 'destroy');
 });
 

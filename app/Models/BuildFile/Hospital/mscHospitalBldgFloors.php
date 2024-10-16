@@ -13,7 +13,7 @@ class mscHospitalBldgFloors extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscHospitalBldgFloors';
+    protected $table = 'mscHospitalBldgFloors';
     protected $guarded = [];
     protected $with = ['building',"stations"];
 

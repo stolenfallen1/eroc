@@ -113,18 +113,18 @@ class PaymentTransaction extends Controller
                 'order_status_id'=>'9'
             ]);
             
-            $transaction = FmsTransactionCode::where('transaction_code', 'PY')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('code', 'PY')->where('isActive', 1)->first();
             foreach ($orderdetails as $row) {
                 // $batch = ItemBatch::where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                 $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('warehouse_Id',$row['warehouse_Id'])->where('item_Id', (int)$row['order_item_id'])->first();
-                $batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
+                $batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                 if($batch) {
                     $isConsumed = '0';
                     $usedqty = $batch->item_Qty_Used + $row['order_item_qty'];
                     if($usedqty >= $batch->item_Qty) {
                         $isConsumed = '1';
                     }
-                    DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
+                    DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
                         'item_Qty_Used'=>  (int)$batch->item_Qty_Used + (int)$row['order_item_qty'],
                         'isConsumed'=>  $isConsumed 
                     ]);
@@ -143,7 +143,7 @@ class PaymentTransaction extends Controller
                         'transaction_Item_ListCost' => $row['order_item_total_amount'],
                         'transaction_UserID' =>  Auth()->user()->idnumber,
                         'createdBy' => Auth()->user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                     ]);
 
                 }

@@ -9,6 +9,6 @@ class PriceGroup extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv";
-    protected $table = "CDG_CORE.dbo.mscPriceGroups";
+    protected $table = "mscPriceGroups";
     protected $guarded = [];
 }

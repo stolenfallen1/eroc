@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\BuildFile;
 
-use App\Helpers\SearchFilter\ItemLocation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Helpers\RecomputePrice;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\SearchFilter\Items;
 use App\Http\Controllers\Controller;
@@ -14,6 +14,7 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\MMIS\inventory\ItemBatch;
 use App\Models\MMIS\inventory\ItemModel;
+use App\Helpers\SearchFilter\ItemLocation;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
@@ -49,6 +50,7 @@ class ItemandServicesController extends Controller
                 'item_specification'=> $request->item_specification ?? '',
                 'item_SKU'=> $request->item_SKU ?? '',
                 'item_Barcode'=> $request->item_Barcode ?? '',
+                'item_UPC'=> $request->item_UPC ?? '',
                 'item_UnitOfMeasure_Id'=> (int)$request->item_UnitOfMeasure_Id ?? '',
                 'item_InventoryGroup_Id'=> (int)$request->item_InventoryGroup_Id ?? '',
                 'item_Med_Dosage_Form_id'=> (int)$request->item_Med_Dosage_Form_id ?? '',
@@ -108,7 +110,7 @@ class ItemandServicesController extends Controller
                     'CreatedBy'=>Auth()->user()->idnumber,
                 ]);
                 $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Beginning Inventory%')->where('isActive', 1)->first();
+                $transaction = FmsTransactionCode::where('description', 'like', '%Beginning Inventory%')->where('isActive', 1)->first();
                 InventoryTransaction::create([
                     'branch_Id' => Auth::user()->branch_id,
                     'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
@@ -123,7 +125,7 @@ class ItemandServicesController extends Controller
                     'transaction_Item_ListCost' => $warehourse_item->item_ListCost,
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                 ]);
                 $sequence->update([
                     'seq_no' => (int) $sequence->seq_no + 1,
@@ -151,6 +153,7 @@ class ItemandServicesController extends Controller
             'item_specification'=> $request->item_specification ?? '',
             'item_SKU'=> $request->item_SKU ?? '',
             'item_Barcode'=> $request->item_Barcode ?? '',
+            'item_UPC'=> $request->item_UPC ?? '',
             'item_UnitOfMeasure_Id'=> (int)$request->item_UnitOfMeasure_Id ?? '',
             'item_InventoryGroup_Id'=> (int)$request->item_InventoryGroup_Id ?? '',
             'item_Med_Dosage_Form_id'=> (int)$request->item_Med_Dosage_Form_id ?? '',
@@ -260,7 +263,7 @@ class ItemandServicesController extends Controller
                 'CreatedBy'=>Auth()->user()->idnumber,
             ]);
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Beginning Inventory%')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('description', 'like', '%Beginning Inventory%')->where('isActive', 1)->first();
             InventoryTransaction::create([
                 'branch_Id' => Auth::user()->branch_id,
                 'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
@@ -275,7 +278,7 @@ class ItemandServicesController extends Controller
                 'transaction_Item_ListCost' => $warehourse_item->item_ListCost,
                 'transaction_UserID' =>  Auth::user()->idnumber,
                 'createdBy' =>  Auth::user()->idnumber,
-                'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                'transaction_Acctg_TransType' =>  $transaction->code ?? '',
             ]);
             $sequence->update([
                 'seq_no' => (int) $sequence->seq_no + 1,
@@ -314,7 +317,7 @@ class ItemandServicesController extends Controller
             'isConsignment' => $request->isConsignment,
             'ModifiedBy'=>Auth()->user()->idnumber,
         ]);
-
+        (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$id,'out');
         $item->itemMaster()->where('map_item_id',$request->map_item_id)->update([
             'isConsignment' => $request->isConsignment,
         ]);
@@ -328,7 +331,7 @@ class ItemandServicesController extends Controller
         
         try {
             $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
 
             ItemBatchModelMaster::where('id', $request['batch']['id'])->update([
                 'item_Qty' => $request->item_OnHand,
@@ -371,7 +374,7 @@ class ItemandServicesController extends Controller
                 'transaction_UserID' =>  Auth::user()->idnumber,
                 'createdBy' =>  Auth::user()->idnumber,
                 'transaction_count_by' =>  $request->count_by ?? Auth::user()->idnumber,
-                'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                'transaction_Acctg_TransType' =>  $transaction->code ?? '',
             ]);
 
             $sequence->update([

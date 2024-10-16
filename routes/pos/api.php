@@ -8,22 +8,17 @@ use App\Http\Controllers\POS\PaymentTransaction;
 use App\Http\Controllers\POS\Report_ZController;
 use App\Http\Controllers\POS\CustomersController;
 use App\Http\Controllers\POS\DashboardController;
-use App\Http\Controllers\POS\BIRSettingsController;
 use App\Http\Controllers\POS\ExpiredItemsController;
 use App\Http\Controllers\POS\CustomerOrderController;
 use App\Http\Controllers\POS\CustomerGroupsController;
 use App\Http\Controllers\POS\PosTransactionController;
 use App\Http\Controllers\POS\Report_SummaryController;
-use App\Http\Controllers\POS\SeriesSettingsController;
-use App\Http\Controllers\POS\CompanySettingsController;
 use App\Http\Controllers\POS\OpenningAmountTransaction;
 use App\Http\Controllers\POS\Report_ItemizedController;
 
-use App\Http\Controllers\POS\TerminalSettingsController;
 use App\Http\Controllers\POS\Report_DailySalesController;
 use App\Http\Controllers\POS\Report_SalesBatchController;
 use App\Http\Controllers\POS\ReturnTransactionController;
-use App\Http\Controllers\POS\TakeOrderTerminalController;
 use App\Http\Controllers\POS\ClosingTransactionController;
 
 // get all items 

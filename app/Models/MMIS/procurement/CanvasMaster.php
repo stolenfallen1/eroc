@@ -2,10 +2,11 @@
 
 namespace App\Models\MMIS\procurement;
 
+use App\Models\User;
 use App\Models\BuildFile\Vendors;
+use App\Models\BuildFile\Itemmasters;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class CanvasMaster extends Model
@@ -15,10 +16,14 @@ class CanvasMaster extends Model
     protected $table = 'CDG_MMIS.dbo.canvasMaster';
     protected $guarded = [];
 
+    protected $appends = ['currency'];
+    
     public function purchaseRequestDetail(){
         return $this->belongsTo(PurchaseRequestDetails::class, 'pr_request_details_id');
     }
-
+    public function item(){
+        return $this->belongsTo(Itemmasters::class, 'canvas_Item_Id');
+    }
     public function purchaseRequest(){
         return $this->belongsTo(PurchaseRequest::class, 'pr_request_id');
     }
@@ -48,5 +53,10 @@ class CanvasMaster extends Model
 
     public function comptroller(){
         return $this->belongsTo(User::class, 'canvas_Level2_ApprovedBy', 'idnumber');
+    }
+
+    public function getCurrencyAttribute(){
+        $currency = $this->currency_id == 1 ? "₱" :"$";
+        return $currency;
     }
 }

@@ -14,6 +14,17 @@ class VendorController extends Controller
         return (new SearchFilterVendors)->searchable();
     }
 
+    public function vendorList(Request $request){
+
+       
+        $query = Vendors::whereNull('deleted_at')->orderBy('vendor_Name','asc');
+        if(Request()->vendor_id){
+            $query->where('id',Request()->vendor_id);
+        }
+        $data = $query->get();
+        return response()->json($data, 200);
+    }
+
     public function store(Request $request){
         Vendors::updateOrCreate(
             [

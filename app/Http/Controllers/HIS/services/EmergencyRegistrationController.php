@@ -2635,6 +2635,3 @@ class EmergencyRegistrationController extends Controller
     }
 
 }
-
-    
-

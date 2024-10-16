@@ -9,6 +9,6 @@ class AllergyType extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv';
-    protected $table = 'CDG_CORE.dbo.mscAllergyType';
+    protected $table = 'mscAllergyType';
     protected $guarded = [];
 }

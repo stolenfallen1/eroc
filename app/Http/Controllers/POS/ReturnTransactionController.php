@@ -105,14 +105,14 @@ class ReturnTransactionController extends Controller
                 foreach($return_items as $row){
 
                     $warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['returned_order_item_id'])->first();
-                    $batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
+                    $batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
                     if($batch) {
                         $isConsumed = '0';
                         $usedqty = $batch->item_Qty_Used - $row['returned_order_item_qty'];
                         if($usedqty >= $batch->item_Qty) {
                             $isConsumed = '1';
                         }
-                        DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
+                        DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
                             'item_Qty_Used'=>  (int)$batch->item_Qty_Used - (int)$row['returned_order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
@@ -420,20 +420,20 @@ class ReturnTransactionController extends Controller
                 //     'user_id'=>Auth()->user()->idnumber,
                 //     'shift_id'=>Auth()->user()->shift,
                 // ]);
-                $transaction = FmsTransactionCode::where('transaction_code', 'RMS')->where('isActive', 1)->first();
+                $transaction = FmsTransactionCode::where('code', 'RMS')->where('isActive', 1)->first();
 
                 $return_items = ReturnDetailsTransaction::where('refund_id',Request()->return_payment_details['refund_id'])->get();
                 foreach($return_items as $row){
                     // return order 
                     $return_warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['returned_order_item_id'])->first();
-                    $return_batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
+                    $return_batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->where('item_Id', (int)$row['returned_order_item_id'])->first();
                     if($return_batch) {
                         $isConsumed = '0';
                         $usedqty = $return_batch->item_Qty_Used - $row['returned_order_item_qty'];
                         if($usedqty >= $return_batch->item_Qty) {
                             $isConsumed = '1';
                         }
-                        DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
+                        DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['returned_order_item_batchno'])->update([
                             'item_Qty_Used'=>  (int)$return_batch->item_Qty_Used - (int)$row['returned_order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
@@ -453,7 +453,7 @@ class ReturnTransactionController extends Controller
                             'transaction_Item_ListCost' => $row['returned_order_item_total_amount'],
                             'transaction_UserID' =>  Auth()->user()->idnumber,
                             'createdBy' => Auth()->user()->idnumber,
-                            'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                            'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                         ]);
 
                     }
@@ -464,14 +464,14 @@ class ReturnTransactionController extends Controller
 
                     // new order 
                     $order_warehouseitem = DB::connection('sqlsrv_mmis')->table('warehouseitems')->where('item_Id', (int)$row['order_item_id'])->first();
-                    $order_batch = DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
+                    $order_batch = DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->where('item_Id', (int)$row['order_item_id'])->first();
                     if($order_batch) {
                         $isConsumed = '0';
                         $usedqty = $order_batch->item_Qty_Used + $row['order_item_qty'];
                         if($usedqty >= $order_batch->item_Qty) {
                             $isConsumed = '1';
                         }
-                        DB::connection('sqlsrv_mmis')->table('itemBatchNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
+                        DB::connection('sqlsrv_mmis')->table('itemBatchModelNumberMaster')->where('id', (int)$row['order_item_batchno'])->update([
                             'item_Qty_Used'=>  (int)$order_batch->item_Qty_Used + (int)$row['order_item_qty'],
                             'isConsumed'=>  $isConsumed 
                         ]);
@@ -491,7 +491,7 @@ class ReturnTransactionController extends Controller
                            'transaction_Item_ListCost' => $row['order_item_total_amount'],
                            'transaction_UserID' =>  Auth()->user()->idnumber,
                            'createdBy' => Auth()->user()->idnumber,
-                           'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                           'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                        ]);
 
                     }

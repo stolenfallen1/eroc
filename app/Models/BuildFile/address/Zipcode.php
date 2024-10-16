@@ -14,6 +14,8 @@ class Zipcode extends Model
     protected $connection = "sqlsrv";
     protected $table = 'mscAddressZipcodes';
     protected $guarded = [];
+    protected $appends = ['zip_code_details'];
+
     public function regions(){
         return $this->belongsTo(Region::class, 'region_code', 'region_code');
     }
@@ -23,5 +25,27 @@ class Zipcode extends Model
      
     public function muncipalities(){
         return $this->belongsTo(Municipality::class, 'municipality_code', 'municipality_code');
+    }
+
+
+
+    public function getMunicipality(){
+        return $this->belongsTo(Municipality::class,'municipality_code','municipality_code');
+    }
+
+    public function getProvince(){
+        return $this->belongsTo(Province::class,'province_code','province_code');
+    }
+
+    public function getZipCodeDetailsAttribute()
+    {
+      
+        $municipality = $this->getMunicipality()->first();
+        $province = $this->getProvince()->first();
+
+        $municipalityName = $municipality ? $municipality->municipality_name : 'Unknown Municipality';
+        $provinceName = $province ? $province->province_name : 'Unknown Province';
+        return $this->zip_code.' - '.$provinceName.', '.$municipalityName;
+
     }
 }

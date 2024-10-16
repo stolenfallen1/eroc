@@ -320,6 +320,11 @@ class HISCashAssestmentController extends Controller
                     ->where('itemID', $itemID)
                     ->first();
 
+                $existingData->updateOrFail([
+                    'dateRevoked' => Carbon::now(),
+                    'revokedBy' => Auth()->user()->idnumber,
+                ]);
+
                 if ($existingData) {
                     $existingData->update([
                         'dateRevoked'   => Carbon::now(),

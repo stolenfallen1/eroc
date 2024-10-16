@@ -226,9 +226,9 @@ class ConsignmentDeliveryController extends Controller
                     ConsignmentItems::where('rr_id',$delivery->id)->where('rr_Detail_Item_Id',$batch['item_Id'])->update([
                         'rr_Detail_Item_BatchNumber' => $batchdetails['id']
                     ]);
-                    (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'in');
+                    (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'out');
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
-                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
+                    $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
 
                     // return $detail['purchase_request_detail'];
                     InventoryTransaction::create([
@@ -244,7 +244,7 @@ class ConsignmentDeliveryController extends Controller
                         'transaction_Item_ListCost' => $delivery_item->rr_Detail_Item_ListCost,
                         'transaction_UserID' =>  Auth::user()->idnumber,
                         'createdBy' =>  Auth::user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                     ]);
                     
                 }
@@ -275,6 +275,8 @@ class ConsignmentDeliveryController extends Controller
             $delivery = Consignment::find($id);
             $delivery->where('id',$id)->update([
                 'rr_Document_Vendor_Id' => $vendor->id,
+                'rr_Document_Invoice_No' => $payload['rr_Document_Invoice_No'],
+                'rr_Document_Invoice_Date' => $payload['rr_Document_Invoice_Date'],
                 'rr_Document_Delivery_Receipt_No' => $payload['rr_Document_Delivery_Receipt_No'],
                 'rr_Document_TotalGrossAmount' => $payload['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $payload['rr_Document_TotalDiscountAmount'],
@@ -345,9 +347,9 @@ class ConsignmentDeliveryController extends Controller
                         'rr_Detail_Item_BatchNumber' => $batchdetails['id']
                     ]);
 
-                    (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'in');
+                    (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'out');
                   
-                    $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
+                    $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
 
                     // return $detail['purchase_request_detail'];
                     InventoryTransaction::where('transaction_Item_Batch_Detail', $batchdetails['id'])->where('transaction_Item_Id',$batch['item_Id'])->update([
@@ -363,7 +365,7 @@ class ConsignmentDeliveryController extends Controller
                         'transaction_Item_ListCost' => $delivery_item->rr_Detail_Item_ListCost,
                         'transaction_UserID' =>  Auth::user()->idnumber,
                         'createdBy' =>  Auth::user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                        'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                     ]);
                     
                 }

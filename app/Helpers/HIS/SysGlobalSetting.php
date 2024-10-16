@@ -17,7 +17,7 @@ class SysGlobalSetting
     public function check_is_allow_medsys_status()
     {
         $result = $this->model->where('setting_code','MedsysRegistration')->first();
-        // return $result->value
+        // return $result->value;
         if($result->value == 'True'){
             return true;
         }

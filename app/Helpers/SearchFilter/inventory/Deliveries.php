@@ -41,7 +41,7 @@ class Deliveries
     //     });
     //   }
     // }
-    // $this->model->orderBy('id','desc');
+    $this->model->orderBy('id','desc');
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

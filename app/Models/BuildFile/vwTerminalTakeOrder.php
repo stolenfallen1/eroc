@@ -9,5 +9,5 @@ class vwTerminalTakeOrder extends Model
 {
     use HasFactory;   
     protected $connection = "sqlsrv";
-    protected $table = 'CDG_CORE.dbo.vwTerminalTakeOrder';
+    protected $table = 'vwTerminalTakeOrder';
 }

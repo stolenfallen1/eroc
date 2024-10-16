@@ -87,7 +87,7 @@ class TransactionCodesController extends Controller
     {
         try {
             $data = FmsExamProcedureItems::query();
-            $data->where('code', Request()->revenuecode);
+            $data->where('transaction_code', Request()->revenuecode);
             if(Request()->chargecode){
                 $data->whereNotIn('map_item_id', Request()->chargecode);
             }

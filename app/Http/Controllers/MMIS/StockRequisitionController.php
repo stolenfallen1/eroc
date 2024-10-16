@@ -194,8 +194,8 @@ class StockRequisitionController extends Controller
         try {
             $authUser = Auth::user();
             $stock_requisition->load('items');
-            $transaction = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Stock Requisition%')->where('isActive', 1)->first();
-            $transaction1 = FmsTransactionCode::where('transaction_description', 'like', '%Inventory Received Requisition%')->where('isActive', 1)->first();
+            $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Stock Requisition%')->where('isActive', 1)->first();
+            $transaction1 = FmsTransactionCode::where('description', 'like', '%Inventory Received Requisition%')->where('isActive', 1)->first();
             if(!$transaction || !$transaction1) return response()->json(['error' => 'Transaction code no found'], 200);
             $sequence = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
             if(!$sequence) return response()->json(['error' => 'Sequence no found'], 200);
@@ -304,7 +304,7 @@ class StockRequisitionController extends Controller
                     'transaction_Item_ListCost' => $sender_warehouse->item_ListCost,
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
-                    'transaction_Acctg_TransType' =>  $transaction->transaction_code ?? '',
+                    'transaction_Acctg_TransType' =>  $transaction->code ?? '',
                 ]);
 
                 $sequence->update([

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\Systerminals;
+use App\Models\BuildFile\TerminalTakeOrder;
 
 class TerminalSettingsController extends Controller
 {
@@ -19,7 +20,7 @@ class TerminalSettingsController extends Controller
         try {
             $data = Systerminals::query();
             $data->with("takeOrders");
-            if(Request()->keyword) {
+            if (Request()->keyword) {
                 $data->where('terminal_name', 'LIKE', '%' . Request()->keyword . '%');
             }
             $data->orderBy('id', 'desc');
@@ -49,26 +50,58 @@ class TerminalSettingsController extends Controller
     public function store(Request $request)
     {
         DB::connection('sqlsrv_pos')->beginTransaction();
-        try{
-            Systerminals::create([
-                'terminal_code'=>$request->payload['terminal_code'] ?? '',
-                'terminal_name'=>$request->payload['terminal_name'] ?? '',
-                'terminal_brand'=>$request->payload['terminal_brand'] ?? '',
-                'terminal_serial_number'=>$request->payload['terminal_serial_number'] ?? '',
-                'terminal_Machine_Identification_Number'=>$request->payload['terminal_Machine_Identification_Number'] ?? '',
-                'terminal_ip_address'=>$request->payload['terminal_ip_address'] ?? '',
-                'terminal_mac_address'=>$request->payload['terminal_mac_address'] ?? '',
-                'isActive'=>$request->payload['isActive'] ?? '',
-                'isitem_Selling_Price_Out'=>$request->payload['isitem_Selling_Price_Out'] ?? '',
-                'isitem_Selling_Price_In'=>$request->payload['isitem_Selling_Price_In'] ?? '',
-            ]);
+        try {
+            if ($request->payload['terminal_type'] == 2) {
+                Systerminals::updateOrCreate(
+                    [
+                        'terminal_takeorder_code' => $request->payload['terminal_code'] ?? '',
+                        'terminal_takeorder_ip_address' => $request->payload['terminal_ip_address'] ?? '',
+                    ],
+                    [
+                        'branch_Id' => 1,
+                        'warehouse_Id' => 66,
+                        'terminal_Id' => 1,
+                        'terminal_code' => $request->payload['terminal_code'] ?? '',
+                        'terminal_name' => $request->payload['terminal_name'] ?? '',
+                        'terminal_brand' => $request->payload['terminal_brand'] ?? '',
+                        'terminal_serial_number' => $request->payload['terminal_serial_number'] ?? '',
+                        'terminal_Machine_Identification_Number' => $request->payload['terminal_Machine_Identification_Number'] ?? '',
+                        'terminal_ip_address' => $request->payload['terminal_ip_address'] ?? '',
+                        'terminal_mac_address' => $request->payload['terminal_mac_address'] ?? '',
+                        'isActive' => $request->payload['isActive'] ?? '',
+                        'isitem_Selling_Price_Out' => $request->payload['isitem_Selling_Price_Out'] ?? '',
+                        'isitem_Selling_Price_In' => $request->payload['isitem_Selling_Price_In'] ?? '',
+                    ]
+                );
+            } else {
+                TerminalTakeOrder::updateOrCreate(
+                    [
+                        'terminal_takeorder_code' => $request->payload['terminal_code'] ?? '',
+                        'terminal_takeorder_ip_address' => $request->payload['terminal_ip_address'] ?? '',
+                    ],
+                    [
+                        'branch_Id' => 1,
+                        'warehouse_Id' => 66,
+                        'terminal_Id' => 1,
+                        'terminal_takeorder_code' => $request->payload['terminal_code'] ?? '',
+                        'terminal_takeorder_name' => $request->payload['terminal_name'] ?? '',
+                        'terminal_takeorder_brand' => $request->payload['terminal_brand'] ?? '',
+                        'terminal_takeorder_serial_number' => $request->payload['terminal_serial_number'] ?? '',
+                        'terminal_takeorder_Machine_Identification_Number' => $request->payload['terminal_Machine_Identification_Number'] ?? '',
+                        'terminal_takeorder_ip_address' => $request->payload['terminal_ip_address'] ?? '',
+                        'terminal_takeorder_mac_address' => $request->payload['terminal_mac_address'] ?? '',
+                        'isActive' => $request->payload['isActive'] ?? '',
+                        'isitem_Selling_Price_Out' => $request->payload['isitem_Selling_Price_Out'] ?? '',
+                        'isitem_Selling_Price_In' => $request->payload['isitem_Selling_Price_In'] ?? '',
+                    ]
+                );
+            }
+
             DB::connection('sqlsrv_pos')->commit();
-            return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
-       
+            return response()->json(["message" =>  'Record successfully saved', 'status' => '200'], 200);
         } catch (\Exception $e) {
             DB::connection('sqlsrv_pos')->rollback();
-            return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-            
+            return response()->json(["message" => 'error', 'status' => $e->getMessage()], 200);
         }
     }
 
@@ -104,26 +137,24 @@ class TerminalSettingsController extends Controller
     public function update(Request $request, $id)
     {
         DB::connection('sqlsrv_pos')->beginTransaction();
-        try{
-            Systerminals::where('id',$id)->update([
-                'terminal_code'=>$request->payload['terminal_code'] ?? '',
-                'terminal_name'=>$request->payload['terminal_name'] ?? '',
-                'terminal_brand'=>$request->payload['terminal_brand'] ?? '',
-                'terminal_serial_number'=>$request->payload['terminal_serial_number'] ?? '',
-                'terminal_Machine_Identification_Number'=>$request->payload['terminal_Machine_Identification_Number'] ?? '',
-                'terminal_ip_address'=>$request->payload['terminal_ip_address'] ?? '',
-                'terminal_mac_address'=>$request->payload['terminal_mac_address'] ?? '',
-                'isActive'=>$request->payload['isActive'] ?? '',
-                'isitem_Selling_Price_Out'=>$request->payload['isitem_Selling_Price_Out'] ?? '',
-                'isitem_Selling_Price_In'=>$request->payload['isitem_Selling_Price_In'] ?? '',
+        try {
+            Systerminals::where('id', $id)->update([
+                'terminal_code' => $request->payload['terminal_code'] ?? '',
+                'terminal_name' => $request->payload['terminal_name'] ?? '',
+                'terminal_brand' => $request->payload['terminal_brand'] ?? '',
+                'terminal_serial_number' => $request->payload['terminal_serial_number'] ?? '',
+                'terminal_Machine_Identification_Number' => $request->payload['terminal_Machine_Identification_Number'] ?? '',
+                'terminal_ip_address' => $request->payload['terminal_ip_address'] ?? '',
+                'terminal_mac_address' => $request->payload['terminal_mac_address'] ?? '',
+                'isActive' => $request->payload['isActive'] ?? '',
+                'isitem_Selling_Price_Out' => $request->payload['isitem_Selling_Price_Out'] ?? '',
+                'isitem_Selling_Price_In' => $request->payload['isitem_Selling_Price_In'] ?? '',
             ]);
             DB::connection('sqlsrv_pos')->commit();
-            return response()->json(["message" =>  'Record successfully saved','status'=>'200'], 200);
-       
+            return response()->json(["message" =>  'Record successfully saved', 'status' => '200'], 200);
         } catch (\Exception $e) {
             DB::connection('sqlsrv_pos')->rollback();
-            return response()->json(["message" => 'error','status'=>$e->getMessage()], 200);
-            
+            return response()->json(["message" => 'error', 'status' => $e->getMessage()], 200);
         }
     }
 
@@ -137,6 +168,6 @@ class TerminalSettingsController extends Controller
     {
         $details = Systerminals::find($id);
         $details->delete();
-        return response()->json(["message" =>  'Record successfully deleted','status' => '200'], 200);
+        return response()->json(["message" =>  'Record successfully deleted', 'status' => '200'], 200);
     }
 }

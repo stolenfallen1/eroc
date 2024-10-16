@@ -21,7 +21,7 @@ class Canvases
   }
 
   public function searchable(){
-    $this->model->with('vendor', 'unit', 'attachments');
+    $this->model->with('vendor', 'unit', 'attachments','item');
     $this->model->where('pr_request_details_id', Request()->details_id);
     $this->byBranch();
     $this->byTab();

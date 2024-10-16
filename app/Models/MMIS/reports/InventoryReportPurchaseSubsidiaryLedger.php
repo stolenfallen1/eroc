@@ -1,7 +1,7 @@
 <?php
 
-namespace App\Models\MMIS\reports;
 
+namespace App\Models\MMIS\reports;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use DB;

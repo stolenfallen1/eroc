@@ -37,13 +37,14 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 
 Route::controller(SOAController::class)->group(function() {
     Route::get('generate-statement/{id}', 'createStatmentOfAccount');
-    Route::get('generate-statement-summary/{id}', 'createStatmentOfAccountSummary');
+    Route::get('generate-statement-summary', 'createStatmentOfAccountSummary');
 });
 
 Route::controller(PatientDischarge::class)->group(function(){
     Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
     Route::put('untag-patient-maygohome/{id}', 'untagMGH');
     Route::put('discharge-patient/{id}', 'dischargePatient');
+    Route::get('patient-balance/{id}', 'getTotalCharges');
     Route::get('get-er-result', 'erResult');
 });
 

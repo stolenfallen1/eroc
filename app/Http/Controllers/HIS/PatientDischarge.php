@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use \Carbon\Carbon;
 use App\Models\HIS\ErResult;
 use DB;
+use App\Models\HIS\his_functions\HISBillingOut;
+use App\Models\HIS\SOA\OutPatient;
 
 class PatientDischarge extends Controller
 {
@@ -161,7 +163,9 @@ class PatientDischarge extends Controller
             ])->first();
     
             if (!$checkUser) {
+
                 return response()->json(['message' => 'Incorrect Username or Password'], 404);
+                
             }
     
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
@@ -210,6 +214,118 @@ class PatientDischarge extends Controller
 
             return response()->json(['message' => 'Error! ' . $e->getMessage()], 500);
         }
+    }
+
+    public function getTotalCharges($id) {
+
+        $data = OutPatient::with(['patientBillingInfo' => function($query) {
+            $query->orderBy('revenueID', 'asc'); 
+                }])
+                ->where('case_No', $id)
+                ->take(1)
+                ->get();
+        
+        if($data->isEmpty()) {
+
+            return response()->json([
+                'message'   => 'Cannot issue statement, billing is empty'
+            ], 404);
+
+        } else {
+           
+            $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
+
+            $totalChargesSummary = collect($billsPayment)
+                ->groupBy('RevenueID') 
+                ->map(function($groupedItems) {
+
+                    $totalAmount = $groupedItems->sum(function($billing) {
+                        return floatval(str_replace(',', '', $billing->Charges ?? 0));
+                    });
+                });
+
+                $firstRow = true;
+                $runningBalance = 0; 
+                $totalCharges = 0;
+                $prevID = '';
+                
+                $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
+
+                    return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
+
+                        $charges = floatval(str_replace(',', '', ($billing->amount * intval($billing->quantity))));  
+                
+                        if ($firstRow && ($billing->drcr === 'D' || $billing->drcr === 'P')) {
+
+                            $runningBalance = $charges;
+                            $totalCharges = $charges;
+                            $firstRow = false;
+
+                        } elseif($firstRow && $billing->drcr === 'C') {
+
+                            $runningBalance = 0;
+                            $totalCharges = 0;
+                            $firstRow = false;
+
+                        } else {
+
+                            if ((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID) !== 0) {
+
+                                $runningBalance = 0;
+                                $runningBalance += $charges;
+                                $totalCharges += $charges;
+
+                            } elseif((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID)=== 0) {
+
+                                $runningBalance += $charges;
+                                $totalCharges += $charges;
+
+                            } else {
+
+                                $runningBalance -= $charges;
+                                $totalCharges -= $charges;
+                            }
+
+                        }
+
+                        $prevID = $billing->revenueID;
+
+                        return [
+                            
+                            'Charges'               => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
+                                                    ? number_format(0, 2)
+                                                    : number_format($charges,2),
+
+                            'Credit'                => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
+                                                    ? number_format($charges,2)
+                                                    : number_format(0, 2),
+
+                            'Balance'               => number_format($runningBalance, 2)
+                        ];
+
+                    });
+                });
+
+                
+                $totalCharges = $patientBill->sum(function($bill) {
+                    return floatval(str_replace(',', '', $bill['Charges']));
+                });
+                
+                $totalCredits = $patientBill->sum(function($bill) {
+                    return floatval(str_replace(',', '', $bill['Credit']));
+                });
+    
+                $patientBillInfo = [
+
+                    'Charges' => number_format($totalCharges, 2),
+                    'Credit' => number_format($totalCredits, 2),
+                    'Total_Charges'     =>  number_format($totalCharges, 2),
+                ]; 
+
+            return response()->json($patientBillInfo, 200);
+
+        }
+        
     }
     
 }

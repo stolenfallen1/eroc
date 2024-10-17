@@ -1291,14 +1291,6 @@ class EmergencyRegistrationController extends Controller
                 $allergy                        = $patientRegistry && $patientRegistry->allergies()
                                                 ? $patientRegistry->allergies()->whereDate('created_at', $today)->first() 
                                                 : null;
-
-                $causeOfAllergy                 = $patientRegistry && $allergy->cause_of_allergy()
-                                                ? $allergy->cause_of_allergy()->whereDate('created_at', $today)->first() 
-                                                : null;
-
-                $symptomsOfAllergy              = $patientRegistry && $allergy->symptoms_allergy()
-                                                ? $allergy->symptoms_allergy()->whereDate('created_at', $today)->first() 
-                                                : null;
         
                 $badHabits                      = $patientRegistry && $patientRegistry->bad_habits()
                                                 ? $patientRegistry->bad_habits()->whereDate('created_at', $today)->first() 
@@ -2215,11 +2207,7 @@ class EmergencyRegistrationController extends Controller
 
                                 $patient->drug_used_for_allergy()->create(array_merge($commonData, $patientDrugUsedForAllergyData));
                             }
-                        } else {
-
-                            throw new \Exception('Failed to update Allergy');
-                            
-                        }
+                        } 
                     }
             
                     $badHabits->update($patientBadHabitsData);
@@ -2464,8 +2452,11 @@ class EmergencyRegistrationController extends Controller
     }
 
     public function updateAllergy($registry_id) {
+
         $allergy = PatientAllergies::where('case_No', $registry_id)->first();
+
         $isUpdated = false;
+
         if($allergy) {  
 
             $allergyUpdated           = $allergy->update(['isDeleted' => 1]);

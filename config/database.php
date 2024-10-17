@@ -184,6 +184,19 @@ return [
                 ],
             ],
         ],
+
+        'sqlsrv_medsys_core_db' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_CORE_DB', 'localhost'),
+            'port' => env('DB_PORT_MEDSYS_CORE_DB', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_CORE_DB', 'forge'),
+            'username' => env('DB_USERNAME_MEDSYS_CORE_DB', 'forge'),
+            'password' => env('DB_PASSWORD_MEDSYS_CORE_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
  
         'sqlsrv_patient_data_v1' => [
             'driver' => 'sqlsrv',

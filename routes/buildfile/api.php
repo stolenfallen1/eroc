@@ -9,6 +9,7 @@ use App\Http\Controllers\BuildFile\Hospital\DispositionController;
 use App\Http\Controllers\BuildFile\Hospital\mscHospitalRoomStatusController;
 use App\Http\Controllers\HIS\AllergyTypeController;
 use App\Http\Controllers\HIS\CaseIndicatorController;
+use App\Http\Controllers\HIS\DosagesController;
 use App\Http\Controllers\HIS\HISHospitalRoomsController;
 use App\Http\Controllers\HIS\MedicalPackageMasterController;
 use Illuminate\Support\Facades\Route;
@@ -666,6 +667,10 @@ Route::controller(TransactionCodesController::class)->group(function () {
     Route::get('get-charges-specimen', 'chargespecimen');
 });
 Route::resource('database-drivers', DriverController::class);
+
+Route::controller(DosagesController::class)->group(function () {
+    Route::get('get-dosages', 'index');
+});
 
 
 Route::controller(GlobalSettingsController::class)->group(function () {

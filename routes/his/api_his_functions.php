@@ -3,6 +3,7 @@
 use App\Http\Controllers\HIS\his_functions\CashierController;
 use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
 use App\Http\Controllers\HIS\his_functions\LaboratoryController;
+use App\Http\Controllers\HIS\his_functions\opd_specific\OPDMedicinesSuppliesController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
@@ -50,4 +51,9 @@ Route::controller(LaboratoryController::class)->group(function() {
     Route::post('get-lab-exams-uncancelled', 'getUncancelledLabExamsByPatient'); // Get All Uncancelled Laboratory Exams
     Route::post('archive-lab-exam', 'archivePatientLabItem'); // For Staff access cancellation
     Route::post('cancel-lab-exam', 'cancelPatientLabItem'); // For Head of Laboratory access cancellation
+});
+// OPD SPECIFIC - Routes
+// Post Medicine / Supplies Routes
+Route::controller(OPDMedicinesSuppliesController::class)->group(function() {
+    Route::post('get-medicine-supplies', 'medicineSuppliesList');
 });

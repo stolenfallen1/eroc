@@ -13,7 +13,8 @@ use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\HIS\CaseIndicatorController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use App\Http\Controllers\HIS\PatientDischarge;
-
+use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
+use App\Http\Controllers\HIS\EmergencyRoomMedicine;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,3 +52,5 @@ Route::get('/generate-statement', [SOAController::class, 'createStatmentOfAccoun
 Route::get('/generate-statement-summary', [SOAController::class, 'createStatmentOfAccountSummary']);
 Route::get('/patient-balance', [PatientDischarge::class, 'getTotalCharges']);
 Route::get('/get-staff-id', [EmergencyRegistrationController::class, 'getStaffId']);
+Route::get('get-transaction-codes', [TransactionCodesController::class, 'list']);
+Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);

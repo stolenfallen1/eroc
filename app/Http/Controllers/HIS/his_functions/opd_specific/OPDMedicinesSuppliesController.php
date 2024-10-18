@@ -28,7 +28,7 @@ class OPDMedicinesSuppliesController extends Controller
             $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
             $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
                 $query->where('warehouse_Id', $request->warehouseID)
-                    ->select('id', 'item_Id', DB::raw("$priceColumn as price"));
+                    ->select('id', 'item_Id', 'item_OnHand', DB::raw("$priceColumn as price"));
             }])
             ->whereIn('id', $warehouseItemsArray) 
             ->orderBy('item_name', 'asc');

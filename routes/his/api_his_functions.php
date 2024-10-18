@@ -7,6 +7,7 @@ use App\Http\Controllers\HIS\his_functions\opd_specific\OPDMedicinesSuppliesCont
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
+use App\Http\Controllers\HIS\EmergencyRoomMedicine;
 
 
 // Charge for Company / Insurance
@@ -56,4 +57,8 @@ Route::controller(LaboratoryController::class)->group(function() {
 // Post Medicine / Supplies Routes
 Route::controller(OPDMedicinesSuppliesController::class)->group(function() {
     Route::post('get-medicine-supplies', 'medicineSuppliesList');
+});
+
+Route::controller(EmergencyRoomMedicine::class)->group(function() {
+    Route::post('er-get-medicine-suplies', 'erRoomMedicine');
 });

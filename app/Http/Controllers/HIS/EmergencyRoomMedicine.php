@@ -25,10 +25,10 @@ class EmergencyRoomMedicine extends Controller
                 return response()->json(["msg" => "Warehouse items not found"], 404);
             }
 
-            $priceColumn = 'item_Selling_Price_In';
+            $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
             $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
                 $query->where('warehouse_Id', $request->warehouseID)
-                    ->select('id', 'item_Id', DB::raw("$priceColumn as price"));
+                    ->select('id', 'item_Id', 'item_OnHand', DB::raw("$priceColumn as price"));
             }])
             ->whereIn('id', $warehouseItemsArray) 
             ->orderBy('item_name', 'asc');
@@ -42,5 +42,34 @@ class EmergencyRoomMedicine extends Controller
         } catch(\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
+
+        // try {
+        //     $revenueCode = TransactionCodes::where("code",'RS')->first();
+        //     if (!$revenueCode) {
+        //         return response()->json(["msg" => "Revenue code not found"], 404);
+        //     }
+        //     $warehouseItems = Warehouseitems::where('warehouse_Id', 64)->pluck('item_Id');
+        //     $warehouseItemsArray = $warehouseItems->toArray();
+        //     if (empty($warehouseItemsArray)) {
+        //         return response()->json(["msg" => "Warehouse items not found"], 404);
+        //     }
+
+        //     $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
+        //     $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
+        //         $query->where('warehouse_Id', 64)
+        //             ->select('id', 'item_Id', 'item_OnHand', DB::raw("$priceColumn as price"));
+        //     }])
+        //     ->whereIn('id', $warehouseItemsArray) 
+        //     ->orderBy('item_name', 'asc');
+
+        //     if($request->keyword) {
+        //         $items->where('item_name','LIKE','%'.$request->keyword.'%');
+        //     }
+        //     $page  = $request->per_page ?? '15';
+        //     return response()->json($items->paginate($page), 200);
+
+        // } catch(\Exception $e) {
+        //     return response()->json(["msg" => $e->getMessage()], 500);
+        // }
     }
 }

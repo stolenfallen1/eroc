@@ -22,74 +22,78 @@ use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 // <!====================================== PURCHASE ORDER  ====================================== !> 
 
 Route::get('/print-purchase-order/{id}', function ($pid) {
+    
     $id = Crypt::decrypt($pid);
+    try {
+        $purchase_order = VwPurchaseOrderMaster::with('items')->findOrFail($id);
+        // Generate the QR code for the purchase-order
+        $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
 
-    $purchase_order = VwPurchaseOrderMaster::with('items')->findOrFail($id);
-    // Generate the QR code for the purchase-order
-    $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
+        // Load the logo image and encode it in base64
+        $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
+        $imageData = base64_encode(file_get_contents($imagePath));
+        $imageSrc = 'data:image/jpeg;base64,' . $imageData;
 
-    // Load the logo image and encode it in base64
-    $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
-    $imageData = base64_encode(file_get_contents($imagePath));
-    $imageSrc = 'data:image/jpeg;base64,' . $imageData;
+        // Encode the QR code in base64
+        $qrData = base64_encode($qrCode);
+        $qrSrc = 'data:image/jpeg;base64,' . $qrData;
+        // 12% VAT rate and a discount (adjust as needed)
+        $vatAmount = 0;
+        $discount = 0;
+        $Nondiscount = 0;
+        $subTotalNonFreeGoods = 0;
+        $grandTotalNonFreeGoods = 0;
+        $currency = '₱';
 
-    // Encode the QR code in base64
-    $qrData = base64_encode($qrCode);
-    $qrSrc = 'data:image/jpeg;base64,' . $qrData;
-    // 12% VAT rate and a discount (adjust as needed)
-    $vatAmount = 0;
-    $discount = 0;
-    $Nondiscount = 0;
-    $subTotalNonFreeGoods = 0;
-    $grandTotalNonFreeGoods = 0;
-    $currency = '₱';
+        // Filter items where isfreegood = 1 and isfreegood = 0
+        $freeGoods = $purchase_order->items->filter(function ($item) {
+            return $item->isFreeGoods == 1;
+        });
 
-    // Filter items where isfreegood = 1 and isfreegood = 0
-    $freeGoods = $purchase_order->items->filter(function ($item) {
-        return $item->isFreeGoods == 1;
-    });
-
-    $nonFreeGoods = $purchase_order->items->filter(function ($item) {
-        return $item->isFreeGoods == 0;
-    });
+        $nonFreeGoods = $purchase_order->items->filter(function ($item) {
+            return $item->isFreeGoods == 0;
+        });
 
 
 
-    // Calculate totals for non-free goods
-    foreach ($nonFreeGoods as $item) {
-        $itemTotal = $item->order_qty * $item->price;
-        $subTotalNonFreeGoods += (float)$itemTotal;
-        $Nondiscount += (float)$item->discount;
-        $vatAmount += (float)$item->vat;
-        $grandTotalNonFreeGoods += (float)$item->net_amount;
-        if ($item->currency_id == 2) {
-            $currency = '$';
+        // Calculate totals for non-free goods
+        foreach ($nonFreeGoods as $item) {
+            $itemTotal = $item->order_qty * $item->price;
+            $subTotalNonFreeGoods += (float)$itemTotal;
+            $Nondiscount += (float)$item->discount;
+            $vatAmount += (float)$item->vat;
+            $grandTotalNonFreeGoods += (float)$item->net_amount;
+            if ($item->currency_id == 2) {
+                $currency = '$';
+            }
         }
+        // Calculate overall total
+        // Prepare the data for the PDF
+        $pdf_data = [
+            'logo' => $imageSrc,
+            'qr' => $qrSrc,
+            'purchase_order' => $purchase_order,
+            'purchase_order_items' => $nonFreeGoods,
+            'free_goods_purchase_order_items' => $freeGoods,
+            'sub_total' => $subTotalNonFreeGoods,
+            'discount' => $Nondiscount,
+            'vat_amount' => $vatAmount,
+            'grand_total' => $grandTotalNonFreeGoods,
+            'currency' => $currency,
+        ];
+
+        $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
+        // Render the PDF
+        $pdf->render();
+
+        // Add page numbers to the PDF
+        $dompdf = $pdf->getDomPDF();
+        $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
+        $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, [0, 0, 0]);
+        return $pdf->stream('PO-' . $purchase_order['vendor_Name'] . '-' . now()->format('m-d-Y') . '-' . $purchase_order['poNumber'] . '.pdf');
+    } catch (Exception $e) {
+        return $e->getMessage();
     }
-    // Calculate overall total
-    // Prepare the data for the PDF
-    $pdf_data = [
-        'logo' => $imageSrc,
-        'qr' => $qrSrc,
-        'purchase_order' => $purchase_order,
-        'purchase_order_items' => $nonFreeGoods,
-        'free_goods_purchase_order_items' => $freeGoods,
-        'sub_total' => $subTotalNonFreeGoods,
-        'discount' => $Nondiscount,
-        'vat_amount' => $vatAmount,
-        'grand_total' => $grandTotalNonFreeGoods,
-        'currency' => $currency,
-    ];
-
-    $pdf = PDF::loadView('pdf_layout.purchaser_order', ['pdf_data' => $pdf_data]);
-    // Render the PDF
-    $pdf->render();
-
-    // Add page numbers to the PDF
-    $dompdf = $pdf->getDomPDF();
-    $font = $dompdf->getFontMetrics()->get_font("helvetica", "bold");
-    $dompdf->get_canvas()->page_text(750, 595, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, [0, 0, 0]);
-    return $pdf->stream('PO-' . $purchase_order['vendor_Name'] . '-' . now()->format('m-d-Y') . '-' . $purchase_order['poNumber'] . '.pdf');
 });
 
 // <!====================================== END PURCHASE ORDER  ====================================== !> 
@@ -209,7 +213,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $grandTotal = 0;
     $currency = '₱';
 
-     // Filter items where isfreegood = 1 and isfreegood = 0
+    // Filter items where isfreegood = 1 and isfreegood = 0
     $freeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 1;
     });
@@ -425,10 +429,10 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
 
 
 Route::controller(PurchaseSubsidiaryReportController::class)->group(function () {
-    Route::get('print-all-supplier', 'printAllSupplier');  
+    Route::get('print-all-supplier', 'printAllSupplier');
 });
 
 Route::controller(PriceListController::class)->group(function () {
-    Route::get('price-all-report', 'printAllLocation');  
+    Route::get('price-all-report', 'printAllLocation');
 });
 // <!====================================== END CONSIGNMENT PO  ====================================== !> 

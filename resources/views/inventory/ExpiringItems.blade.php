@@ -70,10 +70,13 @@
 
         td {
             font-size: 12px;
+            border: none !important;
         }
 
         th {
             font-size: 12px;
+            border: none !important;
+            border-bottom: 2px solid;
         }
 
         .item-td {

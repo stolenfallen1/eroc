@@ -19,6 +19,9 @@ class PurchaseOrders
   }
 
   public function searchable(){
+    if($this->role->purchaser()){
+      $this->model->whereIn('po_Document_warehouse_id', $this->authUser->departments);
+    }
     $this->model->with('details.canvas', 'purchaseRequest', 'vendor', 'warehouse', 'status', 'user');
     $this->searchableColumns();
     $this->byBranch();

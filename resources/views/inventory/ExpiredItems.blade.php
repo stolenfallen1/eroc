@@ -76,15 +76,18 @@
 
         td {
             font-size: 12px;
+            border: none !important;
         }
 
         th {
             font-size: 12px;
+            border: none !important;
             /* text-transform: uppercase; */
         }
-
+        
         .item-td {
             text-align: center;
+            border: none !important;
         }
 
         .spacer {
@@ -132,6 +135,7 @@
 
         td {
             text-align: center;
+            border: none !important;
         }
 
         td:nth-child(2) {
@@ -168,6 +172,12 @@
         .title {
             text-align: center;
             text-transform: uppercase;
+        }
+        .border-top {
+            border-top: 1px solid black;
+        }
+        .border-bottom {
+            border-bottom: 1px solid black;
         }
     </style>
 </head>
@@ -208,15 +218,17 @@
         </div>
         <table class="item-section">
             <thead>
-                <th style="width: 50px;">Code</th>
-                <th style="width: 250px;">Item Name</th>
-                <th style="width: 150px;">Description</th>
-                <th style="width: 60px;">Qty</th>
-                <th style="width: 60px;">Unit</th>
-                <th style="width: 60px;">Unit Cost</th>
-                <th style="width: 60px;">Total Cost</th>
-                <th style="width: 100px;">Batch Number</th>
-                <th style="width: 100px;">Batch Expiry Date</th>
+              <tr class="border-bottom">
+                <th class="border-bottom" style="width: 50px;">Code</th>
+                <th class="border-bottom" style="width: 250px;">Item Name</th>
+                <th class="border-bottom" style="width: 150px;">Description</th>
+                <th class="border-bottom" style="width: 60px;">Qty</th>
+                <th class="border-bottom" style="width: 60px;">Unit</th>
+                <th class="border-bottom" style="width: 60px;">Unit Cost</th>
+                <th class="border-bottom" style="width: 60px;">Total Cost</th>
+                <th class="border-bottom" style="width: 100px;">Batch Number</th>
+                <th class="border-bottom" style="width: 100px;">Batch Expiry Date</th>
+              </tr>
             </thead>
             <tbody>
                 @php
@@ -244,7 +256,7 @@
                 $grandTotalqty +=$totalqty;
                 $grandTotalCost +=$totalCost;
                 @endphp
-                <tr>
+                <tr  class="border-top">
                     <td class="border-none" ></td>
                     <td class="border-none"></td>
                     <td class="border-none"></td>
@@ -255,7 +267,7 @@
                     <td class="border-none"></td>
                     <td class="border-none"></td>
                 </tr>
-                <tr class="border-none">
+                <tr class="border-none ">
                     <td colspan="9" class="border-none"><br></td>
                 </tr>
             </tbody>

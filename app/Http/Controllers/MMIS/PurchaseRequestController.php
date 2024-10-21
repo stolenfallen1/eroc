@@ -56,7 +56,7 @@ class PurchaseRequestController extends Controller
         $role = Auth::user()->role->name;
         return PurchaseRequest::with(['warehouse', 'status', 'category', 'subcategory', 'itemGroup', 'priority',
             'purchaseRequestAttachments', 'user', 'departmentApprovedBy', 'departmentDeclinedBy', 'administratorApprovedBy',
-            'purchaseRequestDetails'=>function($q) use($role){
+            'purchaseRequestDetails'=>function($q) use($id){
                 if(Request()->tab==6){
                     $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
                     ->where(function($query){
@@ -65,24 +65,24 @@ class PurchaseRequestController extends Controller
                         });
                     })->where('is_submitted', true);
                 }else if(Request()->tab==7){
-                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                    $q->with('depApprovedBy','adminApprovedBy','conApprovedBy','itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('recommendedCanvas', function($query1){
                             $query1->where('canvas_Level2_ApprovedBy', '!=', null)
                             ->orWhere('canvas_Level2_CancelledBy', '!=', null);
                         });
                     })->where('is_submitted', true);
                 }else if(Request()->tab==9){
-                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                    $q->with('depApprovedBy','adminApprovedBy','conApprovedBy','itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
                         $query->whereHas('recommendedCanvas', function($query1){
                             $query1->where('canvas_Level2_ApprovedBy', '!=', null)
                             ->orWhere('canvas_Level2_CancelledBy', '!=', null);
                         });
                     })->whereDoesntHave('purchaseOrderDetails');
                 }else if(Request()->tab==10){
-                    $q->with(['itemMaster', 'canvases', 'recommendedCanvas' => function($q){
+                    $q->with(['depApprovedBy','preparedSupplier','adminApprovedBy','conApprovedBy','itemMaster', 'canvases', 'recommendedCanvas' => function($q){
                         $q->with('vendor', 'canvaser','comptroller', 'unit');
                     }, 'unit', 'PurchaseOrderDetails' => function($query1){
-                        $query1->with('purchaseOrder.user', 'unit');
+                        $query1->with('purchaseOrder.user', 'unit','purchaseOrder.vendor');
                     }]);
                 }else if(Request()->tab==8){
                     $q->with(['itemMaster', 'canvases', 'recommendedCanvas' => function($q){
@@ -92,19 +92,40 @@ class PurchaseRequestController extends Controller
                     }])->where('is_submitted', true);
                 }
                 else{
-                    $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
-                        $query->whereHas('canvases', function($query1){
-                            // $query1->whereDoesntHave('purchaseRequestDetail', function($q1){
-                            //     $q1->where('is_submitted', [true,false]);
-                            // });
-                        })->orWhereDoesntHave('canvases');
-                    })->where(function($q2){
-                        $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
-                    });
+                    if (PurchaseRequest::where('id',$id)->where('ismedicine', 1)->exists()) {
+                        $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
+                            ->where(function ($query) {
+                                $query->whereHas('canvases', function ($query1) {
+                                    // Keeping the comment if `ismedicine` is 1
+                                    // $query1->whereDoesntHave('purchaseRequestDetail', function ($q1) {
+                                    //     $q1->where('is_submitted', [true, false]);
+                                    // });
+                                })
+                                ->orWhereDoesntHave('canvases');
+                            });
+                    } else {
+                        $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
+                            ->where(function ($query) {
+                                $query->whereHas('canvases', function ($query1) {
+                                    // Keeping the comment if `ismedicine` is not 1
+                                    // $query1->whereDoesntHave('purchaseRequestDetail', function ($q1) {
+                                    //     $q1->where('is_submitted', [true, false]);
+                                    // });
+                                })
+                                ->orWhereDoesntHave('canvases');
+                            })
+                            ->where(function ($q2) {
+                                // Active condition for non-medicine items
+                                $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
+                                   ->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
+                            });
+                    }
+                    
+                    
                 }
             }, 'purchaseOrder' => function($q){
                 $q->with('user', 'comptroller', 'administrator', 'corporateAdmin', 'president', 
-                'details.item', 'details.unit', 'details.purchaseRequestDetail.recommendedCanvas.vendor');
+                'details.item', 'details.unit', 'details.purchaseRequestDetail.recommendedCanvas.vendor','vendor');
             }])->findOrFail($id);
     }
 
@@ -154,6 +175,7 @@ class PurchaseRequestController extends Controller
                 'pr_Document_Number' => $number,
                 'pr_Document_Prefix' => $prefix ?? "",
                 'pr_Document_Suffix' => $suffex ?? "",
+                'vendor_Id'=> $request->prepared_supplier_id ?? '',
                 'pr_Status_Id' => $status ?? null,
                 'isPerishable' => $request->isPerishable ?? 0,
                 'isconsignment'=>isset($request->isconsignments) ? 1 : 0 ,
@@ -204,13 +226,20 @@ class PurchaseRequestController extends Controller
                         'discount' => $item['discount'] ?? 0,
                         'item_Request_Qty' => $item['item_Request_Qty'],
                         'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                        'recommended_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                         'lead_time' => $item['lead_time'] ?? 0,
                         'vat_rate' => $item['vat_rate'] ?? 0,
                         'vat_type' => $item['vat_type'] ?? 0,
                         'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                     ]
                 );
-
+             
+                if($request->invgroup_id == 2){
+                    $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
+                    $item['id'] = $details->id;
+                    $item['pr_id'] = $pr['id'];
+                    $this->addPharmaCanvas($item);
+                }
                 if(isset($request->isconsignments) && $request->isconsignments == 1){
                     if($item['item_Request_Qty'] > 0){
                         // PurchaseOrderConsignment::create([
@@ -414,9 +443,9 @@ class PurchaseRequestController extends Controller
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
                 // return Auth::user()->role->name;
                 if(!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
-                    if($request->invgroup_id == 2){
-                        $this->addPharmaCanvas($item);
-                    }
+                    // if($request->invgroup_id == 2){
+                    //     $this->addPharmaCanvas($item);
+                    // }
                 }
              
                 if(Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
@@ -443,7 +472,7 @@ class PurchaseRequestController extends Controller
                                 'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                                 'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                                 'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                                // 'is_submitted' => 1,
+                                'is_submitted' => 1,
                             ]);
                         } else{
                             $prd->update([
@@ -582,11 +611,12 @@ class PurchaseRequestController extends Controller
         if($item['discount']){
             $discount_amount = $total_amount * ($item['discount'] / 100);
         }
-
+        $pr_id = Request()->id ?? $item['pr_id'];
+        
         CanvasMaster::updateOrCreate(
             [
-                'pr_request_id' => Request()->id,
-                'pr_request_details_id' =>  $item['id'],
+                'pr_request_id' => $pr_id,
+                'pr_request_details_id' => $item['id'],
                 'canvas_Item_Id' => $item['item_Id'],
                 'vendor_id' => $vendor->id,
                 'canvas_Branch_Id' => Request()->branch_Id
@@ -595,14 +625,14 @@ class PurchaseRequestController extends Controller
             'canvas_Document_Number' => $number,
             'canvas_Document_Prefix' => $prefix,
             'canvas_Document_Suffix' => $suffix,
-            'canvas_Document_CanvassBy' => Request()->pr_RequestedBy,
+            'canvas_Document_CanvassBy' => Request()->pr_RequestedBy ?? Auth()->user()->idnumber,
             'canvas_Document_Transaction_Date' => Carbon::now(),
             'requested_date' => Carbon::now(),
             'canvas_Branch_Id' => Request()->branch_Id,
-            'canvas_Warehouse_Group_Id' => Request()->warehouse['warehouse_Group_Id'],
+            'canvas_Warehouse_Group_Id' => Request()->warehouse['warehouse_Group_Id'] ?? '1',
             'canvas_Warehouse_Id' =>  Request()->warehouse_Id,
             'vendor_id' => $vendor->id,
-            'pr_request_id' => Request()->id,
+            'pr_request_id' => $pr_id,
             'pr_request_details_id' => $item['id'],
             'canvas_Item_Id' => $item['item_Id'],
             'canvas_Item_Qty' => $item['item_Request_Qty'],

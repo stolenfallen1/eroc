@@ -31,11 +31,17 @@ class PurchaseRequestDetails extends Model
     {
         return $this->hasMany(CanvasMaster::class, 'pr_request_details_id', 'id');
     }
-
+    
     public function recommendedCanvas()
     {
         return $this->hasOne(CanvasMaster::class, 'pr_request_details_id')->where('isRecommended', 1);
     }
+
+    public function changedRecommendedCanvas()
+    {
+        return $this->belongsTo(CanvasMaster::class, 'recommended_supplier_id','id')->where('isRecommended', 1);
+    }
+
 
     public function purchaseOrderDetails(){
         return $this->hasOne(PurchaseOrderDetails::class, 'pr_detail_id', 'id');

@@ -49,6 +49,7 @@ class CanvasController extends Controller
 
     public function store(Request $request)
     {
+
         $authUser = Auth::user();
         $pr = PurchaseRequest::findOrfail($request->pr_request_id);
         $itemDetails = Itemmasters::findOrfail($request->canvas_Item_Id);
@@ -239,9 +240,16 @@ class CanvasController extends Controller
     
     public function submitCanvasItem(Request $request)
     {
-        PurchaseRequestDetails::whereIn('id', $request->items)->update([
-            'is_submitted' => true
+        PurchaseRequest::where('id', $request->prid)->update([
+            'pr_Purchaser_Status_Id' => true,
         ]);
+        $details = canvasMaster::where('pr_request_id',$request->prid)->whereIn('pr_request_details_id', $request->items)->where('isRecommended',1)->get();
+        foreach($details as $row){
+            PurchaseRequestDetails::where('id', $row->pr_request_details_id)->update([
+                'is_submitted' => true,
+                'recommended_supplier_id' => $row->id,
+            ]);
+        }
         return response()->json(['message' => 'success'], 200);
     }
 

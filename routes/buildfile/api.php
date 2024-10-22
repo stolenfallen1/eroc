@@ -232,6 +232,7 @@ Route::controller(BranchController::class)->group(function () {
 
 Route::controller(DepartmentController::class)->group(function () {
     Route::get('departments', 'index');
+    Route::get('get-departments-list', 'getDepartmentList');
     Route::get('department-sections', 'getSections');
     Route::post('get-department-access', 'UserDeptAccess');
 

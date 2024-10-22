@@ -51,4 +51,15 @@ class DepartmentController extends Controller
         $sections = WarehouseSection::where('warehouse_id', Auth::user()->warehouse_id)->get();
         return response()->json(['sections'=> $sections] ,200);
     }
+    
+    public function getDepartmentList() {
+        try {
+            $data = Warehouses::query();
+            $data->where('isActive', 1);
+            $data->orderBy('warehouse_description', 'asc');
+            return response()->json($data->get(), 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

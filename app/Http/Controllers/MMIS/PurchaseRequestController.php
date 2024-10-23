@@ -30,6 +30,7 @@ class PurchaseRequestController extends Controller
 {
     public function index()
     {
+
         // return TestModel::get();
         return (new PurchaseRequests)->searchable();
     }
@@ -153,7 +154,7 @@ class PurchaseRequestController extends Controller
             if($request->invgroup_id == 2){
                 $ismed = 1;
             }
-            if(isset($request->isconsignments) && $request->isconsignments == 1){
+            if($request->isconsignments && $request->isconsignments == 1){
                 $ismed = 1;
             }
             $pr = PurchaseRequest::updateOrCreate(
@@ -175,10 +176,10 @@ class PurchaseRequestController extends Controller
                 'pr_Document_Number' => $number,
                 'pr_Document_Prefix' => $prefix ?? "",
                 'pr_Document_Suffix' => $suffex ?? "",
-                'vendor_Id'=> $request->prepared_supplier_id ?? '',
+                // 'vendor_Id'=> isset($request->prepared_supplier_id) ? $request->prepared_supplier_id : '',
                 'pr_Status_Id' => $status ?? null,
                 'isPerishable' => $request->isPerishable ?? 0,
-                'isconsignment'=>isset($request->isconsignments) ? 1 : 0 ,
+                'isconsignment'=>$request->isconsignments,
                 'ismedicine'=>$ismed 
             ]);
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
@@ -191,7 +192,7 @@ class PurchaseRequestController extends Controller
                 }
             }
             // return $request->items;
-            if(isset($request->isconsignments) && $request->isconsignments == 1){
+            if($request->isconsignments && $request->isconsignments == 1){
               
                 $po_consignment = PurchaseOrderConsignment::updateOrCreate(
                     [
@@ -225,8 +226,8 @@ class PurchaseRequestController extends Controller
                         'item_ListCost' => $item['item_ListCost'] ?? 0,
                         'discount' => $item['discount'] ?? 0,
                         'item_Request_Qty' => $item['item_Request_Qty'],
-                        'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
-                        'recommended_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                        'prepared_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id']: 0,
+                        'recommended_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id']: 0,
                         'lead_time' => $item['lead_time'] ?? 0,
                         'vat_rate' => $item['vat_rate'] ?? 0,
                         'vat_type' => $item['vat_type'] ?? 0,

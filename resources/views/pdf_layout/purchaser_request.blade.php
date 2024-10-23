@@ -188,8 +188,8 @@
                 <td class="item-td" >{{ $pdf_data['purchase_request']['ismedicine'] ? $detail['itemMaster']['item_Description'] : '' }}</td>
                 <td class="item-td" >{{ (int)$detail['item_Branch_Level1_Approved_Qty'] }}</td>
                 <td class="item-td" >{{ $detail['unit']['name']??$detail['unit2']['name'] }}</td>
-                <td class="item-td" >0</td>
-                <td class="item-td" >0</td>
+                <td class="item-td" >{{ number_format($detail['item_ListCost'],2) }}</td>
+                <td class="item-td" >{{ number_format(($detail['item_ListCost'] * $detail['item_Branch_Level1_Approved_Qty']),2) }}</td>
               </tr>
           @endforeach
         </tbody>

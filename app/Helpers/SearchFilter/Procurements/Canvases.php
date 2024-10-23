@@ -21,7 +21,9 @@ class Canvases
   }
 
   public function searchable(){
-    
+    $this->model->where(function($query) {
+      $query->whereYear('created_at', '!=', 2022);
+    });
     $this->model->with('vendor', 'unit', 'attachments','item');
     $this->model->where('pr_request_details_id', Request()->details_id);
     $this->byBranch();

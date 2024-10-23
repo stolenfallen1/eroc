@@ -393,6 +393,15 @@ class PurchaseRequestController extends Controller
     }
 
     public function removeItem($id){
+        
+        $prdetail = PurchaseRequestDetails::where('id', $id)->first();
+
+        if($prdetail->canvases()->where('pr_request_details_id',$id)->exists()){
+            $prdetail->canvases()->where('pr_request_details_id',$id)->delete();
+        }
+       
+        $prdetail->delete();
+
         return PurchaseRequestDetails::where('id', $id)->delete();
     }
 
@@ -414,6 +423,9 @@ class PurchaseRequestController extends Controller
         }
         foreach ($pr->purchaseRequestDetails as $detail) {
             File::delete(public_path().$detail->filepath);
+            if($detail->canvases()->where('pr_request_details_id',$detail->id)->exists()){
+                $detail->canvases()->where('pr_request_details_id',$detail->id)->delete();
+            }
             $detail->delete();
         }
         $pr->delete();

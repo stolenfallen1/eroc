@@ -40,6 +40,9 @@ class PurchaseOrders
 
   public function searchableColumns(){
     $searchable = ['po_number', 'pr_number'];
+    $this->model->where(function($query) {
+      $query->whereYear('created_at', '!=', 2022);
+    });
     if (Request()->keyword) {
       $keyword = Request()->keyword;
       $this->model->where(function ($q) use ($keyword, $searchable) {
@@ -58,7 +61,7 @@ class PurchaseOrders
           }
       });
     }else{
-      $this->model->where('po_Document_number', 'like', "000%");
+      // $this->model->where('po_Document_number', 'like', "000%");
     }
   }
   

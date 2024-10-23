@@ -200,8 +200,8 @@ class PurchaseOrderController extends Controller
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;
-                $checkcanvas = CanvasMaster::whereNull('canvas_Level2_ApprovedBy')->where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
-                if(!$checkcanvas){
+                // $checkcanvas = CanvasMaster::whereNull('canvas_Level2_ApprovedBy')->where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                // if(!$checkcanvas){
                         
                     $checkPO = purchaseOrderMaster::whereNull('comptroller_approved_by')->where('pr_request_id',$purchase_order['pr_request_id'])->where('po_Document_vendor_id',$purchase_order['po_Document_vendor_id'])->first();
                     if ($checkPO) {
@@ -371,7 +371,7 @@ class PurchaseOrderController extends Controller
                         }
                     }
                     
-                }
+                // }
             }
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_mmis')->commit();

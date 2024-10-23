@@ -11,5 +11,4 @@ class UserRoleItemGroup extends Model
     use HasFactory;
     protected $connection = 'sqlsrv';
     protected $table = "user_role_itemcategories";
-    
 }

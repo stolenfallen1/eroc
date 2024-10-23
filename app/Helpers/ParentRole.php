@@ -51,6 +51,13 @@ class ParentRole{
         return $this->parent_role('PHARMACIST TAKE ORDER');
     }
 
+    public function pharmacy_warehouse(){
+        if(Auth::user()->warehouse_id == '78' || Auth::user()->warehouse_id == '66') return true;
+    }
+    public function isMedicine($itemgroup){
+        if ($itemgroup == 2) return true;
+    }
+    
     public function pharmacyHead(){
         return $this->parent_role('PHARMACIST HEAD');
     }

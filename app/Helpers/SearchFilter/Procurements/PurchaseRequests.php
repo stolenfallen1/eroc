@@ -507,49 +507,46 @@ class PurchaseRequests
 
   private function forCanvas()
   {
-    $assignedItemGroup = is_array($this->authUser->assigneditemgroup) 
-      ? $this->authUser->assigneditemgroup 
+    $assignedItemGroup = is_array($this->authUser->assigneditemgroup)
+      ? $this->authUser->assigneditemgroup
       : (array) $this->authUser->assigneditemgroup;
-      // $this->model->whereIn('invgroup_id',$this->authUser->assigneditemgroup);
+    $this->model->whereIn('invgroup_id', $this->authUser->assigneditemgroup);
 
-      if ($this->role->isMedicine('2')) {
-        $this->model->with('purchaseRequestDetails');
+    $this->model->with(['purchaseRequestDetails' => function ($q) {
+      if($this->model->where('ismedicine',1)->exists()){
+
       }else{
-        $this->model->with(['purchaseRequestDetails' => function ($q) {
-          $q->where(function ($q2) {
-            $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
-          })->where(function ($q2) {
-            $q2->where('is_submitted', true)->orWhereNull('is_submitted', false)->orWhereNull('is_submitted');
-          });
-        }]);
-      }
-      if (!$this->role->isMedicine(2)) {
-        $this->model->where(function ($q1) {
-          $q1->where(function ($q2) {
-            $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
-              ->where('invgroup_id', '!=', 2)
-              ->whereHas('purchaseRequestDetails', function ($q3) {
-                $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
-              });
-          })
-            ->orWhere(function ($q2) {
-              // ->where('invgroup_id', 2)
-              $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3) {
-                $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
-              });
-            });
+        $q->where(function ($q2) {
+          $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
+        })->where(function ($q2) {
+          $q2->where('is_submitted', true)->orWhereNull('is_submitted', false)->orWhereNull('is_submitted');
         });
       }
-    
-      $this->model->whereHas('purchaseRequestDetails', function ($q1) {
-        $q1->whereHas('canvases', function ($q1) {
-          $q1->whereDoesntHave('purchaseRequestDetail', function ($q2) {
-            $q2->where('is_submitted', true);
+    }]);
+    $this->model->where(function ($q1) {
+      $q1->where(function ($q2) {
+        $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
+          ->where('invgroup_id', '!=', 2)
+          ->whereHas('purchaseRequestDetails', function ($q3) {
+            $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
           });
-          $q1->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
-        })->orWhereDoesntHave('canvases');
-      });
-   
+      })
+        ->orWhere(function ($q2) {
+          // ->where('invgroup_id', 2)
+          $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3) {
+            $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
+          });
+        });
+    });
+    $this->model->whereHas('purchaseRequestDetails', function ($q1) {
+      $q1->whereHas('canvases', function ($q1) {
+        $q1->whereDoesntHave('purchaseRequestDetail', function ($q2) {
+          $q2->where('is_submitted', true);
+        });
+        $q1->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+      })->orWhereDoesntHave('canvases');
+    });
+
 
     // $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){
     //   // $q->where('is_submitted', NULL)->orWhere('is_submitted', false)

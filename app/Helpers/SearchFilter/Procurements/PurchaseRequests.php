@@ -522,20 +522,20 @@ class PurchaseRequests
           $q2->where('is_submitted', true)->orWhereNull('is_submitted', false)->orWhereNull('is_submitted');
         });
       }
-    }]);
-    $this->model->where(function ($q1) {
+    }])
+    ->where(function ($q1) {
       $q1->where(function ($q2) {
-        $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
-          ->where('invgroup_id', '!=', 2)
-          ->whereHas('purchaseRequestDetails', function ($q3) {
-            $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
-          });
-      })
+          // $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
+          // $q2->where('invgroup_id', '!=', 2);
+          // ->whereHas('purchaseRequestDetails', function ($q3) {
+          //   $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
+          // });
+        })
         ->orWhere(function ($q2) {
           // ->where('invgroup_id', 2)
-          $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3) {
-            $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
-          });
+            // $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3) {
+            //   $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
+            // });
         });
     });
     $this->model->whereHas('purchaseRequestDetails', function ($q1) {

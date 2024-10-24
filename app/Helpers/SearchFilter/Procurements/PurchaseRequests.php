@@ -222,7 +222,7 @@ class PurchaseRequests
         })
         ->with('purchaseRequestDetails.itemMaster');
     } else if ($this->role->department_head()) {
-      if ($this->role->pharmacy_warehouse()) {
+      if ($this->role->pharmacy_warehouse() || $this->role->isdietary() || $this->role->isdietaryhead()) {
         $this->model->where('pr_Purchaser_Status_Id', 1);
       }
       $this->model->whereIn('warehouse_Id', $this->authUser->departments)
@@ -507,45 +507,104 @@ class PurchaseRequests
 
   private function forCanvas()
   {
-    $assignedItemGroup = is_array($this->authUser->assigneditemgroup)
-      ? $this->authUser->assigneditemgroup
-      : (array) $this->authUser->assigneditemgroup;
+
     $this->model->whereIn('invgroup_id', $this->authUser->assigneditemgroup);
-
     $this->model->with(['purchaseRequestDetails' => function ($q) {
-      if($this->model->where('ismedicine',1)->exists()){
-
-      }else{
+      if ($this->model->where('ismedicine', 1)->exists() || $this->model->where('isdietary', 1)->exists()) {
+      } else {
         $q->where(function ($q2) {
-          $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
+          if ($q2->where('isdietary', 1)->exists() || $q2->where('ismedicine', 1)->exists()) {
+            $q2->whereNull('pr_Branch_Level1_ApprovedBy')->orWhereNull('pr_Branch_Level2_ApprovedBy');
+          } else {
+            $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
+          }
         })->where(function ($q2) {
-          $q2->where('is_submitted', true)->orWhereNull('is_submitted', false)->orWhereNull('is_submitted');
+          $q2->where('is_submitted', false)->orWhereNull('is_submitted');
         });
       }
-    }])
-    ->where(function ($q1) {
+    }]);
+
+    $this->model->where(function ($q1) {
       $q1->where(function ($q2) {
-          // $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
-          // $q2->where('invgroup_id', '!=', 2);
-          // ->whereHas('purchaseRequestDetails', function ($q3) {
-          //   $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
-          // });
-        })
+        $q2->where(function ($q3) {
+          $q3->whereNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level1_ApprovedBy');
+        })->where('invgroup_id', '!=', 2)->whereHas('purchaseRequestDetails', function ($q3) {
+          $q3->where(function ($q5) {
+            if ($q5->where('isdietary', 1)->exists() || $q5->where('ismedicine', 1)->exists()) {
+              $q5->where(['pr_Branch_Level1_ApprovedBy' => null])->orWhereNotNull('pr_Branch_Level1_ApprovedBy');
+            } else {
+              $q5->whereNotNull('pr_Branch_Level1_ApprovedBy');
+            }
+          });
+        });
+      })
         ->orWhere(function ($q2) {
-          // ->where('invgroup_id', 2)
-            // $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3) {
-            //   $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
-            // });
+          $q2->where(function ($q3) {
+            $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null)->orWhereNull('pr_Branch_Level2_ApprovedBy');
+          })
+            ->where('invgroup_id', 2)->whereHas('purchaseRequestDetails', function ($q3) {
+              $q3->where(function ($q4) {
+                if ($q4->where('isdietary', 1)->exists() || $q4->where('ismedicine', 1)->exists()) {
+                  $q4->where('pr_Branch_Level2_ApprovedBy', '!=', null)->orWhereNull('pr_Branch_Level2_ApprovedBy');
+                } else {
+                  $q4->where('pr_Branch_Level2_ApprovedBy', '!=', null);
+                }
+              });
+            });
         });
     });
+
+
+
     $this->model->whereHas('purchaseRequestDetails', function ($q1) {
       $q1->whereHas('canvases', function ($q1) {
         $q1->whereDoesntHave('purchaseRequestDetail', function ($q2) {
           $q2->where('is_submitted', true);
         });
-        $q1->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+        // $q->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
       })->orWhereDoesntHave('canvases');
     });
+
+    // $this->model->where(function ($q1) {
+    // if(($q1->where('ismedicine',1)->exists() || $q1->where('isdietary',1)->exists())){
+
+    // }else{
+    // $q1->where(function ($q2) {
+    //   $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
+    //   ->where('invgroup_id', '!=', 2)
+    //   ->whereHas('purchaseRequestDetails', function ($q3) {
+    //     $q3->whereNotNull('pr_Branch_Level1_ApprovedBy');
+    //   });
+    // })
+    // ->orWhere(function ($q2) {
+    //   // ->where('invgroup_id', 2)
+    //     $q2->where('pr_Branch_Level2_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q3) {
+    //       $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null);
+    //     });
+    // });
+    // }
+    // });
+
+    // $this->model->with(['purchaseRequestDetails' => function ($q) {
+    //   if($this->model->where('ismedicine',1)->exists() || $this->model->where('isdietary',1)->exists()){
+
+    //   }else{
+    //     // $q->where(function ($q2) {
+    //     //   $q2->where(['pr_Branch_Level1_ApprovedBy' => null, 'pr_Branch_Level2_ApprovedBy' => null]);
+    //     // })->where(function ($q2) {
+    //     //   $q2->where('is_submitted', true)->orWhereNull('is_submitted', false)->orWhereNull('is_submitted');
+    //     // });
+    //   }
+    // }]);
+
+    // $this->model->whereHas('purchaseRequestDetails', function ($q1) {
+    //   $q1->whereHas('canvases', function ($q1) {
+    //     $q1->whereDoesntHave('purchaseRequestDetail', function ($q2) {
+    //       $q2->where('is_submitted', true);
+    //     });
+    //     $q1->where(['canvas_Level1_ApprovedBy' => null, 'canvas_Level1_CancelledBy' => null, 'canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+    //   })->orWhereDoesntHave('canvases');
+    // });
 
 
     // $this->model->where('pr_Branch_Level1_ApprovedBy', '!=', null)->whereHas('purchaseRequestDetails', function ($q){

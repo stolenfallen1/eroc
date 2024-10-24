@@ -81,6 +81,16 @@ class ParentRole
         return $this->parent_role('PHARMACIST HEAD');
     }
 
+    public function isdietary()
+    {
+        return Auth::user()->role->name === 'dietary';
+    }
+
+    public function isdietaryhead()
+    {
+        return Auth::user()->role->name === 'dietary head';
+    }
+
     public function parent_role($role = null)
     {
         $parent = Auth::user()->approvaldetail ? Auth::user()->approvaldetail->approver_designation : Auth::user()->role->name;

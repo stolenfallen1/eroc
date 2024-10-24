@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MMIS;
 
 use Exception;
 use Carbon\Carbon;
+use App\Helpers\ParentRole;
 use Illuminate\Http\Request;
 use App\Models\MMIS\TestModel;
 use App\Models\BuildFile\Vendors;
@@ -28,9 +29,18 @@ use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 
 class PurchaseRequestController extends Controller
 {
+    protected $authUser;
+    protected $role;
+
+    public function __construct()
+    {
+        // $this->model = DB::connection('sqlsrv_mmis')->table('purchaseRequestMaster');
+        $this->authUser = auth()->user();
+        $this->role = new ParentRole();
+
+    }
     public function index()
     {
-
         // return TestModel::get();
         return (new PurchaseRequests)->searchable();
     }
@@ -93,7 +103,8 @@ class PurchaseRequestController extends Controller
                     }])->where('is_submitted', true);
                 }
                 else{
-                    if (PurchaseRequest::where('id',$id)->where('ismedicine', 1)->exists()) {
+           
+                    if (PurchaseRequest::where('id',$id)->where('ismedicine', 1)->exists() || PurchaseRequest::where('id',$id)->where('isdietary', 1)->exists()) {
                         $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
                             ->where(function ($query) {
                                 $query->whereHas('canvases', function ($query1) {
@@ -105,21 +116,15 @@ class PurchaseRequestController extends Controller
                                 ->orWhereDoesntHave('canvases');
                             });
                     } else {
-                        $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')
-                            ->where(function ($query) {
-                                $query->whereHas('canvases', function ($query1) {
-                                    // Keeping the comment if `ismedicine` is not 1
-                                    // $query1->whereDoesntHave('purchaseRequestDetail', function ($q1) {
-                                    //     $q1->where('is_submitted', [true, false]);
-                                    // });
-                                })
-                                ->orWhereDoesntHave('canvases');
-                            })
-                            ->where(function ($q2) {
-                                // Active condition for non-medicine items
-                                $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')
-                                   ->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
-                            });
+                        $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function($query){
+                            $query->whereHas('canvases', function($query1){
+                                $query1->whereDoesntHave('purchaseRequestDetail', function($q1){
+                                    $q1->where('is_submitted', true);
+                                });
+                            })->orWhereDoesntHave('canvases');
+                        })->where(function($q2){
+                            $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
+                        });
                     }
                     
                     
@@ -157,6 +162,10 @@ class PurchaseRequestController extends Controller
             if($request->isconsignments && $request->isconsignments == 1){
                 $ismed = 1;
             }
+            $isdiet = NULL;
+            if($this->role->isdietary()  || $this->role->isdietaryhead()){
+                $isdiet = 1;
+            }
             $pr = PurchaseRequest::updateOrCreate(
                 [
                     'pr_Document_Number' => $number,
@@ -180,7 +189,8 @@ class PurchaseRequestController extends Controller
                 'pr_Status_Id' => $status ?? null,
                 'isPerishable' => $request->isPerishable ?? 0,
                 'isconsignment'=>$request->isconsignments,
-                'ismedicine'=>$ismed 
+                'ismedicine'=>$ismed, 
+                'isdietary'=>$isdiet 
             ]);
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
                 foreach ($request->attachments as $key => $attachment) {
@@ -232,10 +242,12 @@ class PurchaseRequestController extends Controller
                         'vat_rate' => $item['vat_rate'] ?? 0,
                         'vat_type' => $item['vat_type'] ?? 0,
                         'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+                        'ismedicine'=>$ismed, 
+                        'isdietary'=>$isdiet 
                     ]
                 );
              
-                if($request->invgroup_id == 2){
+                if($request->invgroup_id == 2 || $this->role->isdietary()){
                     $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
                     $item['id'] = $details->id;
                     $item['pr_id'] = $pr['id'];
@@ -517,7 +529,7 @@ class PurchaseRequestController extends Controller
                             'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                             'item_Branch_Level2_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
                             'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                            // 'is_submitted' => 1, 
+                            'is_submitted' => 1,  
                         ]);
                     } else{
                         $prd->update([
@@ -674,29 +686,61 @@ class PurchaseRequestController extends Controller
 
     private function approveByDepartmentHead($request){
         $items = isset($request->items) ? $request->items: $request->purchase_request_details;
+        $pr = PurchaseRequest::where('id', $request->id)->first();
         foreach ($items as $key => $item ) {
             $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
             // return Auth::user()->role->name;
             if(isset($item['isapproved']) && $item['isapproved'] == true){
-                $prd->update([
-                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
-                    'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
-                    'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
-                    'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
-                ]);
+                if($pr->isdietary == 1){
+                    $prd->update([
+                        'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                        'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                        'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                   
+                        'pr_Branch_Level1_ApprovedBy' => 'auto',
+                        'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
+                        'item_Branch_Level1_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                        'is_submitted' => 1,
+                    ]);
+                }else{
+                    
+                    $prd->update([
+                        'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                        'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                        'item_Request_Department_Approved_Qty' => $item['item_Request_Department_Approved_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                    ]);
+                }
             } else{
                 $prd->update([
                     'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,
                     'pr_DepartmentHead_CancelledDate' => Carbon::now(),
+
+                    
+                    'pr_Branch_Level1_CancelledBy' => 'auto',
+                    'pr_Branch_Level1_CancelledDate' => Carbon::now(),
                 ]);
             }
         }
-        $pr = PurchaseRequest::where('id', $request->id)->first();
+        
         if($request->isapproved){
-            $pr->update([
-                'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
-                'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
-            ]);
+            if($pr->isdietary == 1){
+                $pr->update([
+                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                    'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                    'pr_Branch_Level1_ApprovedBy' => 'auto',
+                    'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
+                    'pr_Status_Id' => 6
+                ]);
+            }else{
+                $pr->update([
+                    'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                    'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                ]);
+            }
+
         }else{
             $pr->update([
                 'pr_DepartmentHead_CancelledBy' => Auth::user()->idnumber,

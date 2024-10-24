@@ -316,7 +316,6 @@ class PatientDischarge extends Controller
                 });
     
                 $patientBillInfo = [
-
                     'Charges' => number_format($totalCharges, 2),
                     'Credit' => number_format($totalCredits, 2),
                     'Total_Charges'     =>  number_format($totalCharges, 2),

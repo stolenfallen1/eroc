@@ -453,14 +453,21 @@ class PurchaseOrderController extends Controller
 
     private function autoApproveByComptroller($id)
     {
-        purchaseOrderMaster::where('id', $id)->update([
-            'comptroller_approved_by' => auth()->user()->idnumber,
-            'comptroller_approved_date' => Carbon::now(),
-        ]);
-        PurchaseOrderDetails::where('po_id',$id)->update([
-            'comptroller_approved_by' => auth()->user()->idnumber,
-            'comptroller_approved_date' => Carbon::now()
-        ]);
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        try {
+            purchaseOrderMaster::where('id', $id)->update([
+                'comptroller_approved_by' => Auth()->user()->idnumber,
+                'comptroller_approved_date' => Carbon::now(),
+            ]);
+            PurchaseOrderDetails::where('po_id',$id)->update([
+                'comptroller_approved_by' => Auth()->user()->idnumber,
+                'comptroller_approved_date' => Carbon::now()
+            ]);
+            DB::connection('sqlsrv_mmis')->commit();
+        } catch (\Exception $e) {
+            DB::connection('sqlsrv_mmis')->rollback();
+            return response()->json(["error" => $e->getMessage()], 200);
+        }
     }
 
 
@@ -470,14 +477,14 @@ class PurchaseOrderController extends Controller
             $freegoods = PurchaseOrderDetails::where('po_id',$detail['po_id'])->where('isFreeGoods',1)->first();
             if($detail['isapproved'] == true){
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'admin_approved_by' => auth()->user()->idnumber,
+                    'admin_approved_by' => Auth()->user()->idnumber,
                     'admin_approved_date' => Carbon::now()
                 ]);
 
                 if($freegoods){
                     $freegoods->update(
                         [
-                            'admin_approved_by' => auth()->user()->idnumber,
+                            'admin_approved_by' => Auth()->user()->idnumber,
                             'admin_approved_date' => Carbon::now()
                         ]
                     );
@@ -485,7 +492,7 @@ class PurchaseOrderController extends Controller
                 $isdecline = false;
             }else{
                 PurchaseOrderDetails::where('id', $detail['id'])->update([
-                    'admin_cancelled_by' => auth()->user()->idnumber,
+                    'admin_cancelled_by' => Auth()->user()->idnumber,
                     'admin_cancelled_date' => Carbon::now(),
                     'admin_cancelled_remarks' => $request->remarks
                 ]);

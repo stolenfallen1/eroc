@@ -9,6 +9,10 @@ use App\Models\BuildFile\Warehouseitems;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use App\Models\HIS\his_functions\NurseLogBook;
+use App\Models\HIS\medsys\tbInvStockCard;
+use App\Models\HIS\medsys\tbNurseLogBook;
+
 class OPDMedicinesSuppliesController extends Controller
 {
     //
@@ -28,7 +32,7 @@ class OPDMedicinesSuppliesController extends Controller
             $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
             $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
                 $query->where('warehouse_Id', $request->warehouseID)
-                    ->select('id', 'item_Id', DB::raw("$priceColumn as price"));
+                    ->select('id', 'item_Id', 'item_OnHand', DB::raw("$priceColumn as price"));
             }])
             ->whereIn('id', $warehouseItemsArray) 
             ->orderBy('item_name', 'asc');
@@ -42,5 +46,9 @@ class OPDMedicinesSuppliesController extends Controller
         } catch(\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
+    }
+
+    public function chargePatientMedicing(Request $request) {
+        //
     }
 }

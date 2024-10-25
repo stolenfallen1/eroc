@@ -40,7 +40,7 @@ class EmergencyRoomMedicine extends Controller
 
             $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
                 $query->where('warehouse_Id', $request->warehouseID)
-                    ->select('id', 'item_Id', 'item_OnHand', DB::raw("$priceColumn as price"));
+                    ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
             }])
             ->whereIn('id', $warehouseItemsArray) 
             ->orderBy('item_name', 'asc');
@@ -80,14 +80,25 @@ class EmergencyRoomMedicine extends Controller
               /**************************************/
              /*          Process Medicines         */
             /**************************************/
-            if (isset($request->payload['Medicines'])) {
+            if (isset($request->payload['Medicines']) && 
+                count(array_filter($request->payload['Medicines'], function($item) {
+                    return !empty($item['code']);
+                })) > 0) {
                 $this->processItems($request, $checkUser, 'Medicines');
             }
+
+            if(isset($request->payload['itemListCost'])) {
+                $this->processItems($request, $checkUser, 'itemListCost');
+            }
+
     
               /**************************************/
              /*          Process Supplies          */
             /**************************************/
-            if (isset($request->payload['Supplies'])) {
+            if (isset($request->payload['Supplies']) && 
+                count(array_filter($request->payload['Supplies'], function($item) {
+                    return !empty($item['code']);
+                })) > 0) {
                 $this->processItems($request, $checkUser, 'Supplies');
             }
     
@@ -130,20 +141,24 @@ class EmergencyRoomMedicine extends Controller
             if($itemType === 'Medicines') {
 
                 $itemID   = $request->payload['medicine_stocks_OnHand'][$index]['medicine_id'] ?? null;
+                $listCost = $request->payload['medicine_stocks_OnHand'][$index]['item_List_Cost'] ?? null;
                 $stock   = intval($request->payload['medicine_stocks_OnHand'][$index]['medicine_stock']) ?? null;
 
             } else if('Supplies') {
 
-                $itemID    = $request->payload['supply_stocks_OnHand'][$index]['supply_id'] ?? null;
-                $stock     = intval($request->payload['supply_stocks_OnHand'][$index]['supply_stock']) ?? null;
-
+                $itemID     = $request->payload['supply_stocks_OnHand'][$index]['supply_id'] ?? null;
+                $listCost   = $request->payload['supply_stocks_OnHand'][$index]['item_List_Cost'] ?? null;
+                $stock      = intval($request->payload['supply_stocks_OnHand'][$index]['supply_stock']) ?? null;
             }
+
+            
+            
     
               /**************************************/
              /*     Prepare data for insertion     */
             /**************************************/
             $tbNurseLogBookData = $this->prepareLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $itemID);
+            $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $itemID, $listCost);
             $nurseLogBookData = $this->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
             $inventoryTransactionData = $this->prepareInventoryTransactionData($request, $item, $checkUser, $itemID, $stock);
     
@@ -183,7 +198,7 @@ class EmergencyRoomMedicine extends Controller
         ];
     }
     
-    private function prepareStockCardData($request, $item, $checkUser, $itemID) {
+    private function prepareStockCardData($request, $item, $checkUser, $itemID, $listCost) {
         return [
             'SummaryCode'   => $item['code'],
             'HospNum'       => $request->payload['patient_Id'] ?? null,
@@ -202,6 +217,7 @@ class EmergencyRoomMedicine extends Controller
             'RequestByID'   => $checkUser->idnumber,
             'CreditMemoNum' => $request->payload['CreditMemoNum'] ?? null,
             'DispenserCode' => 0,
+            'ListCost'      => $listCost,
             'HostName'      => (new GetIP())->getHostname(),
         ];
     }

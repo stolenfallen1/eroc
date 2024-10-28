@@ -59,6 +59,7 @@ class EmergencyRoomMedicine extends Controller
     }
 
     public function chargePatientMedicineSupply(Request $request) {
+
         DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
@@ -268,8 +269,62 @@ class EmergencyRoomMedicine extends Controller
         ];
     }
 
-    public function getMedicineSupplyCharges() {
+    public function getMedicineSupplyCharges($id) {
 
+        $data =  DB::table('STATION.dbo.tbNurseLogBook as lb')
+            ->select(
+            'lb.Hospnum', 'lb.IDnum', 'lb.RevenueID', 'lb.ItemID', 'lb.Description', 
+                     DB::raw('SUM(lb.Quantity) as Quantity'), 
+                     DB::raw('Sum(lb.Amount) as Amount'),
+                     'lb.Dosage','lb.RequestNum', 'lb.ReferenceNum', 'cdglb.description', 
+                     'sc.NetCost',  'lb.RecordStatus'
+                    )
+            ->join(
+                'INVENTORY.dbo.tbInvStockCard as sc', 
+                function($join) {
+                            $join->on('lb.IDnum', '=', 'sc.IdNum')
+                                 ->on('lb.ItemID', '=', 'sc.ItemID');
+                        })
+
+            ->join(
+                'CDG_MMIS.dbo.inventoryTransaction as it', 
+                function($join) {
+                            $join->on('lb.IDnum', '=', 'it.patient_Registry_Id')
+                                 ->on('lb.ItemID', '=', 'it.transaction_Item_Id');
+                         })
+
+            ->join(
+                    'CDG_PATIENT_DATA.dbo.NurseLogBook as cdglb', 
+                    function($join) {
+                                $join->on('lb.IDnum', '=', 'cdglb.case_No')
+                                     ->on('lb.ItemID', '=', 'cdglb.item_Id');
+                            })
+
+            ->where('lb.IDnum', $id)
+
+            ->groupBy(
+                'lb.Hospnum', 
+                    'lb.IDnum', 
+                    'lb.RevenueID', 
+                    'lb.ItemID', 
+                    'lb.Description', 
+                    'lb.Dosage', 
+                    'lb.Amount', 
+                    'lb.RequestNum', 
+                    'lb.ReferenceNum', 
+                    'cdglb.description', 
+                    'sc.NetCost',
+                    'lb.RecordStatus'
+                )
+            ->get();
+
+        if($data->isEmpty()) {
+            return response()->json([
+                'message' => 'No Charges'
+            ], 404);
+        }
+
+        return response()->json($data, 200);
     }
     
 }

@@ -54,3 +54,4 @@ Route::get('/patient-balance', [PatientDischarge::class, 'getTotalCharges']);
 Route::get('/get-staff-id', [EmergencyRegistrationController::class, 'getStaffId']);
 Route::get('get-transaction-codes', [TransactionCodesController::class, 'list']);
 Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);
+Route::get('get-charge-items', [EmergencyRoomMedicine::class, 'getMedicineSupplyCharges']);

@@ -434,5 +434,9 @@ Route::controller(PurchaseSubsidiaryReportController::class)->group(function () 
 
 Route::controller(PriceListController::class)->group(function () {
     Route::get('price-all-report', 'printAllLocation');
+    Route::get('generate-price-list', 'priceList');  
 });
+
+
+
 // <!====================================== END CONSIGNMENT PO  ====================================== !> 

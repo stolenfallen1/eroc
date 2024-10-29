@@ -64,6 +64,8 @@ class PurchaseRequests
             $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
         }
       });
+    }else{
+      $this->model->where('pr_Document_Number', 'LIKE' , '000%');
     }
   }
 
@@ -213,7 +215,7 @@ class PurchaseRequests
   private function forApproval()
   {
     // Apply department head and staff role logic
-    if ($this->role->staff()) {
+    if ($this->role->staff() || $this->role->audit() || $this->role->purchaser()) {
       $this->model->whereIn('warehouse_Id', $this->authUser->departments)
         ->whereNull('pr_Purchaser_Status_Id')
         ->whereHas('purchaseRequestDetails', function ($query) {
@@ -264,7 +266,7 @@ class PurchaseRequests
             $query->whereNotNull('pr_DepartmentHead_ApprovedBy')
               ->whereNull('pr_Branch_Level2_ApprovedBy')
               ->whereNull('pr_DepartmentHead_CancelledBy');
-          })
+            })
             ->whereNull('pr_Branch_Level1_ApprovedBy')
             ->whereNull('pr_Branch_Level1_CancelledBy')
             ->whereNotNull('pr_DepartmentHead_ApprovedBy')
@@ -376,7 +378,6 @@ class PurchaseRequests
 
   private function forConsultant()
   {
-
     $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)->where(function ($q1) {
       $q1->where('isvoid', 0)->orWhereNull('isvoid');
     });
@@ -508,7 +509,8 @@ class PurchaseRequests
   private function forCanvas()
   {
 
-    $this->model->whereIn('invgroup_id', $this->authUser->assigneditemgroup);
+    // if($this->role->department_head())
+    // $this->model->whereIn('invgroup_id', $this->authUser->assigneditemgroup);
     $this->model->with(['purchaseRequestDetails' => function ($q) {
       if ($this->model->where('ismedicine', 1)->exists() || $this->model->where('isdietary', 1)->exists()) {
       } else {
@@ -583,6 +585,7 @@ class PurchaseRequests
 
   private function canvasForApproval()
   {
+    
     $this->model->where(function ($q) {
       $q->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
     })->whereHas('purchaseRequestDetails', function ($q) {
@@ -602,6 +605,7 @@ class PurchaseRequests
           });
         })->where('is_submitted', true);
     }]);
+
     $this->model->orderBy('created_at', 'desc');
   }
 
@@ -622,7 +626,13 @@ class PurchaseRequests
           });
         })->where('is_submitted', true);
     }]);
-
+    if ($this->role->staff() || $this->role->department_head()) {
+      $this->model->where('isPerishable', 1);
+    } else {
+      $this->model->where(function ($q2) {
+        $q2->where('isPerishable', 0)->orWhere('isPerishable', NULL);
+      });
+    }
     $this->model->orderBy('created_at', 'desc');
   }
 
@@ -718,10 +728,10 @@ class PurchaseRequests
             });
           })->where('warehouse_Id', $this->authUser->warehouse_id);
       } else {
-        $this->model->with(['purchaseRequestDetails' => function ($q1) {
-          $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy')
-            ->orWhereNotNull('pr_DepartmentHead_CancelledBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy');
-        }])
+          $this->model->with(['purchaseRequestDetails' => function ($q1) {
+            $q1->with('itemMaster')->whereNotNull('pr_Branch_Level2_CancelledBy')
+              ->orWhereNotNull('pr_DepartmentHead_CancelledBy')->orWhereNotNull('pr_Branch_Level1_CancelledBy');
+          }])
           ->where(function ($q1) {
             $q1->where('invgroup_id', '!=', 2)->where(function ($q2) {
               $q2->whereHas('purchaseRequestDetails', function ($q) {

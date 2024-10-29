@@ -240,10 +240,16 @@ class CanvasController extends Controller
     
     public function submitCanvasItem(Request $request)
     {
+        $authUser = Auth::user();
         PurchaseRequest::where('id', $request->prid)->update([
             'pr_Purchaser_Status_Id' => true,
+            'pr_Purchaser_UserId'=>$authUser->idnumber,
         ]);
         $details = canvasMaster::where('pr_request_id',$request->prid)->whereIn('pr_request_details_id', $request->items)->where('isRecommended',1)->get();
+        
+        canvasMaster::where('pr_request_id',$request->prid)->update([
+            'canvas_Document_CanvassBy'=>$authUser->idnumber
+        ]);
         foreach($details as $row){
             PurchaseRequestDetails::where('id', $row->pr_request_details_id)->update([
                 'is_submitted' => true,

@@ -198,7 +198,7 @@
         <td class="left-width text-right">Supplier Name :</td>
         <td class="mid-width underline">{{$pdf_data['purchase_order']['vendor_Name']}}</td>
         <td class="right-width text-right">Date :</td>
-        <td class="underline">{{$pdf_data['purchase_order']['transaction_date']}}</td>
+        <td class="underline">{{date('m/d/Y',strtotime($pdf_data['purchase_order']['poDate']))}}</td>
       </tr>
       <tr>
         <td class="left-width text-right">Contact Person :</td>

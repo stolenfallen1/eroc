@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\MMIS\inventory\Delivery;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Unitofmeasurement;
+use App\Models\MMIS\procurement\CanvasMaster;
+use App\Models\MMIS\procurement\PurchaseRequest;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
 use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
-use App\Models\MMIS\procurement\CanvasMaster;
 
 class PurchaseOrderController extends Controller
 {
@@ -199,7 +200,8 @@ class PurchaseOrderController extends Controller
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;
-                // $checkcanvas = CanvasMaster::whereNull('canvas_Level2_ApprovedBy')->where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                $checkcanvas = CanvasMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                // $requestby = PurchaseRequest::where('id',$purchase_order['pr_request_id'])->first();
                 // if(!$checkcanvas){
                         
                     $checkPO = purchaseOrderMaster::whereNull('comptroller_approved_by')->where('pr_request_id',$purchase_order['pr_request_id'])->where('po_Document_vendor_id',$purchase_order['po_Document_vendor_id'])->first();
@@ -257,7 +259,7 @@ class PurchaseOrderController extends Controller
                             'po_Document_vat_amount' => $po_Document_vat_amount,
                             'po_Document_total_net_amount' => $po_Document_total_net_amount,
                             'pr_request_id' => $purchase_order['pr_request_id'],
-                            'po_Document_userid' => $authUser->idnumber,
+                            'po_Document_userid' => $request->dietary == 1 ? $checkcanvas->canvas_Document_CanvassBy : $authUser->idnumber,
                             'po_status_id' => 1,
                         ]
                     );

@@ -110,13 +110,13 @@
             @foreach($pdf_data['items'] as $item)
             <tr>
                 <td class="font-md itemid" style="padding:15px;">
-                    {{ $item->id }}
+                    {{ $item['id'] }}
                 </td>
-                <td class="font-md description">{{ $item->itemdescription }}</td>
-                <td class="font-md item-width">{{ number_format($item->Listcost,2) }}</td>
-                <td class="font-md item-width text-center">{{ $item->Packing }}</td>
-                <td class="font-md item-width text-center">{{ number_format($item->PriceOut,2) }}</td>
-                <td class="font-md item-width text-center">{{ number_format($item->PriceIn,2) }}</td>
+                <td class="font-md description">{{ $item['itemdescription'] }}</td>
+                <td class="font-md item-width">{{ number_format($item['Listcost'],2) }}</td>
+                <td class="font-md item-width text-center">{{ $item['Packing'] }}</td>
+                <td class="font-md item-width text-center">{{ number_format($item['PriceOut'],2) }}</td>
+                <td class="font-md item-width text-center">{{ number_format($item['PriceIn'],2) }}</td>
             </tr>
 
             @endforeach

@@ -184,5 +184,6 @@ Route::controller(PurchaseSubsidiaryReportController::class)->group(function () 
 
 Route::controller(PriceListController::class)->group(function () {
   Route::post('price-list-report', 'allPriceList');  
+ 
 });
 

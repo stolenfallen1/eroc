@@ -222,7 +222,7 @@ class HISCashAssestmentController extends Controller
                     if ($saveCashAssessment && $this->check_is_allow_medsys):
                         MedSysCashAssessment::create([
                             'HospNum'               => $patient_id,
-                            'IdNum'                 => $case_no,
+                            'IdNum'                 => $case_no . 'B',
                             'Name'                  => $patient_name,
                             'TransDate'             => $transdate,
                             'AssessNum'             => $assessnum_sequence['MedSysCashSequence'],
@@ -358,7 +358,7 @@ class HISCashAssestmentController extends Controller
 
                     if ($this->check_is_allow_medsys) {
                         MedSysCashAssessment::where('HospNum', $patient_id)
-                            ->where('IdNum', $case_no)
+                            ->where('IdNum', $case_no . 'B')
                             ->where('RefNum', $refNum)
                             ->where('ItemID', $itemID)
                             ->update([
@@ -367,7 +367,7 @@ class HISCashAssestmentController extends Controller
                         ]);
                         MedSysCashAssessment::create([
                             'HospNum'           => $existingData->patient_Id,
-                            'IdNum'             => $existingData->case_No,
+                            'IdNum'             => $existingData->case_No . 'B',
                             'Name'              => $existingData->patient_Name,
                             'TransDate'         => Carbon::now(),
                             'AssessNum'         => $existingData->assessnum,

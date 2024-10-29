@@ -224,14 +224,14 @@ class CashierController extends Controller
                         ]);
                         if ($this->check_is_allow_medsys):
                             MedSysCashAssessment::where('HospNum', $patient_Id)
-                                ->where('IdNum', $case_No)
+                                ->where('IdNum', $case_No . 'B')
                                 ->where('RefNum', $refNum)
                                 ->where('RevenueID', $revenueID)
                                 ->where('ItemID', $itemID)
                                 ->update([
                                     'ORNumber'          => $ORNum,
                             ]);
-                            $medsysbilling = MedSysDailyOut::create([
+                            MedSysDailyOut::create([
                                 'HospNum'               => $patient_Id,
                                 'IDNum'                 => 'CASH',
                                 'TransDate'             => $transDate,
@@ -290,7 +290,7 @@ class CashierController extends Controller
                             if ($this->check_is_allow_medsys):
                                 tbCashORMaster::create([
                                     'HospNum'               => $patient_Id,
-                                    'IDNum'                 => $case_No,
+                                    'IDNum'                 => $case_No . 'B',
                                     'TransDate'             => $transDate,
                                     'PaymentFrom'           => $PaymentFrom,
                                     'PaymentType'           => $PaymentType,
@@ -355,7 +355,7 @@ class CashierController extends Controller
                                             if ($this->check_is_allow_medsys):
                                                 tbLABMaster::create([
                                                     'HospNum'           => $patient_Id,
-                                                    'IdNum'             => $case_No,
+                                                    'IdNum'             => $case_No . 'B',
                                                     'RefNum'            => $refNum,
                                                     'RequestStatus'     => 'X',
                                                     'ItemId'            => $exam->map_exam_id,
@@ -401,7 +401,7 @@ class CashierController extends Controller
                                 if ($this->check_is_allow_medsys):
                                     tbLABMaster::create([
                                         'HospNum'           => $patient_Id,
-                                        'IdNum'             => $case_No,
+                                        'IdNum'             => $case_No . 'B',
                                         'RefNum'            => $refNum,
                                         'RequestStatus'     => 'X',
                                         'ItemId'            => $itemID,
@@ -538,7 +538,7 @@ class CashierController extends Controller
                         if ($this->check_is_allow_medsys) {
                             MedSysDailyOut::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'TransDate'         => $transDate,
                                 'RevenueID'         => $itemID, // PY
                                 'DrCr'              => 'C',
@@ -555,7 +555,7 @@ class CashierController extends Controller
                             ]);
                             tbCashORMaster::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'PaymentFrom'       => $PaymentFrom,
                                 'PaymentType'       => $PaymentType,
                                 'PaymentFor'        => $ORNum,
@@ -586,13 +586,14 @@ class CashierController extends Controller
                         }
             
                     }
-                    DB::connection('sqlsrv_billingOut')->commit();
-                    DB::connection('sqlsrv_medsys_billing')->commit();
-                    return response()->json([
-                        'message' => 'Successfully saved payment',
-                    ], 200);
                 }
+                DB::connection('sqlsrv_billingOut')->commit();
+                DB::connection('sqlsrv_medsys_billing')->commit();
+                return response()->json([
+                    'message' => 'Successfully saved payment',
+                ], 200);
             }
+
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
@@ -701,7 +702,7 @@ class CashierController extends Controller
                         if ($this->check_is_allow_medsys) {
                             MedSysDailyOut::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'TransDate'         => $transDate,
                                 'RevenueID'         => $itemID, // CP
                                 'DrCr'              => 'C',
@@ -718,7 +719,7 @@ class CashierController extends Controller
                             ]);
                             tbCashORMaster::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'PaymentFrom'       => $PaymentFrom,
                                 'PaymentType'       => $PaymentType,
                                 'PaymentFor'        => $ORNum,
@@ -748,13 +749,14 @@ class CashierController extends Controller
                             ]);
                         }
                     }
-                    DB::connection('sqlsrv_billingOut')->commit();
-                    DB::connection('sqlsrv_medsys_billing')->commit();
-                    return response()->json([
-                        'message' => 'Successfully saved payment',
-                    ], 200);
                 }
+                DB::connection('sqlsrv_billingOut')->commit();
+                DB::connection('sqlsrv_medsys_billing')->commit();
+                return response()->json([
+                    'message' => 'Successfully saved payment',
+                ], 200);
             }
+
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
@@ -786,6 +788,9 @@ class CashierController extends Controller
     public function cancelOR(Request $request)
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction(); 
+        DB::connection('sqlsrv_laboratory')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
         try {
             $patient_Id = $request->items['patient_Id'];
             $case_No = $request->items['case_No'];
@@ -794,83 +799,143 @@ class CashierController extends Controller
             $cancelDate = $request->items['CancelDate'];
             $cancelReason = $request->items['CancelledReason'];
     
-            $update = CashORMaster::where('HospNum', $patient_Id)
+            CashORMaster::where('HospNum', $patient_Id)
                 ->where('case_no', $case_No)
                 ->where('RefNum', $ORNumber)
-                ->update([
+                ->updateOrFail([
                     'CancelDate' => $cancelDate,
                     'CancelledBy' => Auth()->user()->idnumber,
                     'CancelledReason' => $cancelReason,
             ]);
     
-            if (!$update) {
-                throw new \Exception('Failed to cancel OR');
-            } else {
-                $cashAssessment = CashAssessment::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('refNum', $refNum)
+            $cashAssessment = CashAssessment::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->where('refNum', $refNum)
+                ->where('ORNumber', $ORNumber)
+                ->get();
+
+            if ($cashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found');
+            foreach ($cashAssessment as $item) {
+                $item->update([
+                    'recordStatus' => null,
+                    'ORNumber' => '',
+                ]);
+            }
+            $existingBillingOut = BillingOutModel::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->where('ChargeSlip', $refNum)
+                ->where('ornumber', $ORNumber)
+                ->get();
+
+            if ($existingBillingOut->isEmpty()) throw new \Exception('Billing Out not found');
+            foreach ($existingBillingOut as $item) {
+                $item->update([
+                    'updatedBy' => Auth()->user()->idnumber,
+                    'updated_at' => Carbon::now(),
+                ]);
+            }
+
+            $replicatedItems = [];
+            foreach ($existingBillingOut as $data) {
+                $item = $data->replicate();
+                $item->transDate = Carbon::now();
+                $item->drcr = 'C';
+                $item->quantity = $data->quantity * -1;
+                $item->amount = $data->amount * -1;
+                $item->userId = Auth()->user()->idnumber;
+                $item->created_at = Carbon::now();
+                $item->createdby = Auth()->user()->idnumber;
+
+                if ($item->save()) {
+                    $replicatedItems[] = $item;
+                }
+            }
+
+            if (empty($replicatedItems)) throw new \Exception('No items replicated, submitted empty array');
+            $labExams = LaboratoryMaster::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->where('refNum', $refNum)
+                ->where('ornumber', $ORNumber)
+                ->get();
+
+            if ($labExams->isEmpty()) throw new \Exception('Lab Exams not found');
+            foreach ($labExams as $exam) {
+                $exam->update([
+                    'request_Status' => 'R',
+                    'result_Status' => 'R',
+                ]);
+            }
+
+            if ($this->check_is_allow_medsys) {
+                tbCashORMaster::where('HospNum', $patient_Id)
+                    ->where('IDNum', $case_No . 'B')
+                    ->where('RefNum', $ORNumber)
+                    ->updateOrFail([
+                        'CancelDate' => $cancelDate,
+                        'CancelledBy' => Auth()->user()->idnumber,
+                    ]);
+
+                $medSysCashAssessment = MedSysCashAssessment::where('HospNum', $patient_Id)
+                    ->where('IdNum', $case_No . 'B')
+                    ->where('RefNum', $refNum)
                     ->where('ORNumber', $ORNumber)
                     ->get();
-    
-                if ($cashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found');
-                foreach ($cashAssessment as $item) {
+                
+                if ($medSysCashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found in MedSys DB');
+                foreach ($medSysCashAssessment as $item) {
                     $item->update([
-                        'recordStatus' => '',
+                        'RecordStatus' => null,
                         'ORNumber' => '',
                     ]);
                 }
-    
-                $existingBillingOut = BillingOutModel::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('ChargeSlip', $refNum)
-                    ->where('ornumber', $ORNumber)
-                    ->get();
 
-                if ($existingBillingOut->isEmpty()) throw new \Exception('Billing Out not found');
-                foreach ($existingBillingOut as $item) {
-                    $item->update([
-                        'updatedBy' => Auth()->user()->idnumber,
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-    
-                $replicatedItems = [];
-                foreach ($existingBillingOut as $data) {
+                $existingMedSysBillingOut = MedSysDailyOut::where('HospNum', $patient_Id)
+                    ->where('IDNum', 'CASH')
+                    ->where('ChargeSlip', $refNum)
+                    ->where('RefNum', $ORNumber)
+                    ->get();
+                
+                $medSysReplicatedItems = [];
+                foreach ($existingMedSysBillingOut as $data) {
                     $item = $data->replicate();
-                    $item->transDate = Carbon::now();
-                    $item->drcr = 'C';
-                    $item->quantity = $data->quantity * -1;
-                    $item->amount = $data->amount * -1;
-                    $item->userId = Auth()->user()->idnumber;
-                    $item->created_at = Carbon::now();
-                    $item->createdby = Auth()->user()->idnumber;
-    
+                    $item->TransDate = Carbon::now();
+                    $item->DrCr = 'C';
+                    $item->Quantity = $data->quantity * -1;
+                    $item->Amount = $data->amount * -1;
+                    $item->UserID = Auth()->user()->idnumber;
+
                     if ($item->save()) {
-                        $replicatedItems[] = $item;
+                        $medSysReplicatedItems[] = $item;
                     }
                 }
-    
-                if (empty($replicatedItems)) throw new \Exception('No items replicated, submitted empty array');
-                $labExams = LaboratoryMaster::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('refNum', $refNum)
-                    ->where('ornumber', $ORNumber)
+
+                if (empty($medSysReplicatedItems)) throw new \Exception('No items replicated in MedSys DB, submitted empty array');
+                $medSysLabExams = tbLABMaster::where('HospNum', $patient_Id)
+                    ->where('IdNum', $case_No . 'B')
+                    ->where('RefNum', $refNum)
+                    ->where('ORNum', $ORNumber)
                     ->get();
 
-                if ($labExams->isEmpty()) throw new \Exception('Lab Exams not found');
-                foreach ($labExams as $exam) {
+                if ($medSysLabExams->isEmpty()) throw new \Exception('Lab Exams not found in MedSys DB');
+                foreach ($medSysLabExams as $exam) {
                     $exam->update([
-                        'request_Status' => 'C',
-                        'result_Status' => 'C',
+                        'RequestStatus' => 'R',
+                        'ResultStatus' => 'R',
                     ]);
                 }
-    
-                DB::connection('sqlsrv_billingOut')->commit();
-                return response()->json(['message' => 'Successfully cancelled OR'], 200);
             }
+
+            DB::connection('sqlsrv_billingOut')->commit(); 
+            DB::connection('sqlsrv_laboratory')->commit();
+            DB::connection('sqlsrv_medsys_billing')->commit();
+            DB::connection('sqlsrv_medsys_laboratory')->commit();
+            return response()->json(['message' => 'Successfully cancelled OR'], 200);
     
         } catch(\Exception $e) {
-            DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack(); 
+            DB::connection('sqlsrv_laboratory')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_medsys_laboratory')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -897,17 +962,18 @@ class CashierController extends Controller
     public function getORSequence(Request $request)
     {
         try {
-            $user = CashReceiptTerminal::where('user_id', '!=', null)->first();
-            if ($user->user_id == Auth()->user()->idnumber) {
-                $data = CashReceiptTerminal::where('user_id', Auth()->user()->idnumber)->get();
-                return response()->json(['data' => $data], 200);
-            } else {
-                return response()->json(['error' => 'User not found'], 404);
+            $userId = Auth()->user()->idnumber;
+            $data = CashReceiptTerminal::where('user_id', $userId)->get();
+    
+            if ($data->isEmpty()) {
+                return response()->json(['error' => 'User not found'], 200);
             }
+    
+            return response()->json(['data' => $data], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
-    }
+    }    
     public function getOPDBill(Request $request) 
     {
         try {

@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\HIS\his_functions\AncillaryController;
 use App\Http\Controllers\HIS\his_functions\CashierController;
 use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
 use App\Http\Controllers\HIS\his_functions\LaboratoryController;
 use App\Http\Controllers\HIS\his_functions\opd_specific\OPDMedicinesSuppliesController;
+use App\Http\Controllers\HIS\his_functions\PharmacyController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
@@ -53,10 +55,21 @@ Route::controller(LaboratoryController::class)->group(function() {
     Route::post('archive-lab-exam', 'archivePatientLabItem'); // For Staff access cancellation
     Route::post('cancel-lab-exam', 'cancelPatientLabItem'); // For Head of Laboratory access cancellation
 });
+// Ancillary Routes
+Route::controller(AncillaryController::class)->group(function() {
+    Route::get('get-ancillary-patients', 'getAncillaryPatients');
+});
+// Pharmacy Routes
+Route::controller(PharmacyController::class)->group(function() {
+    Route::get('get-pharmacy-patients', 'getPharmacyPatients');
+});
 // OPD SPECIFIC - Routes
 // Post Medicine / Supplies Routes
 Route::controller(OPDMedicinesSuppliesController::class)->group(function() {
     Route::post('get-medicine-supplies', 'medicineSuppliesList');
+    Route::post('charge-medicine-supplies', 'chargeMedicineSupplies');
+    Route::post('get-medicine-supplies-charge-history', 'getPostedMedicineSupplies');
+    Route::put('revoke-medicine-supplies-charge', 'revokecharge');
 });
 
 Route::controller(EmergencyRoomMedicine::class)->group(function() {

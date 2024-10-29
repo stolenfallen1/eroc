@@ -7,9 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\Hospital\Company;
-use App\Models\HIS\BillingOutModel;
 use App\Models\HIS\his_functions\CashAssessment;
 use App\Models\HIS\his_functions\CashierPaymentCode;
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\CashORMaster;
 use App\Models\HIS\his_functions\CashReceiptTerminal;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
@@ -200,7 +200,7 @@ class CashierController extends Controller
                             'updated_at'        => Carbon::now()
                     ]);
                     if ($update) {
-                        $billingOut = BillingOutModel::create([
+                        $billingOut = HISBillingOut::create([
                             'patient_Id'            => $patient_Id,
                             'case_No'               => $case_No,
                             'accountnum'            => 'CASH',
@@ -480,7 +480,7 @@ class CashierController extends Controller
                     $revenueID = $item['revenueID'];
                     $Particulars = isset($item['items']) ? $item['items']['exam_description'] : '';
                     
-                    $billingOut = BillingOutModel::create([
+                    $billingOut = HISBillingOut::create([
                         'patient_Id'            => $patient_Id,
                         'case_No'               => $case_No,
                         'accountnum'            => $accountnum,
@@ -644,7 +644,7 @@ class CashierController extends Controller
                     $revenueID = $item['revenueID'];
                     $Particulars = isset($item['items']) ? $item['items']['exam_description'] : '';
                     
-                    $billingOut = BillingOutModel::create([
+                    $billingOut = HISBillingOut::create([
                         'patient_Id'            => $patient_Id,
                         'case_No'               => $case_No,
                         'accountnum'            => $accountnum,
@@ -760,7 +760,10 @@ class CashierController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => $e->getMessage(),
+                'stackTrace' => $e->getTrace(),
+            ], 500);
         }
     }
     public function getORForCancellation(Request $request)
@@ -821,7 +824,7 @@ class CashierController extends Controller
                     'ORNumber' => '',
                 ]);
             }
-            $existingBillingOut = BillingOutModel::where('patient_Id', $patient_Id)
+            $existingBillingOut = HISBillingOut::where('patient_Id', $patient_Id)
                 ->where('case_No', $case_No)
                 ->where('ChargeSlip', $refNum)
                 ->where('ornumber', $ORNumber)

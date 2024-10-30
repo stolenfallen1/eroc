@@ -52,9 +52,12 @@ class EmergencyRoomMedicine extends Controller
             
             $page  = $request->per_page ?? '15';
             return response()->json($items->paginate($page), 200);
+            
 
         } catch(Exception $e) {
+
             return response()->json(["msg" => $e->getMessage()], 500);
+
         }
 
     }
@@ -329,7 +332,6 @@ class EmergencyRoomMedicine extends Controller
     
     public function cancelCharges(Request $request) {
 
-       
         DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
@@ -392,10 +394,15 @@ class EmergencyRoomMedicine extends Controller
                 'HostName'                      => (new GetIP())->getHostname(), 
             ];
 
-            InventoryTransaction::create($cdg_mmis_inventory_data);
-            tbInvStockCard::create($inventory_data);
-            NurseLogBook::where('requestNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
-            tbNurseLogBook::where('RequestNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+            $isCreated_cdg_MMIS = InventoryTransaction::create($cdg_mmis_inventory_data);
+            $isCreated_Medsys_Inventory = tbInvStockCard::create($inventory_data);
+            $isUpdated_cdg_lb = NurseLogBook::where('requestNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
+            $isUpdated_cdg_medsys_lb = tbNurseLogBook::where('RequestNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+
+            if(!$isCreated_cdg_MMIS || !$isCreated_Medsys_Inventory || !$isUpdated_cdg_lb || !$isUpdated_cdg_medsys_lb) {
+                
+                throw new Exception('Failed to cancel charges');
+            }
 
             DB::connection('sqlsrv_medsys_nurse_station')->commit();
             DB::connection('sqlsrv_patient_data')->commit();

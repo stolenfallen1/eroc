@@ -37,6 +37,8 @@ class PurchaseRequestDetails extends Model
         return $this->hasOne(CanvasMaster::class, 'pr_request_details_id')->where('isRecommended', 1);
     }
 
+   
+
     public function changedRecommendedCanvas()
     {
         return $this->belongsTo(CanvasMaster::class, 'recommended_supplier_id','id')->where('isRecommended', 1);

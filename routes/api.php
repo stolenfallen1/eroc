@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Models\BuildFile\Syssystems;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
@@ -21,7 +22,10 @@ use App\Http\Controllers\POS\TerminalSettingsController;
 |
 */
 
-
+Route::get('check-status',function(){
+    $data = Syssystems::where('id',1)->select('isActive')->first();
+    return response()->json($data,200);
+});
 /*require_once('/schedules/api.php');*/
 // Route::resource('userss', UserController::class);
 Route::get('clearances', [ClearanceController::class, 'index']);

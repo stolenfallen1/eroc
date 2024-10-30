@@ -3,15 +3,16 @@
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\OldMMIS\Branch;
+use App\Models\BuildFile\Syssystems;
 use App\Models\BuildFile\Warehouses;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\POS\Report_ZController;
-use App\Models\MMIS\procurement\PurchaseOrderDetails;
-use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
-use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\HIS\CaseIndicatorController;
+use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\HIS\his_functions\SOAController;
+use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 
 
 /*
@@ -24,6 +25,7 @@ use App\Http\Controllers\HIS\his_functions\SOAController;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
 
 
 Route::get('view-image', [AppointmentController::class, 'image']);

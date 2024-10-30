@@ -305,13 +305,15 @@ class PurchaseOrders
         ->where('po_Document_total_net_amount', '>', 99999);
 
       }
+      
     }
   }
 
   private function forComptroller(){
     $this->model->where('comptroller_approved_date', '!=', null);
-    // $this->model->orderBy('created_at', 'desc');
-    $this->model->orderBy('isprinted', 'desc');
+   
+    $this->model->orderBy('isprinted', 'asc');
+    $this->model->orderBy('created_at', 'desc');
   }
 
   private function forAdministrator(){

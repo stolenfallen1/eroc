@@ -44,7 +44,10 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
         $subTotalNonFreeGoods = 0;
         $grandTotalNonFreeGoods = 0;
         $currency = '₱';
-
+        purchaseOrderMaster::where('id',$id)->update([
+            'viewers' => $purchase_order->po_Document_userid,
+            'isprinted'=>1
+        ]);
         // Filter items where isfreegood = 1 and isfreegood = 0
         $freeGoods = $purchase_order->items->filter(function ($item) {
             return $item->isFreeGoods == 1;

@@ -696,10 +696,12 @@ class PurchaseRequestController extends Controller
                         'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
                         'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
                         'item_Request_Department_Approved_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Request_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
                         'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                    
                         'pr_Branch_Level1_ApprovedBy' => 'auto',
                         'pr_Branch_Level1_ApprovedDate' => Carbon::now(),
+                        'item_Request_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
                         'item_Branch_Level1_Approved_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
                         'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                         'is_submitted' => 1,

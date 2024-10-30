@@ -10,6 +10,7 @@ use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\Schedules\SchedulingDashboard;
 use App\Http\Controllers\POS\TerminalSettingsController;
+use App\Models\BuildFile\Syssystems;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -21,7 +22,10 @@ use App\Http\Controllers\POS\TerminalSettingsController;
 |
 */
 
-
+Route::get('check-status',function(){
+    $data = Syssystems::where('id',1)->select('isActive')->first();
+    return response()->json($data,200);
+});
 /*require_once('/schedules/api.php');*/
 // Route::resource('userss', UserController::class);
 Route::get('clearances', [ClearanceController::class, 'index']);

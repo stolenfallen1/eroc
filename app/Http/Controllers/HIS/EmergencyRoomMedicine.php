@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\HIS;
 
 use App\Http\Controllers\Controller;
+use Exception;
 use Illuminate\Http\Request;
 use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\Warehouseitems;
@@ -52,7 +53,7 @@ class EmergencyRoomMedicine extends Controller
             $page  = $request->per_page ?? '15';
             return response()->json($items->paginate($page), 200);
 
-        } catch(\Exception $e) {
+        } catch(Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
 
@@ -110,7 +111,7 @@ class EmergencyRoomMedicine extends Controller
 
             return response()->json(['message' => 'Charge processing successful'], 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
 
             DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
             DB::connection('sqlsrv_patient_data')->rollBack();
@@ -159,9 +160,9 @@ class EmergencyRoomMedicine extends Controller
              /*     Prepare data for insertion     */
             /**************************************/
             $tbNurseLogBookData = $this->prepareLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $itemID, $listCost);
+            $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost);
             $nurseLogBookData = $this->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $inventoryTransactionData = $this->prepareInventoryTransactionData($request, $item, $checkUser, $itemID, $stock);
+            $inventoryTransactionData = $this->prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock);
     
               /**************************************/
              /*            Insert Records          */
@@ -176,7 +177,7 @@ class EmergencyRoomMedicine extends Controller
     private function prepareLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID) {
         return [
             'Hospnum'       => $request->payload['patient_Id'] ?? null,
-            'IDnum'         => $request->payload['case_No'] ?? null,
+            'IDnum'         => $request->payload['case_No'] . 'B' ?? null,
             'PatientType'   => $request->payload[''] ?? null,
             'RevenueID'     => $item['code'],
             'RequestDate'   => Carbon::now(),
@@ -199,25 +200,27 @@ class EmergencyRoomMedicine extends Controller
         ];
     }
     
-    private function prepareStockCardData($request, $item, $checkUser, $itemID, $listCost) {
+    private function prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost) {
+        $item_price =  $item['price'] = str_replace('₱', '', $item['price']);
         return [
             'SummaryCode'   => $item['code'],
             'HospNum'       => $request->payload['patient_Id'] ?? null,
-            'IdNum'         => $request->payload['case_No'] ?? null,
+            'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
             'ItemID'        => $itemID,
             'TransDate'     => Carbon::now(),
             'RevenueID'     => $item['code'] ?? null,
-            'RefNum'        => $request->payload['RefNum'] ?? null,
+            'RefNum'        => $tbInvChargeSlipSequence->DispensingCSlip,
             'Status'        => $item['stat'] ?? null,
             'Quantity'      => $item['quantity'] ?? null,
             'Balance'       => $request->payload['Balance'] ?? null,
-            'NetCost'       => str_replace('₱', '', $item['price']) ?? null,
+            'NetCost'       => $item_price ? floatval($item_price) : null,
             'Amount'        => $item['amount'] ?? null,
             'UserID'        => $checkUser->idnumber,
             'DosageID'      => $item['frequency'] ?? null,
             'RequestByID'   => $checkUser->idnumber,
             'CreditMemoNum' => $request->payload['CreditMemoNum'] ?? null,
             'DispenserCode' => 0,
+            'RequestNum'    => $tbNursePHSlipSequence->ChargeSlip,
             'ListCost'      => $listCost,
             'HostName'      => (new GetIP())->getHostname(),
         ];
@@ -248,7 +251,7 @@ class EmergencyRoomMedicine extends Controller
         ];
     }
     
-    private function prepareInventoryTransactionData($request, $item, $checkUser, $itemID, $stock) {
+    private function prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock) {
         return [
             'branch_Id'                     => 1,
             'warehouse_Group_Id'            => $request->payload['warehouse_Group_Id'] ?? null,
@@ -257,10 +260,12 @@ class EmergencyRoomMedicine extends Controller
             'patient_Registry_Id'           => $request->payload['case_No'] ?? null,
             'transaction_Item_Id'           => $itemID,
             'transaction_Date'              => Carbon::now(),
+            'trasanction_Reference_Number'  => $tbInvChargeSlipSequence->DispensingCSlip,
             'transaction_Acctg_TransType'   => $item['code'] ?? null,
             'transaction_Qty'               => $item['quantity'] ?? null,
             'transaction_Item_OnHand'       => $stock,
             'transaction_Item_ListCost'     => $request->payload['transaction_Item_ListCost'] ?? null,
+            'transaction_Requesting_Number' => $tbNursePHSlipSequence->ChargeSlip,
             'transaction_UserId'            => $checkUser->idnumber,
             'created_at'                    => Carbon::now(),
             'createdBy'                     => $checkUser->idnumber,
@@ -270,61 +275,146 @@ class EmergencyRoomMedicine extends Controller
     }
 
     public function getMedicineSupplyCharges($id) {
-
-        $data =  DB::table('STATION.dbo.tbNurseLogBook as lb')
+        $data = DB::table('STATION.dbo.tbNurseLogBook as lb')
             ->select(
-            'lb.Hospnum', 'lb.IDnum', 'lb.RevenueID', 'lb.ItemID', 'lb.Description', 
-                     DB::raw('SUM(lb.Quantity) as Quantity'), 
-                     DB::raw('Sum(lb.Amount) as Amount'),
-                     'lb.Dosage','lb.RequestNum', 'lb.ReferenceNum', 'cdglb.description', 
-                     'sc.NetCost',  'lb.RecordStatus'
-                    )
-            ->join(
-                'INVENTORY.dbo.tbInvStockCard as sc', 
-                function($join) {
-                            $join->on('lb.IDnum', '=', 'sc.IdNum')
-                                 ->on('lb.ItemID', '=', 'sc.ItemID');
-                        })
-
-            ->join(
-                'CDG_MMIS.dbo.inventoryTransaction as it', 
-                function($join) {
-                            $join->on('lb.IDnum', '=', 'it.patient_Registry_Id')
-                                 ->on('lb.ItemID', '=', 'it.transaction_Item_Id');
-                         })
-
-            ->join(
-                    'CDG_PATIENT_DATA.dbo.NurseLogBook as cdglb', 
-                    function($join) {
-                                $join->on('lb.IDnum', '=', 'cdglb.case_No')
-                                     ->on('lb.ItemID', '=', 'cdglb.item_Id');
-                            })
-
-            ->where('lb.IDnum', $id)
-
-            ->groupBy(
                 'lb.Hospnum', 
-                    'lb.IDnum', 
-                    'lb.RevenueID', 
-                    'lb.ItemID', 
-                    'lb.Description', 
-                    'lb.Dosage', 
-                    'lb.Amount', 
-                    'lb.RequestNum', 
-                    'lb.ReferenceNum', 
-                    'cdglb.description', 
-                    'sc.NetCost',
-                    'lb.RecordStatus'
-                )
-            ->get();
+                'lb.IDnum', 
+                'lb.RevenueID', 
+                'lb.ItemID', 
+                'lb.Description', 
+                'lb.Quantity', 
+                'lb.Amount',
+                'lb.Dosage', 
+                'lb.RequestNum', 
+                'lb.ReferenceNum', 
+                'lb.RecordStatus',
+                'sc.NetCost',
+                'cdglb.description'
+            )
 
-        if($data->isEmpty()) {
+            ->leftJoin('INVENTORY.dbo.tbInvStockCard as sc', function($join) {
+                $join->on(
+                            DB::raw("CASE WHEN RIGHT(lb.IDnum, 1) = 'B' THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) ELSE lb.IDnum END"), '=', 
+                            DB::raw("CASE WHEN RIGHT(sc.IdNum, 1) = 'B' THEN LEFT(sc.IdNum, LEN(sc.IdNum) - 1) ELSE sc.IdNum END")
+                        )
+                     ->on('lb.ItemID', '=', 'sc.ItemID');
+            })
+
+            ->leftJoin('CDG_PATIENT_DATA.dbo.NurseLogBook as cdglb', function($join) {
+                $join->on(DB::raw("CASE WHEN RIGHT(lb.IDnum, 1) = 'B' THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) ELSE lb.IDnum END"), '=', 'cdglb.case_No')
+                     ->on('lb.ItemID', '=', 'cdglb.item_Id');
+            })
+
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('CDG_MMIS.dbo.inventoryTransaction as it')
+                    ->whereColumn(DB::raw("CASE WHEN RIGHT(lb.IDnum, 1) = 'B' THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) ELSE lb.IDnum END"), 'it.patient_Registry_Id')
+                    ->whereColumn('lb.ItemID', 'it.transaction_Item_Id');
+            })
+
+            ->where(DB::raw("CASE WHEN RIGHT(lb.IDnum, 1) = 'B' THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) ELSE lb.IDnum END"), $id)
+            ->distinct() 
+            ->get();
+    
+        if ($data->isEmpty()) {
             return response()->json([
                 'message' => 'No Charges'
             ], 404);
         }
-
+    
         return response()->json($data, 200);
     }
     
+    
+    public function cancelCharges(Request $request) {
+
+       
+        DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+
+        try{
+            $checkUser = User::where([
+                ['idnumber', '=', $request->payload['user_userid']],
+                ['passcode', '=', $request->payload['user_passcode']]
+            ])->first();
+
+            if (!$checkUser) {
+                return response()->json(['message' => 'Incorrect Username or Password'], 404);
+            }
+
+            $cdg_mmis_inventory = InventoryTransaction::where('transaction_Requesting_Number', $request->payload['reference_id'])->first();
+            $inventory = tbInvStockCard::where('RequestNum', $request->payload['reference_id'])->first();
+
+            $cdg_mmis_inventory_data = [
+                'branch_Id'                     => 1,
+                'warehouse_Group_Id'            => $cdg_mmis_inventory->warehouse_Group_Id,
+                'warehouse_Id'                  => $cdg_mmis_inventory->warehouse_Id,
+                'patient_Id'                    => $cdg_mmis_inventory->patient_Id,
+                'patient_Registry_Id'           => $cdg_mmis_inventory->patient_Registry_Id,
+                'transaction_Item_Id'           => $cdg_mmis_inventory->transaction_Item_Id,
+                'transaction_Date'              => Carbon::now(),
+                'trasanction_Reference_Number'  => $cdg_mmis_inventory->trasanction_Reference_Number,
+                'transaction_Acctg_TransType'   => $cdg_mmis_inventory->transaction_Acctg_TransType,
+                'transaction_Qty'               => (intval($cdg_mmis_inventory->transaction_Qty) * -1),
+                'transaction_Item_OnHand'       => $cdg_mmis_inventory->transaction_Item_OnHand,
+                'transaction_Item_ListCost'     => $cdg_mmis_inventory->transaction_Item_ListCost,
+                'transaction_Requesting_Number' => $cdg_mmis_inventory->transaction_Requesting_Number,
+                'transaction_UserId'            => $checkUser->idnumber,
+                'created_at'                    => Carbon::now(),
+                'createdBy'                     => $checkUser->idnumber,
+                'updated_at'                    => Carbon::now(),
+                'updatedby'                     => $checkUser->idnumber,
+            ];
+
+            $inventory_data = [
+                'SummaryCode'                   => $inventory->SummaryCode,
+                'HospNum'                       => $inventory->HospNum,
+                'IdNum'                         => $inventory->IdNum,
+                'ItemID'                        => $inventory->ItemID,
+                'TransDate'                     => Carbon::now(),
+                'RevenueID'                     => $inventory->RevenueID,
+                'RefNum'                        => $inventory->RefNum,
+                'Status'                        => $inventory->Status,
+                'Quantity'                      => (intval($inventory->Quantity) * -1),
+                'Balance'                       => $inventory->Balance,
+                'NetCost'                       => $inventory->NetCost,
+                'Amount'                        => (floatval($inventory->Amount) * -1),
+                'UserID'                        => $checkUser->idnumber,
+                'DosageID'                      => $inventory->DosageID,
+                'RequestByID'                   => $checkUser->idnumber,
+                'CreditMemoNum'                 => $inventory->CreditMemoNum,
+                'DispenserCode'                 => $inventory->DispenserCode,
+                'RequestNum'                    => $inventory->RequestNum,
+                'ListCost'                      => $inventory->ListCost,
+                'HostName'                      => (new GetIP())->getHostname(), 
+            ];
+
+            InventoryTransaction::create($cdg_mmis_inventory_data);
+            tbInvStockCard::create($inventory_data);
+            NurseLogBook::where('requestNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
+            tbNurseLogBook::where('RequestNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+
+            DB::connection('sqlsrv_medsys_nurse_station')->commit();
+            DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_medsys_inventory')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+
+            return response()->json([
+                'message'   => 'Item Charged has been successfully Canceleled'
+            ], 200);
+
+        } catch(Exception $e) {
+
+            DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            DB::connection('sqlsrv_medsys_inventory')->rollBack();
+            DB::connection('sqlsrv_mmis')->rollBack();
+
+            return response()->json([
+                'message' => 'Error!' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

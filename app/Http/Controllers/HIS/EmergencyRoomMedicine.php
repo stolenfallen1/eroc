@@ -201,6 +201,7 @@ class EmergencyRoomMedicine extends Controller
     }
     
     private function prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost) {
+        $item_price =  $item['price'] = str_replace('₱', '', $item['price']);
         return [
             'SummaryCode'   => $item['code'],
             'HospNum'       => $request->payload['patient_Id'] ?? null,
@@ -212,7 +213,7 @@ class EmergencyRoomMedicine extends Controller
             'Status'        => $item['stat'] ?? null,
             'Quantity'      => $item['quantity'] ?? null,
             'Balance'       => $request->payload['Balance'] ?? null,
-            'NetCost'       => str_replace('₱', '', $item['price']) ?? null,
+            'NetCost'       => $item_price ? floatval($item_price) : null,
             'Amount'        => $item['amount'] ?? null,
             'UserID'        => $checkUser->idnumber,
             'DosageID'      => $item['frequency'] ?? null,

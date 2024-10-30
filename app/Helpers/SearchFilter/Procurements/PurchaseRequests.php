@@ -64,9 +64,10 @@ class PurchaseRequests
             $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
         }
       });
-    }else{
-      $this->model->where('pr_Document_Number', 'LIKE' , '000%');
     }
+    // else{
+    //   $this->model->where('pr_Document_Number', 'LIKE' , '000%');
+    // }
   }
 
   // $this->authUser->role->name == 'consultant' ||
@@ -588,12 +589,13 @@ class PurchaseRequests
     
     $this->model->where(function ($q) {
       $q->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
-    })->whereHas('purchaseRequestDetails', function ($q) {
+    })
+    ->whereHas('purchaseRequestDetails', function ($q) {
       $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function ($q1) {
           $q1->where(function ($q2) {
-            // $q2->where('canvas_Branch_Id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
-            // ->orWhere('canvas_Branch_Id', 1);
+            $q2->where('canvas_Branch_Id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
+            ->orWhere('canvas_Branch_Id', 1);
           })->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         });
     });

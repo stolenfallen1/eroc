@@ -96,147 +96,156 @@ class SOAController extends Controller
     public function createStatmentOfAccountSummary($id) {
         $data = OutPatient::with(['patientBillingInfo' => function($query) {
             $query->orderBy('revenueID', 'asc'); 
-        }])
-        ->where('case_No', $id)
-        ->take(1)
-        ->get();
-
-        $patientInfo = $data->map(function($item) {
-            return [
-                'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,
-                'Patient_Address'   => isset($item->address) ? $item->address : 'N/A',
-                'Account_No'        => $item->patient_Id,
-                'Guarantor'         => $item->guarantor_Name,
-                'Credit_Limit'      => $item->guarantor_Credit_Limit,
-                'Admission_No'      => $item->case_No,
-                'Hospital_No'       => $item->branch_Id,
-                'Hospital_Name'     => $item->patient_Id,
-                'Date_Admitted'     => isset($item->registry_Date) ? date('Y/m/d', strtotime($item->registry_Date)) : '',
-                'Time_Admitted'     => isset($item->registry_Date) ? date('h:i A', strtotime($item->registry_Date)) : '',
-                'Billed_Date'       => isset($item->build_Date) ? date('Y/m/d', strtotime($item->build_Date)) : '',
-                'Billed_Time'       => isset($item->build_Date) ? date('h:i A', strtotime($item->build_Date)) : '',
-            ];
-        });
+                }])
+                ->where('case_No', $id)
+                ->take(1)
+                ->get();
         
-        $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
+        if($data->isEmpty()) {
 
-        $totalChargesSummary = collect($billsPayment)
-            ->groupBy('RevenueID') 
-            ->map(function($groupedItems) {
+            return response()->json([
+                'message'   => 'Cannot issue statement, billing is empty'
+            ], 404);
 
-                $totalAmount = $groupedItems->sum(function($billing) {
-                    return floatval(str_replace(',', '', $billing->Charges ?? 0));
-                });
-
-                $revenueDescription = $groupedItems->first()->Description ?? 'N/A';
-                $accountType        = $groupedItems->first()->DrCr ?? 'N/A';
-                $RevenueID          = $groupedItems->first()->RevenueID ?? '';
-                $Credit             = $groupedItems->first()->Credit_MD ? floatval($groupedItems->first()->Credit) : number_format(0, 2);
-                $Discount           = $groupedItems->first()->Discount ? floatval($groupedItems->first()->Discount) : number_format(0, 2);
-                $PhicMD             = $groupedItems->first()->PHIC_MD ? floatval($groupedItems->first()->PHIC_MD) : number_format(0, 2);
-                $PaymentType        = $groupedItems->first()->PaymentType ? floatval($groupedItems->first()->PaymentType) : number_format(0, 2);
-
+        } else {
+            $patientInfo = $data->map(function($item) {
                 return [
-                    'Total'         => $totalAmount,
-                    'Description'   => $revenueDescription,
-                    'AccountType'   => $accountType,
-                    'RevenueID'     => $RevenueID,
-                    'Credit'        => $Credit,
-                    'Discount'      => $Discount,
-                    'PHIC'          => $PhicMD,
-                    'Payment'       => $PaymentType
+                    'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,
+                    'Patient_Address'   => isset($item->address) ? $item->address : 'N/A',
+                    'Account_No'        => $item->patient_Id,
+                    'Guarantor'         => $item->guarantor_Name,
+                    'Credit_Limit'      => $item->guarantor_Credit_Limit,
+                    'Admission_No'      => $item->case_No,
+                    'Hospital_No'       => $item->branch_Id,
+                    'Hospital_Name'     => $item->patient_Id,
+                    'Date_Admitted'     => isset($item->registry_Date) ? date('Y/m/d', strtotime($item->registry_Date)) : '',
+                    'Time_Admitted'     => isset($item->registry_Date) ? date('h:i A', strtotime($item->registry_Date)) : '',
+                    'Billed_Date'       => isset($item->build_Date) ? date('Y/m/d', strtotime($item->build_Date)) : '',
+                    'Billed_Time'       => isset($item->build_Date) ? date('h:i A', strtotime($item->build_Date)) : '',
                 ];
             });
-
-            $firstRow = true;
-            $runningBalance = 0; 
-            $totalCharges = 0;
-            $prevID = '';
             
-            $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
+            $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
 
-                return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
+            $totalChargesSummary = collect($billsPayment)
+                ->groupBy('RevenueID') 
+                ->map(function($groupedItems) {
 
-                    $charges = floatval(str_replace(',', '', ($billing->amount * intval($billing->quantity))));  
-            
-                    if ($firstRow && ($billing->drcr === 'D' || $billing->drcr === 'P')) {
+                    $totalAmount = $groupedItems->sum(function($billing) {
+                        return floatval(str_replace(',', '', $billing->Charges ?? 0));
+                    });
 
-                        $runningBalance = $charges;
-                        $totalCharges = $charges;
-                        $firstRow = false;
+                    $revenueDescription = $groupedItems->first()->Description ?? 'N/A';
+                    $accountType        = $groupedItems->first()->DrCr ?? 'N/A';
+                    $RevenueID          = $groupedItems->first()->RevenueID ?? '';
+                    $Credit             = $groupedItems->first()->Credit_MD ? floatval($groupedItems->first()->Credit) : number_format(0, 2);
+                    $Discount           = $groupedItems->first()->Discount ? floatval($groupedItems->first()->Discount) : number_format(0, 2);
+                    $PhicMD             = $groupedItems->first()->PHIC_MD ? floatval($groupedItems->first()->PHIC_MD) : number_format(0, 2);
+                    $PaymentType        = $groupedItems->first()->PaymentType ? floatval($groupedItems->first()->PaymentType) : number_format(0, 2);
 
-                    } elseif($firstRow && $billing->drcr === 'C') {
+                    return [
+                        'Total'         => $totalAmount,
+                        'Description'   => $revenueDescription,
+                        'AccountType'   => $accountType,
+                        'RevenueID'     => $RevenueID,
+                        'Credit'        => $Credit,
+                        'Discount'      => $Discount,
+                        'PHIC'          => $PhicMD,
+                        'Payment'       => $PaymentType
+                    ];
+                });
 
-                        $runningBalance = 0;
-                        $totalCharges = 0;
-                        $firstRow = false;
+                $firstRow = true;
+                $runningBalance = 0; 
+                $totalCharges = 0;
+                $prevID = '';
+                
+                $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
 
-                    } else {
+                    return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
 
-                        if ((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID) !== 0) {
+                        $charges = floatval(str_replace(',', '', ($billing->amount * intval($billing->quantity))));  
+                
+                        if ($firstRow && ($billing->drcr === 'D' || $billing->drcr === 'P')) {
+
+                            $runningBalance = $charges;
+                            $totalCharges = $charges;
+                            $firstRow = false;
+
+                        } elseif($firstRow && $billing->drcr === 'C') {
 
                             $runningBalance = 0;
-                            $runningBalance += $charges;
-                            $totalCharges += $charges;
-
-                        } elseif((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID)=== 0) {
-
-                            $runningBalance += $charges;
-                            $totalCharges += $charges;
+                            $totalCharges = 0;
+                            $firstRow = false;
 
                         } else {
 
-                            $runningBalance -= $charges;
-                            $totalCharges -= $charges;
+                            if ((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID) !== 0) {
+
+                                $runningBalance = 0;
+                                $runningBalance += $charges;
+                                $totalCharges += $charges;
+
+                            } elseif((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID)=== 0) {
+
+                                $runningBalance += $charges;
+                                $totalCharges += $charges;
+
+                            } else {
+
+                                $runningBalance -= $charges;
+                                $totalCharges -= $charges;
+                            }
+
                         }
 
-                    }
+                        $prevID = $billing->revenueID;
+                
+                        return [
+                            'Date'                  => date('Y/m/d', strtotime($billing->transDate)),
+                            'RevenueID'             => $billing->revenueID,
+                            'RevenueDesc'           => $billing->revenue,
+                            'Reference_No'          => $billing->revenueID . ' ' . $billing->refNum,
+                            'Description'           => $billing->exam_description,
+                            'Charges_Description'   => $billing->revenue,
+                            'Quantity'              => isset($billing->quantity) ? intval($billing->quantity) : 1,
+                            
+                            'Charges'               => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
+                                                    ? number_format(0, 2)
+                                                    : number_format($charges,2),
 
-                    $prevID = $billing->revenueID;
-            
-                    return [
-                        'Date'                  => date('Y/m/d', strtotime($billing->transDate)),
-                        'RevenueID'             => $billing->revenueID,
-                        'RevenueDesc'           => $billing->revenue,
-                        'Reference_No'          => $billing->revenueID . ' ' . $billing->refNum,
-                        'Description'           => $billing->exam_description,
-                        'Charges_Description'   => $billing->revenue,
-                        'Quantity'              => isset($billing->quantity) ? intval($billing->quantity) : 1,
-                        
-                        'Charges'               => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
-                                                ? number_format(0, 2)
-                                                : number_format($charges,2),
+                            'Credit'                => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
+                                                    ? number_format($charges,2)
+                                                    : number_format(0, 2),
 
-                        'Credit'                => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
-                                                ? number_format($charges,2)
-                                                : number_format(0, 2),
-
-                        'Balance'               => number_format($runningBalance, 2)
-                    ];
+                            'Balance'               => number_format($runningBalance, 2)
+                        ];
+                    });
                 });
-            });
-   
-        $patientBillInfo = [
-            'Patient_Info'      => $patientInfo->toArray(),
-            'PatientBilSummary' =>  $totalChargesSummary,
-            'DoctorsFee'        => $billsPayment,
-            'Run_Date'          => Carbon::now()->format('Y/m/d'),
-            'Run_Time'          => Carbon::now()->format('g:i A'),
-            'Patient_Bill'      => $patientBill->toArray(),
-            'Total_Charges'     => number_format($totalCharges, 2),
-        ]; 
+    
+            $patientBillInfo = [
+                'Patient_Info'      =>  $patientInfo->toArray(),
+                'PatientBilSummary' =>  $totalChargesSummary,
+                'DoctorsFee'        =>  $billsPayment,
+                'Run_Date'          =>  Carbon::now()->format('Y/m/d'),
+                'Run_Time'          =>  Carbon::now()->format('g:i A'),
+                'Patient_Bill'      =>  $patientBill->toArray(),
+                'Total_Charges'     =>  number_format($totalCharges, 2),
+            ]; 
 
-        $filename   = 'Statement_of_account_summary';
-        $html       = view('his.report.soa.statement_of_account_summary', $patientBillInfo)->render();
-        $pdf        = PDF::loadHTML($html)->setPaper('letter', 'portrait');
+            $filename   = 'Statement_of_account_summary';
+            $html       = view('his.report.soa.statement_of_account_summary', $patientBillInfo)->render();
+            $pdf        = PDF::loadHTML($html)->setPaper('letter', 'portrait');
 
-        $pdf->render();
+            $pdf->render();
 
-        $dompdf = $pdf->getDomPDF();
-        $font   = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
-        $dompdf->get_canvas()->page_text(554, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-        // $dompdf->get_canvas()->page_text(100, 780, $pageInfo, $font, 8, array(0, 0, 0));
-        return $pdf->stream($filename . '.pdf');
+            $dompdf = $pdf->getDomPDF();
+            $font   = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
+            $dompdf->get_canvas()->page_text(554, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
+            // $dompdf->get_canvas()->page_text(100, 780, $pageInfo, $font, 8, array(0, 0, 0));
+            return $pdf->stream($filename . '.pdf');
+        }
+        
     }
 
     public function getPatientSOA(Request $request) {

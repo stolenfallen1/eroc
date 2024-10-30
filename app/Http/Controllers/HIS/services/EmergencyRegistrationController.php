@@ -52,8 +52,8 @@ class EmergencyRegistrationController extends Controller
     //
     public function index() {
         try {
-            $today = Carbon::now()->format('Y-m-d'); 
-            // $today = '2024-10-14'; 
+            // $today = Carbon::now()->format('Y-m-d'); 
+            $today = '2024-10-25'; 
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
@@ -61,15 +61,6 @@ class EmergencyRegistrationController extends Controller
                     ->where('isRevoked', 0)              
                     ->whereDate('registry_Date', $today); 
             });
-
-            // $data->with([
-            //     'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-            //     'patientRegistry.allergies' => function ($query)use ($today) {
-            //         $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
-            //         $query->where('isDeleted', '!=', 1);
-            //         $query->whereDate('created_at', $today);
-            //     }
-            // ]);
 
             if (Request()->has('keyword')) {
                 $keyword = Request()->keyword;
@@ -84,7 +75,7 @@ class EmergencyRegistrationController extends Controller
 
             $data->with([
                 'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-                'patientRegistry.allergies' => function ($query)use ($today) {
+                'patientRegistry.allergies' => function ($query) use ($today) {
                     $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
                     $query->where('isDeleted', '!=', 1);
                     $query->whereDate('created_at', $today);
@@ -173,8 +164,11 @@ class EmergencyRegistrationController extends Controller
                     'description'   => $item->description
                 ];
             });
+
             return response()->json($mscServiceType, 200);
+
         } catch(\Exception $e) {
+
             return response()->json(['msg'=> $e->getMessage()], 500);
         }
     }
@@ -458,7 +452,7 @@ class EmergencyRegistrationController extends Controller
                 'guarantor_Approval_date'                   => $request->payload['selectedGuarantor'][0]['guarantor_Approval_date'] ?? null,
                 'guarantor_Validity_date'                   => $request->payload['selectedGuarantor'][0]['guarantor_Validity_date'] ?? null,
                 'guarantor_Approval_remarks'                => $request->payload['guarantor_Approval_remarks'] ?? null,
-                'isWithCreditLimit'                         => !empty($request->payload['selectedGuarantor'][0]['guarantor_code']) ? true : ($request->payload['isWithCreditLimit'] ?? false),
+                'isWithCreditLimit'                         => $request->payload['selectedGuarantor'][0]['guarantor_code'] ? true : false,
                 'guarantor_Credit_Limit'                    => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null,
                 'isWithMultiple_Gurantor'                   => $request->payload['isWithMultiple_Gurantor'] ?? false,
                 'gurantor_Mutiple_TotalCreditLimit'         => $request->payload['gurantor_Mutiple_TotalCreditLimit'] ?? false,
@@ -1072,62 +1066,64 @@ class EmergencyRegistrationController extends Controller
                 $OBG->PatientPregnancyHistory()->create($patientPregnancyHistoryData);
                 $OBG->gynecologicalConditions()->create($patientGynecologicalConditions);
 
-                foreach($request->payload['selectedAllergy'] as $allergy) {
+                if(isset($request->payload['selectedAllergy']) && !empty($request->payload['selectedAllergy'])) {
+                    foreach($request->payload['selectedAllergy'] as $allergy) {
 
-                    $commonData = [
-                        'patient_Id'            => $patient_id,
-                        'case_No'               => $registry_id,
-                        'createdby'             => $checkUser->idnumber,
-                        'created_at'            => Carbon::now(),
-                        'isDeleted'             => 0,
-                    ];
-    
-                    $patientAllergyData         = array_merge($commonData, [
+                        $commonData = [
+                            'patient_Id'            => $patient_id,
+                            'case_No'               => $registry_id,
+                            'createdby'             => $checkUser->idnumber,
+                            'created_at'            => Carbon::now(),
+                            'isDeleted'             => 0,
+                        ];
+        
+                        $patientAllergyData         = array_merge($commonData, [
 
-                        'allergy_type_id'       => $allergy['allergy_id'],
-                        'allergy_description'   => $allergy['allergy_name'] ?? null,
-                        'family_History'        => $request->payload['family_History'] ?? null,
-    
-                    ]);
+                            'allergy_type_id'       => $allergy['allergy_id'],
+                            'allergy_description'   => $allergy['allergy_name'] ?? null,
+                            'family_History'        => $request->payload['family_History'] ?? null,
+        
+                        ]);
 
-                    $patientAllergy             = $patientRegistry->allergies()->create($patientAllergyData);
-                    $last_inserted_id           = $patientAllergy->id;
+                        $patientAllergy             = $patientRegistry->allergies()->create($patientAllergyData);
+                        $last_inserted_id           = $patientAllergy->id;
 
-                    $patientCauseAllergyData    = array_merge($commonData, [
+                        $patientCauseAllergyData    = array_merge($commonData, [
 
-                        'assessID'              => $last_inserted_id,
-                        'allergy_Type_Id'       => $allergy['allergy_id'],
-                        'description'           => $allergy['cause'],
-                        'duration'              => $request->payload['duration'] ?? null,
+                            'assessID'              => $last_inserted_id,
+                            'allergy_Type_Id'       => $allergy['allergy_id'],
+                            'description'           => $allergy['cause'],
+                            'duration'              => $request->payload['duration'] ?? null,
 
-                    ]);
+                        ]);
+                        
+                        $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
                     
-                    $patientAllergy->cause_of_allergy()->create($patientCauseAllergyData);
-                   
-                    if (isset($allergy['symptoms']) && is_array($allergy['symptoms'])) {
-                        foreach ($allergy['symptoms'] as $symptom) {
-                            $patientSymptomsOfAllergy   = array_merge($commonData,  [
+                        if (isset($allergy['symptoms']) && is_array($allergy['symptoms'])) {
+                            foreach ($allergy['symptoms'] as $symptom) {
+                                $patientSymptomsOfAllergy   = array_merge($commonData,  [
 
-                                'assessID'              => $last_inserted_id,
-                                'allergy_Type_Id'       => $allergy['allergy_id'],
-                                'symptom_id'            => $symptom['id'],
-                                'symptom_Description'   => $symptom['description'] ?? null,
+                                    'assessID'              => $last_inserted_id,
+                                    'allergy_Type_Id'       => $allergy['allergy_id'],
+                                    'symptom_id'            => $symptom['id'],
+                                    'symptom_Description'   => $symptom['description'] ?? null,
 
-                            ]);
-    
-                            $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
+                                ]);
+        
+                                $patientAllergy->symptoms_allergy()->create($patientSymptomsOfAllergy);
+                            }
                         }
+
+                        $patientDrugUsedForAllergyData  = array_merge($commonData, [
+
+                            'assessID'                  => $last_inserted_id,
+                            'allergy_Type_Id'           => $allergy['allergy_id'],
+                            'drug_Description'          => $request->payload['drug_Description'] ?? null,
+
+                        ]);
+
+                        $patientAllergy->drug_used_for_allergy()->create($patientDrugUsedForAllergyData);
                     }
-
-                    $patientDrugUsedForAllergyData  = array_merge($commonData, [
-
-                        'assessID'                  => $last_inserted_id,
-                        'allergy_Type_Id'           => $allergy['allergy_id'],
-                        'drug_Description'          => $request->payload['drug_Description'] ?? null,
-
-                    ]);
-
-                    $patientAllergy->drug_used_for_allergy()->create($patientDrugUsedForAllergyData);
                 }
 
                 $patientDischarge = $patientRegistry->dischargeInstructions()->create($patientDischargeInstructions);
@@ -1285,14 +1281,6 @@ class EmergencyRegistrationController extends Controller
 
                 $allergy                        = $patientRegistry && $patientRegistry->allergies()
                                                 ? $patientRegistry->allergies()->whereDate('created_at', $today)->first() 
-                                                : null;
-
-                $causeOfAllergy                 = $patientRegistry && $allergy->cause_of_allergy()
-                                                ? $allergy->cause_of_allergy()->whereDate('created_at', $today)->first() 
-                                                : null;
-
-                $symptomsOfAllergy              = $patientRegistry && $allergy->symptoms_allergy()
-                                                ? $allergy->symptoms_allergy()->whereDate('created_at', $today)->first() 
                                                 : null;
         
                 $badHabits                      = $patientRegistry && $patientRegistry->bad_habits()
@@ -2018,15 +2006,15 @@ class EmergencyRegistrationController extends Controller
                     'informant_Suffix'                          => Arr::get($request->payload, 'informant_Suffix', optional($patientRegistry)->informant_Suffix),
                     'informant_Address'                         => Arr::get($request->payload, 'informant_Address', optional($patientRegistry)->informant_Address),
                     'informant_Relation_id'                     => Arr::get($request->payload, 'informant_Relation_id', optional($patientRegistry)->informant_Relation_id),
-                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code', optional($patientRegistry)->guarantor_Id),
+                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Id', optional($patientRegistry)->guarantor_Id),
                     'guarantor_Name'                            => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_name', optional($patientRegistry)->guarantor_Name),
-                    'guarantor_Approval_code'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_approval_code', optional($patientRegistry)->guarantor_Approval_code),
-                    'guarantor_Approval_no'                     => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_approval_no', optional($patientRegistry)->guarantor_Approval_no),
-                    'guarantor_Approval_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_approval_date', optional($patientRegistry)->guarantor_Approval_date),
-                    'guarantor_Validity_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_validity_date', optional($patientRegistry)->guarantor_Validity_date),
+                    'guarantor_Approval_code'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_code', optional($patientRegistry)->guarantor_Approval_code),
+                    'guarantor_Approval_no'                     => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_no', optional($patientRegistry)->guarantor_Approval_no),
+                    'guarantor_Approval_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date', optional($patientRegistry)->guarantor_Approval_date),
+                    'guarantor_Validity_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date', optional($patientRegistry)->guarantor_Validity_date),
                     'guarantor_Approval_remarks'                => Arr::get($request->payload, 'guarantor_Approval_remarks', optional($patientRegistry)->guarantor_Approval_remarks),
-                    'isWithCreditLimit'                         => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code') ? Arr::get($request->payload, 'isWithCreditLimit', false) : false,
-                    'guarantor_Credit_Limit'                    => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_credit_Limit', optional($patientRegistry)->guarantor_Credit_Limit),
+                    'isWithCreditLimit'                         => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Id') ? Arr::get($request->payload, 'isWithCreditLimit', false) : false,
+                    'guarantor_Credit_Limit'                    => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Credit_Limit', optional($patientRegistry)->guarantor_Credit_Limit),
                     'isWithMultiple_Gurantor'                   => Arr::get($request->payload, 'isWithMultiple_Gurantor', false),
                     'gurantor_Mutiple_TotalCreditLimit'         => Arr::get($request->payload, 'gurantor_Mutiple_TotalCreditLimit', false),
                     'isWithPhilHealth'                          => Arr::get($request->payload, 'isWithPhilHealth', false),
@@ -2138,7 +2126,6 @@ class EmergencyRegistrationController extends Controller
                     'updated_at'            => $currentTimestamp,   
                 ];
 
-                
                 if($existingRegistry) {
                     $pastImmunization->update($patientPastImmunizationData);
                     $pastMedicalHistory->update($patientPastMedicalHistoryData);
@@ -2210,11 +2197,7 @@ class EmergencyRegistrationController extends Controller
 
                                 $patient->drug_used_for_allergy()->create(array_merge($commonData, $patientDrugUsedForAllergyData));
                             }
-                        } else {
-
-                            throw new \Exception('Failed to update Allergy');
-                            
-                        }
+                        } 
                     }
             
                     $badHabits->update($patientBadHabitsData);
@@ -2255,51 +2238,53 @@ class EmergencyRegistrationController extends Controller
                     $OBGYNHistory->PatientPregnancyHistory()->create(array_merge(['OBGYNHistoryID' => $OBGYNHistory->id, 'createdby' => $userId, 'created_at' => $currentTimestamp], $patientPregnancyHistoryData));
                     $OBGYNHistory->gynecologicalConditions()->create(array_merge(['OBGYNHistoryID' => $OBGYNHistory->id, 'createdby' => $userId, 'created_at' => $currentTimestamp], $patientGynecologicalConditions));
                     
-                    foreach ($request->payload['selectedAllergy'] as $allergy) {
+                    if(isset($request->payload['selectedAllergy']) && !empty($request->payload['selectedAllergy'])) {
+                        foreach ($request->payload['selectedAllergy'] as $allergy) {
 
-                        $commonData = [
-                            'patient_Id'            => $patient_id,
-                            'case_No'               => $registry_id,
-                            'allergy_Type_Id'       => $allergy['allergy_id'],
-                            'createdby'             => $checkUser->idnumber,
-                            'created_at'            => Carbon::now(),
-                            'isDeleted'             => 0,
-                        ];
-    
-                        $patientAllergyData = array_merge($commonData, [
-                            'allergy_description'   => $allergy['allergy_name'] ?? null,
-                            'family_History'        => $request->payload['family_History'] ?? null,
-                        ]);
-                
-                        $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
-                        $last_inserted_id = $patientAllergy->id;
+                            $commonData = [
+                                'patient_Id'            => $patient_id,
+                                'case_No'               => $registry_id,
+                                'allergy_Type_Id'       => $allergy['allergy_id'],
+                                'createdby'             => $checkUser->idnumber,
+                                'created_at'            => Carbon::now(),
+                                'isDeleted'             => 0,
+                            ];
+        
+                            $patientAllergyData = array_merge($commonData, [
+                                'allergy_description'   => $allergy['allergy_name'] ?? null,
+                                'family_History'        => $request->payload['family_History'] ?? null,
+                            ]);
                     
-                        $patientCauseAllergyData = [
-                            'assessID'          => $last_inserted_id,
-                            'description'       => $allergy['cause'],
-                            'duration'          => $request->payload['duration'] ?? null,
-                        ];
+                            $patientAllergy = $patientRegistry->allergies()->create($patientAllergyData);
+                            $last_inserted_id = $patientAllergy->id;
+                        
+                            $patientCauseAllergyData = [
+                                'assessID'          => $last_inserted_id,
+                                'description'       => $allergy['cause'],
+                                'duration'          => $request->payload['duration'] ?? null,
+                            ];
+                        
+                            $patientAllergy->cause_of_allergy()->create(array_merge($commonData, $patientCauseAllergyData));
                     
-                        $patientAllergy->cause_of_allergy()->create(array_merge($commonData, $patientCauseAllergyData));
-                
-                        if (!empty($allergy['symptoms']) && is_array($allergy['symptoms'])) {
-                            $symptomsData = [];
-                            foreach ($allergy['symptoms'] as $symptom) {
-                                $symptomsData[] = array_merge($commonData, [
-                                    'assessID'              => $last_inserted_id,
-                                    'symptom_id'            => $symptom['id'],
-                                    'symptom_Description'   => $symptom['description'] ?? null,
-                                ]);
+                            if (!empty($allergy['symptoms']) && is_array($allergy['symptoms'])) {
+                                $symptomsData = [];
+                                foreach ($allergy['symptoms'] as $symptom) {
+                                    $symptomsData[] = array_merge($commonData, [
+                                        'assessID'              => $last_inserted_id,
+                                        'symptom_id'            => $symptom['id'],
+                                        'symptom_Description'   => $symptom['description'] ?? null,
+                                    ]);
+                                }
+                                $patientAllergy->symptoms_allergy()->insert($symptomsData);
                             }
-                            $patientAllergy->symptoms_allergy()->insert($symptomsData);
+
+                            $patientDrugUsedForAllergyData = [
+                                'assessID'          => $last_inserted_id,
+                                'drug_Description'  => $request->payload['drug_Description'] ?? null,
+                            ];
+
+                            $patient->drug_used_for_allergy()->create(array_merge($commonData, $patientDrugUsedForAllergyData));
                         }
-
-                        $patientDrugUsedForAllergyData = [
-                            'assessID'          => $last_inserted_id,
-                            'drug_Description'  => $request->payload['drug_Description'] ?? null,
-                        ];
-
-                        $patient->drug_used_for_allergy()->create(array_merge($commonData, $patientDrugUsedForAllergyData));
                     }
 
                     $patientRegistry->bad_habits()->create(array_merge($mergeToRegistryRelatedTable, $patientBadHabitsData));
@@ -2437,14 +2422,21 @@ class EmergencyRegistrationController extends Controller
     public function saveAllergiesWithSymptoms(Request $request){
         $selectedAllergies = $request->input('selectedAllergy');
 
-        // Loop through each selected allergy
+          /***********************************************************/
+         /*            Loop through each selected allergy           */
+        /********************************************************* */
         foreach ($selectedAllergies as $allergy) {
             $allergyId = $allergy['id']; 
 
-            // Check if there are symptoms to be saved
+          /***********************************************************/
+         /*          Check if there are symptoms to be saved        */
+        /********************************************************* */
             if (isset($allergy['symptoms']) && is_array($allergy['symptoms'])) {
                 foreach ($allergy['symptoms'] as $symptomDescription) {
-                    // Create a new symptom entry for the current allergy
+
+                      /***********************************************************/
+                     /*   Create a new symptom entry for the current allergy    */
+                    /********************************************************* */
                     Symptom::create([
                         'allergy_id' => $allergyId,
                         'symptom_description' => $symptomDescription, // Save symptom
@@ -2457,8 +2449,11 @@ class EmergencyRegistrationController extends Controller
     }
 
     public function updateAllergy($registry_id) {
+
         $allergy = PatientAllergies::where('case_No', $registry_id)->first();
+
         $isUpdated = false;
+
         if($allergy) {  
 
             $allergyUpdated           = $allergy->update(['isDeleted' => 1]);
@@ -2476,111 +2471,111 @@ class EmergencyRegistrationController extends Controller
     
     private function preparePatientData($request, $checkUser, $currentTimestamp, $patientId='') {
         return [
-                    'patient_Id'                => $request->payload['patient_Id'] ?? $patientId,
-                    'title_id'                  => $request->payload['title_id'] ?? null,
-                    'lastname'                  => ucwords($request->payload['lastname'] ?? null),
-                    'firstname'                 => ucwords($request->payload['firstname'] ?? null),
-                    'middlename'                => ucwords($request->payload['middlename'] ?? null),
-                    'suffix_id'                 => $request->payload['suffix_id'] ?? null,
-                    'birthdate'                 => $request->payload['birthdate'] ?? null,
-                    'birthtime'                 => $request->payload['birthtime'] ?? null,
-                    'birthplace'                => $request->payload['birthplace'] ?? null,
-                    'age'                       => $request->payload['age'] ?? null,
-                    'sex_id'                    => $request->payload['sex_id'] ?? null,
-                    'nationality_id'            => $request->payload['nationality_id'] ?? null,
-                    'citizenship_id'            => $request->payload['citizenship_id'] ?? null,
-                    'complexion'                => $request->payload['complexion'] ?? null,
-                    'haircolor'                 => $request->payload['haircolor'] ?? null,
-                    'eyecolor'                  => $request->payload['eyecolor'] ?? null,
-                    'height'                    => $request->payload['height'] ?? null,
-                    'weight'                    => $request->payload['weight'] ?? null,
-                    'religion_id'               => $request->payload['religion_id'] ?? null,
-                    'civilstatus_id'            => $request->payload['civilstatus_id'] ?? null,
-                    'bloodtype_id'              => $request->payload['bloodtype_id'] ?? null,
-                    'dialect_spoken'            => $request->payload['dialect_spoken'] ?? null,
-                    'bldgstreet'                => $request->payload['address']['bldgstreet'] ?? null,
-                    'region_id'                 => $request->payload['address']['region_id'] ?? null,
-                    'province_id'               => $request->payload['address']['province_id'] ?? null,
-                    'municipality_id'           => $request->payload['address']['municipality_id'] ?? null,
-                    'barangay_id'               => $request->payload['address']['barangay_id'] ?? null,
-                    'country_id'                => $request->payload['address']['country_id'] ?? null,
-                    'zipcode_id'                => $request->payload['zipcode_id'] ?? null,
-                    'occupation'                => $request->payload['occupation'] ?? null,
-                    'dependents'                => $request->payload['dependents'] ?? null,
-                    'telephone_number'          => $request->payload['telephone_number'] ?? null,
-                    'mobile_number'             => $request->payload['mobile_number'] ?? null,
-                    'email_address'             => $request->payload['email_address'] ?? null,
-                    'isSeniorCitizen'           => $request->payload['isSeniorCitizen'] ?? false,
-                    'SeniorCitizen_ID_Number'   => $request->payload['SeniorCitizen_ID_Number'] ?? null,
-                    'isPWD'                     => $request->payload['isPWD'] ?? false,
-                    'PWD_ID_Number'             => $request->payload['PWD_ID_Number'] ?? null,
-                    'isPhilhealth_Member'       => $request->payload['isPhilhealth_Member'] ?? false,
-                    'Philhealth_Number'         => $request->payload['Philhealth_Number'] ?? null,
-                    'isEmployee'                => $request->payload['isEmployee'] ?? false,
-                    'GSIS_Number'               => $request->payload['GSIS_Number'] ?? null,
-                    'SSS_Number'                => $request->payload['SSS_Number'] ?? null,
-                    'passport_number'           => $request->payload['passport_number'] ?? null,
-                    'seaman_book_number'        => $request->payload['seaman_book_number'] ?? null,
-                    'embarked_date'             => $request->payload['embarked_date'] ?? null,
-                    'disembarked_date'          => $request->payload['disembarked_date'] ?? null,
-                    'xray_number'               => $request->payload['xray_number'] ?? null,
-                    'ultrasound_number'         => $request->payload['ultrasound_number'] ?? null,
-                    'ct_number'                 => $request->payload['ct_number'] ?? null,
-                    'petct_number'              => $request->payload['petct_number'] ?? null,
-                    'mri_number'                => $request->payload['mri_number'] ?? null,
-                    'mammo_number'              => $request->payload['mammo_number'] ?? null,
-                    'OB_number'                 => $request->payload['OB_number'] ?? null,
-                    'nuclearmed_number'         => $request->payload['nuclearmed_number'] ?? null,
-                    'typeofdeath_id'            => $request->payload['typeofdeath_id'] ?? null,
-                    'dateofdeath'               => $request->payload['dateofdeath'] ?? null,
-                    'timeofdeath'               => $request->payload['timeofdeath'] ?? null,
-                    'spDateMarried'             => $request->payload['spDateMarried'] ?? null,
-                    'spLastname'                => $request->payload['spLastname'] ?? null,
-                    'spFirstname'               => $request->payload['spFirstname'] ?? null,
-                    'spMiddlename'              => $request->payload['spMiddlename'] ?? null,
-                    'spSuffix_id'               => $request->payload['spSuffix_id'] ?? null,
-                    'spAddress'                 => $request->payload['spAddress'] ?? null,
-                    'sptelephone_number'        => $request->payload['sptelephone_number'] ?? null,
-                    'spmobile_number'           => $request->payload['spmobile_number'] ?? null,
-                    'spOccupation'              => $request->payload['spOccupation'] ?? null,
-                    'spBirthdate'               => $request->payload['spBirthdate'] ?? null,
-                    'spAge'                     => $request->payload['spAge'] ?? null,
-                    'motherLastname'            => $request->payload['motherLastname'] ?? null,
-                    'motherFirstname'           => $request->payload['motherFirstname'] ?? null,
-                    'motherMiddlename'          => $request->payload['motherMiddlename'] ?? null,
-                    'motherSuffix_id'           => $request->payload['motherSuffix_id'] ?? null,
-                    'motherAddress'             => $request->payload['motherAddress'] ?? null,
-                    'mothertelephone_number'    => $request->payload['mothertelephone_number'] ?? null,
-                    'mothermobile_number'       => $request->payload['mothermobile_number'] ?? null,
-                    'motherOccupation'          => $request->payload['motherOccupation'] ?? null, 
-                    'motherBirthdate'           => $request->payload['motherBirthdate'] ?? null,
-                    'motherAge'                 => $request->payload['motherAge'] ?? null,
-                    'fatherLastname'            => $request->payload['fatherLastname'] ?? null,
-                    'fatherFirstname'           => $request->payload['fatherFirstname'] ?? null,
-                    'fatherMiddlename'          => $request->payload['fatherMiddlename'] ?? null,
-                    'fatherSuffix_id'           => $request->payload['fatherSuffix_id'] ?? null,
-                    'fatherAddress'             => $request->payload['fatherAddress'] ?? null,
-                    'fathertelephone_number'    => $request->payload['fathertelephone_number'] ?? null,
-                    'fathermobile_number'       => $request->payload['fathermobile_number'] ?? null,
-                    'fatherOccupation'          => $request->payload['fatherOccupation'] ?? null,
-                    'fatherBirthdate'           => $request->payload['fatherBirthdate'] ?? null,
-                    'fatherAge'                 => $request->payload['fatherAge'] ?? null,
-                    'portal_access_uid'         => $request->payload['portal_access_uid'] ?? null,
-                    'portal_access_pwd'         => $request->payload['portal_access_pwd'] ?? null,
-                    'isBlacklisted'             => $request->payload['isBlacklisted'] ?? null,
-                    'blacklist_reason'          => $request->payload['blacklist_reason'] ?? null,
-                    'isAbscond'                 => $request->payload['isAbscond'] ?? false,
-                    'abscond_details'           => $request->payload['abscond_details'] ?? null,
-                    'is_old_patient'            => $request->payload['is_old_patient'] ?? null,
-                    'patient_picture'           => $request->payload['patient_picture'] ?? null,
-                    'patient_picture_path'      => $request->payload['patient_picture_path'] ?? null,
-                    'branch_id'                 => $request->payload['branch_id'] ?? null,
-                    'previous_patient_id'       => $request->payload['previous_patient_id'] ?? null,
-                    'medsys_patient_id'         => $request->payload['medsys_patient_id'] ?? null,
-                    'createdBy'                 => $checkUser->idnumber,
-                    'created_at'                => $currentTimestamp,
-                    'updatedBy'                 => $checkUser->idnumber,
-                    'updated_at'                => $currentTimestamp,   
+            'patient_Id'                => $request->payload['patient_Id'] ?? $patientId,
+            'title_id'                  => $request->payload['title_id'] ?? null,
+            'lastname'                  => ucwords($request->payload['lastname'] ?? null),
+            'firstname'                 => ucwords($request->payload['firstname'] ?? null),
+            'middlename'                => ucwords($request->payload['middlename'] ?? null),
+            'suffix_id'                 => $request->payload['suffix_id'] ?? null,
+            'birthdate'                 => $request->payload['birthdate'] ?? null,
+            'birthtime'                 => $request->payload['birthtime'] ?? null,
+            'birthplace'                => $request->payload['birthplace'] ?? null,
+            'age'                       => $request->payload['age'] ?? null,
+            'sex_id'                    => $request->payload['sex_id'] ?? null,
+            'nationality_id'            => $request->payload['nationality_id'] ?? null,
+            'citizenship_id'            => $request->payload['citizenship_id'] ?? null,
+            'complexion'                => $request->payload['complexion'] ?? null,
+            'haircolor'                 => $request->payload['haircolor'] ?? null,
+            'eyecolor'                  => $request->payload['eyecolor'] ?? null,
+            'height'                    => $request->payload['height'] ?? null,
+            'weight'                    => $request->payload['weight'] ?? null,
+            'religion_id'               => $request->payload['religion_id'] ?? null,
+            'civilstatus_id'            => $request->payload['civilstatus_id'] ?? null,
+            'bloodtype_id'              => $request->payload['bloodtype_id'] ?? null,
+            'dialect_spoken'            => $request->payload['dialect_spoken'] ?? null,
+            'bldgstreet'                => $request->payload['address']['bldgstreet'] ?? null,
+            'region_id'                 => $request->payload['address']['region_id'] ?? null,
+            'province_id'               => $request->payload['address']['province_id'] ?? null,
+            'municipality_id'           => $request->payload['address']['municipality_id'] ?? null,
+            'barangay_id'               => $request->payload['address']['barangay_id'] ?? null,
+            'country_id'                => $request->payload['address']['country_id'] ?? null,
+            'zipcode_id'                => $request->payload['zipcode_id'] ?? null,
+            'occupation'                => $request->payload['occupation'] ?? null,
+            'dependents'                => $request->payload['dependents'] ?? null,
+            'telephone_number'          => $request->payload['telephone_number'] ?? null,
+            'mobile_number'             => $request->payload['mobile_number'] ?? null,
+            'email_address'             => $request->payload['email_address'] ?? null,
+            'isSeniorCitizen'           => $request->payload['isSeniorCitizen'] ?? false,
+            'SeniorCitizen_ID_Number'   => $request->payload['SeniorCitizen_ID_Number'] ?? null,
+            'isPWD'                     => $request->payload['isPWD'] ?? false,
+            'PWD_ID_Number'             => $request->payload['PWD_ID_Number'] ?? null,
+            'isPhilhealth_Member'       => $request->payload['isPhilhealth_Member'] ?? false,
+            'Philhealth_Number'         => $request->payload['Philhealth_Number'] ?? null,
+            'isEmployee'                => $request->payload['isEmployee'] ?? false,
+            'GSIS_Number'               => $request->payload['GSIS_Number'] ?? null,
+            'SSS_Number'                => $request->payload['SSS_Number'] ?? null,
+            'passport_number'           => $request->payload['passport_number'] ?? null,
+            'seaman_book_number'        => $request->payload['seaman_book_number'] ?? null,
+            'embarked_date'             => $request->payload['embarked_date'] ?? null,
+            'disembarked_date'          => $request->payload['disembarked_date'] ?? null,
+            'xray_number'               => $request->payload['xray_number'] ?? null,
+            'ultrasound_number'         => $request->payload['ultrasound_number'] ?? null,
+            'ct_number'                 => $request->payload['ct_number'] ?? null,
+            'petct_number'              => $request->payload['petct_number'] ?? null,
+            'mri_number'                => $request->payload['mri_number'] ?? null,
+            'mammo_number'              => $request->payload['mammo_number'] ?? null,
+            'OB_number'                 => $request->payload['OB_number'] ?? null,
+            'nuclearmed_number'         => $request->payload['nuclearmed_number'] ?? null,
+            'typeofdeath_id'            => $request->payload['typeofdeath_id'] ?? null,
+            'dateofdeath'               => $request->payload['dateofdeath'] ?? null,
+            'timeofdeath'               => $request->payload['timeofdeath'] ?? null,
+            'spDateMarried'             => $request->payload['spDateMarried'] ?? null,
+            'spLastname'                => $request->payload['spLastname'] ?? null,
+            'spFirstname'               => $request->payload['spFirstname'] ?? null,
+            'spMiddlename'              => $request->payload['spMiddlename'] ?? null,
+            'spSuffix_id'               => $request->payload['spSuffix_id'] ?? null,
+            'spAddress'                 => $request->payload['spAddress'] ?? null,
+            'sptelephone_number'        => $request->payload['sptelephone_number'] ?? null,
+            'spmobile_number'           => $request->payload['spmobile_number'] ?? null,
+            'spOccupation'              => $request->payload['spOccupation'] ?? null,
+            'spBirthdate'               => $request->payload['spBirthdate'] ?? null,
+            'spAge'                     => $request->payload['spAge'] ?? null,
+            'motherLastname'            => $request->payload['motherLastname'] ?? null,
+            'motherFirstname'           => $request->payload['motherFirstname'] ?? null,
+            'motherMiddlename'          => $request->payload['motherMiddlename'] ?? null,
+            'motherSuffix_id'           => $request->payload['motherSuffix_id'] ?? null,
+            'motherAddress'             => $request->payload['motherAddress'] ?? null,
+            'mothertelephone_number'    => $request->payload['mothertelephone_number'] ?? null,
+            'mothermobile_number'       => $request->payload['mothermobile_number'] ?? null,
+            'motherOccupation'          => $request->payload['motherOccupation'] ?? null, 
+            'motherBirthdate'           => $request->payload['motherBirthdate'] ?? null,
+            'motherAge'                 => $request->payload['motherAge'] ?? null,
+            'fatherLastname'            => $request->payload['fatherLastname'] ?? null,
+            'fatherFirstname'           => $request->payload['fatherFirstname'] ?? null,
+            'fatherMiddlename'          => $request->payload['fatherMiddlename'] ?? null,
+            'fatherSuffix_id'           => $request->payload['fatherSuffix_id'] ?? null,
+            'fatherAddress'             => $request->payload['fatherAddress'] ?? null,
+            'fathertelephone_number'    => $request->payload['fathertelephone_number'] ?? null,
+            'fathermobile_number'       => $request->payload['fathermobile_number'] ?? null,
+            'fatherOccupation'          => $request->payload['fatherOccupation'] ?? null,
+            'fatherBirthdate'           => $request->payload['fatherBirthdate'] ?? null,
+            'fatherAge'                 => $request->payload['fatherAge'] ?? null,
+            'portal_access_uid'         => $request->payload['portal_access_uid'] ?? null,
+            'portal_access_pwd'         => $request->payload['portal_access_pwd'] ?? null,
+            'isBlacklisted'             => $request->payload['isBlacklisted'] ?? null,
+            'blacklist_reason'          => $request->payload['blacklist_reason'] ?? null,
+            'isAbscond'                 => $request->payload['isAbscond'] ?? false,
+            'abscond_details'           => $request->payload['abscond_details'] ?? null,
+            'is_old_patient'            => $request->payload['is_old_patient'] ?? null,
+            'patient_picture'           => $request->payload['patient_picture'] ?? null,
+            'patient_picture_path'      => $request->payload['patient_picture_path'] ?? null,
+            'branch_id'                 => $request->payload['branch_id'] ?? null,
+            'previous_patient_id'       => $request->payload['previous_patient_id'] ?? null,
+            'medsys_patient_id'         => $request->payload['medsys_patient_id'] ?? null,
+            'createdBy'                 => $checkUser->idnumber,
+            'created_at'                => $currentTimestamp,
+            'updatedBy'                 => $checkUser->idnumber,
+            'updated_at'                => $currentTimestamp,   
         ];
     }
 

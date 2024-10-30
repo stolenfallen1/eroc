@@ -827,7 +827,7 @@ class OutpatientRegistrationController extends Controller
                     });
                 }
             });
-            $data->orderBy('id', 'desc');
+            $data->orderBy('id', 'asc');
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);
 

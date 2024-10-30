@@ -10,7 +10,7 @@ class InventoryTransaction extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv_mmis";
-    protected $table = 'inventoryTransaction';
+    protected $table = 'CDG_MMIS.dbo.inventoryTransaction';
 
     protected $guarded = [];
 

@@ -43,7 +43,7 @@ class PurchaseRequests
     $this->byUser();
     $this->byTab();
     $per_page = Request()->per_page;
-    if ($per_page == '-1') return $this->model->paginate($this->model->count());
+    // if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
   }
 
@@ -594,8 +594,8 @@ class PurchaseRequests
       $q->where('is_submitted', true)
         ->whereHas('recommendedCanvas', function ($q1) {
           $q1->where(function ($q2) {
-            $q2->where('canvas_Branch_Id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
-            ->orWhere('canvas_Branch_Id', 1);
+            // $q2->where('canvas_Branch_Id', '!=', 1)->where('canvas_Level1_ApprovedBy', '!=', null)
+            // ->orWhere('canvas_Branch_Id', 1);
           })->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
         });
     });

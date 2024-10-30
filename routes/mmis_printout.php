@@ -250,7 +250,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     ];
 
     // Generate the PDF using the prepared data
-    $pdf = PDF::loadView('pdf_layout.delivery-landscape', ['pdf_data' => $pdf_data])->setPaper('letter', 'landscape');
+    $pdf = PDF::loadView('pdf_layout.delivery-landscape', ['pdf_data' => $pdf_data])->setPaper('letter', 'portrait');
 
     // Render the PDF
     $pdf->render();

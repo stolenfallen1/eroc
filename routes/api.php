@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Models\BuildFile\Syssystems;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
@@ -10,7 +11,6 @@ use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\Schedules\SchedulingDashboard;
 use App\Http\Controllers\POS\TerminalSettingsController;
-use App\Models\BuildFile\Syssystems;
 /*
 |--------------------------------------------------------------------------
 | API Routes

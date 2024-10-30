@@ -19,7 +19,7 @@ class PurchaseRequest extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv_mmis";
-    protected $table = 'purchaseRequestMaster';
+    protected $table = 'CDG_MMIS.dbo.purchaseRequestMaster';
 
     protected $guarded = [];
     protected $appends = ['code','encrypted_key_id'];

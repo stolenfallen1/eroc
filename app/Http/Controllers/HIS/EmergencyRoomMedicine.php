@@ -313,6 +313,7 @@ class EmergencyRoomMedicine extends Controller
             })
 
             ->where(DB::raw("CASE WHEN RIGHT(lb.IDnum, 1) = 'B' THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) ELSE lb.IDnum END"), $id)
+            ->where('lb.RecordStatus', '!=', 'R')
             ->distinct() 
             ->get();
     

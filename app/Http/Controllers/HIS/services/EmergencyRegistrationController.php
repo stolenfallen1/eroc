@@ -2006,7 +2006,7 @@ class EmergencyRegistrationController extends Controller
                     'informant_Suffix'                          => Arr::get($request->payload, 'informant_Suffix', optional($patientRegistry)->informant_Suffix),
                     'informant_Address'                         => Arr::get($request->payload, 'informant_Address', optional($patientRegistry)->informant_Address),
                     'informant_Relation_id'                     => Arr::get($request->payload, 'informant_Relation_id', optional($patientRegistry)->informant_Relation_id),
-                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Id', optional($patientRegistry)->guarantor_Id),
+                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code', optional($patientRegistry)->guarantor_Id),
                     'guarantor_Name'                            => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_name', optional($patientRegistry)->guarantor_Name),
                     'guarantor_Approval_code'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_code', optional($patientRegistry)->guarantor_Approval_code),
                     'guarantor_Approval_no'                     => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_no', optional($patientRegistry)->guarantor_Approval_no),

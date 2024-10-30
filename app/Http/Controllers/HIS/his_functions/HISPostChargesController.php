@@ -83,12 +83,10 @@ class HISPostChargesController extends Controller
     public function history($patient_id, $case_no, $code, $refnum = [])
     {
         try {
-            // $today = Carbon::now()->format('Y-m-d');
             $query = HISBillingOut::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
                 ->where('quantity', '>', 0);
-                // ->whereDate('transDate', $today);
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -230,7 +228,7 @@ class HISPostChargesController extends Controller
                     if ($saveCharges && $this->check_is_allow_medsys) {
                         MedSysDailyOut::create([
                             'HospNum'           => $patient_id,
-                            'IDNum'             => $case_no,
+                            'IDNum'             => $case_no . 'B',
                             'TransDate'         => $transDate,
                             'RevenueID'         => $revenueID,
                             'ItemID'            => $item_id,
@@ -276,7 +274,7 @@ class HISPostChargesController extends Controller
                                     if ($this->check_is_allow_medsys) {
                                         tbLABMaster::create([
                                             'HospNum'           => $patient_id,
-                                            'IdNum'             => $case_no,
+                                            'IdNum'             => $case_no . 'B',
                                             'RefNum'            => $sequence,
                                             'RequestStatus'     => 'X',
                                             'ItemId'            => $exam->map_exam_id,
@@ -323,7 +321,7 @@ class HISPostChargesController extends Controller
                             tbLABMaster::create([
                                 'HospNum'           => $patient_id,
                                 // 'RequestNum'        => $sequence,
-                                'IdNum'             => $case_no,
+                                'IdNum'             => $case_no . 'B',
                                 'RefNum'            => $sequence,
                                 'RequestStatus'     => 'X',
                                 'ItemId'            => $item_id,
@@ -443,7 +441,7 @@ class HISPostChargesController extends Controller
                     if ($this->check_is_allow_medsys) {
                         MedSysDailyOut::create([
                             'HospNum'           => $existingData->patient_Id,
-                            'IDNum'             => $existingData->case_No,
+                            'IDNum'             => $existingData->case_No . 'B',
                             'TransDate'         => Carbon::now(),
                             'RevenueID'         => $existingData->revenueID,
                             'DrCr'              => 'C',
@@ -468,7 +466,7 @@ class HISPostChargesController extends Controller
                         ]);
                         if ($this->check_is_allow_medsys) {
                             tbLABMaster::where('HospNum', $patient_id)
-                                ->where('IdNum', $case_no)
+                                ->where('IdNum', $case_no . 'B')
                                 ->where('RefNum', $refnum)
                                 ->where('ItemId', $item_id)
                                 ->update([

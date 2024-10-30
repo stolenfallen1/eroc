@@ -62,7 +62,6 @@ class LaboratoryController extends Controller
             ], 500);
         }
     }
-
     public function getIPDPatient()
     {
         try {
@@ -97,8 +96,8 @@ class LaboratoryController extends Controller
                     $query->where('requestStatus', '!=', 'R')
                         ->orWhere(function ($q) {
                             $q->where('requestStatus', 'R')
-                            ->whereNotNull('cancelledby')
-                            ->whereNotNull('cancelleddate');
+                                ->whereNotNull('cancelledby')
+                                ->whereNotNull('cancelleddate');
                         });
                 })
                 ->orderBy('refNum', 'desc');

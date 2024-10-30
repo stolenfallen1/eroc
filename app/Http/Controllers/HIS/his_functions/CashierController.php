@@ -7,9 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
 use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\Hospital\Company;
-use App\Models\HIS\BillingOutModel;
 use App\Models\HIS\his_functions\CashAssessment;
 use App\Models\HIS\his_functions\CashierPaymentCode;
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\CashORMaster;
 use App\Models\HIS\his_functions\CashReceiptTerminal;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
@@ -177,9 +177,11 @@ class CashierController extends Controller
             $total_payment          = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
+                $ORCashInsertOnce = true;
                 foreach ($request->payload['Items'] as $item) {
                     $id = $item['id']; 
                     $itemID = $item['itemID'];
+                    $item_amount = $item['amount'];
                     $form = $item['form'];
                     $revenueID = $item['revenueID'];
                     $specimen = $item['specimen'];
@@ -198,7 +200,7 @@ class CashierController extends Controller
                             'updated_at'        => Carbon::now()
                     ]);
                     if ($update) {
-                        $billingOut = BillingOutModel::create([
+                        $billingOut = HISBillingOut::create([
                             'patient_Id'            => $patient_Id,
                             'case_No'               => $case_No,
                             'accountnum'            => 'CASH',
@@ -212,8 +214,7 @@ class CashierController extends Controller
                             'ChargeSlip'            => $refNum,
                             'ornumber'              => $ORNum,
                             'withholdingTax'        => $withholding_tax,
-                            'amount'                => $total_payment,
-                            'net_amount'            => $total_payment,
+                            'amount'                => $item_amount,
                             'request_doctors_id'    => $request_doctors_id,
                             'userid'                => Auth()->user()->idnumber,
                             'HostName'              => (new GetIP())->getHostname(),
@@ -221,45 +222,9 @@ class CashierController extends Controller
                             'created_at'            => Carbon::now(),
                             'createdby'             => Auth()->user()->idnumber,
                         ]);
-                        $cashORMaster = CashORMaster::create([
-                            'branch_id'                 => 1,
-                            'RefNum'                    => $ORNum,
-                            'HospNum'                   => $patient_Id,
-                            'case_no'                   => $case_No,
-                            'TransDate'                 => $transDate,
-                            'transaction_code'          => $revenueID, 
-                            'TIN'                       => $tin,
-                            'BusinessStyle'             => $business_style,
-                            'SCPWDId'                   => $osca_pwd_id,
-                            'Revenueid'                 => $revenueID, 
-                            'PaymentType'               => $PaymentType,
-                            'PaymentFor'                => $ORNum,
-                            'Particulars'               => $Particulars,
-                            'PaymentFrom'               => $PaymentFrom,
-                            'Discount_type'             => $discount_type,
-                            'Discount'                  => $discount,
-                            'NetAmount'                 => $total_payment,
-                            'CashAmount'                => $cash_amount,
-                            'CashTendered'              => $cash_tendered,
-                            'ChangeAmount'              => $cash_change,
-                            'card_type_id'              => $card_type_id,
-                            'card_id'                   => $card_id,
-                            'CardAmount'                => $card_amount,
-                            'CardApprovalNum'           => $card_approval_number,
-                            'CardDate'                  => $card_date,
-                            'BankCheck'                 => $bank_check,
-                            'Checknum'                  => $check_no,
-                            'CheckAmount'               => $check_amount,
-                            'CheckDate'                 => $check_date,
-                            'UserID'                    => Auth()->user()->idnumber,
-                            'Shift'                     => $Shift,
-                            'Hostname'                  => (new GetIP())->getHostname(),
-                            'createdby'                 => Auth()->user()->idnumber,
-                            'created_at'                => Carbon::now(),
-                        ]);
-                        if ($this->check_is_allow_medsys) {
+                        if ($this->check_is_allow_medsys):
                             MedSysCashAssessment::where('HospNum', $patient_Id)
-                                ->where('IdNum', $case_No)
+                                ->where('IdNum', $case_No . 'B')
                                 ->where('RefNum', $refNum)
                                 ->where('RevenueID', $revenueID)
                                 ->where('ItemID', $itemID)
@@ -276,7 +241,7 @@ class CashierController extends Controller
                                 'Quantity'              => 1,
                                 'RefNum'                => $ORNum,
                                 'ChargeSlip'            => $refNum,
-                                'Amount'                => $total_payment,
+                                'Amount'                => $item_amount,
                                 'DiscountType'          => $discount_type,
                                 'withholdingtax'        => $withholding_tax, 
                                 'AutoDiscount'          => 0,
@@ -284,38 +249,80 @@ class CashierController extends Controller
                                 'CashierID'             => Auth()->user()->idnumber,
                                 'CashierShift'          => $Shift,
                             ]);
-                            tbCashORMaster::create([
-                                'HospNum'               => $patient_Id,
-                                'IDNum'                 => $case_No,
-                                'TransDate'             => $transDate,
-                                'PaymentFrom'           => $PaymentFrom,
-                                'PaymentType'           => $PaymentType,
-                                'PaymentFor'            => $ORNum,
-                                'Revenueid'             => $revenueID,
-                                'RefNum'                => $ORNum,
-                                'Particulars'           => $Particulars,
-                                'Amount'                => $total_payment,
-                                'UserID'                => Auth()->user()->idnumber,
-                                'Host_Name'             => (new GetIP())->getHostname(),
-                                'Shift'                 => $Shift,
-                                'Discount'              => $discount,
-                                'TIN'                   => $tin,
-                                'BusinessStyle'         => $business_style,
-                                'PWDID'                 => $osca_pwd_id,
-                                'CashAmount'            => $cash_amount,
-                                'CashTendered'          => $cash_tendered,
-                                'ChangeAmount'          => $cash_change,
-                                'Checknum'              => $check_no,
-                                'Bank'                  => $bank_check,
-                                'CheckAmount'           => $check_amount,
-                                'CheckDate'             => $check_date,
-                                'CardName'              => $card_id,
-                                'ApprovalNum'           => $card_approval_number,
-                                'CardAmount'            => $card_amount,
-                                'CardDate'              => $card_date,
+                        endif;
+
+                        if ($ORCashInsertOnce) {
+                            CashORMaster::create([
+                                'branch_id'                 => 1,
+                                'RefNum'                    => $ORNum,
+                                'HospNum'                   => $patient_Id,
+                                'case_no'                   => $case_No,
+                                'TransDate'                 => $transDate,
+                                'transaction_code'          => $revenueID, 
+                                'TIN'                       => $tin,
+                                'BusinessStyle'             => $business_style,
+                                'SCPWDId'                   => $osca_pwd_id,
+                                'Revenueid'                 => $revenueID, 
+                                'PaymentType'               => $PaymentType,
+                                'PaymentFor'                => $ORNum,
+                                'Particulars'               => $Particulars,
+                                'PaymentFrom'               => $PaymentFrom,
+                                'Discount_type'             => $discount_type,
+                                'Discount'                  => $discount,
+                                'CashAmount'                => $cash_amount,
+                                'CashTendered'              => $cash_tendered,
+                                'ChangeAmount'              => $cash_change,
+                                'card_type_id'              => $card_type_id,
+                                'card_id'                   => $card_id,
+                                'CardAmount'                => $card_amount,
+                                'CardApprovalNum'           => $card_approval_number,
+                                'CardDate'                  => $card_date,
+                                'BankCheck'                 => $bank_check,
+                                'Checknum'                  => $check_no,
+                                'CheckAmount'               => $check_amount,
+                                'CheckDate'                 => $check_date,
+                                'UserID'                    => Auth()->user()->idnumber,
+                                'Shift'                     => $Shift,
+                                'Hostname'                  => (new GetIP())->getHostname(),
+                                'createdby'                 => Auth()->user()->idnumber,
+                                'created_at'                => Carbon::now(),
                             ]);
+                            if ($this->check_is_allow_medsys):
+                                tbCashORMaster::create([
+                                    'HospNum'               => $patient_Id,
+                                    'IDNum'                 => $case_No . 'B',
+                                    'TransDate'             => $transDate,
+                                    'PaymentFrom'           => $PaymentFrom,
+                                    'PaymentType'           => $PaymentType,
+                                    'PaymentFor'            => $ORNum,
+                                    'Revenueid'             => $revenueID,
+                                    'RefNum'                => $ORNum,
+                                    'Particulars'           => $Particulars,
+                                    'Amount'                => $total_payment,
+                                    'UserID'                => Auth()->user()->idnumber,
+                                    'Host_Name'             => (new GetIP())->getHostname(),
+                                    'Shift'                 => $Shift,
+                                    'Discount'              => $discount,
+                                    'TIN'                   => $tin,
+                                    'BusinessStyle'         => $business_style,
+                                    'PWDID'                 => $osca_pwd_id,
+                                    'CashAmount'            => $cash_amount,
+                                    'CashTendered'          => $cash_tendered,
+                                    'ChangeAmount'          => $cash_change,
+                                    'Checknum'              => $check_no,
+                                    'Bank'                  => $bank_check,
+                                    'CheckAmount'           => $check_amount,
+                                    'CheckDate'             => $check_date,
+                                    'CardName'              => $card_id,
+                                    'ApprovalNum'           => $card_approval_number,
+                                    'CardAmount'            => $card_amount,
+                                    'CardDate'              => $card_date,
+                                ]);
+                            endif;
+                            $ORCashInsertOnce = false;
                         }
-                        if ($billingOut && $cashORMaster) {
+
+                        if ($billingOut) {
                             if ($revenueID == 'LB' && $form == 'C') {
                                 $labProfileData = $this->getLabItems($itemID);
                                 if ($labProfileData->getStatusCode() === 200) {
@@ -333,7 +340,6 @@ class CashierController extends Controller
                                                 'itemId'                => $exam->map_exam_id,
                                                 'quantity'              => 1,
                                                 'amount'                => 0,
-                                                'NetAmount'             => 0,
                                                 'doctor_Id'             => $request_doctors_id,
                                                 'specimen_Id'           => $exam->map_specimen_id,
                                                 'processed_By'          => Auth()->user()->idnumber,
@@ -346,10 +352,10 @@ class CashierController extends Controller
                                                 'created_at'            => Carbon::now(),
                                                 'createdby'             => Auth()->user()->idnumber,
                                             ]);
-                                            if ($this->check_is_allow_medsys) {
+                                            if ($this->check_is_allow_medsys):
                                                 tbLABMaster::create([
                                                     'HospNum'           => $patient_Id,
-                                                    'IdNum'             => $case_No,
+                                                    'IdNum'             => $case_No . 'B',
                                                     'RefNum'            => $refNum,
                                                     'RequestStatus'     => 'X',
                                                     'ItemId'            => $exam->map_exam_id,
@@ -364,7 +370,7 @@ class CashierController extends Controller
                                                     'ProfileId'         => $exam->map_profile_id,
                                                     'ItemCharged'       => $exam->map_profile_id,
                                                 ]);
-                                            }
+                                            endif;
                                         }
                                     }
                                 }
@@ -380,7 +386,6 @@ class CashierController extends Controller
                                     'itemId'                => $itemID,
                                     'quantity'              => 1,
                                     'amount'                => 0,
-                                    'NetAmount'             => 0,
                                     'doctor_Id'             => $request_doctors_id,
                                     'specimen_Id'           => $specimen ?? 1, // BLOOD BY DEFAULT if no specimen
                                     'processed_By'          => Auth()->user()->idnumber,
@@ -393,10 +398,10 @@ class CashierController extends Controller
                                     'created_at'            => Carbon::now(),
                                     'createdby'             => Auth()->user()->idnumber,
                                 ]);
-                                if ($this->check_is_allow_medsys) {
+                                if ($this->check_is_allow_medsys):
                                     tbLABMaster::create([
                                         'HospNum'           => $patient_Id,
-                                        'IdNum'             => $case_No,
+                                        'IdNum'             => $case_No . 'B',
                                         'RefNum'            => $refNum,
                                         'RequestStatus'     => 'X',
                                         'ItemId'            => $itemID,
@@ -411,7 +416,7 @@ class CashierController extends Controller
                                         'ProfileId'         => $itemID,
                                         'ItemCharged'       => $itemID,
                                     ]);
-                                }
+                                endif;
                             }
                         }
                     }
@@ -475,7 +480,7 @@ class CashierController extends Controller
                     $revenueID = $item['revenueID'];
                     $Particulars = isset($item['items']) ? $item['items']['exam_description'] : '';
                     
-                    $billingOut = BillingOutModel::create([
+                    $billingOut = HISBillingOut::create([
                         'patient_Id'            => $patient_Id,
                         'case_No'               => $case_No,
                         'accountnum'            => $accountnum,
@@ -485,7 +490,6 @@ class CashierController extends Controller
                         'refNum'                => $ORNum,
                         'ChargeSlip'            => $ORNum,
                         'amount'                => $total_payment,
-                        'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         'withholdingTax'        => $withholding_tax,
                         'auto_discount'         => 0,
@@ -512,7 +516,6 @@ class CashierController extends Controller
                             'PaymentFrom'               => $PaymentFrom,
                             'Discount_type'             => $discount_type,
                             'Discount'                  => $discount,
-                            'NetAmount'                 => $total_payment,
                             'CashAmount'                => $cash_amount,
                             'CashTendered'              => $cash_tendered,
                             'ChangeAmount'              => $cash_change,
@@ -535,7 +538,7 @@ class CashierController extends Controller
                         if ($this->check_is_allow_medsys) {
                             MedSysDailyOut::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'TransDate'         => $transDate,
                                 'RevenueID'         => $itemID, // PY
                                 'DrCr'              => 'C',
@@ -543,7 +546,6 @@ class CashierController extends Controller
                                 'ChargeSlip'        => $ORNum,
                                 'Payment'           => $PaymentType,
                                 'Amount'            => $total_payment,
-                                'NetAmount'         => $total_payment,
                                 'DiscountType'      => $discount_type,
                                 'withholdingtax'    => $withholding_tax,
                                 'AutoDiscount'      => 0,
@@ -553,7 +555,7 @@ class CashierController extends Controller
                             ]);
                             tbCashORMaster::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'PaymentFrom'       => $PaymentFrom,
                                 'PaymentType'       => $PaymentType,
                                 'PaymentFor'        => $ORNum,
@@ -584,13 +586,14 @@ class CashierController extends Controller
                         }
             
                     }
-                    DB::connection('sqlsrv_billingOut')->commit();
-                    DB::connection('sqlsrv_medsys_billing')->commit();
-                    return response()->json([
-                        'message' => 'Successfully saved payment',
-                    ], 200);
                 }
+                DB::connection('sqlsrv_billingOut')->commit();
+                DB::connection('sqlsrv_medsys_billing')->commit();
+                return response()->json([
+                    'message' => 'Successfully saved payment',
+                ], 200);
             }
+
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
@@ -641,7 +644,7 @@ class CashierController extends Controller
                     $revenueID = $item['revenueID'];
                     $Particulars = isset($item['items']) ? $item['items']['exam_description'] : '';
                     
-                    $billingOut = BillingOutModel::create([
+                    $billingOut = HISBillingOut::create([
                         'patient_Id'            => $patient_Id,
                         'case_No'               => $case_No,
                         'accountnum'            => $accountnum,
@@ -651,7 +654,6 @@ class CashierController extends Controller
                         'refNum'                => $ORNum,
                         'ChargeSlip'            => $ORNum,
                         'amount'                => $total_payment,
-                        'net_amount'            => $total_payment,
                         'discount_type'         => $discount_type,
                         'withholdingTax'        => $withholding_tax,
                         'auto_discount'         => 0,
@@ -678,7 +680,6 @@ class CashierController extends Controller
                             'PaymentFrom'               => $PaymentFrom,
                             'Discount_type'             => $discount_type,
                             'Discount'                  => $discount,
-                            'NetAmount'                 => $total_payment,
                             'CashAmount'                => $cash_amount,
                             'CashTendered'              => $cash_tendered,
                             'ChangeAmount'              => $cash_change,
@@ -701,7 +702,7 @@ class CashierController extends Controller
                         if ($this->check_is_allow_medsys) {
                             MedSysDailyOut::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'TransDate'         => $transDate,
                                 'RevenueID'         => $itemID, // CP
                                 'DrCr'              => 'C',
@@ -709,7 +710,6 @@ class CashierController extends Controller
                                 'ChargeSlip'        => $ORNum,
                                 'Payment'           => $PaymentType,
                                 'Amount'            => $total_payment,
-                                'NetAmount'         => $total_payment,
                                 'DiscountType'      => $discount_type,
                                 'withholdingtax'    => $withholding_tax,
                                 'AutoDiscount'      => 0,
@@ -719,7 +719,7 @@ class CashierController extends Controller
                             ]);
                             tbCashORMaster::create([
                                 'HospNum'           => $patient_Id,
-                                'IDNum'             => $case_No,
+                                'IDNum'             => $case_No . 'B',
                                 'PaymentFrom'       => $PaymentFrom,
                                 'PaymentType'       => $PaymentType,
                                 'PaymentFor'        => $ORNum,
@@ -749,17 +749,21 @@ class CashierController extends Controller
                             ]);
                         }
                     }
-                    DB::connection('sqlsrv_billingOut')->commit();
-                    DB::connection('sqlsrv_medsys_billing')->commit();
-                    return response()->json([
-                        'message' => 'Successfully saved payment',
-                    ], 200);
                 }
+                DB::connection('sqlsrv_billingOut')->commit();
+                DB::connection('sqlsrv_medsys_billing')->commit();
+                return response()->json([
+                    'message' => 'Successfully saved payment',
+                ], 200);
             }
+
         } catch (\Exception $e) {
             DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => $e->getMessage(),
+                'stackTrace' => $e->getTrace(),
+            ], 500);
         }
     }
     public function getORForCancellation(Request $request)
@@ -787,6 +791,9 @@ class CashierController extends Controller
     public function cancelOR(Request $request)
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction(); 
+        DB::connection('sqlsrv_laboratory')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
         try {
             $patient_Id = $request->items['patient_Id'];
             $case_No = $request->items['case_No'];
@@ -795,84 +802,143 @@ class CashierController extends Controller
             $cancelDate = $request->items['CancelDate'];
             $cancelReason = $request->items['CancelledReason'];
     
-            $update = CashORMaster::where('HospNum', $patient_Id)
+            CashORMaster::where('HospNum', $patient_Id)
                 ->where('case_no', $case_No)
                 ->where('RefNum', $ORNumber)
-                ->update([
+                ->updateOrFail([
                     'CancelDate' => $cancelDate,
                     'CancelledBy' => Auth()->user()->idnumber,
                     'CancelledReason' => $cancelReason,
             ]);
     
-            if (!$update) {
-                throw new \Exception('Failed to cancel OR');
-            } else {
-                $cashAssessment = CashAssessment::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('refNum', $refNum)
+            $cashAssessment = CashAssessment::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->where('refNum', $refNum)
+                ->where('ORNumber', $ORNumber)
+                ->get();
+
+            if ($cashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found');
+            foreach ($cashAssessment as $item) {
+                $item->update([
+                    'recordStatus' => null,
+                    'ORNumber' => '',
+                ]);
+            }
+            $existingBillingOut = HISBillingOut::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->where('ChargeSlip', $refNum)
+                ->where('ornumber', $ORNumber)
+                ->get();
+
+            if ($existingBillingOut->isEmpty()) throw new \Exception('Billing Out not found');
+            foreach ($existingBillingOut as $item) {
+                $item->update([
+                    'updatedBy' => Auth()->user()->idnumber,
+                    'updated_at' => Carbon::now(),
+                ]);
+            }
+
+            $replicatedItems = [];
+            foreach ($existingBillingOut as $data) {
+                $item = $data->replicate();
+                $item->transDate = Carbon::now();
+                $item->drcr = 'C';
+                $item->quantity = $data->quantity * -1;
+                $item->amount = $data->amount * -1;
+                $item->userId = Auth()->user()->idnumber;
+                $item->created_at = Carbon::now();
+                $item->createdby = Auth()->user()->idnumber;
+
+                if ($item->save()) {
+                    $replicatedItems[] = $item;
+                }
+            }
+
+            if (empty($replicatedItems)) throw new \Exception('No items replicated, submitted empty array');
+            $labExams = LaboratoryMaster::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->where('refNum', $refNum)
+                ->where('ornumber', $ORNumber)
+                ->get();
+
+            if ($labExams->isEmpty()) throw new \Exception('Lab Exams not found');
+            foreach ($labExams as $exam) {
+                $exam->update([
+                    'request_Status' => 'R',
+                    'result_Status' => 'R',
+                ]);
+            }
+
+            if ($this->check_is_allow_medsys) {
+                tbCashORMaster::where('HospNum', $patient_Id)
+                    ->where('IDNum', $case_No . 'B')
+                    ->where('RefNum', $ORNumber)
+                    ->updateOrFail([
+                        'CancelDate' => $cancelDate,
+                        'CancelledBy' => Auth()->user()->idnumber,
+                    ]);
+
+                $medSysCashAssessment = MedSysCashAssessment::where('HospNum', $patient_Id)
+                    ->where('IdNum', $case_No . 'B')
+                    ->where('RefNum', $refNum)
                     ->where('ORNumber', $ORNumber)
                     ->get();
-    
-                if ($cashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found');
-                foreach ($cashAssessment as $item) {
+                
+                if ($medSysCashAssessment->isEmpty()) throw new \Exception('Cash Assessment not found in MedSys DB');
+                foreach ($medSysCashAssessment as $item) {
                     $item->update([
-                        'recordStatus' => '',
+                        'RecordStatus' => null,
                         'ORNumber' => '',
                     ]);
                 }
-    
-                $existingBillingOut = BillingOutModel::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('ChargeSlip', $refNum)
-                    ->where('ornumber', $ORNumber)
-                    ->get();
 
-                if ($existingBillingOut->isEmpty()) throw new \Exception('Billing Out not found');
-                foreach ($existingBillingOut as $item) {
-                    $item->update([
-                        'updatedBy' => Auth()->user()->idnumber,
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-    
-                $replicatedItems = [];
-                foreach ($existingBillingOut as $data) {
+                $existingMedSysBillingOut = MedSysDailyOut::where('HospNum', $patient_Id)
+                    ->where('IDNum', 'CASH')
+                    ->where('ChargeSlip', $refNum)
+                    ->where('RefNum', $ORNumber)
+                    ->get();
+                
+                $medSysReplicatedItems = [];
+                foreach ($existingMedSysBillingOut as $data) {
                     $item = $data->replicate();
-                    $item->transDate = Carbon::now();
-                    $item->drcr = 'C';
-                    $item->quantity = $data->quantity * -1;
-                    $item->amount = $data->amount * -1;
-                    $item->net_amount = $data->net_amount * -1;
-                    $item->userId = Auth()->user()->idnumber;
-                    $item->created_at = Carbon::now();
-                    $item->createdby = Auth()->user()->idnumber;
-    
+                    $item->TransDate = Carbon::now();
+                    $item->DrCr = 'C';
+                    $item->Quantity = $data->quantity * -1;
+                    $item->Amount = $data->amount * -1;
+                    $item->UserID = Auth()->user()->idnumber;
+
                     if ($item->save()) {
-                        $replicatedItems[] = $item;
+                        $medSysReplicatedItems[] = $item;
                     }
                 }
-    
-                if (empty($replicatedItems)) throw new \Exception('No items replicated, submitted empty array');
-                $labExams = LaboratoryMaster::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('refNum', $refNum)
-                    ->where('ornumber', $ORNumber)
+
+                if (empty($medSysReplicatedItems)) throw new \Exception('No items replicated in MedSys DB, submitted empty array');
+                $medSysLabExams = tbLABMaster::where('HospNum', $patient_Id)
+                    ->where('IdNum', $case_No . 'B')
+                    ->where('RefNum', $refNum)
+                    ->where('ORNum', $ORNumber)
                     ->get();
 
-                if ($labExams->isEmpty()) throw new \Exception('Lab Exams not found');
-                foreach ($labExams as $exam) {
+                if ($medSysLabExams->isEmpty()) throw new \Exception('Lab Exams not found in MedSys DB');
+                foreach ($medSysLabExams as $exam) {
                     $exam->update([
-                        'request_Status' => 'C',
-                        'result_Status' => 'C',
+                        'RequestStatus' => 'R',
+                        'ResultStatus' => 'R',
                     ]);
                 }
-    
-                DB::connection('sqlsrv_billingOut')->commit();
-                return response()->json(['message' => 'Successfully cancelled OR'], 200);
             }
+
+            DB::connection('sqlsrv_billingOut')->commit(); 
+            DB::connection('sqlsrv_laboratory')->commit();
+            DB::connection('sqlsrv_medsys_billing')->commit();
+            DB::connection('sqlsrv_medsys_laboratory')->commit();
+            return response()->json(['message' => 'Successfully cancelled OR'], 200);
     
         } catch(\Exception $e) {
-            DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack(); 
+            DB::connection('sqlsrv_laboratory')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_medsys_laboratory')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -899,17 +965,18 @@ class CashierController extends Controller
     public function getORSequence(Request $request)
     {
         try {
-            $user = CashReceiptTerminal::where('user_id', '!=', null)->first();
-            if ($user->user_id == Auth()->user()->idnumber) {
-                $data = CashReceiptTerminal::where('user_id', Auth()->user()->idnumber)->get();
-                return response()->json(['data' => $data], 200);
-            } else {
-                return response()->json(['error' => 'User not found'], 404);
+            $userId = Auth()->user()->idnumber;
+            $data = CashReceiptTerminal::where('user_id', $userId)->get();
+    
+            if ($data->isEmpty()) {
+                return response()->json(['error' => 'User not found'], 200);
             }
+    
+            return response()->json(['data' => $data], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
-    }
+    }    
     public function getOPDBill(Request $request) 
     {
         try {

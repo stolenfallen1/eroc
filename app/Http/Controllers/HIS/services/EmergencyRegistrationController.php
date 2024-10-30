@@ -49,11 +49,11 @@ class EmergencyRegistrationController extends Controller
         $this->isproduction = true;
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
     }
-    //
+    
     public function index() {
         try {
-            // $today = Carbon::now()->format('Y-m-d'); 
-            $today = '2024-10-25'; 
+            $today = Carbon::now()->format('Y-m-d'); 
+            // $today = '2024-10-29'; 
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {

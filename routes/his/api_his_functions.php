@@ -76,4 +76,5 @@ Route::controller(EmergencyRoomMedicine::class)->group(function() {
     Route::post('er-get-medicine-suplies', 'erRoomMedicine');
     Route::post('er-medicine-supplies-charges', 'chargePatientMedicineSupply');
     Route::get('get-charge-items/{id}', 'getMedicineSupplyCharges');
+    Route::post('er-cancel-charge', 'cancelCharges');
 });

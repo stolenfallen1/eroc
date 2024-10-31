@@ -33,7 +33,7 @@ class Vendors
       $keyword = Request()->keyword;
       $this->model->where(function ($q) use ($keyword, $searchable) {
         foreach ($searchable as $column) {
-          $q->orWhere($column, 'LIKE', "%" . $keyword . "%");
+          $q->orWhere($column, 'LIKE', "" . $keyword . "%");
         }
       });
     }

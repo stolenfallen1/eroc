@@ -78,6 +78,9 @@ class GlobalChargingSequences
                 case 'NU':
                     $this->incrementMedSysNuclearMedSequence();
                     break;
+                case 'ER':
+                    $this->incrementMedsysEmergencySequence();
+                    break;
             }
         }
     }
@@ -140,5 +143,9 @@ class GlobalChargingSequences
         DB::connection('sqlsrv_medsys_radiology')->table('RADIOLOGY.dbo.tbradiologyrevenues')
             ->where('RevenueID', 'NU')
             ->increment('ChargeSlipNum');
+    }
+
+    protected function incrementMedsysEmergencySequence() {
+        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('AssessmentNum');
     }
 } 

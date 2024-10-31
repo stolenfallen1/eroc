@@ -89,6 +89,7 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'schema' => 'dbo',
         ],
 
         'sqlsrv_laboratory' => [
@@ -150,6 +151,7 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'schema' => 'dbo',
         ],
 
         'sqlsrv_pos' => [
@@ -163,6 +165,7 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'schema' => 'dbo',
         ],
         'sqlsrv_schedules' => [
             'driver' => 'sqlsrv',

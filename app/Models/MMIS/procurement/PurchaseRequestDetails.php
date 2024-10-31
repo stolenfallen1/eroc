@@ -2,12 +2,13 @@
 
 namespace App\Models\MMIS\procurement;
 
-use App\Models\BuildFile\Itemmasters;
-use App\Models\BuildFile\Unitofmeasurement;
-use App\Models\BuildFile\Vendors;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\BuildFile\Vendors;
+use App\Models\BuildFile\Itemmasters;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\BuildFile\Unitofmeasurement;
+use App\Models\MMIS\procurement\VwCanvasMaster;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PurchaseRequestDetails extends Model
 {
@@ -37,7 +38,10 @@ class PurchaseRequestDetails extends Model
         return $this->hasOne(CanvasMaster::class, 'pr_request_details_id')->where('isRecommended', 1);
     }
 
-   
+    public function NewrecommendedCanvas()
+    {
+        return $this->hasOne(VwCanvasMaster::class, 'pr_request_details_id');
+    }
 
     public function changedRecommendedCanvas()
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
+use App\Helpers\ParentRole;
 use Illuminate\Http\Request;
 use App\Models\BuildFile\Vendors;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,16 @@ use App\Models\MMIS\procurement\PurchaseRequestDetails;
 
 class CanvasController extends Controller
 {
+
+    protected $model;
+    protected $authUser;
+    protected $role;
+
+    public function __construct()
+    {
+        $this->authUser = auth()->user();
+        $this->role = new ParentRole();
+    }
     public function index()
     {
         return (new Canvases)->searchable();
@@ -26,6 +37,9 @@ class CanvasController extends Controller
     public function countForPO()
     {
         $model = PurchaseRequest::query();
+        if($this->role->purchaser()){
+            $model->whereIn('invgroup_id', Auth()->user()->assigneditemgroup);
+        }
         $model->where(function($q1){
             $q1->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
         })->whereHas('purchaseRequestDetails', function($q){

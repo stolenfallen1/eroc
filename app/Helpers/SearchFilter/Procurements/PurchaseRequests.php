@@ -374,6 +374,8 @@ class PurchaseRequests
 
   private function forDepartmentHead()
   {
+    
+    $this->model->whereNull('pr_DepartmentHead_CancelledBy');
     $this->model->with(['purchaseRequestDetails' => function ($q) {
       $q->with(['itemMaster', 'changedRecommendedCanvas', 'changedRecommendedCanvas.vendor']) // Correctly reference nested relationships
         ->whereNotNull('pr_DepartmentHead_ApprovedBy'); // Simplified where condition

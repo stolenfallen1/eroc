@@ -749,7 +749,7 @@ class PurchaseRequestController extends Controller
                             'canvas_Item_Qty' => $prd->item_Request_Qty,
                             'canvas_item_amount' => $prd->item_ListCost,
                             'canvas_item_total_amount' => $canvas_item_total_amount,
-                            'canvas_item_discount_percent' => $prd->canvas_discount_percent,
+                            'canvas_item_discount_percent' => $prd->canvas_discount_percent ?? 0,
                             'canvas_item_discount_amount' => $discount_amount,
                             'canvas_item_net_amount' => $canvas_item_total_amount,
                             'canvas_lead_time' => $prd->lead_time,

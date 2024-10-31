@@ -29,6 +29,7 @@ class PurchaseRequests
     if ($this->role->purchaser()) {
       $this->model->whereIn('warehouse_Id', $this->authUser->departments);
     }
+    $this->model->whereNull('pr_DepartmentHead_CancelledBy');
     $this->model->with('warehouse', 'status', 'category', 'subcategory', 'purchaseRequestAttachments', 'user', 'itemGroup');
     $this->searchableColumns();
     $this->byBranch();

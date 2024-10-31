@@ -43,7 +43,7 @@ class PurchaseRequests
     $this->byUser();
     $this->byTab();
     $per_page = Request()->per_page;
-    // if ($per_page == '-1') return $this->model->paginate($this->model->count());
+    if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
   }
 
@@ -65,9 +65,9 @@ class PurchaseRequests
       //   }
       // });
     }
-    // else{
-    //   $this->model->where('pr_Document_Number', 'LIKE' , '000%');
-    // }
+    else{
+      $this->model->where('pr_Document_Number', 'LIKE' , '000%');
+    }
   }
 
   // $this->authUser->role->name == 'consultant' ||

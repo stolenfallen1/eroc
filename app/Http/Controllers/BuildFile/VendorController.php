@@ -17,7 +17,7 @@ class VendorController extends Controller
     public function vendorList(Request $request){
 
        
-        $query = Vendors::whereNull('deleted_at')->orderBy('vendor_Name','asc');
+        $query = Vendors::whereNull('deleted_at')->where('isActive',1)->orderBy('vendor_Name','asc');
         if(Request()->vendor_id){
             $query->where('id',Request()->vendor_id);
         }

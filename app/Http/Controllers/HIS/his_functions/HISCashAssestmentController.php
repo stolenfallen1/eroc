@@ -117,13 +117,17 @@ class HISCashAssestmentController extends Controller
                 }
             }
 
+            return $request->payload['Charges'];
+
             $cashAssessmentSequences = new GlobalChargingSequences();
             $cashAssessmentSequences->incrementSequence(); 
+
             if ($this->check_is_allow_medsys) {
                 $assessnum_sequence = $cashAssessmentSequences->getSequence();
             } else {
                 $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
                 $assessnum_sequence = SystemSequence::where('code', 'GAN')->first();
+
                 if ($chargeslip_sequence && $assessnum_sequence) {
                     $chargeslip_sequence->increment('seq_no');
                     $chargeslip_sequence->increment('recent_generated');
@@ -143,6 +147,7 @@ class HISCashAssestmentController extends Controller
                 'MM'    => 'MedSysMammoSequence',
                 'WC'    => 'MedSysCentreForWomenSequence',
                 'NU'    => 'MedSysNuclearMedSequence',
+                'ER'    => 'MedSysCashSequence'
             ];
 
             $sequenceGenerated = [];
@@ -156,6 +161,7 @@ class HISCashAssestmentController extends Controller
             $transdate = Carbon::now();
             
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
+                echo $request->payload['Charges'];
                 foreach ($request->payload['Charges'] as $charge) {
                     $revenueID = $charge['code'];
                     $itemID = $charge['map_item_id'];
@@ -174,6 +180,7 @@ class HISCashAssestmentController extends Controller
                         }
                     } else {
                         if (!isset($sequenceGenerated[$revenueID])) {
+                            echo $revenueID;
                             $cashAssessmentSequences->incrementSequence($revenueID);
                             $chargeslip_sequence = $cashAssessmentSequences->getSequence();
                             $sequenceGenerated[$revenueID] = true;
@@ -185,15 +192,14 @@ class HISCashAssestmentController extends Controller
                         $sequence = $revenueID . ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType]) 
                             ? $chargeslip_sequence[$sequenceType] 
                             : $chargeslip_sequence['seq_no']);
-                    }                  
-
+                    }
+                    
                     if ($barcode_prefix === null) {
                         $barcode = '';
                     } else {
                         $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
                     }
                     $refNum[] = $sequence;
-                    
                     $saveCashAssessment = CashAssessment::create([
                         'branch_id' => 1,
                         'patient_Id' => $patient_id,
@@ -219,6 +225,7 @@ class HISCashAssestmentController extends Controller
                         'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'created_at' => Carbon::now(),
                     ]);
+
                     if ($saveCashAssessment && $this->check_is_allow_medsys):
                         MedSysCashAssessment::create([
                             'HospNum'               => $patient_id,

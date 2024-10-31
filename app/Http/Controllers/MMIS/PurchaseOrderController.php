@@ -83,8 +83,9 @@ class PurchaseOrderController extends Controller
 
     public function getByNumber()
     {
+        
         $has_delivery = Delivery::whereRaw("CONCAT(po_Document_prefix,'',po_Document_number,'',po_Document_suffix) = ?", Request()->number )
-        ->where('rr_Status', 11)->exists();
+        ->whereIn('rr_Status', [5,11])->exists();
         if($has_delivery) return response()->json(['error' => 'PO already exist'], 200);
 
         return purchaseOrderMaster::with(['latestdelivery.items' => function($q){

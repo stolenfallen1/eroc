@@ -288,8 +288,12 @@
     </thead>
     <tbody>
       @if(count($pdf_data['delivery_items']) > 0)
+      @php $total = 0; @endphp;
       @foreach ($pdf_data['delivery_items'] as $detail)
-      @php
+          
+       
+      @php 
+      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$detail['po_Document_Number'])->where('itemcode',$detail['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
       $expirydate = '';
       $batchno = '';
       if($detail['expirydate']) {
@@ -305,7 +309,7 @@
         <td class="item-td">{{ $expirydate }}</td>
         <td class="item-td">{{ intval($detail['order_qty']) }}</td>
         <td class="item-td">{{ intval($detail['served_qty']) }}</td>
-        <td class="item-td">{{ intval($detail['balance']) }}</td>
+        <td class="item-td">{{ intval(($detail['order_qty'] - $total)) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>

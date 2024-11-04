@@ -189,6 +189,7 @@ class PurchaseOrderController extends Controller
     public function store(Request $request) {
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
+        return '12313';
         try {
             $authUser = Auth::user();
             $uom = Unitofmeasurement::where('name', 'like', '%Day%')->first();
@@ -266,7 +267,7 @@ class PurchaseOrderController extends Controller
                     );
 
 
-                    if($request->dietary == 1){
+                    if($request->dietary == 1 || $request->po_Document_warehouse_id == '36'){
                         $this->autoApproveByComptroller($po->id);
                     }
                     // update if not exist 

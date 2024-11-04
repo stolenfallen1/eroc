@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Helpers\ParentRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -21,12 +22,25 @@ use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 
 class PurchaseOrderController extends Controller
 {
+    protected $model;
+    protected $authUser;
+    protected $role;
+  
+    public function __construct()
+    {
+      // $this->model = DB::connection('sqlsrv_mmis')->table('purchaseRequestMaster');
+      $this->authUser = auth()->user();
+      $this->role = new ParentRole();
+    }
+
     public function index() {
         return (new PurchaseOrders)->searchable();
     }
 
     public function getCount(){
         $branch = Request()->branch_id ? Request()->branch_id : Auth()->user()->branch_id;
+
+
         $comptroller_count = purchaseOrderMaster::where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
         $administrator_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
         $corp_admin_count = purchaseOrderMaster::where('comptroller_approved_date', '!=', null)->where('corp_admin_approved_date', '=', null)->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
@@ -34,7 +48,7 @@ class PurchaseOrderController extends Controller
             $q->where('corp_admin_approved_date', '=', null)->orWhere('corp_admin_approved_date', '!=', null);
         })->where('po_Document_branch_id',$branch)->where('po_Document_number', 'like', "000%");
        
-        if(Auth()->user()->role->name != 'comptroller' && Auth()->user()->role->name != 'administrator' &&  Auth()->user()->role->name != 'corporate admin' && Auth()->user()->role->name != 'president' && Auth()->user()->role->name != 'purchaser'){
+        if($this->role->staff() || $this->role->department_head() || $this->role->isdietary() || $this->role->isdietaryhead()){
             $comptroller_count->where('po_Document_warehouse_id',Auth()->user()->warehouse_id);
             $administrator_count->where('po_Document_warehouse_id',Auth()->user()->warehouse_id);
             $corp_admin_count->where('po_Document_warehouse_id',Auth()->user()->warehouse_id);
@@ -48,7 +62,7 @@ class PurchaseOrderController extends Controller
             }
         }
        
-        if(Auth()->user()->role->name == 'president'){
+        if($this->role->president()){
             $comptroller_count->where('ysl_approved_date', '!=', null);
             $administrator_count->where('ysl_approved_date', '!=', null);
             $corp_admin_count->where('ysl_approved_date', '!=', null);
@@ -57,12 +71,9 @@ class PurchaseOrderController extends Controller
        
         return response()->json([
             'comptroller_count' => $comptroller_count->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL])->count(),
-            'administrator_count' => $administrator_count
-                ->whereNotNull('comptroller_approved_date')->where(function($q){
+            'administrator_count' => $administrator_count->whereNotNull('comptroller_approved_date')->where(function($q){
                 $q->whereNull('corp_admin_approved_date')->orWhereNull('corp_admin_cancelled_date');
-                })
-                ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])
-                ->count(),
+            })->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->count(),
             'corp_admin_count' => $corp_admin_count->where('admin_approved_date', null)->where('comptroller_approved_date', '!=', null)->where(['corp_admin_approved_date' => null, 'corp_admin_cancelled_date' => null])->count(),
             'president_count' => $president_count->where(function($q){ $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');})->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_total_net_amount', '>', 99999)->count()
         ]);

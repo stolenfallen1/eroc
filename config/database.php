@@ -90,9 +90,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'dbo',
-            'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            ],
+            // 'options'   => [
+            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            // ],
         ],
 
         'sqlsrv_laboratory' => [
@@ -106,9 +106,9 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            ],
+            // 'options'   => [
+            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            // ],
         ],
 
             /*
@@ -158,9 +158,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'dbo',
-            'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            ],
+            // 'options'   => [
+            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            // ],
         ],
 
         'sqlsrv_pos' => [
@@ -175,9 +175,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'dbo',
-            'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            ],
+            // 'options'   => [
+            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            // ],
         ],
         'sqlsrv_schedules' => [
             'driver' => 'sqlsrv',

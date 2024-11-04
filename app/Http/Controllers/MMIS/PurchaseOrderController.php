@@ -189,7 +189,6 @@ class PurchaseOrderController extends Controller
     public function store(Request $request) {
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
-        return '12313';
         try {
             $authUser = Auth::user();
             $uom = Unitofmeasurement::where('name', 'like', '%Day%')->first();

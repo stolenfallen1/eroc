@@ -370,13 +370,13 @@ class EmergencyRoomMedicine extends Controller
                 $query->select(DB::raw(1))
                     ->from('CDG_MMIS.dbo.inventoryTransaction as it')
                     ->whereColumn(DB::raw(
-                            "
-                                CASE WHEN RIGHT(lb.IDnum, 1) = 'B' 
-                                THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) 
-                                ELSE lb.IDnum END
-                            "
-                        ), 'it.patient_Registry_Id')
-                    ->whereColumn('lb.ItemID', 'it.transaction_Item_Id');
+                        "
+                            CASE WHEN RIGHT(lb.IDnum, 1) = 'B' 
+                            THEN LEFT(lb.IDnum, LEN(lb.IDnum) - 1) 
+                            ELSE lb.IDnum END
+                        "
+                    ), 'it.patient_Registry_Id')
+                ->whereColumn('lb.ItemID', 'it.transaction_Item_Id');
             })
     
             ->where(DB::raw(

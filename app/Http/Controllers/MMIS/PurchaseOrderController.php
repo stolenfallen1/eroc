@@ -266,8 +266,8 @@ class PurchaseOrderController extends Controller
                     );
 
 
-                    if($request->dietary == 1 || $request->po_Document_warehouse_id == '36'){
-                        $this->autoApproveByComptroller($po->id);
+                    if($request->dietary == 1 || $checkcanvas->canvas_Warehouse_Id == '36'){
+                        $this->autoApproveByComptroller($po->id, $checkcanvas->canvas_Level2_ApprovedBy);
                     }
                     // update if not exist 
                     if (!$checkPO) {
@@ -454,16 +454,16 @@ class PurchaseOrderController extends Controller
 
 
 
-    private function autoApproveByComptroller($id)
+    private function autoApproveByComptroller($id,$compid)
     {
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
             purchaseOrderMaster::where('id', $id)->update([
-                'comptroller_approved_by' => Auth()->user()->idnumber,
+                'comptroller_approved_by' => $compid,
                 'comptroller_approved_date' => Carbon::now(),
             ]);
             PurchaseOrderDetails::where('po_id',$id)->update([
-                'comptroller_approved_by' => Auth()->user()->idnumber,
+                'comptroller_approved_by' => $compid,
                 'comptroller_approved_date' => Carbon::now()
             ]);
             DB::connection('sqlsrv_mmis')->commit();

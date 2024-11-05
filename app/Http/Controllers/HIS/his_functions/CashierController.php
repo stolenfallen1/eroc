@@ -255,24 +255,6 @@ class CashierController extends Controller
                                 'CashierShift'          => $Shift,
                             ]);
 
-                            tbInvStockCard::create([
-                                'SummaryCode'   => $revenueID,
-                                'HospNum'       => $patient_Id,
-                                'IdNum'         => $case_No . 'B',
-                                'ItemID'        => $itemID,
-                                'TransDate'     => Carbon::now(),
-                                'RevenueID'     => $revenueID ?? null,
-                                'RefNum'        => $ORNum,
-                                'Status'        => $item['stat'] ?? null,
-                                'Quantity'      => $item['quantity'] ?? null,
-                                'Amount'        => $item_amount,
-                                'UserID'        => Auth()->user()->idnumber,
-                                'DosageID'      => $item['frequency'] ?? null,
-                                'DispenserCode' => 0,
-                                'RequestNum'    => $refNum,
-                                'HostName'      => (new GetIP())->getHostname(),
-                            ]);
-
                         endif;
 
                         if ($ORCashInsertOnce) {

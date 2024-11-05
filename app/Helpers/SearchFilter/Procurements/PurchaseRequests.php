@@ -550,7 +550,7 @@ class PurchaseRequests
             $q2->whereNotNull('pr_Branch_Level1_ApprovedBy')->orWhereNotNull('pr_Branch_Level2_ApprovedBy');
           }
         })->where(function ($q2) {
-          $q2->where('is_submitted', false)->orWhereNull('is_submitted');
+          $q2->where('is_submitted', false)->orWhereNull('is_submitted'); 
         });
       }
     }]);

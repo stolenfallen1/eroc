@@ -226,7 +226,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     });
 
     foreach ($nonFreeGoods as $item) {
-        
+    
         $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
         $subTotal += (float)$itemTotal;
         $discount += (float)$item->discount;

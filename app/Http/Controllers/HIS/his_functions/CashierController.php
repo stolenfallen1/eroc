@@ -20,6 +20,8 @@ use App\Models\HIS\medsys\tbCashORMaster;
 use App\Models\HIS\medsys\tbLABMaster;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
+use App\Models\HIS\medsys\tbInvStockCard;
+use App\Models\HIS\medsys\tbNurseLogBook;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -199,6 +201,7 @@ class CashierController extends Controller
                             'updatedBy'         => Auth()->user()->idnumber, 
                             'updated_at'        => Carbon::now()
                     ]);
+                    
                     if ($update) {
                         $billingOut = HISBillingOut::create([
                             'patient_Id'            => $patient_Id,
@@ -223,6 +226,7 @@ class CashierController extends Controller
                             'createdby'             => Auth()->user()->idnumber,
                         ]);
                         if ($this->check_is_allow_medsys):
+
                             MedSysCashAssessment::where('HospNum', $patient_Id)
                                 ->where('IdNum', $case_No . 'B')
                                 ->where('RefNum', $refNum)
@@ -231,6 +235,7 @@ class CashierController extends Controller
                                 ->update([
                                     'ORNumber'          => $ORNum,
                             ]);
+
                             MedSysDailyOut::create([
                                 'HospNum'               => $patient_Id,
                                 'IDNum'                 => 'CASH',
@@ -249,6 +254,25 @@ class CashierController extends Controller
                                 'CashierID'             => Auth()->user()->idnumber,
                                 'CashierShift'          => $Shift,
                             ]);
+
+                            tbInvStockCard::create([
+                                'SummaryCode'   => $revenueID,
+                                'HospNum'       => $patient_Id,
+                                'IdNum'         => $case_No . 'B',
+                                'ItemID'        => $itemID,
+                                'TransDate'     => Carbon::now(),
+                                'RevenueID'     => $revenueID ?? null,
+                                'RefNum'        => $ORNum,
+                                'Status'        => $item['stat'] ?? null,
+                                'Quantity'      => $item['quantity'] ?? null,
+                                'Amount'        => $item_amount,
+                                'UserID'        => Auth()->user()->idnumber,
+                                'DosageID'      => $item['frequency'] ?? null,
+                                'DispenserCode' => 0,
+                                'RequestNum'    => $refNum,
+                                'HostName'      => (new GetIP())->getHostname(),
+                            ]);
+
                         endif;
 
                         if ($ORCashInsertOnce) {

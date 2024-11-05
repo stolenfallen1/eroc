@@ -143,6 +143,8 @@ class CashierController extends Controller
         DB::connection('sqlsrv_laboratory')->beginTransaction();
         DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
+        DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
+
         try {
             $patient_Id             = $request->payload['patient_Id'];
             $case_No                = $request->payload['case_No'];
@@ -179,7 +181,9 @@ class CashierController extends Controller
             $total_payment          = floatval(str_replace([',', '₱'], '', $request->payload['total_payment']));
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
+
                 $ORCashInsertOnce = true;
+
                 foreach ($request->payload['Items'] as $item) {
                     $id = $item['id']; 
                     $itemID = $item['itemID'];
@@ -225,6 +229,27 @@ class CashierController extends Controller
                             'created_at'            => Carbon::now(),
                             'createdby'             => Auth()->user()->idnumber,
                         ]);
+
+                        if($this->check_is_allow_medsys && ($revenueID === 'EM' || $revenueID === 'RS')):
+                            tbInvStockCard::create([
+                                'SummaryCode'   => $revenueID,
+                                'HospNum'       => $patient_Id,
+                                'IdNum'         => $case_No . 'B',
+                                'ItemID'        => $itemID,
+                                'TransDate'     => Carbon::now(),
+                                'RevenueID'     => $revenueID ?? null,
+                                'RefNum'        => $ORNum,
+                                'Status'        => $item['stat'] ?? null,
+                                'Quantity'      => $item['quantity'] ?? null,
+                                'Amount'        => $item_amount,
+                                'UserID'        => Auth()->user()->idnumber,
+                                'DosageID'      => $item['frequency'] ?? null,
+                                'DispenserCode' => 0,
+                                'RequestNum'    => $refNum,
+                                'HostName'      => (new GetIP())->getHostname(),
+                            ]);
+                        endif;
+
                         if ($this->check_is_allow_medsys):
 
                             MedSysCashAssessment::where('HospNum', $patient_Id)
@@ -254,6 +279,8 @@ class CashierController extends Controller
                                 'CashierID'             => Auth()->user()->idnumber,
                                 'CashierShift'          => $Shift,
                             ]);
+
+
 
                         endif;
 
@@ -324,6 +351,7 @@ class CashierController extends Controller
                                     'CardAmount'            => $card_amount,
                                     'CardDate'              => $card_date,
                                 ]);
+                                
                             endif;
                             $ORCashInsertOnce = false;
                         }
@@ -427,10 +455,13 @@ class CashierController extends Controller
                         }
                     }
                 }
+
                 DB::connection('sqlsrv_billingOut')->commit();
                 DB::connection('sqlsrv_laboratory')->commit();
                 DB::connection('sqlsrv_medsys_billing')->commit();
                 DB::connection('sqlsrv_medsys_laboratory')->commit();
+                DB::connection('sqlsrv_medsys_inventory')->commit();
+
                 return response()->json(['message' => 'Successfully saved'], 200);
             }
 
@@ -439,6 +470,8 @@ class CashierController extends Controller
             DB::connection('sqlsrv_laboratory')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
             DB::connection('sqlsrv_medsys_laboratory')->rollBack();
+            DB::connection('sqlsrv_medsys_inventory')->rollBack();
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

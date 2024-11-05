@@ -364,11 +364,11 @@ class EmergencyRegistrationController extends Controller
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
                 'transDate'                 => Carbon::now(),
-                'bloodPressureSystolic'     => isset($request->payload['bloodPressureSystolic']) ? (int)$request->payload['bloodPressureSystolic'] :   null,
+                'bloodPressureSystolic'     => isset($request->payload['bloodPressureSystolic'])  ? (int)$request->payload['bloodPressureSystolic'] :   null,
                 'bloodPressureDiastolic'    => isset($request->payload['bloodPressureDiastolic']) ? (int)$request->payload['bloodPressureDiastolic'] : null,
                 'temperature'               => isset($request->payload['temperatue']) ? (int)$request->payload['temperatue'] : null,
-                'pulseRate'                 => isset($request->payload['pulseRate']) ? (int)$request->payload['pulseRate'] : null,
-                'respiratoryRate'           => isset($request->payload['respiratoryRate']) ? (int)$request->payload['respiratoryRate'] : null,
+                'pulseRate'                 => isset($request->payload['pulseRate'])  ? (int)$request->payload['pulseRate'] : null,
+                'respiratoryRate'           => isset($request->payload['respiratoryRate'])  ? (int)$request->payload['respiratoryRate'] : null,
                 'oxygenSaturation'          => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : null,
                 'createdby'                 => $checkUser->idnumber,
                 'created_at'                => Carbon::now(),
@@ -445,15 +445,32 @@ class EmergencyRegistrationController extends Controller
                 'informant_Suffix'                          => $request->payload['informant_Suffix'] ?? null,
                 'informant_Address'                         => $request->payload['informant_Address'] ?? null,
                 'informant_Relation_id'                     => $request->payload['informant_Relation_id'] ?? null,
-                'guarantor_Id'                              => $request->payload['selectedGuarantor'][0]['guarantor_code'] ?? $patient_id,
-                'guarantor_Name'                            => $request->payload['selectedGuarantor'][0]['guarantor_Name'] ?? 'Self Pay',
-                'guarantor_Approval_code'                   => $request->payload['selectedGuarantor'][0]['guarantor_Approval_code'] ?? null,
-                'guarantor_Approval_no'                     => $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] ?? null,
-                'guarantor_Approval_date'                   => $request->payload['selectedGuarantor'][0]['guarantor_Approval_date'] ?? null,
-                'guarantor_Validity_date'                   => $request->payload['selectedGuarantor'][0]['guarantor_Validity_date'] ?? null,
+                'guarantor_Id'                              => isset($request->payload['selectedGuarantor'])
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_code']
+                                                            :  $patient_id,
+                'guarantor_Name'                            => isset($request->payload['selectedGuarantor']) 
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_Name']
+                                                            :  'Self Pay',
+                'guarantor_Approval_code'                   => isset($request->payload['selectedGuarantor']) 
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_code']
+                                                            :  null,
+                'guarantor_Approval_no'                     => isset($request->payload['selectedGuarantor']) 
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] 
+                                                            :  null,
+                'guarantor_Approval_date'                   => isset($request->payload['selectedGuarantor'])
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_date']
+                                                            :  null,
+                'guarantor_Validity_date'                   => isset($request->payload['selectedGuarantor']) 
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_Validity_date']
+                                                            :  null,
                 'guarantor_Approval_remarks'                => $request->payload['guarantor_Approval_remarks'] ?? null,
-                'isWithCreditLimit'                         => $request->payload['selectedGuarantor'][0]['guarantor_code'] ? true : false,
-                'guarantor_Credit_Limit'                    => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null,
+                'isWithCreditLimit'                         => isset($request->payload['selectedGuarantor']) 
+                                                            && $request->payload['selectedGuarantor'][0]['guarantor_code']
+                                                            ? true 
+                                                            : false,
+                'guarantor_Credit_Limit'                    => isset($request->payload['selectedGuarantor']) 
+                                                            ?  $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] 
+                                                            :  null,
                 'isWithMultiple_Gurantor'                   => $request->payload['isWithMultiple_Gurantor'] ?? false,
                 'gurantor_Mutiple_TotalCreditLimit'         => $request->payload['gurantor_Mutiple_TotalCreditLimit'] ?? false,
                 'isWithPhilHealth'                          => $request->payload['isWithPhilHealth'] ?? false,

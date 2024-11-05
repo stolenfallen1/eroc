@@ -176,7 +176,7 @@ class PurchaseOrders
           $q->whereNull('corp_admin_approved_date')->orWhereNull('corp_admin_cancelled_date');
         })
         ->where(['admin_approved_date' => null, 'admin_cancelled_date' => null]);
-      }else if($this->role->purchaser()){
+      }else if($this->role->purchaser() || $this->role->isdietary() || $this->role->staff() || $this->role->department_head()){
         if(Request()->approver == 1){
           $this->model->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);
         }else if(Request()->approver == 2){
@@ -226,7 +226,7 @@ class PurchaseOrders
       else if($this->role->administrator()){
         $this->model->where(['admin_approved_date' => null, 'admin_cancelled_date' => null])->where('po_Document_branch_id', $this->authUser->branch_id);
       }
-      else if($this->role->purchaser()){
+      else if($this->role->purchaser() || $this->role->isdietary() || $this->role->staff() || $this->role->department_head()){
 
         if(Request()->approver == 1){
           $this->model->where('admin_approved_date', '!=', null)->where(['comptroller_approved_date' => NULL, 'comptroller_cancelled_date' => NULL]);

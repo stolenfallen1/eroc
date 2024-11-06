@@ -20,7 +20,6 @@ class OPDMedicinesSuppliesController extends Controller
 {
     //
     protected $check_is_allow_medsys;
-
     public function __construct() 
     {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
@@ -84,9 +83,6 @@ class OPDMedicinesSuppliesController extends Controller
             $patient_Id = $request->payload['patient_Id'];
             $case_No = $request->payload['case_No'];
             $charge_to = $request->payload['charge_to'];
-            $patient_Name = $request->payload['patient_Name'];
-            $doctor_id = $request->payload['attending_Doctor'];
-            $doctor_name = $request->payload['attending_Doctor_fullname'];
 
             if (isset($request->payload['Medicines']) && count($request->payload['Medicines']) > 0) {
                 foreach ($request->payload['Medicines'] as $medicine) {
@@ -286,7 +282,6 @@ class OPDMedicinesSuppliesController extends Controller
             DB::connection('sqlsrv_mmis')->commit();
             DB::connection('sqlsrv_medsys_nurse_station')->commit();
             $data = $this->history($patient_Id, $case_No);
-            echo json_encode($data);
             return response()->json(['message' => 'Charges posted successfully', 'data' => $data], 200);
             
 
@@ -298,7 +293,6 @@ class OPDMedicinesSuppliesController extends Controller
             return response()->json(["msg" => $e->getMessage()], 500); 
         }
     }
-    // get-medicine-supplies-charge-history
     public function getPostedMedicineSupplies(Request $request) 
     {
         try {

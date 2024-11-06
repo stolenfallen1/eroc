@@ -11,6 +11,7 @@ use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\LaboratoryMaster;
 use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbLABMaster;
+use App\Models\HIS\MedsysCashAssessment;
 use Auth;
 use Carbon\Carbon;
 use App\Models\User;
@@ -130,6 +131,7 @@ class HISPostChargesController extends Controller
                 }
             }
 
+           
             if ($this->check_is_allow_medsys) {
                 $chargeSlipSequences = new GlobalChargingSequences();
             } else {
@@ -151,6 +153,7 @@ class HISPostChargesController extends Controller
                 'MM'    => 'MedSysMammoSequence',
                 'WC'    => 'MedSysCentreForWomenSequence',
                 'NU'    => 'MedSysNuclearMedSequence',
+                'ER'    => 'MedSysCashSequence'
             ];
 
             $sequenceGenerated = [];
@@ -195,6 +198,10 @@ class HISPostChargesController extends Controller
                         $sequenceType = $revenueCodeSequences[$revenueID];
                         $sequence = $revenueID . ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType]) 
                             ? $chargeslip_sequence[$sequenceType] 
+                            : $chargeslip_sequence['seq_no']);
+
+                        $assessNum = ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType])
+                            ? $chargeslip_sequence[$sequenceType]
                             : $chargeslip_sequence['seq_no']);
                     }
 
@@ -337,6 +344,26 @@ class HISPostChargesController extends Controller
                                 'ItemCharged'       => $item_id,
                             ]);
                         }
+                    }
+                    
+                    if($revenueID === 'ER' && $this->check_is_allow_medsys) {
+                        MedsysCashAssessment::create([
+                            'idNum'         => $case_no . 'B',
+                            'HospNum'       => $patient_id,
+                            'Name'          => $request->payload['patient_Name'] ?? null,
+                            'TransDate'     => Carbon::now(),
+                            'AssessNum'      => $assessNum,
+                            'Indicator'     => $revenueID,
+                            'DrCr'          => 'D',
+                            'RecordStatus'  => 1,
+                            'itemID'        => $item_id,
+                            'Quantity'      => 1,
+                            'RefNum'        => $sequence,
+                            'Amount'        => $amount,
+                            'UserId'        => $checkUser->idnumber,
+                            'RevenueID'     => $revenueID,
+                            'SpecimenId'    => $request->payload['SpecimenId'] ?? null
+                        ]);
                     }
                 }
             }

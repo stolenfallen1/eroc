@@ -6,6 +6,7 @@ use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
 use App\Http\Controllers\HIS\his_functions\LaboratoryController;
 use App\Http\Controllers\HIS\his_functions\opd_specific\OPDMedicinesSuppliesController;
 use App\Http\Controllers\HIS\his_functions\PharmacyController;
+use App\Http\Controllers\HIS\his_functions\RequisitionController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
@@ -61,7 +62,17 @@ Route::controller(AncillaryController::class)->group(function() {
 });
 // Pharmacy Routes
 Route::controller(PharmacyController::class)->group(function() {
-    Route::get('get-pharmacy-patients', 'getPharmacyPatients');
+    Route::get('get-opd-pharmacy-orders', 'getOPDOrders');
+    Route::get('get-er-pharmacy-orders', 'getEROrders');
+    Route::get('get-ipd-pharmacy-orders', 'getIPDOrders');
+});
+// Requisition Routes 
+Route::controller(RequisitionController::class)->group(function() {
+    Route::get('get-warehouses', 'getWarehouses');
+    Route::post('get-warehouse-items', 'getWarehouseItems');
+    Route::post('save-supply-requisition', 'saveSupplyRequisition');
+    Route::post('save-medicine-requisition', 'saveMedicineRequisition');
+    Route::post('save-procedure-requisition', 'saveProcedureRequisition');
 });
 // OPD SPECIFIC - Routes
 // Post Medicine / Supplies Routes
@@ -71,7 +82,6 @@ Route::controller(OPDMedicinesSuppliesController::class)->group(function() {
     Route::post('get-medicine-supplies-charge-history', 'getPostedMedicineSupplies');
     Route::put('revoke-medicine-supplies-charge', 'revokecharge');
 });
-
 Route::controller(EmergencyRoomMedicine::class)->group(function() {
     Route::post('er-get-medicine-suplies', 'erRoomMedicine');
     Route::post('er-medicine-supplies-charges', 'chargePatientMedicineSupply');

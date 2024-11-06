@@ -5,6 +5,7 @@ namespace App\Http\Controllers\HIS\services;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\SystemSequence;
+use App\Models\HIS\MedsysOutpatient;
 use App\Models\HIS\MedsysSeriesNo;
 use App\Models\HIS\PatientPastImmunizations;
 use App\Models\HIS\services\Patient;
@@ -823,11 +824,14 @@ class OutpatientRegistrationController extends Controller
                     $query->where(function($subQuery) {
                         $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
                                 ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
-                                ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
+                                ->orWhere('patient_Id', 'LIKE', '%'.Request()->keyword.'%')
+                                ->orWhere('case_No', 'LIKE', '%'.Request()->keyword.'%');
                     });
                 }
             });
-            $data->orderBy('id', 'asc');
+            $data->join('CDG_PATIENT_DATA.dbo.PatientRegistry', 'CDG_PATIENT_DATA.dbo.PatientMaster.patient_Id', '=', 'CDG_PATIENT_DATA.dbo.PatientRegistry.patient_Id')
+                ->orderBy('CDG_PATIENT_DATA.dbo.PatientRegistry.case_No', 'desc');
+
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);
 
@@ -853,8 +857,8 @@ class OutpatientRegistrationController extends Controller
             SystemSequence::where('code', 'MERN')->increment('recent_generated');
             SystemSequence::where('code', 'MOPD')->increment('recent_generated');
 
-            $sequence = SystemSequence::where('code', 'MPID')->select('seq_no', 'recent_generated')->where('branch_id', 1)->first();
-            $registry_sequence = SystemSequence::where('code', 'MOPD')->select('seq_no', 'recent_generated')->where('branch_id', 1)->first();
+            $sequence = SystemSequence::where('code', 'MPID')->select('seq_no')->where('branch_id', 1)->first();
+            $registry_sequence = SystemSequence::where('code', 'MOPD')->select('seq_no')->where('branch_id', 1)->first();
             if (!$sequence || !$registry_sequence) {
                 throw new \Exception('Sequence not found');
             }
@@ -862,16 +866,15 @@ class OutpatientRegistrationController extends Controller
             if($this->check_is_allow_medsys) {
                 DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('HospNum');
                 DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
-                DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('ERNum');
 
-                $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'ERNum', 'OPDId')->first();
+                $check_medsys_series_no = MedsysSeriesNo::select('HospNum', 'OPDId')->first();
 
                 $patient_id     = $check_medsys_series_no->HospNum;
                 $registry_id    = $check_medsys_series_no->OPDId;
 
             } else {
-                $patient_id     = intval($sequence->seq_no + 1);
-                $registry_id    = intval($registry_sequence->seq_no + 1);
+                $patient_id     = intval($sequence->seq_no);
+                $registry_id    = intval($registry_sequence->seq_no);
             }
 
             $today = Carbon::now();
@@ -1090,19 +1093,23 @@ class OutpatientRegistrationController extends Controller
                 ->where('branch_id', 1)
                 ->first();
 
+            $medsys_registry_sequence = DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->select('OPDId')->first();
+
             if ($isPatientRegistered) {
                 if ($this->check_is_allow_medsys) {
                     $registry_id = PatientRegistry::where('patient_Id', $patient_id)
                         ->whereDate('registry_Date', $today)
                         ->value('case_No');
                 } else {
-                    $registry_id = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
+                    $registry_id = PatientRegistry::where('patient_Id', $patient_id)
+                        ->whereDate('registry_Date', $today)
+                        ->value('case_No');
                 }
             } else {
                 if ($this->check_is_allow_medsys) {
-                    $registry_id = $registry_sequence->seq_no;
+                    $registry_id = $medsys_registry_sequence->OPDId;
                 } else {
-                    $registry_id = $request->payload['case_No'] ?? intval($registry_sequence->seq_no + 1);
+                    $registry_id = $request->payload['case_No'] ?? intval($registry_sequence->seq_no);
                 }
             }
 
@@ -2038,9 +2045,15 @@ class OutpatientRegistrationController extends Controller
                 $uniqueCauses = $this->getUniqueAllergy($arrayCause);
                 $uniqueDrugs = $this->getUniqueAllergy($arrayDrugs);
 
-                $allergy->cause_of_allergy()->insert($uniqueCauses);
-                $allergy->symptoms_allergy()->insert(array_values($arraySymptoms)); 
-                $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+                if (!empty($uniqueCauses)) {
+                    $allergy->cause_of_allergy()->insert($uniqueCauses);
+                }
+                if (!empty($arraySymptoms)) {
+                    $allergy->symptoms_allergy()->insert(array_values($arraySymptoms));
+                }
+                if (!empty($uniqueDrugs)) {
+                    $allergy->drug_used_for_allergy()->insert($uniqueDrugs);
+                }
 
                 $patientHistory->update($patientHistoryData);
                 $patientMedicalProcedure->update($patientMedicalProcedureData);

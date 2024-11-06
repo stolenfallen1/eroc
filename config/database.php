@@ -90,9 +90,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'dbo',
-            // 'options'   => [
-            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            // ],
+            'options'   => [
+                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            ],
         ],
 
         'sqlsrv_laboratory' => [
@@ -106,9 +106,9 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            // 'options'   => [
-            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            // ],
+            'options'   => [
+                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            ],
         ],
 
             /*
@@ -158,9 +158,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'dbo',
-            // 'options'   => [
-            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            // ],
+            'options'   => [
+                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            ],
         ],
 
         'sqlsrv_pos' => [
@@ -175,9 +175,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'schema' => 'dbo',
-            // 'options'   => [
-            //     PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
-            // ],
+            'options'   => [
+                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            ],
         ],
         'sqlsrv_schedules' => [
             'driver' => 'sqlsrv',
@@ -381,7 +381,22 @@ return [
             'prefix_indexes' => true,
         ],
 
-
+        'sqlsrv_medsys_inventory' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_INVENTORY', '10.4.15.200'),
+            'port' => env('DB_PORT_MEDSYS_INVENTORY', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_INVENTORY', ''),
+            'username' => env('DB_USERNAME_MEDSYS_INVENTORY', ''),
+            'password' => env('DB_PASSWORD_MEDSYS_INVENTORY', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'dbo',
+            'options'   => [
+                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+            ],
+        ],
 
     ],
 

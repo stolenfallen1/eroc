@@ -53,7 +53,7 @@ class EmergencyRegistrationController extends Controller
     public function index() {
         try {
             $today = Carbon::now()->format('Y-m-d'); 
-            // $today = '2024-10-30'; 
+            // $today = '2024-11-05'; 
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
@@ -213,6 +213,8 @@ class EmergencyRegistrationController extends Controller
                 $registry_id            = $request->payload['case_No'] ?? intval($registry_sequence->seq_no);
                 $er_Case_No             = $request->payload['er_Case_No'] ?? intval($er_case_sequence->seq_no);
             }
+
+            // $patientIdentifier = $this->preparePatientIdentification($request);
             
             $patientIdentifier      = $request->payload['patientIdentifier'] ?? null;
             $isHemodialysis         = ($patientIdentifier === "Hemo Patient") ? true : false;
@@ -445,32 +447,42 @@ class EmergencyRegistrationController extends Controller
                 'informant_Suffix'                          => $request->payload['informant_Suffix'] ?? null,
                 'informant_Address'                         => $request->payload['informant_Address'] ?? null,
                 'informant_Relation_id'                     => $request->payload['informant_Relation_id'] ?? null,
+
                 'guarantor_Id'                              => isset($request->payload['selectedGuarantor'])
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_code']
                                                             :  $patient_id,
+
                 'guarantor_Name'                            => isset($request->payload['selectedGuarantor']) 
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_Name']
                                                             :  'Self Pay',
+
                 'guarantor_Approval_code'                   => isset($request->payload['selectedGuarantor']) 
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_code']
                                                             :  null,
+
                 'guarantor_Approval_no'                     => isset($request->payload['selectedGuarantor']) 
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] 
                                                             :  null,
+
                 'guarantor_Approval_date'                   => isset($request->payload['selectedGuarantor'])
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_date']
                                                             :  null,
+
                 'guarantor_Validity_date'                   => isset($request->payload['selectedGuarantor']) 
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_Validity_date']
                                                             :  null,
+
                 'guarantor_Approval_remarks'                => $request->payload['guarantor_Approval_remarks'] ?? null,
+
                 'isWithCreditLimit'                         => isset($request->payload['selectedGuarantor']) 
                                                             && $request->payload['selectedGuarantor'][0]['guarantor_code']
-                                                            ? true 
-                                                            : false,
+                                                            ?  true 
+                                                            :  false,
+
                 'guarantor_Credit_Limit'                    => isset($request->payload['selectedGuarantor']) 
                                                             ?  $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] 
                                                             :  null,
+
                 'isWithMultiple_Gurantor'                   => $request->payload['isWithMultiple_Gurantor'] ?? false,
                 'gurantor_Mutiple_TotalCreditLimit'         => $request->payload['gurantor_Mutiple_TotalCreditLimit'] ?? false,
                 'isWithPhilHealth'                          => $request->payload['isWithPhilHealth'] ?? false,
@@ -573,16 +585,6 @@ class EmergencyRegistrationController extends Controller
                 'createdby'     => $checkUser->idnumber,
                 'created_at'    => Carbon::now(),
             ];
-
-            // $patientDrugUsedForAllergyData = [
-            //     'patient_Id'        => $patient_id,
-            //     'case_No'           => $registry_id,
-            //     'assessID'          => '',
-            //     'allergy_Type_Id'   => '',
-            //     'drug_Description'  => $request->payload['drug_Description'] ?? null,
-            //     'createdby'         => $checkUser->idnumber,
-            //     'created_at'        => Carbon::now(),
-            // ];
 
             $patientDoctorsData = [
                 'patient_Id'        => $patient_id,
@@ -1044,6 +1046,7 @@ class EmergencyRegistrationController extends Controller
                 $patientRule,  
                 $this->preparePatientData($request, $checkUser, $currentTimestamp, $patient_id)
             );
+            
             $patient->past_medical_procedures()->create($pastientPastMedicalProcedureData);
             $patient->past_medical_history()->create($patientPastMedicalHistoryData);
             $patient->past_immunization()->create($patientPastImmunizationData);
@@ -2485,6 +2488,23 @@ class EmergencyRegistrationController extends Controller
     
         return $isUpdated; 
     }
+
+    // private function preparePatientIdentification($request) {
+    //     return [
+    //         'isHemodialysis'         => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Hemo Patient" ? true : false,
+    //         'isPeritoneal'           => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Peritoneal Patient" ? true : false,
+    //         'isLINAC'                => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "LINAC" ? true : false,
+    //         'isCOBALT'               => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "COBALT" ? true : false,
+    //         'isBloodTrans'           => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Blood Trans Patient" ? true : false,
+    //         'isChemotherapy'         => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Chemo Patient" ? true : false,
+    //         'isBrachytherapy'        => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Brachytherapy Patient" ? true : false,
+    //         'isDebridement'          => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Debridement" ? true : false,
+    //         'isTBDots'               => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "TB DOTS" ? true : false,
+    //         'isPAD'                  => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "PAD Patient" ? true : false,
+    //         'isRadioTherapy'         => isset($request->payload['patientIdentifier']) && $request->payload['patientIdentifier'] === "Radio Patient" ? true : false,
+    //     ];
+
+    // }
     
     private function preparePatientData($request, $checkUser, $currentTimestamp, $patientId='') {
         return [
@@ -2595,6 +2615,395 @@ class EmergencyRegistrationController extends Controller
             'updated_at'                => $currentTimestamp,   
         ];
     }
+
+    // private function preparePatientRegistryData($request, $checkUser, $patientIdentifier, $patient_id='', $registry_id='', $er_Case_No='', $existingData=null) {
+    //     return [
+    //         'branch_Id'                                 =>  1,
+    //             'patient_Id'                                => $patient_id,
+    //             'case_No'                                   => $registry_id,
+    //             'er_Case_No'                                => $er_Case_No,
+    //             'register_source'                           => $request->payload['register_Source']                 ??  optional($existingData)->register_source,
+    //             'register_Casetype'                         => $request->payload['register_Casetype']               ??  optional($existingData)->register_Casetype,
+    //             'register_Link_Case_No'                     => $request->payload['register_Link_Case_No']           ??  optional($existingData)->register_Link_Case_No,
+    //             'register_Case_No_Consolidate'              => $request->payload['register_Case_No_Consolidate']    ??  optional($existingData)->register_Case_No_Consolidate,
+    //             'patient_Age'                               => $request->payload['age']                             ??  optional($existingData)->patient_Age,
+    //             'er_Bedno'                                  => $request->payload['er_Bedno']                        ??  optional($existingData)->er_Bedno,
+    //             'room_Code'                                 => $request->payload['room_Code']                       ??  optional($existingData)->room_Code,
+    //             'room_Rate'                                 => $request->payload['room_Rate']                       ??  optional($existingData)->room_Rate,
+    //             'mscAccount_Type'                           => $request->payload['mscAccount_Type']                 ??  optional($existingData)->mscAccount_Type,
+    //             'mscAccount_Discount_Id'                    => $request->payload['mscAccount_Discount_Id']          ??  optional($existingData)->mscAccount_Discount_Id,
+    //             'mscAccount_Trans_Types'                    => $request->payload['mscAccount_Trans_Types']          ??  5, 
+    //             'mscAdmission_Type_Id'                      => $request->payload['mscAdmission_Type_Id']            ??  optional($existingData)->mscAdmission_Type_Id,
+    //             'mscPatient_Category'                       => $request->payload['mscPatient_Category']             ??  2,
+    //             'mscPrice_Groups'                           => $request->payload['mscPrice_Groups']                 ??  optional($existingData)->mscPrice_Groups,
+    //             'mscPrice_Schemes'                          => $request->payload['mscPrice_Schemes']                ??  100,
+    //             'mscService_Type'                           => $request->payload['mscService_Type']                 ??  optional($existingData)->mscService_Type,
+    //             'mscService_Type2'                          => $request->payload['mscService_Type2']                ??  optional($existingData)->mscService_Type2,
+    //             'mscDiet_Meal_Id'                           => $request->payload['mscDiet_Meal_Id']                 ??  optional($existingData)->mscDiet_Meal_Id,
+    //             'mscDisposition_Id'                         => $request->payload['mscDisposition_Id']               ??  optional($existingData)->mscDisposition_Id,
+    //             'mscTriage_level_Id'                        => $request->payload['mscTriage_level_Id']              ??  optional($existingData)->mscTriage_level_Id,
+    //             'mscCase_Result_Id'                         => $request->payload['mscCase_Result_Id']               ??  optional($existingData)->mscCase_Result_Id,
+    //             'mscCase_Indicators_Id'                     => $request->payload['mscCase_Indicators_Id']           ??  optional($existingData)->mscCase_Indicators_Id,
+    //             'mscPrivileged_Card_Id'                     => $request->payload['mscPrivileged_Card_Id']           ??  optional($existingData)->mscPrivileged_Card_Id,
+    //             'mscBroughtBy_Relationship_Id'              => $request->payload['mscBroughtBy_Relationship_Id']    ??  optional($existingData)->mscBroughtBy_Relationship_Id,
+    //             'queue_Number'                              => $request->payload['queue_Number']                    ??  optional($existingData)->queue_Number,
+    //             'arrived_Date'                              => Carbon::now(),
+    //             'registry_Userid'                           => $checkUser->idnumber,
+    //             'registry_Date'                             => Carbon::now(),
+    //             'registry_Status'                           => $request->payload['registry_Status']                 ?? 1,
+    //             'registry_Hostname'                         => (new GetIP())->getHostname(),
+    //             'discharged_Userid'                         => $request->payload['discharged_Userid']               ??  optional($existingData)->discharged_Userid,
+    //             'discharged_Date'                           => $request->payload['discharged_Date']                 ??  optional($existingData)->discharged_Date,
+    //             'discharged_Hostname'                       => $request->payload['discharged_Hostname']             ??  optional($existingData)->discharged_Hostname,
+    //             'billed_Userid'                             => $request->payload['billed_Userid']                   ??  optional($existingData)->billed_Userid,
+    //             'billed_Date'                               => $request->payload['billed_Date']                     ??  optional($existingData)->billed_Date,
+    //             'billed_Remarks'                            => $request->payload['billed_Remarks']                  ??  optional($existingData)->billed_Remarks,
+    //             'billed_Hostname'                           => $request->payload['billed_Hostname']                 ??  optional($existingData)->billed_Hostname,
+    //             'mgh_Userid'                                => $request->payload['mgh_Userid']                      ??  optional($existingData)->mgh_Userid,
+    //             'mgh_Datetime'                              => $request->payload['mgh_Datetime']                    ??  optional($existingData)->mgh_Datetime,
+    //             'mgh_Hostname'                              => $request->payload['mgh_Hostname']                    ??  optional($existingData)->mgh_Hostname,
+    //             'untag_Mgh_Userid'                          => $request->payload['untag_Mgh_Userid']                ??  optional($existingData)->untag_Mgh_Userid,
+    //             'untag_Mgh_Datetime'                        => $request->payload['untag_Mgh_Datetime']              ??  optional($existingData)->untag_Mgh_Datetime,
+    //             'untag_Mgh_Hostname'                        => $request->payload['untag_Mgh_Hostname']              ??  optional($existingData)->untag_Mgh_Hostname,
+    //             'isHoldReg'                                 => $request->payload['isHoldReg']                       ??  false,
+    //             'hold_Userid'                               => $request->payload['hold_Userid']                     ??  optional($existingData)->hold_Userid,
+    //             'hold_No'                                   => $request->payload['hold_No']                         ??  optional($existingData)->hold_No,
+    //             'hold_Date'                                 => $request->payload['hold_Date']                       ??  optional($existingData)->hold_Date,
+    //             'hold_Remarks'                              => $request->payload['hold_Remarks']                    ??  optional($existingData)->hold_Remarks,
+    //             'hold_Hostname'                             => $request->payload['hold_Hostname']                   ??  optional($existingData)->hold_Hostname,
+    //             'isRevoked'                                 => $request->payload['isRevoked']                       ??  false,
+    //             'revokedBy'                                 => $request->payload['revokedBy']                       ??  optional($existingData)->revokedBy,
+    //             'revoked_Date'                              => $request->payload['revoked_Date']                    ??  optional($existingData)->revoked_Date,
+    //             'revoked_Remarks'                           => $request->payload['revoked_Remarks']                 ??  optional($existingData)->revoked_Remarks,
+    //             'revoked_Hostname'                          => $request->payload['revoked_Hostname']                ??  optional($existingData)->revoked_Hostname,
+    //             'dischargeNotice_Userid'                    => $request->payload['dischargeNotice_Userid']          ??  optional($existingData)->dischargeNotice_Userid,
+    //             'dischargeNotice_Date'                      => $request->payload['dischargeNotice_Date']            ??  optional($existingData)->dischargeNotice_Date,
+    //             'dischargeNotice_Hostname'                  => $request->payload['dischargeNotice_Hostname']        ??  optional($existingData)->dischargeNotice_Hostname,
+    //             'hbps_PrintedBy'                            => $request->payload['hbps_PrintedBy']                  ??  optional($existingData)->hbps_PrintedBy,
+    //             'hbps_Date'                                 => $request->payload['hbps_Date']                       ??  optional($existingData)->hbps_Date,
+    //             'hbps_Hostname'                             => $request->payload['hbps_Hostname']                   ??  optional($existingData)->hbps_Hostname,
+    //             'informant_Lastname'                        => $request->payload['informant_Lastname']              ??  optional($existingData)->informant_Lastname,
+    //             'informant_Firstname'                       => $request->payload['informant_Firstname']             ??  optional($existingData)->informant_Firstname,
+    //             'informant_Middlename'                      => $request->payload['informant_Middlename']            ??  optional($existingData)->informant_Middlename,
+    //             'informant_Suffix'                          => $request->payload['informant_Suffix']                ??  optional($existingData)->informant_Suffix,
+    //             'informant_Address'                         => $request->payload['informant_Address']               ??  optional($existingData)->informant_Address,
+    //             'informant_Relation_id'                     => $request->payload['informant_Relation_id']           ??  optional($existingData)->informant_Relation_id,
+
+    //             'guarantor_Id'                              => isset($request->payload['selectedGuarantor'])
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_code']
+    //                                                         :  $patient_id,
+
+    //             'guarantor_Name'                            => isset($request->payload['selectedGuarantor']) 
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_Name']
+    //                                                         :  'Self Pay',
+
+    //             'guarantor_Approval_code'                   => isset($request->payload['selectedGuarantor']) 
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_code']
+    //                                                         :  optional($existingData)->guarantor_Approval_code,
+
+    //             'guarantor_Approval_no'                     => isset($request->payload['selectedGuarantor']) 
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_no'] 
+    //                                                         :  optional($existingData)->guarantor_Approval_no,
+
+    //             'guarantor_Approval_date'                   => isset($request->payload['selectedGuarantor'])
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_Approval_date']
+    //                                                         :  optional($existingData)->guarantor_Approval_date,
+
+    //             'guarantor_Validity_date'                   => isset($request->payload['selectedGuarantor']) 
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_Validity_date']
+    //                                                         :  optional($existingData)->guarantor_Validity_date,
+
+    //             'guarantor_Approval_remarks'                => $request->payload['guarantor_Approval_remarks'] ?? optional($existingData)->guarantor_Approval_remarks,
+
+    //             'isWithCreditLimit'                         => isset($request->payload['selectedGuarantor']) 
+    //                                                         && $request->payload['selectedGuarantor'][0]['guarantor_code']
+    //                                                         ?  true 
+    //                                                         :  false,
+
+    //             'guarantor_Credit_Limit'                    => isset($request->payload['selectedGuarantor']) 
+    //                                                         ?  $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] 
+    //                                                         :  optional($existingData)->guarantor_Credit_Limit,
+
+    //             'isWithMultiple_Gurantor'                   => $request->payload['isWithMultiple_Gurantor']                             ??  false,
+    //             'gurantor_Mutiple_TotalCreditLimit'         => $request->payload['gurantor_Mutiple_TotalCreditLimit']                   ??  false,
+    //             'isWithPhilHealth'                          => $request->payload['isWithPhilHealth']                                    ??  false,
+    //             'mscPHIC_Membership_Type_id'                => $request->payload['mscPHIC_Membership_Type_id']                          ??  optional($existingData)->mscPHIC_Membership_Type_id,
+    //             'philhealth_Number'                         => $request->payload['philhealth_Number']                                   ??  optional($existingData)->philhealth_Number,
+    //             'isWithMedicalPackage'                      => $request->payload['isWithMedicalPackage']                                ??  false,
+    //             'medical_Package_Id'                        => $request->payload['medical_Package_Id']                                  ??  optional($existingData)->medical_Package_Id,
+    //             'medical_Package_Name'                      => $request->payload['medical_Package_Name']                                ??  optional($existingData)->medical_Package_Name,
+    //             'medical_Package_Amount'                    => $request->payload['medical_Package_Amount']                              ??  optional($existingData)->medical_Package_Amount,
+    //             'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description']                         ??  optional($existingData)->chief_Complaint_Description,
+    //             'impression'                                => $request->payload['impression']                                          ??  optional($existingData)->impression,
+    //             'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis']                                 ??  optional($existingData)->admitting_Diagnosis,
+    //             'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis']                                 ??  optional($existingData)->discharge_Diagnosis,
+    //             'preOperative_Diagnosis'                    => $request->payload['preOperative_Diagnosis']                              ??  optional($existingData)->preOperative_Diagnosis,
+    //             'postOperative_Diagnosis'                   => $request->payload['postOperative_Diagnosis']                             ??  optional($existingData)->postOperative_Diagnosis,
+    //             'surgical_Procedure'                        => $request->payload['surgical_Procedure']                                  ??  optional($existingData)->surgical_Procedure,
+    //             'triageNotes'                               => $request->payload['triageNotes']                                         ??  optional($existingData)->triageNotes,
+    //             'triageDate'                                => $request->payload['triageDate']                                          ??  optional($existingData)->triageDate,
+    //             'isCriticallyIll'                           => $request->payload['isCriticallyIll']                                     ??  false,
+    //             'illness_Type'                              => $request->payload['illness_Type']                                        ??  optional($existingData)->illness_Type,
+    //             'attending_Doctor'                          => $request->payload['selectedConsultant'][0]['attending_Doctor']           ??  optional($existingData)->attending_Doctor,
+    //             'attending_Doctor_fullname'                 => $request->payload['selectedConsultant'][0]['attending_Doctor_fullname']  ??  optional($existingData)->attending_Doctor_fullname,
+    //             'bmi'                                       => $request->payload['bmi']                                                 ??  optional($existingData)->bmi,
+    //             'weight'                                    => $request->payload['weight']                                              ??  optional($existingData)->weight,
+    //             'weightUnit'                                => $request->payload['weightUnit']                                          ??  optional($existingData)->weightUnit,
+    //             'height'                                    => $request->payload['height']                                              ??  optional($existingData)->height,
+    //             'heightUnit'                                => $request->payload['heightUnit']                                          ??  optional($existingData)->heightUnit,
+    //             'bloodPressureSystolic'                     => $request->payload['bloodPressureSystolic']                               ??  optional($existingData)->bloodPressureSystolic,
+    //             'bloodPressureDiastolic'                    => $request->payload['bloodPressureDiastolic']                              ??  optional($existingData)->bloodPressureDiastolic,
+    //             'temperatute'                               => $request->payload['temperatute']                                         ??  optional($existingData)->temperatute,
+    //             'pulseRate'                                 => $request->payload['pulseRate']                                           ??  optional($existingData)->pulseRate,
+    //             'respiratoryRate'                           => $request->payload['respiratoryRate']                                     ??  optional($existingData)->respiratoryRate,
+    //             'oxygenSaturation'                          => $request->payload['oxygenSaturation']                                    ??  optional($existingData)->oxygenSaturation,
+    //             'isHemodialysis'                            => $patientIdentifier['isHemodialysis'],
+    //             'isPeritoneal'                              => $patientIdentifier['isPeritoneal'],
+    //             'isLINAC'                                   => $patientIdentifier['isLINAC'],
+    //             'isCOBALT'                                  => $patientIdentifier['isCOBALT'],
+    //             'isBloodTrans'                              => $patientIdentifier['isBloodTrans'],
+    //             'isChemotherapy'                            => $patientIdentifier['isChemotherapy'],
+    //             'isBrachytherapy'                           => $patientIdentifier['isBrachytherapy'],
+    //             'isDebridement'                             => $patientIdentifier['isDebridement'],
+    //             'isTBDots'                                  => $patientIdentifier['isTBDots'],
+    //             'isPAD'                                     => $patientIdentifier['isPAD'],
+    //             'isRadioTherapy'                            => $patientIdentifier['isRadioTherapy'],
+    //             'typeOfBirth_id'                            => $request->payload['typeOfBirth_id']          ??  optional($existingData)->typeOfBirth_id,
+    //             'isWithBaby'                                => $request->payload['isWithBaby']              ??  optional($existingData)->isWithBaby,
+    //             'isRoomIn'                                  => $request->payload['isRoomIn']                ??  optional($existingData)->isRoomIn,
+    //             'birthDate'                                 => $request->payload['birthDate']               ??  optional($existingData)->birthDate,
+    //             'birthTime'                                 => $request->payload['birthTime']               ??  optional($existingData)->birthTime,
+    //             'newborn_Status_Id'                         => $request->payload['newborn_Status_Id']       ??  optional($existingData)->newborn_Status_Id,
+    //             'mother_Case_No'                            => $request->payload['mother_Case_No']          ??  optional($existingData)->mother_Case_No,
+    //             'isDiedLess48Hours'                         => $request->payload['isDiedLess48Hours']       ??  optional($existingData)->isDiedLess48Hours,
+    //             'isDeadOnArrival'                           => $request->payload['isDeadOnArrival']         ??  optional($existingData)->isDeadOnArrival,
+    //             'isAutopsy'                                 => $request->payload['isAutopsy']               ??  optional($existingData)->isAutopsy,
+    //             'typeOfDeath_id'                            => $request->payload['typeOfDeath_id']          ??  optional($existingData)->typeOfDeath_id,
+    //             'dateOfDeath'                               => $request->payload['dateOfDeath']             ??  optional($existingData)->dateOfDeath,
+    //             'timeOfDeath'                               => $request->payload['timeOfDeath']             ??  optional($existingData)->timeOfDeath,
+    //             'barcode_Image'                             => $request->payload['barcode_Image']           ??  optional($existingData)->barcode_Image,
+    //             'barcode_Code_Id'                           => $request->payload['barcode_Code_Id']         ??  optional($existingData)->barcode_Code_Id,
+    //             'barcode_Code_String'                       => $request->payload['barcode_Code_String']     ??  optional($existingData)->barcode_Code_String,
+    //             'isreferredFrom'                            => $request->payload['isreferredFrom']          ??  false,
+    //             'referred_From_HCI'                         => $request->payload['referred_From_HCI']       ??  optional($existingData)->referred_From_HCI,
+    //             'referred_From_HCI_address'                 => $request->payload['FromHCIAddress']          ??  optional($existingData)->referred_From_HCI_address,
+    //             'referred_From_HCI_code'                    => $request->payload['referred_From_HCI_code']  ??  optional($existingData)->referred_From_HCI_code,
+    //             'referred_To_HCI'                           => $request->payload['referred_To_HCI']         ??  optional($existingData)->referred_To_HCI,
+    //             'referred_To_HCI_code'                      => $request->payload['referred_To_HCI_code']    ??  optional($existingData)->referred_To_HCI_code,
+    //             'referred_To_HCI_address'                   => $request->payload['ToHCIAddress']            ??  optional($existingData)->referred_To_HCI_address,
+    //             'referring_Doctor'                          => $request->payload['referring_Doctor']        ??  optional($existingData)->referring_Doctor,
+    //             'referral_Reason'                           => $request->payload['referral_Reason']         ??  optional($existingData)->referral_Reason,
+    //             'isWithConsent_DPA'                         => $request->payload['isWithConsent_DPA']       ??  optional($existingData)->isWithConsent_DPA,
+    //             'isConfidentialPatient'                     => $request->payload['isConfidentialPatient']   ??  optional($existingData)->isConfidentialPatient,
+    //             'isMedicoLegal'                             => $request->payload['isMedicoLegal']           ??  optional($existingData)->isMedicoLegal,
+    //             'isFinalBill'                               => $request->payload['isFinalBill']             ??  optional($existingData)->isFinalBill,
+    //             'isWithPromissoryNote'                      => $request->payload['isWithPromissoryNote']    ??  optional($existingData)->isWithPromissoryNote,
+    //             'isFirstNotice'                             => $request->payload['isFirstNotice']           ??  optional($existingData)->isFirstNotice,
+    //             'FirstNoteDate'                             => $request->payload['FirstNoteDate']           ??  optional($existingData)->FirstNoteDate,
+    //             'isSecondNotice'                            => $request->payload['isSecondNotice']          ??  optional($existingData)->isSecondNotice,
+    //             'SecondNoticeDate'                          => $request->payload['SecondNoticeDate']        ??  optional($existingData)->SecondNoticeDate,
+    //             'isFinalNotice'                             => $request->payload['isFinalNotice']           ??  optional($existingData)->isFinalNotice,
+    //             'FinalNoticeDate'                           => $request->payload['FinalNoticeDate']         ??  optional($existingData)->FinalNoticeDate,
+    //             'isOpenLateCharges'                         => $request->payload['isOpenLateCharges']       ??  optional($existingData)->isOpenLateCharges,
+    //             'isBadDebt'                                 => $request->payload['isBadDebt']               ??  optional($existingData)->isBadDebt,
+    //             'registry_Remarks'                          => $request->payload['registry_Remarks']        ??  optional($existingData)->registry_Remarks,
+    //             'medsys_map_idnum'                          => $request->payload['medsys_map_idnum']        ??  optional($existingData)->medsys_map_idnum,
+    //             'createdBy'                                 => $checkUser->idnumber,
+    //             'created_at'                                => Carbon::now(),         
+    //     ];
+    // }
+
+    // private function prepareOBGHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+    //     return [
+    //         'patient_Id'                                            => $patient_id,
+    //         'case_No'                                               => $registry_id,
+    //         'obsteric_Code'                                         => $request->payload['obsteric_Code']                                       ??  optional($existingData)->obsteric_Code,
+    //         'menarchAge'                                            => $request->payload['menarchAge']                                          ??  optional($existingData)->menarchAge,
+    //         'menopauseAge'                                          => $request->payload['menopauseAge']                                        ??  optional($existingData)->menopauseAge,
+    //         'cycleLength'                                           => $request->payload['cycleLength']                                         ??  optional($existingData)->cycleLength,
+    //         'cycleRegularity'                                       => $request->payload['cycleRegularity']                                     ??  optional($existingData)->cycleRegularity,
+    //         'lastMenstrualPeriod'                                   => $request->payload['lastMenstrualPeriod']                                 ??  optional($existingData)->lastMenstrualPeriod,
+    //         'contraceptiveUse'                                      => $request->payload['contraceptiveUse']                                    ??  optional($existingData)->contraceptiveUse,
+    //         'lastPapSmearDate'                                      => $request->payload['lastPapSmearDate']                                    ??  optional($existingData)->lastPapSmearDate,
+    //         'isVitalSigns_Normal'                                   => $request->payload['isVitalSigns_Normal']                                 ??  optional($existingData)->isVitalSigns_Normal,
+    //         'isAscertainPresent_PregnancyisLowRisk'                 => $request->payload['isAscertainPresent_PregnancyisLowRisk']               ??  optional($existingData)->isAscertainPresent_PregnancyisLowRisk,
+    //         'riskfactor_MultiplePregnancy'                          => $request->payload['riskfactor_MultiplePregnancy']                        ??  optional($existingData)->riskfactor_MultiplePregnancy,
+    //         'riskfactor_OvarianCyst'                                => $request->payload['riskfactor_OvarianCyst']                              ??  optional($existingData)->riskfactor_OvarianCyst,
+    //         'riskfactor_MyomaUteri'                                 => $request->payload['riskfactor_MyomaUteri']                               ??  optional($existingData)->riskfactor_MyomaUteri,
+    //         'riskfactor_PlacentaPrevia'                             => $request->payload['riskfactor_PlacentaPrevia']                           ??  optional($existingData)->riskfactor_PlacentaPrevia,
+    //         'riskfactor_Historyof3Miscarriages'                     => $request->payload['riskfactor_Historyof3Miscarriages']                   ??  optional($existingData)->riskfactor_Historyof3Miscarriages,
+    //         'riskfactor_HistoryofStillbirth'                        => $request->payload['riskfactor_HistoryofStillbirth']                      ??  optional($existingData)->riskfactor_HistoryofStillbirth,
+    //         'riskfactor_HistoryofEclampsia'                         => $request->payload['riskfactor_HistoryofEclampsia']                       ??  optional($existingData)->riskfactor_HistoryofEclampsia,
+    //         'riskfactor_PrematureContraction'                       => $request->payload['riskfactor_PrematureContraction']                     ??  optional($existingData)->riskfactor_PrematureContraction,
+    //         'riskfactor_NotApplicableNone'                          => $request->payload['riskfactor_NotApplicableNone']                        ??  optional($existingData)->riskfactor_NotApplicableNone,
+    //         'medicalSurgical_Hypertension'                          => $request->payload['medicalSurgical_Hypertension']                        ??  optional($existingData)->medicalSurgical_Hypertension,
+    //         'medicalSurgical_HeartDisease'                          => $request->payload['medicalSurgical_HeartDisease']                        ??  optional($existingData)->medicalSurgical_HeartDisease,
+    //         'medicalSurgical_Diabetes'                              => $request->payload['medicalSurgical_Diabetes']                            ??  optional($existingData)->medicalSurgical_Diabetes,
+    //         'medicalSurgical_ThyroidDisorder'                       => $request->payload['medicalSurgical_ThyroidDisorder']                     ??  optional($existingData)->medicalSurgical_ThyroidDisorder,
+    //         'medicalSurgical_Obesity'                               => $request->payload['medicalSurgical_Obesity']                             ??  optional($existingData)->medicalSurgical_Obesity,
+    //         'medicalSurgical_ModerateToSevereAsthma'                => $request->payload['medicalSurgical_ModerateToSevereAsthma']              ??  optional($existingData)->medicalSurgical_ModerateToSevereAsthma,
+    //         'medicalSurigcal_Epilepsy'                              => $request->payload['medicalSurigcal_Epilepsy']                            ??  optional($existingData)->medicalSurigcal_Epilepsy,
+    //         'medicalSurgical_RenalDisease'                          => $request->payload['medicalSurgical_RenalDisease']                        ??  optional($existingData)->medicalSurgical_RenalDisease,
+    //         'medicalSurgical_BleedingDisorder'                      => $request->payload['medicalSurgical_BleedingDisorder']                    ??  optional($existingData)->medicalSurgical_BleedingDisorder,
+    //         'medicalSurgical_HistoryOfPreviousCesarianSection'      => $request->payload['medicalSurgical_HistoryOfPreviousCesarianSection']    ??  optional($existingData)->medicalSurgical_HistoryOfPreviousCesarianSection,
+    //         'medicalSurgical_HistoryOfUterineMyomectomy'            => $request->payload['medicalSurgical_HistoryOfUterineMyomectomy']          ??  optional($existingData)->medicalSurgical_HistoryOfUterineMyomectomy,
+    //         'medicalSurgical_NotApplicableNone'                     => $request->payload['medicalSurgical_NotApplicableNone']                   ??  optional($existingData)->medicalSurgical_NotApplicableNone,
+    //         'deliveryPlan_OrientationToMCP'                         => $request->payload['deliveryPlan_OrientationToMCP']                       ??  optional($existingData)->deliveryPlan_OrientationToMCP,
+    //         'deliveryPlan_ExpectedDeliveryDate'                     => $request->payload['deliveryPlan_ExpectedDeliveryDate']                   ??  optional($existingData)->deliveryPlan_ExpectedDeliveryDate,
+    //         'followUp_Prenatal_ConsultationNo_2nd'                  => $request->payload['followUp_Prenatal_ConsultationNo_2nd']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_2nd,
+    //         'followUp_Prenatal_DateVisit_2nd'                       => $request->payload['followUp_Prenatal_DateVisit_2nd']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_2nd,
+    //         'followUp_Prenatal_AOGInWeeks_2nd'                      => $request->payload['followUp_Prenatal_AOGInWeeks_2nd']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_2nd,
+    //         'followUp_Prenatal_Weight_2nd'                          => $request->payload['followUp_Prenatal_Weight_2nd']                        ??  optional($existingData)->followUp_Prenatal_Weight_2nd,
+    //         'followUp_Prenatal_CardiacRate_2nd'                     => $request->payload['followUp_Prenatal_CardiacRate_2nd']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_2nd,
+    //         'followUp_Prenatal_RespiratoryRate_2nd'                 => $request->payload['followUp_Prenatal_RespiratoryRate_2nd']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_2nd,
+    //         'followUp_Prenatal_BloodPresureSystolic_2nd'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_2nd']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_2nd,
+    //         'followUp_Prenatal_BloodPresureDiastolic_2nd'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_2nd']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_2nd,
+    //         'followUp_Prenatal_Temperature_2nd'                     => $request->payload['followUp_Prenatal_Temperature_2nd']                   ??  optional($existingData)->followUp_Prenatal_Temperature_2nd,
+    //         'followUp_Prenatal_ConsultationNo_3rd'                  => $request->payload['followUp_Prenatal_ConsultationNo_3rd']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_3rd,
+    //         'followUp_Prenatal_DateVisit_3rd'                       => $request->payload['followUp_Prenatal_DateVisit_3rd']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_3rd,
+    //         'followUp_Prenatal_AOGInWeeks_3rd'                      => $request->payload['followUp_Prenatal_AOGInWeeks_3rd']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_3rd,
+    //         'followUp_Prenatal_Weight_3rd'                          => $request->payload['followUp_Prenatal_Weight_3rd']                        ??  optional($existingData)->followUp_Prenatal_Weight_3rd,
+    //         'followUp_Prenatal_CardiacRate_3rd'                     => $request->payload['followUp_Prenatal_CardiacRate_3rd']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_3rd,
+    //         'followUp_Prenatal_RespiratoryRate_3rd'                 => $request->payload['followUp_Prenatal_RespiratoryRate_3rd']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_3rd,
+    //         'followUp_Prenatal_BloodPresureSystolic_3rd'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_3rd']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_3rd,
+    //         'followUp_Prenatal_BloodPresureDiastolic_3rd'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_3rd']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_3rd,
+    //         'followUp_Prenatal_Temperature_3rd'                     => $request->payload['followUp_Prenatal_Temperature_3rd']                   ??  optional($existingData)->followUp_Prenatal_Temperature_3rd,
+    //         'followUp_Prenatal_ConsultationNo_4th'                  => $request->payload['followUp_Prenatal_ConsultationNo_4th']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_4th,
+    //         'followUp_Prenatal_DateVisit_4th'                       => $request->payload['followUp_Prenatal_DateVisit_4th']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_4th,
+    //         'followUp_Prenatal_AOGInWeeks_4th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_4th']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_4th,
+    //         'followUp_Prenatal_Weight_4th'                          => $request->payload['followUp_Prenatal_Weight_4th']                        ??  optional($existingData)->followUp_Prenatal_Weight_4th,
+    //         'followUp_Prenatal_CardiacRate_4th'                     => $request->payload['followUp_Prenatal_CardiacRate_4th']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_4th,
+    //         'followUp_Prenatal_RespiratoryRate_4th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_4th']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_4th,
+    //         'followUp_Prenatal_BloodPresureSystolic_4th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_4th']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_4th,
+    //         'followUp_Prenatal_ConsultationNo_5th'                  => $request->payload['followUp_Prenatal_ConsultationNo_5th']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_5th,
+    //         'followUp_Prenatal_DateVisit_5th'                       => $request->payload['followUp_Prenatal_DateVisit_5th']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_5th,
+    //         'followUp_Prenatal_AOGInWeeks_5th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_5th']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_5th,
+    //         'followUp_Prenatal_Weight_5th'                          => $request->payload['followUp_Prenatal_Weight_5th']                        ??  optional($existingData)->followUp_Prenatal_Weight_5th,
+    //         'followUp_Prenatal_CardiacRate_5th'                     => $request->payload['followUp_Prenatal_CardiacRate_5th']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_5th,
+    //         'followUp_Prenatal_RespiratoryRate_5th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_5th']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_5th,
+    //         'followUp_Prenatal_BloodPresureSystolic_5th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_5th']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_5th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_5th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_5th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_5th,
+    //         'followUp_Prenatal_Temperature_5th'                     => $request->payload['followUp_Prenatal_Temperature_5th']                   ??  optional($existingData)->followUp_Prenatal_Temperature_5th,
+    //         'followUp_Prenatal_ConsultationNo_6th'                  => $request->payload['followUp_Prenatal_ConsultationNo_6th']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_6th,
+    //         'followUp_Prenatal_DateVisit_6th'                       => $request->payload['followUp_Prenatal_DateVisit_6th']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_6th,
+    //         'followUp_Prenatal_AOGInWeeks_6th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_6th']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_6th,
+    //         'followUp_Prenatal_Weight_6th'                          => $request->payload['followUp_Prenatal_Weight_6th']                        ??  optional($existingData)->followUp_Prenatal_Weight_6th,
+    //         'followUp_Prenatal_CardiacRate_6th'                     => $request->payload['followUp_Prenatal_CardiacRate_6th']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_6th,
+    //         'followUp_Prenatal_RespiratoryRate_6th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_6th']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_6th,
+    //         'followUp_Prenatal_BloodPresureSystolic_6th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_6th']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_6th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_6th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_6th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_6th,
+    //         'followUp_Prenatal_Temperature_6th'                     => $request->payload['followUp_Prenatal_Temperature_6th']                   ??  optional($existingData)->followUp_Prenatal_Temperature_6th,
+    //         'followUp_Prenatal_ConsultationNo_7th'                  => $request->payload['followUp_Prenatal_ConsultationNo_7th']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_7th,
+    //         'followUp_Prenatal_DateVisit_7th'                       => $request->payload['followUp_Prenatal_DateVisit_7th']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_7th,
+    //         'followUp_Prenatal_AOGInWeeks_7th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_7th']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_7th,
+    //         'followUp_Prenatal_Weight_7th'                          => $request->payload['followUp_Prenatal_Weight_7th']                        ??  optional($existingData)->followUp_Prenatal_Weight_7th,
+    //         'followUp_Prenatal_CardiacRate_7th'                     => $request->payload['followUp_Prenatal_CardiacRate_7th']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_7th,
+    //         'followUp_Prenatal_RespiratoryRate_7th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_7th']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_7th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_7th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_7th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_7th,
+    //         'followUp_Prenatal_Temperature_7th'                     => $request->payload['followUp_Prenatal_Temperature_7th']                   ??  optional($existingData)->followUp_Prenatal_Temperature_7th,
+    //         'followUp_Prenatal_ConsultationNo_8th'                  => $request->payload['followUp_Prenatal_ConsultationNo_8th']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_8th,
+    //         'followUp_Prenatal_DateVisit_8th'                       => $request->payload['followUp_Prenatal_DateVisit_8th']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_8th,
+    //         'followUp_Prenatal_AOGInWeeks_8th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_8th']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_8th,
+    //         'followUp_Prenatal_Weight_8th'                          => $request->payload['followUp_Prenatal_Weight_8th']                        ??  optional($existingData)->followUp_Prenatal_Weight_8th,
+    //         'followUp_Prenatal_CardiacRate_8th'                     => $request->payload['followUp_Prenatal_CardiacRate_8th']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_8th,
+    //         'followUp_Prenatal_RespiratoryRate_8th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_8th']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_8th,
+    //         'followUp_Prenatal_BloodPresureSystolic_8th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_8th']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_8th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_8th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_8th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_8th,
+    //         'followUp_Prenatal_Temperature_8th'                     => $request->payload['followUp_Prenatal_Temperature_8th']                   ??  optional($existingData)->followUp_Prenatal_Temperature_8th,
+    //         'followUp_Prenatal_ConsultationNo_9th'                  => $request->payload['followUp_Prenatal_ConsultationNo_9th']                ??  optional($existingData)->followUp_Prenatal_ConsultationNo_9th,
+    //         'followUp_Prenatal_DateVisit_9th'                       => $request->payload['followUp_Prenatal_DateVisit_9th']                     ??  optional($existingData)->followUp_Prenatal_DateVisit_9th,
+    //         'followUp_Prenatal_AOGInWeeks_9th'                      => $request->payload['followUp_Prenatal_AOGInWeeks_9th']                    ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_9th,
+    //         'followUp_Prenatal_Weight_9th'                          => $request->payload['followUp_Prenatal_Weight_9th']                        ??  optional($existingData)->followUp_Prenatal_Weight_9th,
+    //         'followUp_Prenatal_CardiacRate_9th'                     => $request->payload['followUp_Prenatal_CardiacRate_9th']                   ??  optional($existingData)->followUp_Prenatal_CardiacRate_9th,
+    //         'followUp_Prenatal_RespiratoryRate_9th'                 => $request->payload['followUp_Prenatal_RespiratoryRate_9th']               ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_9th,
+    //         'followUp_Prenatal_BloodPresureSystolic_9th'            => $request->payload['followUp_Prenatal_BloodPresureSystolic_9th']          ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_9th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_9th'           => $request->payload['followUp_Prenatal_BloodPresureDiastolic_9th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_9th,
+    //         'followUp_Prenatal_Temperature_9th'                     => $request->payload['followUp_Prenatal_Temperature_9th']                   ??  optional($existingData)->followUp_Prenatal_Temperature_9th,
+    //         'followUp_Prenatal_ConsultationNo_10th'                 => $request->payload['followUp_Prenatal_ConsultationNo_10th']               ??  optional($existingData)->followUp_Prenatal_ConsultationNo_10th,
+    //         'followUp_Prenatal_DateVisit_10th'                      => $request->payload['followUp_Prenatal_DateVisit_10th']                    ??  optional($existingData)->followUp_Prenatal_DateVisit_10th,
+    //         'followUp_Prenatal_AOGInWeeks_10th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_10th']                   ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_10th,
+    //         'followUp_Prenatal_Weight_10th'                         => $request->payload['followUp_Prenatal_Weight_10th']                       ??  optional($existingData)->followUp_Prenatal_Weight_10th,
+    //         'followUp_Prenatal_CardiacRate_10th'                    => $request->payload['followUp_Prenatal_CardiacRate_10th']                  ??  optional($existingData)->followUp_Prenatal_CardiacRate_10th,
+    //         'followUp_Prenatal_RespiratoryRate_10th'                => $request->payload['followUp_Prenatal_RespiratoryRate_10th']              ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_10th,
+    //         'followUp_Prenatal_BloodPresureSystolic_10th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_10th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_10th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_10th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_10th']        ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_10th,
+    //         'followUp_Prenatal_Temperature_10th'                    => $request->payload['followUp_Prenatal_Temperature_10th']                  ??  optional($existingData)->followUp_Prenatal_Temperature_10th,
+    //         'followUp_Prenatal_ConsultationNo_11th'                 => $request->payload['followUp_Prenatal_ConsultationNo_11th']               ??  optional($existingData)->followUp_Prenatal_ConsultationNo_11th,
+    //         'followUp_Prenatal_DateVisit_11th'                      => $request->payload['followUp_Prenatal_DateVisit_11th']                    ??  optional($existingData)->followUp_Prenatal_DateVisit_11th,
+    //         'followUp_Prenatal_AOGInWeeks_11th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_11th']                   ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_11th,
+    //         'followUp_Prenatal_Weight_11th'                         => $request->payload['followUp_Prenatal_Weight_11th']                       ??  optional($existingData)->followUp_Prenatal_Weight_11th,
+    //         'followUp_Prenatal_CardiacRate_11th'                    => $request->payload['followUp_Prenatal_CardiacRate_11th']                  ??  optional($existingData)->followUp_Prenatal_CardiacRate_11th,
+    //         'followUp_Prenatal_RespiratoryRate_11th'                => $request->payload['followUp_Prenatal_RespiratoryRate_11th']              ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_11th,
+    //         'followUp_Prenatal_BloodPresureSystolic_11th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_11th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_11th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_11th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_11th']        ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_11th,
+    //         'followUp_Prenatal_Temperature_11th'                    => $request->payload['followUp_Prenatal_Temperature_11th']                  ??  optional($existingData)->followUp_Prenatal_Temperature_11th,
+    //         'followUp_Prenatal_ConsultationNo_12th'                 => $request->payload['followUp_Prenatal_ConsultationNo_12th']               ??  optional($existingData)->followUp_Prenatal_ConsultationNo_12th,
+    //         'followUp_Prenatal_DateVisit_12th'                      => $request->payload['followUp_Prenatal_DateVisit_12th']                    ??  optional($existingData)->followUp_Prenatal_DateVisit_12th,
+    //         'followUp_Prenatal_AOGInWeeks_12th'                     => $request->payload['followUp_Prenatal_AOGInWeeks_12th']                   ??  optional($existingData)->followUp_Prenatal_AOGInWeeks_12th,
+    //         'followUp_Prenatal_Weight_12th'                         => $request->payload['ffollowUp_Prenatal_Weight_12th']                      ??  optional($existingData)->followUp_Prenatal_Weight_12th,
+    //         'followUp_Prenatal_CardiacRate_12th'                    => $request->payload['followUp_Prenatal_CardiacRate_12th']                  ??  optional($existingData)->followUp_Prenatal_CardiacRate_12th,
+    //         'followUp_Prenatal_RespiratoryRate_12th'                => $request->payload['followUp_Prenatal_RespiratoryRate_12th']              ??  optional($existingData)->followUp_Prenatal_RespiratoryRate_12th,
+    //         'followUp_Prenatal_BloodPresureSystolic_12th'           => $request->payload['followUp_Prenatal_BloodPresureSystolic_12th']         ??  optional($existingData)->followUp_Prenatal_BloodPresureSystolic_12th,
+    //         'followUp_Prenatal_BloodPresureDiastolic_12th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_12th']        ??  optional($existingData)->followUp_Prenatal_BloodPresureDiastolic_12th,
+    //         'followUp_Prenatal_Temperature_12th'                    => $request->payload['followUp_Prenatal_Temperature_12th']                  ??  optional($existingData)->followUp_Prenatal_Temperature_12th,
+    //         'followUp_Prenatal_Remarks'                             => $request->payload['followUp_Prenatal_Remarks']                           ??  optional($existingData)->followUp_Prenatal_Remarks,
+    //         'createdby'                                             => $checkUser->idnumber,
+    //         'created_at'                                            => Carbon::now(),
+    //     ];
+    // }
+
+    // private function  preparePastImmunizationData($request, $checkUser, $patient_id, $existingData = null) {
+    //     return [
+    //         'branch_Id'             => 1,
+    //         'patient_Id'            => $patient_id,
+    //         'vaccine_Id'            => $request->payload['vaccine_Id']              ??  optional($existingData)->vaccine_Id,
+    //         'administration_Date'   => $request->payload['administration_Date']     ??  optional($existingData)->administration_Date,
+    //         'dose'                  => $request->payload['dose']                    ??  optional($existingData)->dose,
+    //         'site'                  => $request->payload['site']                    ??  optional($existingData)->site,
+    //         'administrator_Name'    => $request->payload['administrator_Name']      ??  optional($existingData)->administrator_Name,
+    //         'notes'                 => $request->payload['notes']                   ??  optional($existingData)->notes,
+    //         'createdby'             => $checkUser->idnumber,
+    //         'created_at'            => Carbon::now(),
+    //     ];
+    // }
+
+    // private function preparePastMedicalHistoryData($request, $checkUser, $patient_id, $existingData = null) { 
+    //     return [
+    //         'patient_Id'                => $patient_id,
+    //         'diagnose_Description'      => $request->payload['diagnose_Description'] ?? optional($existingData)->diagnose_Description,
+    //         'diagnosis_Date'            => $request->payload['diagnosis_Date'] ?? optional($existingData)->diagnosis_Date,
+    //         'treament'                  => $request->payload['treament'] ?? optional($existingData)->treament,
+    //         'createdby'                 => $checkUser->idnumber,
+    //         'created_at'                => Carbon::now()
+    //     ];
+    // }
+
+    // private function preparePastMedicalProcedureData($request, $checkUser, $patient_id, $existingData = null) {
+    //     return [
+    //         'patient_Id'                => $patient_id,
+    //         'description'               => $request->payload['description'] ?? optional($existingData)->description,
+    //         'date_Of_Procedure'         => $request->payload['date_Of_Procedure'] ?? optional($existingData)->date_Of_Procedure,
+    //         'createdby'                 => $checkUser->idnumber,
+    //         'created_at'                => Carbon::now(),
+    //     ];
+    // }
+
+    // private function prepareAdministeredMedicineData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+    //     return [
+    //         'patient_Id'            => $patient_id,
+    //         'case_No'               => $registry_id,
+    //         'transactDate'          => Carbon::now(),
+    //         'item_Id'               => $request->payload['item_Id'] ?? null,
+    //         'quantity'              => $request->payload['quantity'] ?? null,
+    //         'administered_Date'     => $request->payload['administered_Date'] ?? null,
+    //         'administered_By'       => $request->payload['administered_By'] ?? null,
+    //         'reference_num'         => $request->payload['reference_num'] ?? null,
+    //         'transaction_num'       => $request->payload['transaction_num'] ?? null,
+    //         'createdby'             => $checkUser->idnumber,
+    //         'created_at'            => Carbon::now(),
+    //     ];
+    // }
+        
 
     protected function handleMedsysRegistry($existingRegistry, $request, $registrySequence, $registryMopdSequence, $erCaseSequence){
 

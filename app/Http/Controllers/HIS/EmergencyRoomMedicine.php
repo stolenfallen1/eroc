@@ -10,6 +10,7 @@ use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\Itemmasters;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\HIS\MedsysCashAssessment;
+use App\Models\HIS\his_functions\CashAssessment;
 use DB;
 use \Carbon\Carbon;
 use App\Models\HIS\his_functions\NurseLogBook;
@@ -75,6 +76,8 @@ class EmergencyRoomMedicine extends Controller
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
+        DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
     
         try {
               /**************************************/
@@ -115,9 +118,10 @@ class EmergencyRoomMedicine extends Controller
     
             DB::connection('sqlsrv_medsys_nurse_station')->commit();
             DB::connection('sqlsrv_patient_data')->commit();
-            // DB::connection('sqlsrv_medsys_inventory')->commit();
+            DB::connection('sqlsrv_medsys_inventory')->commit();
             DB::connection('sqlsrv_medsys_billing')->commit();
             DB::connection('sqlsrv_mmis')->commit();
+            DB::connection('sqlsrv_billingOut')->commit();
 
             return response()->json(['message' => 'Charge processing successful'], 200);
 
@@ -125,9 +129,10 @@ class EmergencyRoomMedicine extends Controller
 
             DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
             DB::connection('sqlsrv_patient_data')->rollBack();
-            // DB::connection('sqlsrv_medsys_inventory')->rollBack();
+            DB::connection('sqlsrv_medsys_inventory')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
             DB::connection('sqlsrv_mmis')->rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
 
             return response()->json(['message' => 'An error occurred', 'error' => $e->getMessage()], 500);
         }
@@ -172,19 +177,24 @@ class EmergencyRoomMedicine extends Controller
              /*     Prepare data for insertion     */
             /**************************************/
             $tbNurseLogBookData = $this->prepareLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            // $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost);
-            $tbCashAssessment = $this->prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
+            $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost);
+            $cashAssessment = $this->prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
+            $tbCashAssessment = $this->prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
             $nurseLogBookData = $this->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
             $inventoryTransactionData = $this->prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock);
     
               /**************************************/
              /*            Insert Records          */
             /**************************************/
-            tbNurseLogBook::create($tbNurseLogBookData);
-            // tbInvStockCard::create($tbInvStockCardData);
-            MedsysCashAssessment::create($tbCashAssessment);
-            NurseLogBook::create($nurseLogBookData);
-            InventoryTransaction::create($inventoryTransactionData);
+            if($request->payload['charge_to'] === 'Company / Insurance') {
+                tbNurseLogBook::create($tbNurseLogBookData);
+                NurseLogBook::create($nurseLogBookData);
+                InventoryTransaction::create($inventoryTransactionData);
+                tbInvStockCard::create($tbInvStockCardData);
+            } else {
+                CashAssessment::create($cashAssessment);
+                MedsysCashAssessment::create($tbCashAssessment);
+            }
         }
     }
     
@@ -241,6 +251,31 @@ class EmergencyRoomMedicine extends Controller
     }
 
     private function prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence) {
+        return [
+            'branch_id'     => 1,
+            'patient_id'    => $request->payload['patient_Id'],
+            'case_No'       => $request->payload['case_No'],
+            'patient_Name'  => $request->payload['patient_Name'],
+            'transdate'     => Carbon::now(),
+            'assessNum'     => intval($medsysCashAssessmentSequence->RequestNum),
+            'drcr'          => 'C',
+            'stat'          => 1,
+            'revenueID'     => $item['code'],
+            'refNum'        => $item['code'] . intval($medsysCashAssessmentSequence->AssessmentNum),
+            'itemID'        => $itemID,
+            'quantity'      => $item['quantity'],
+            'amount'        => $item['amount'],
+            'specimenId'    => '',
+            'recordStatus'  => '',
+            'requestDoctorID' => '',
+            'requestDoctorName' => '',
+            'hostname'          => (new GetIP())->getHostname(),
+            'createdBy'         => $checkUser->idnumber,
+            'created_at'        => Carbon::now(),
+        ];
+    }
+
+    private function prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence) {
         $item_price =  $item['price'] = str_replace('₱', '', $item['price']);
         return [
             'IdNum'         => $request->payload['case_No'] . 'B',

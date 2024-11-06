@@ -11,6 +11,7 @@ use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\FmsTransactionCode;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
+use App\Models\MMIS\inventory\medsys\RRHeaderModel;
 use DB;
 class InventoryTransactionObserver
 {
@@ -32,6 +33,48 @@ class InventoryTransactionObserver
 
             $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
             $deliveryDetails = Delivery::with('items')->findOrFail($delivery->id);
+
+            // RRHeaderModel::updateOrCreate(
+            //     [
+            //         'LocationId'=>$deliveryDetails[''],
+            //         'PONumber'=>$deliveryDetails[''],
+            //         'RRNumber'=>$deliveryDetails[''],
+            //     ],
+            //     [
+            //         'LocationId'=>$deliveryDetails[''],
+            //         'SupplierID'=>$deliveryDetails[''],
+            //         'TransNum'=>$deliveryDetails[''],
+            //         'TransDate'=>$deliveryDetails[''],
+            //         'Status'=>$deliveryDetails[''],
+            //         'PONumber'=>$deliveryDetails[''],
+            //         'SummaryCode'=>$deliveryDetails[''],
+            //         'Remarks'=>$deliveryDetails[''],
+            //         'RRNumber'=>$deliveryDetails[''],
+            //         'EmergencyPurchase'=>$deliveryDetails[''],
+            //         'CorrectionEntry'=>$deliveryDetails[''],
+            //         'RIVNumber'=>$deliveryDetails[''],
+            //         'RIVDate'=>$deliveryDetails[''],
+            //         'RequisitionerUserID'=>$deliveryDetails[''],
+            //         'DeliveryStatus'=>$deliveryDetails[''],
+            //         'PORecordNumber'=>$deliveryDetails[''],
+            //         'TransType'=>$deliveryDetails[''],
+            //         'PU_ID'=>$deliveryDetails[''],
+            //         'Inserted'=>$deliveryDetails[''],
+            //         'InvoiceDate'=>$deliveryDetails[''],
+            //         'PODate'=>$deliveryDetails[''],
+            //         'TermsID'=>$deliveryDetails[''],
+            //         'OldRecordNumber'=>$deliveryDetails[''],
+            //         'Purchaser'=>$deliveryDetails[''],
+            //         'MultiPORecNum'=>$deliveryDetails[''],
+            //         'docnum'=>$deliveryDetails[''],
+            //         'InvoiceAmount'=>$deliveryDetails[''],
+            //         'DeliveryDate'=>$deliveryDetails[''],
+            //         'Voucher'=>$deliveryDetails[''],
+            //         'InvoiceDiscount'=>$deliveryDetails[''],
+            //         'DeliveryNum'=>$deliveryDetails[''],
+            //     ]
+            // );
+
             foreach ($deliveryDetails->items as $item) {
 
                 $warehouse_item = Warehouseitems::where('branch_id',$delivery->rr_Document_Branch_Id)->where('item_Id',$item['rr_Detail_Item_Id'])->where('warehouse_Id',$delivery->rr_Document_Warehouse_Id)->first();
@@ -87,7 +130,8 @@ class InventoryTransactionObserver
                     'created_at'                            => Carbon::now(),
                 ]);
             }
-            
+           
+
             DB::connection('sqlsrv_mmis')->commit();
         } catch (\Exception $e) {
             // Log the error message and stack trace

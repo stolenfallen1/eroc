@@ -16,11 +16,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\MMIS\procurement\PurchaseRequestDetails;
 use App\Models\MMIS\procurement\VwPurchaseRequestDetails;
 
-class PurchaseRequest extends Model
+class VwPurchaseRequest extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv_mmis";
-    protected $table = 'CDG_MMIS.dbo.purchaseRequestMaster';
+    protected $table = 'CDG_MMIS.dbo.VwPurchaseRequest';
 
     protected $guarded = [];
     protected $appends = ['code','encrypted_key_id'];
@@ -35,7 +35,7 @@ class PurchaseRequest extends Model
     public function purchaseRequestDetails(){
         return $this->hasMany(PurchaseRequestDetails::class, 'pr_request_id', 'id')->whereNull('IsFreeGoods');
     }
-    public function newpurchaseRequestDetails(){
+    public function newPurchaseRequestDetails(){
         return $this->hasMany(VwPurchaseRequestDetails::class, 'pr_request_id', 'id')->whereNull('IsFreeGoods');
     }
     public  function status(){

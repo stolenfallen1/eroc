@@ -58,6 +58,8 @@ Route::controller(CanvasController::class)->group(function () {
   Route::put('update-isrecommended/{id}', 'updateIsRecommended');
   Route::post('submit-canvas', 'submitCanvasItem');
   Route::post('approve-canvas', 'approveCanvasItem');
+  Route::post('reconsider-canvas', 'reconsiderCanvas');
+  
 });
 
 Route::controller(PurchaseOrderController::class)->group(function () {

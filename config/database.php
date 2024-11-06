@@ -91,7 +91,8 @@ return [
             'prefix_indexes' => true,
             'schema' => 'dbo',
             'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
             ],
         ],
 
@@ -107,11 +108,12 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
             ],
         ],
 
-            /*
+        /*
     DB_CONNECTION_SERVICE_RECORD=sqlsrv
     DB_HOST_SERVICE_RECORD=10.4.15.101
     DB_PORT_SERVICE_RECORD=1433
@@ -159,7 +161,8 @@ return [
             'prefix_indexes' => true,
             'schema' => 'dbo',
             'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
             ],
         ],
 
@@ -176,7 +179,8 @@ return [
             'prefix_indexes' => true,
             'schema' => 'dbo',
             'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
             ],
         ],
         'sqlsrv_schedules' => [
@@ -225,7 +229,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
- 
+
         'sqlsrv_patient_data_v1' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -263,7 +267,7 @@ return [
             'prefix_indexes' => true,
         ],
 
-        
+
         'sqlsrv_medsys_hemodialysis' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -394,7 +398,8 @@ return [
             'prefix_indexes' => true,
             'schema' => 'dbo',
             'options'   => [
-                PDO::ATTR_TIMEOUT => 120,  // Set to 120 seconds
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
             ],
         ],
 

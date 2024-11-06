@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Helpers\ParentRole;
 use Illuminate\Support\Facades\DB;
 use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Models\MMIS\procurement\VwPurchaseRequest;
 
 class PurchaseRequests
 {
@@ -15,7 +16,7 @@ class PurchaseRequests
 
   public function __construct()
   {
-    $this->model = PurchaseRequest::query();
+    $this->model = VwPurchaseRequest::query();
     // $this->model = DB::connection('sqlsrv_mmis')->table('purchaseRequestMaster');
     $this->authUser = auth()->user();
     $this->role = new ParentRole();
@@ -203,6 +204,8 @@ class PurchaseRequests
       $this->forVoidPr();
     } else if (Request()->tab == 11) {
       $this->forDeclinedPr();
+    } else if (Request()->tab == 12) {
+      $this->forDeclinedCanvas();
     }
   }
 
@@ -556,8 +559,8 @@ class PurchaseRequests
           })->where(function ($q2) {
             $q2->where('is_submitted', false)->orWhereNull('is_submitted');
           });
-        }else{
-           $q->where('pr_Branch_Level2_ApprovedBy','!=',null)->where('is_submitted', false)->orWhereNull('is_submitted');
+        } else {
+          $q->where('pr_Branch_Level2_ApprovedBy', '!=', null)->where('is_submitted', false)->orWhereNull('is_submitted');
         }
       }
     }]);
@@ -617,9 +620,8 @@ class PurchaseRequests
 
     $this->model->orderBy('created_at', 'desc');
   }
-
-
-  private function canvasForApproval()
+ 
+  private function canvasForApproval1()
   {
     // if($this->role->isdietary() || $this->role->isdietaryhead()){
     $this->model->whereNull('pr_DepartmentHead_CancelledBy');
@@ -644,6 +646,29 @@ class PurchaseRequests
             $query1->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
           });
         })->where('is_submitted', true);
+    }]);
+
+    $this->model->orderBy('created_at', 'desc');
+  }
+  private function canvasForApproval()
+  {
+
+    $this->model->whereNotNull('approved_admin');
+    $this->model->whereHas('newPurchaseRequestDetails', function ($q) {
+      $q->where('is_submitted', true);
+      $q->whereNull('canvas_Level2_ApprovedBy')->whereNull('canvas_Level2_CancelledBy')
+        ->whereHas('NewrecommendedCanvas', function ($q1) {
+          $q1->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+        });
+    });
+    $this->model->with(['purchaseRequestDetails' => function ($q) {
+      $q->with('recommendedCanvas.vendor')
+        ->where('is_submitted', true)
+        ->where(function ($query) {
+          $query->whereHas('NewrecommendedCanvas', function ($query1) {
+            $query1->where(['canvas_Level2_ApprovedBy' => null, 'canvas_Level2_CancelledBy' => null]);
+          });
+        });
     }]);
 
     $this->model->orderBy('created_at', 'desc');
@@ -790,5 +815,22 @@ class PurchaseRequests
           });
       }
     }
+  }
+  public function forDeclinedCanvas()
+  {
+    if (!$this->role->comptroller()) {
+      $this->model->where('warehouse_Id', $this->authUser->warehouse_id);
+    }
+    $this->model->with(['purchaseRequestDetails' => function ($q) {
+      $q->with(['itemMaster', 'changedRecommendedCanvas', 'changedRecommendedCanvas.vendor', 'recommendedCanvas.vendor', 'recommendedCanvas']) // Correctly reference nested relationships
+        ->whereNotNull('pr_DepartmentHead_ApprovedBy'); // Simplified where condition
+    }]);
+    $this->model->whereHas('purchaseRequestDetails', function ($q1) {
+      $q1->whereHas('recommendedCanvas', function ($q1) {
+        $q1->where(function ($q2) {
+          $q2->where('canvas_Level2_CancelledBy', '!=', null);
+        });
+      });
+    });
   }
 }

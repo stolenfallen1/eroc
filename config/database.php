@@ -89,6 +89,11 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'schema' => 'dbo',
+            'options'   => [
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
+            ],
         ],
 
         'sqlsrv_laboratory' => [
@@ -102,9 +107,13 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'options'   => [
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
+            ],
         ],
 
-            /*
+        /*
     DB_CONNECTION_SERVICE_RECORD=sqlsrv
     DB_HOST_SERVICE_RECORD=10.4.15.101
     DB_PORT_SERVICE_RECORD=1433
@@ -163,6 +172,11 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'schema' => 'dbo',
+            'options'   => [
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
+            ],
         ],
 
         'sqlsrv_pos' => [
@@ -176,6 +190,11 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
+            'schema' => 'dbo',
+            'options'   => [
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
+            ],
         ],
         'sqlsrv_schedules' => [
             'driver' => 'sqlsrv',
@@ -211,19 +230,19 @@ return [
             // ],
         ],
 
-        // 'sqlsrv_medsys_core_db' => [
-        //     'driver' => 'sqlsrv',
-        //     'url' => env('DATABASE_URL'),
-        //     'host' => env('DB_HOST_MEDSYS_CORE_DB', 'localhost'),
-        //     'port' => env('DB_PORT_MEDSYS_CORE_DB', '1433'),
-        //     'database' => env('DB_DATABASE_MEDSYS_CORE_DB', 'forge'),
-        //     'username' => env('DB_USERNAME_MEDSYS_CORE_DB', 'forge'),
-        //     'password' => env('DB_PASSWORD_MEDSYS_CORE_DB', ''),
-        //     'charset' => 'utf8',
-        //     'prefix' => '',
-        //     'prefix_indexes' => true,
-        // ],
- 
+        'sqlsrv_medsys_core_db' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_CORE_DB', 'localhost'),
+            'port' => env('DB_PORT_MEDSYS_CORE_DB', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_CORE_DB', 'forge'),
+            'username' => env('DB_USERNAME_MEDSYS_CORE_DB', 'forge'),
+            'password' => env('DB_PASSWORD_MEDSYS_CORE_DB', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
+
         'sqlsrv_patient_data_v1' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -261,7 +280,7 @@ return [
             'prefix_indexes' => true,
         ],
 
-        
+
         'sqlsrv_medsys_hemodialysis' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -379,7 +398,23 @@ return [
             'prefix_indexes' => true,
         ],
 
-
+        'sqlsrv_medsys_inventory' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_MEDSYS_INVENTORY', '10.4.15.200'),
+            'port' => env('DB_PORT_MEDSYS_INVENTORY', '1433'),
+            'database' => env('DB_DATABASE_MEDSYS_INVENTORY', ''),
+            'username' => env('DB_USERNAME_MEDSYS_INVENTORY', ''),
+            'password' => env('DB_PASSWORD_MEDSYS_INVENTORY', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'dbo',
+            'options'   => [
+                'sqlsrv.connect_timeout' => 120,
+                'sqlsrv.query_timeout' => 120,
+            ],
+        ],
 
     ],
 

@@ -337,5 +337,14 @@ class CanvasController extends Controller
 
     }
 
-
+    public function reconsiderCanvas(Request $request){
+        $prid = $request->pr_id;
+        $canvas = CanvasMaster::where('pr_request_id',$prid)->where('isRecommended',1)->first();
+        if($canvas){
+            $canvas->where('pr_request_id',$prid)->where('isRecommended',1)->update([
+                'canvas_Level2_CancelledBy'=>null,
+                'canvas_Level2_CancelledDate'=>null,
+            ]);
+        }
+    }
 }

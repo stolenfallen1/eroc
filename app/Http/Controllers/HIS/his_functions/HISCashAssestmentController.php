@@ -117,8 +117,6 @@ class HISCashAssestmentController extends Controller
                 }
             }
 
-            return $request->payload['Charges'];
-
             $cashAssessmentSequences = new GlobalChargingSequences();
             $cashAssessmentSequences->incrementSequence(); 
 
@@ -161,7 +159,6 @@ class HISCashAssestmentController extends Controller
             $transdate = Carbon::now();
             
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
-                echo $request->payload['Charges'];
                 foreach ($request->payload['Charges'] as $charge) {
                     $revenueID = $charge['code'];
                     $itemID = $charge['map_item_id'];
@@ -180,7 +177,6 @@ class HISCashAssestmentController extends Controller
                         }
                     } else {
                         if (!isset($sequenceGenerated[$revenueID])) {
-                            echo $revenueID;
                             $cashAssessmentSequences->incrementSequence($revenueID);
                             $chargeslip_sequence = $cashAssessmentSequences->getSequence();
                             $sequenceGenerated[$revenueID] = true;

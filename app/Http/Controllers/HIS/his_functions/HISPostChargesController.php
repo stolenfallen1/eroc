@@ -271,8 +271,8 @@ class HISPostChargesController extends Controller
                                         'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         'processed_Date'        => $transDate,
                                         'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                                        'request_Status'        => 'X', // Pending
-                                        'result_Status'         => 'X', // Pending
+                                        'request_Status'        => 'X',
+                                        'result_Status'         => 'X',
                                         'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         'barcode'               => $barcode,
                                         'created_at'            => Carbon::now(),
@@ -313,12 +313,12 @@ class HISPostChargesController extends Controller
                             'amount'                => 0,
                             'NetAmount'             => 0,
                             'doctor_Id'             => $request_doctors_id,
-                            'specimen_Id'           => $specimenId ?? 1, // BLOOD BY DEFAULT if no specimen
+                            'specimen_Id'           => $specimenId ?? 1,
                             'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'processed_Date'        => $transDate,
                             'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                            'request_Status'        => 'X', // Pending
-                            'result_Status'         => 'X', // Pending
+                            'request_Status'        => 'X',
+                            'result_Status'         => 'X',
                             'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'barcode'               => $barcode,
                             'created_at'            => Carbon::now(),

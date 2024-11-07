@@ -52,8 +52,8 @@ class EmergencyRegistrationController extends Controller
     
     public function index() {
         try {
-            $today = Carbon::now()->format('Y-m-d'); 
-            // $today = '2024-11-05'; 
+            // $today = Carbon::now()->format('Y-m-d'); 
+            $today = '2024-11-06'; 
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
@@ -2026,12 +2026,17 @@ class EmergencyRegistrationController extends Controller
                     'informant_Suffix'                          => Arr::get($request->payload, 'informant_Suffix', optional($patientRegistry)->informant_Suffix),
                     'informant_Address'                         => Arr::get($request->payload, 'informant_Address', optional($patientRegistry)->informant_Address),
                     'informant_Relation_id'                     => Arr::get($request->payload, 'informant_Relation_id', optional($patientRegistry)->informant_Relation_id),
-                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code', optional($patientRegistry)->guarantor_Id),
-                    'guarantor_Name'                            => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_name', optional($patientRegistry)->guarantor_Name),
+                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code', optional($patientRegistry)->guarantor_Id ?? $patient_id),
+                    'guarantor_Name'                            => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_name') ?: (optional($patientRegistry)->guarantor_Name ?? 'Self Pay'),
                     'guarantor_Approval_code'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_code', optional($patientRegistry)->guarantor_Approval_code),
                     'guarantor_Approval_no'                     => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_no', optional($patientRegistry)->guarantor_Approval_no),
-                    'guarantor_Approval_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date', optional($patientRegistry)->guarantor_Approval_date),
-                    'guarantor_Validity_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date', optional($patientRegistry)->guarantor_Validity_date),
+                    'guarantor_Approval_date'                   => Carbon::hasFormat(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date'), 'Y-m-d') 
+                                                                ? Carbon::parse(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date')) 
+                                                                : optional($patientRegistry)->guarantor_Approval_date,
+
+                    'guarantor_Validity_date'                   => Carbon::hasFormat(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date'), 'Y-m-d') 
+                                                                ? Carbon::parse(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date')) 
+                                                                : optional($patientRegistry)->guarantor_Validity_date,
                     'guarantor_Approval_remarks'                => Arr::get($request->payload, 'guarantor_Approval_remarks', optional($patientRegistry)->guarantor_Approval_remarks),
                     'isWithCreditLimit'                         => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Id') ? Arr::get($request->payload, 'isWithCreditLimit', false) : false,
                     'guarantor_Credit_Limit'                    => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Credit_Limit', optional($patientRegistry)->guarantor_Credit_Limit),

@@ -248,13 +248,13 @@ class CashierController extends Controller
                             $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
 
                             tbInvStockCard::create([
-                                'SummaryCode'   => $revenueID,
+                                'SummaryCode'   => $item['revenueID'],
                                 'HospNum'       => $patient_Id,
                                 'IdNum'         => $case_No . 'B',
                                 'ItemID'        => $itemID,
                                 'TransDate'     => Carbon::now(),
                                 'RevenueID'     => $revenueID ?? null,
-                                'RefNum'        => $ORNum,
+                                'RefNum'        => $tbInvChargeSlipSequence->DispensingCSlip,
                                 'Status'        => $item['stat'] ?? null,
                                 'Quantity'      => $item['quantity'] ?? null,
                                 'Amount'        => $item_amount,
@@ -262,6 +262,7 @@ class CashierController extends Controller
                                 'DosageID'      => $item['frequency'] ?? null,
                                 'DispenserCode' => 0,
                                 'RequestNum'    => $refNum,
+                                'ORNumber'      => $ORNum,
                                 'HostName'      => (new GetIP())->getHostname(),
                             ]);
 
@@ -269,7 +270,7 @@ class CashierController extends Controller
                                 'Hospnum'       => $patient_Id,
                                 'IDnum'         => $case_No . 'B' ?? null,
                                 'PatientType'   => $request->payload[''] ?? null,
-                                'RevenueID'     => $item['code'] ?? null,
+                                'RevenueID'     => $item['revenueID'] ?? null,
                                 'RequestDate'   => Carbon::now(),
                                 'ItemID'        => $itemID,
                                 'Description'   => $item['item_name'] ?? null,
@@ -294,7 +295,7 @@ class CashierController extends Controller
                                 'patient_Id'       => $patient_Id,
                                 'case_No'          => $case_No,
                                 'patient_Type'     => 0,
-                                'revenue_Id'       => $item['code'],
+                                'revenue_Id'       => $item['revenueID'],
                                 'requestNum'       => $tbNursePHSlipSequence->ChargeSlip,
                                 'referenceNum'     => $tbInvChargeSlipSequence->DispensingCSlip,
                                 'item_Id'          => $itemID,
@@ -313,26 +314,24 @@ class CashierController extends Controller
                             ]);
 
                             InventoryTransaction::create([
-                                'SummaryCode'   => $item['code'],
-                                'HospNum'       => $request->payload['patient_Id'] ?? null,
-                                'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
-                                'ItemID'        => $itemID,
-                                'TransDate'     => Carbon::now(),
-                                'RevenueID'     => $item['code'] ?? null,
-                                'RefNum'        => $tbInvChargeSlipSequence->DispensingCSlip,
-                                'Status'        => $item['stat'] ?? null,
-                                'Quantity'      => $item['quantity'] ?? null,
-                                'Balance'       => $request->payload['Balance'] ?? null,
-                                'NetCost'       => null,
-                                'Amount'        => $item['amount'] ?? null,
-                                'UserID'        => Auth()->user()->idnumber,,
-                                'DosageID'      => $item['frequency'] ?? null,
-                                'RequestByID'   => '',
-                                'CreditMemoNum' => $request->payload['CreditMemoNum'] ?? null,
-                                'DispenserCode' => 0,
-                                'RequestNum'    => $tbNursePHSlipSequence->ChargeSlip,
-                                'ListCost'      => '',
-                                'HostName'      => (new GetIP())->getHostname(),
+                                'branch_Id'                     => 1,
+                                'warehouse_Group_Id'            => $request->payload['warehouse_Group_Id'] ?? null,
+                                'warehouse_Id'                  => $request->payload['warehouse_Id'] ?? null,
+                                'patient_Id'                    => $patient_Id,
+                                'patient_Registry_Id'           => $case_No,
+                                'transaction_Item_Id'           => $itemID,
+                                'transaction_Date'              => Carbon::now(),
+                                'trasanction_Reference_Number'  => $tbInvChargeSlipSequence->DispensingCSlip,
+                                'transaction_Acctg_TransType'   => $item['revenueID'] ?? null,
+                                'transaction_Qty'               => $item['quantity'] ?? null,
+                                'transaction_Item_OnHand'       => $item['stockOnHand'] ?? null,
+                                'transaction_Item_ListCost'     => $request->payload['transaction_Item_ListCost'] ?? null,
+                                'transaction_Requesting_Number' => $tbNursePHSlipSequence->ChargeSlip,
+                                'transaction_UserId'            => Auth()->user()->idnumber,
+                                'created_at'                    => Carbon::now(),
+                                'createdBy'                     => Auth()->user()->idnumber,
+                                'updated_at'                    => Carbon::now(),
+                                'updatedby'                     => Auth()->user()->idnumber,
                             ]);
 
                         endif;
@@ -565,7 +564,7 @@ class CashierController extends Controller
             DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
             DB::connection('sqlsrv_patient_data')->rollBack();
 
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage(), 'line' => $e->getLine(), $e->getFile()], 500);
         }
     }
     public function saveOPDBill(Request $request) 
@@ -685,6 +684,7 @@ class CashierController extends Controller
                                 'CashierID'         => Auth()->user()->idnumber,
                                 'CashierShift'      => $Shift,
                             ]);
+
                             tbCashORMaster::create([
                                 'HospNum'           => $patient_Id,
                                 'IDNum'             => $case_No . 'B',

@@ -2,6 +2,7 @@
 
 namespace App\Models\MMIS\inventory;
 
+use App\Models\HIS\his_functions\NurseLogBook;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,11 @@ class InventoryTransaction extends Model
 
     public function unit(){
         return $this->belongsTo(Unitofmeasurement::class, 'transaction_Item_UnitofMeasurement_Id','id');
+    }
+
+    // Fetching Purposes
+    public function nurse_logbook() {
+        return $this->belongsTo(NurseLogBook::class, 'patient_Id', 'patient_Id');
     }
 
 }

@@ -9,9 +9,12 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\Itemmasters;
 use App\Models\HIS\his_functions\CashAssessment;
+use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\HIS\medsys\MedSysCashAssessment;
+use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\medsys\tbNurseLogBook;
+use App\Models\MMIS\inventory\InventoryTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -227,6 +230,8 @@ class RequisitionController extends Controller
                     $item_name = $items['item_name'];
                     $quantity = $items['quantity'];
                     $item_OnHand = $items['item_OnHand'];
+                    $item_ListCost = $items['item_ListCost'];
+                    $price = $items['price'];
                     $amount = floatval(str_replace([',', '₱'], '', $items['amount']));
                     $requestNum = $revenueID . $medSysRequestNum;
                     $referenceNum = 'C' . $medSysReferenceNum . 'M';
@@ -278,6 +283,7 @@ class RequisitionController extends Controller
                             'branch_id'                 => 1,
                             'patient_Id'                => $patient_Id,
                             'case_No'                   => $case_No,
+                            'patient_Name'              => $patient_Name,
                             'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                             'revenue_Id'                => $revenueID,
                             'requestNum'                => $requestNum,
@@ -286,6 +292,8 @@ class RequisitionController extends Controller
                             'description'               => $item_name,
                             'Quantity'                  => $quantity,
                             'item_OnHand'               => $item_OnHand,
+                            'item_ListCost'             => $item_ListCost,
+                            'price'                     => $price,
                             'amount'                    => $amount,
                             'section_Id'                => $warehouseID,
                             'issupplies'                => 1,
@@ -294,20 +302,53 @@ class RequisitionController extends Controller
                             'createdat'                 => $today,
                             'createdby'                 => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
+                        NurseCommunicationFile::create([
+                            'branch_id'                 => 1,
+                            'patient_Id'                => $patient_Id,
+                            'case_No'                   => $case_No,
+                            'patient_Name'              => $patient_Name,
+                            'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'item_Id'                   => $itemID,
+                            'amount'                    => $amount,
+                            'quantity'                  => $quantity,
+                            'section_Id'                => $warehouseID,
+                            'request_Date'              => $today,
+                            'revenue_Id'                => $revenueID,
+                            'record_Status'             => 'X',
+                            'user_Id'                   => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'requestNum'                => $requestNum,
+                            'referenceNum'              => $referenceNum,
+                        ]);
                         if ($this->check_is_allow_medsys) {
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
                                 'PatientType'          => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'RevenueID'             => $revenueID,
                                 'RequestDate'           => $today,
                                 'ItemID'                => $itemID,
                                 'Description'           => $item_name,
                                 'Quantity'              => $quantity,
                                 'Amount'                => $amount,
-                                'RecordStatus'          => 'X',
+                                'RecordStatus'          => null,
                                 'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                 'ProcessBy'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                 'ProcessDate'           => $today,
+                                'RequestNum'            => $requestNum,
+                                'ReferenceNum'          => $referenceNum,
+                            ]);
+                            tbNurseCommunicationFile::create([
+                                'HospNum'               => $patient_Id,
+                                'IDnum'                 => $case_No . 'B',
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'ItemID'                => $itemID,
+                                'Amount'                => $amount,
+                                'Quantity'              => $quantity,
+                                'SectionID'             => $warehouseID,
+                                'RequestDate'           => $today,
+                                'RevenueID'             => $revenueID,
+                                'RecordStatus'          => null,
+                                'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                 'RequestNum'            => $requestNum,
                                 'ReferenceNum'          => $referenceNum,
                             ]);
@@ -380,7 +421,9 @@ class RequisitionController extends Controller
                     $warehouseID = $items['warehouse_id'];
                     $item_name = $items['item_name'];
                     $quantity = $items['quantity'];
+                    $price = $items['price'];
                     $item_OnHand = $items['item_OnHand'];
+                    $item_ListCost = $items['item_ListCost'];
                     $dosage = $items['frequency'];
                     $stat = $items['stat'];
                     $amount = floatval(str_replace([',', '₱'], '', $items['amount']));
@@ -436,6 +479,7 @@ class RequisitionController extends Controller
                             'branch_id'                 => 1,
                             'patient_Id'                => $patient_Id,
                             'case_No'                   => $case_No,
+                            'patient_Name'              => $patient_Name,
                             'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                             'revenue_Id'                => $revenueID,
                             'requestNum'                => $requestNum,
@@ -443,7 +487,10 @@ class RequisitionController extends Controller
                             'item_Id'                   => $itemID,
                             'description'               => $item_name,
                             'Quantity'                  => $quantity,
+                            'item_OnHand'               => $item_OnHand,
+                            'item_ListCost'             => $item_ListCost,
                             'dosage'                    => $dosage,
+                            'price'                     => $price,
                             'amount'                    => $amount,
                             'ismedicine'                => 1,
                             'record_Status'             => 'X',
@@ -453,24 +500,59 @@ class RequisitionController extends Controller
                             'createdat'                 => $today,
                             'createdby'                 => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
+                        NurseCommunicationFile::create([
+                            'branch_id'                 => 1,
+                            'patient_Id'                => $patient_Id,
+                            'case_No'                   => $case_No,
+                            'patient_Name'              => $patient_Name,
+                            'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'item_Id'                   => $itemID,
+                            'amount'                    => $amount,
+                            'quantity'                  => $quantity,
+                            'dosage'                    => $dosage,
+                            'section_Id'                => $warehouseID,
+                            'request_Date'              => $today,
+                            'revenue_Id'                => $revenueID,
+                            'record_Status'             => 'X',
+                            'user_Id'                   => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'requestNum'                => $requestNum,
+                            'referenceNum'              => $referenceNum,
+                            'stat'                      => $stat,
+                        ]);
                         if ($this->check_is_allow_medsys) {
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
                                 'PatientType'          => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'RevenueID'             => $revenueID,
                                 'RequestDate'           => $today,
                                 'ItemID'                => $itemID,
                                 'Description'           => $item_name,
                                 'Quantity'              => $quantity,
                                 'Dosage'                => $dosage,
                                 'Amount'                => $amount,
-                                'RecordStatus'          => 'X',
+                                'RecordStatus'          => null,
                                 'Stat'                  => $stat,
                                 'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                'ProcessBy'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                'ProcessDate'           => $today,
                                 'RequestNum'            => $requestNum,
                                 'ReferenceNum'          => $referenceNum,
+                            ]);
+                            tbNurseCommunicationFile::create([
+                                'HospNum'               => $patient_Id,
+                                'IDnum'                 => $case_No . 'B',
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'ItemID'                => $itemID,
+                                'Amount'                => $amount,
+                                'Quantity'              => $quantity,
+                                'Dosage'                => $dosage,
+                                'SectionID'             => $warehouseID,
+                                'RequestDate'           => $today,
+                                'RevenueID'             => $revenueID,
+                                'RecordStatus'          => null,
+                                'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'RequestNum'            => $requestNum,
+                                'ReferenceNum'          => $referenceNum,
+                                'Stat'                  => $stat,
                             ]);
                         }
                     }
@@ -495,4 +577,21 @@ class RequisitionController extends Controller
     {
 
     }
+    public function getRenderedPatientRequisitions(Request $request) 
+    {
+        try {
+            $data = InventoryTransaction::with('nurse_logbook')
+                ->where('patient_Id', $request->patient_Id)
+                ->where('patient_Registry_Id', $request->case_No)
+                ->whereHas('nurse_logbook', function ($query) {
+                    $query->where('record_Status', 'W');
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+    
+            return response()->json($data, 200);
+        } catch(\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }    
 }

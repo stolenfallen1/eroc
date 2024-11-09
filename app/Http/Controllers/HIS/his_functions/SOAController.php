@@ -237,7 +237,6 @@ class SOAController extends Controller
             $dompdf = $pdf->getDomPDF();
             $font   = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
             $dompdf->get_canvas()->page_text(554, 24, "{PAGE_NUM} of {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-            // $dompdf->get_canvas()->page_text(100, 780, $pageInfo, $font, 8, array(0, 0, 0));
             return $pdf->stream($filename . '.pdf');
         
     }

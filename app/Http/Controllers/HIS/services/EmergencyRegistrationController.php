@@ -52,8 +52,9 @@ class EmergencyRegistrationController extends Controller
     
     public function index() {
         try {
-            // $today = Carbon::now()->format('Y-m-d'); 
-            $today = '2024-11-06'; 
+
+            $today = Carbon::now()->format('Y-m-d');
+
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
@@ -75,12 +76,29 @@ class EmergencyRegistrationController extends Controller
 
             $data->with([
                 'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-                'patientRegistry.allergies' => function ($query) use ($today) {
-                    $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
-                    $query->where('isDeleted', '!=', 1);
-                    $query->whereDate('created_at', $today);
+                'patientRegistry' => function($query) use ($today) {
+                    $query->whereDate('registry_Date', $today)
+                          ->where('mscAccount_Trans_Types', 5)
+                          ->where('isRevoked', 0)
+                          ->with(['allergies' => function($allergyQuery) use ($today) {
+                              $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+                                           ->where('isDeleted', '!=', 1)
+                                           ->whereDate('created_at', $today);
+                          }]);
                 }
             ]);
+
+            /*Previews Code
+            /*
+            // $data->with([
+            //     'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
+            //     'patientRegistry.allergies' => function ($query) use ($today) {
+            //         $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
+            //         $query->where('isDeleted', '!=', 1);
+            //         $query->whereDate('created_at', $today);
+            //     }
+            // ]);
+            */
 
             $data->orderBy('id', 'desc');
             $page = Request()->per_page ?? '50';
@@ -93,6 +111,68 @@ class EmergencyRegistrationController extends Controller
             ], 500);
         }
     }
+
+    // public function index() {
+    //     try {
+    //         // Get today's date
+    //         $today = Carbon::now()->format('Y-m-d');
+            
+    //         // Start with a basic query to test date filtering on `patientRegistry`
+    //         $data = Patient::whereHas('patientRegistry', function($query) use ($today) {
+    //             $query->where('mscAccount_Trans_Types', 5)
+    //                   ->where('isRevoked', 0)
+    //                   ->whereDate('registry_Date', $today); // Only match today's date
+    //         });
+
+    //         // $data = Patient::whereHas('patientRegistry', function($query) use ($today) {
+    //         //     $query->where('mscAccount_Trans_Types', 5)
+    //         //           ->where('isRevoked', 0)
+    //         //           ->whereDate('registry_Date', $today);
+    //         // });
+            
+    //         // Add keyword search back if needed
+    //         if (Request()->has('keyword')) {
+    //             $keyword = Request()->keyword;
+            
+    //             $data->where(function($subQuery) use ($keyword) {
+    //                 $subQuery->where('lastname', 'LIKE', '%' . $keyword . '%')
+    //                          ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
+    //                          ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
+    //             });
+    //         }
+
+    //         $data->with([
+    //             'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
+    //             'patientRegistry' => function($query) use ($today) {
+    //                 // Filter patientRegistry by today's date to only get relevant records
+    //                 $query->whereDate('registry_Date', $today)
+    //                       ->where('mscAccount_Trans_Types', 5)
+    //                       ->where('isRevoked', 0)
+    //                       ->with(['allergies' => function($allergyQuery) use ($today) {
+    //                           // Apply conditions to allergies
+    //                           $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+    //                                        ->where('isDeleted', '!=', 1)
+    //                                        ->whereDate('created_at', $today);
+    //                       }]);
+    //             }
+    //         ]);
+            
+    
+    //         // Order by ID descending to keep consistency
+    //         $data->orderBy('id', 'desc');
+    
+    //         // Fetch a small sample for inspection
+    //         $result = $data->paginate(10);
+    //         return response()->json($result, 200);
+    
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to get patients',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+    
 
 
     public function getPatientBroughtBy() {
@@ -1222,8 +1302,8 @@ class EmergencyRegistrationController extends Controller
                 
                 $patient =  Patient::updateOrCreate(
                     ['patient_Id' => $id], 
-                        $this->preparePatientData($request, $checkUser, $currentTimestamp)
-                        );
+                    $this->preparePatientData($request, $checkUser, $currentTimestamp)
+                );
 
             endif;
 
@@ -1259,7 +1339,11 @@ class EmergencyRegistrationController extends Controller
 
                 
                 $checkPatient = ['patient_Id'   => $patient_id];
-                
+                $patient =  Patient::updateOrCreate(
+                    ['patient_Id' => $id], 
+                    $this->preparePatientData($request, $checkUser, $currentTimestamp)
+                );
+
                 $pastImmunization               = $patient->past_immunization()->whereDate('created_at', $today)->first() ?: null;
                 $pastMedicalHistory             = $patient->past_medical_history()->whereDate('created_at', $today)->first() ?: null;
                 $pastMedicalProcedure           = $patient->past_medical_procedures()->whereDate('created_at', $today)->first() ?: null;

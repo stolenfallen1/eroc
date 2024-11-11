@@ -5,12 +5,12 @@ namespace App\Models\MMIS\inventory\medsys;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RRDetailsModel extends Model
+class InventoryStockCard extends Model
 {
     use HasFactory;
     protected $connection = "sqlsrv_medsys_inventory";
-    protected $table = 'INVENTORY.dbo.tbInvRRDetails';
-    protected $primaryKey = 'RecordNumber';
+    protected $table = 'INVENTORY.dbo.tbInvStockCard';
+    protected $primaryKey = 'SequenceNumber';
     protected $guarded = [];
     public $timestamps = false;
 }

@@ -35,6 +35,10 @@ class Items
     $this->forLocation();
     $this->forStockRequisition();
     $this->forConsignment();
+    if(Request()->status){
+      $status =  Request()->status;
+      $this->model->where('isActive',$status);
+    }
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

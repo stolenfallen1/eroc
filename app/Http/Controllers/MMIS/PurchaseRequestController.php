@@ -123,13 +123,14 @@ class PurchaseRequestController extends Controller
                                     ->orWhereDoesntHave('canvases');
                             });
                     } else {
-                        $q->with('itemMaster', 'canvases', 'recommendedCanvas.vendor')->where(function ($query) {
+                        $q->with('itemMaster','itemMaster.wareHouseItem', 'canvases', 'recommendedCanvas.vendor')->where(function ($query)  {
                             $query->whereHas('canvases', function ($query1) {
                                 $query1->whereDoesntHave('purchaseRequestDetail', function ($q1) {
                                     $q1->where('is_submitted', true);
                                 });
                             })->orWhereDoesntHave('canvases');
-                        })->where(function ($q2) {
+                        })
+                        ->where(function ($q2) {
                             $q2->where('pr_Branch_Level1_ApprovedBy', '!=', NULL)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
                         });
                     }

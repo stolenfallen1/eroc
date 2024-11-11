@@ -139,6 +139,14 @@ class EmergencyRoomMedicine extends Controller
     }
     
     private function processItems($request, $checkUser, $itemType) {
+        DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
+        DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
+        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('AssessmentNum');
+        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('RequestNum');
+
+        $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
+        $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
+        $medsysCashAssessmentSequence = DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->first();
         
         foreach ($request->payload[$itemType] as $index => $item) {
 
@@ -146,14 +154,6 @@ class EmergencyRoomMedicine extends Controller
               /********************************************/
              /*             Increment Sequences          */
             /********************************************/
-            DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
-            DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
-            DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('AssessmentNum');
-            DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('RequestNum');
-
-            $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
-            $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
-            $medsysCashAssessmentSequence = DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->first();
             
             if (!isset($item['code'], $item['item_name'], $item['quantity'], $item['amount'])) {
                 return response()->json(['message' => "Missing required $itemType information"], 400);
@@ -259,6 +259,7 @@ class EmergencyRoomMedicine extends Controller
             'patient_Name'          => $request->payload['patient_Name'],
             'transdate'             => Carbon::now(),
             'assessNum'             => intval($medsysCashAssessmentSequence->RequestNum),
+            'Indicator'             => $item['code'],
             'drcr'                  => 'C',
             'stat'                  => 1,
             'revenueID'             => $item['code'],
@@ -269,6 +270,7 @@ class EmergencyRoomMedicine extends Controller
             'specimenId'            => '',
             'dosage'                => $item['frequency'] ?? null,
             'recordStatus'          => 'X',
+            'departmentID'          => 'ER',
             'requestDescription'    => $item['item_name'],
             'requestDoctorID'       => '',
             'requestDoctorName'     => '',
@@ -295,6 +297,7 @@ class EmergencyRoomMedicine extends Controller
             'Amount'        => $item['amount'],
             'UserID'        => $checkUser->idnumber,
             'RevenueID'     => $item['code'],
+            'DepartmentID'  => 'ER',
             'UnitPrice'     => $item_price ? floatval($item_price) : null,
         ];
     }

@@ -191,6 +191,12 @@ class CashierController extends Controller
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
 
+                DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
+                DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
+
+                $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
+                $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
+
                 $ORCashInsertOnce = true;
 
                 foreach ($request->payload['Items'] as $item) {
@@ -241,17 +247,13 @@ class CashierController extends Controller
 
                         if($this->check_is_allow_medsys && ($revenueID === 'EM' || $revenueID === 'RS')):
 
-                            DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
-                            DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
-
-                            $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
-                            $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
-
                             $isUpdatedRow = CashAssessment::where('refNum', $request->payload['reference_id'])->update([
+                                'ORNumber'      => $ORNum,
                                 'recordStatus'  => 'W',
                             ]);
 
                             $isMedysUpdatedRow = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->update([
+                                'ORNumber'      => $ORNum,
                                 'RecordStatus'  => 'W',
                             ]);
             

@@ -54,7 +54,7 @@ class PurchaseOrders
               else if($column == 'pr_number'){
                 $q->orWhereHas('purchaseRequest', function($q2) use($keyword){
                   $q2->whereRaw("CONCAT(pr_Document_Prefix,'',pr_Document_Number,'',pr_Document_Suffix) = ?", $keyword)
-                  ->orWhere('pr_Document_Number', 'LIKE' , '' . $keyword . '%');
+                  ->orWhere('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');
                 });
               }
                   // $q->where('pr_Document_Number', 'LIKE' , '%' . $keyword . '%');

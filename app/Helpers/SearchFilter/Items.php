@@ -145,10 +145,10 @@ class Items
 
   private function byCategory()
   {
-    $category_id = Request()->category_id;
-    if ($category_id !== 7) {
-      $this->model->where('item_Category_Id', $category_id);
-    }
+    // $category_id = Request()->category_id;
+    // if ($category_id !== 7) {
+    //   $this->model->where('item_Category_Id', $category_id);
+    // }
     // $category_id = Request()->category_id;
     // if ($category_id) {
     //   $this->model->where('item_Category_Id', $category_id);

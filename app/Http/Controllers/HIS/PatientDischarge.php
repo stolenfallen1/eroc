@@ -13,9 +13,18 @@ use App\Models\HIS\ErResult;
 use DB;
 use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\SOA\OutPatient;
+use App\Models\HIS\MedsysAdmittingCommunication;
+use App\Models\HIS\AdmittingCommunicationFile;
+use App\Helpers\HIS\SysGlobalSetting;
 
 class PatientDischarge extends Controller
 {
+
+    protected $check_is_allow_medsys;
+
+    public function __construct() {
+        $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+    }
     //
     public function mayGoHome(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
@@ -88,6 +97,10 @@ class PatientDischarge extends Controller
                 ], 404);
             }
 
+            $patient_id = $patientRegistry->patient_Id;
+            $case_No = $patientRegistry->case_No;
+            $OPDIDnum = $patientRegistry->case_No . 'B';
+
             $registry_data = [
                 'discharged_Userid'         => $checkUser->idnumber,
                 'discharged_Date'           => Carbon::now(),
@@ -100,13 +113,40 @@ class PatientDischarge extends Controller
                 'updated_at'                => Carbon::now()
             ];
 
+            $send_to_CDG_ComFile_data = [
+                'patient_Id'    => $patient_id,
+                'case_No'       => $case_No,
+                'requestDate'   =>Carbon::now(),
+                'requestBy'     => $checkUser->idnumber,
+                'createdBy'     => $checkUser->idnumber,
+                'createdat'     => Carbon::now(),
+                'updatedby'     => $checkUser->idnumber,
+                'updatedat'     => Carbon::now()
+            ];
+
+            $send_to_Medsys_CompFile_data = [
+                'HospNum'       => $patient_id,
+                'OPDIDnum'      => $OPDIDnum,
+                'RequestDate'   =>Carbon::now(),
+                'RequestBy'     => $checkUser->idnumber   
+            ];
+
             $patient_registry = PatientRegistry::where('case_No', $id)->first();
-            
+
             if($patient_registry) {
 
-                $discharged_patient = $patient_registry->update($registry_data);
+                if($this->check_is_allow_medsys) {
+                    $is_To_Medsys = MedsysAdmittingCommunication::updateOrCreate(['OPDIDnum' => $OPDIDnum], $send_to_Medsys_CompFile_data);
+                } else {
+                    return response()->json(['message' => 'Medsys does not allow to save data' ], 500);
+                }
 
-                if(!$discharged_patient) {
+                if($is_To_Medsys) {
+                    $discharged_patient = $patient_registry->update($registry_data);
+                    $is_To_CDG = AdmittingCommunicationFile::updateOrCreate(['case_No' => $case_No],  $send_to_CDG_ComFile_data);
+                }
+
+                if(!$discharged_patient || !$is_To_CDG) {
                     throw new \Exception('Error');
                 }
             }

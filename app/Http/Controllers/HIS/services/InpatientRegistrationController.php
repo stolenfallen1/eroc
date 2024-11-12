@@ -36,6 +36,7 @@ class InpatientRegistrationController extends Controller
                     });
                 }
             });
+            
             $data->orderBy('id', 'desc');
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);

@@ -102,20 +102,28 @@ class RequisitionController extends Controller
             $patient_Id = $request->items['patient_Id'];
             $case_No = $request->items['case_No'];
             $account = $request->items['account'];
+            $keyword = $request->keyword ?? ''; 
             $data = []; 
+
             if ($account == 1) {
                 $cashAssessments = CashAssessment::where('patient_Id', $patient_Id)
                     ->where('case_No', $case_No)
-                    ->where('recordStatus', 27) // Pending or unpaid
-                    ->where(function($query) {
+                    ->where('recordStatus', 27) 
+                    ->where(function($query) use ($keyword) {
                         $query->where('issupplies', 1)
-                                ->orWhere('ismedicine', 1)
-                                ->orWhere('isprocedure', 1);
+                            ->orWhere('ismedicine', 1)
+                            ->orWhere('isprocedure', 1);
+                    })
+                    ->when($keyword, function($query) use ($keyword) {
+                        $query->where(function($query) use ($keyword) {
+                            $query->where('requestDescription', 'LIKE', "%{$keyword}%")
+                                ->orWhere('itemID', 'LIKE', "%{$keyword}%")
+                                ->orWhere('revenueID', 'LIKE', "%{$keyword}%");
+                        });
                     })
                     ->orderBy('created_at', 'desc')
                     ->get();
-    
-                // Add CashAssessment data to the response
+
                 foreach ($cashAssessments as $item) {
                     $data[] = [
                         'patient_Id' => $item->patient_Id,
@@ -125,18 +133,25 @@ class RequisitionController extends Controller
                         'details' => $item, 
                     ];
                 }
-    
+
                 $nurseLogEntries = NurseLogBook::where('patient_Id', $patient_Id)
                     ->where('case_No', $case_No)
-                    ->where('record_Status', 'X') // Not carried order
+                    ->where('record_Status', 'X') 
                     ->where(function($query) {
                         $query->where('issupplies', 1)
-                                ->orWhere('ismedicine', 1)
-                                ->orWhere('isprocedure', 1);
+                            ->orWhere('ismedicine', 1)
+                            ->orWhere('isprocedure', 1);
+                    })
+                    ->when($keyword, function($query) use ($keyword) {
+                        $query->where(function($query) use ($keyword) {
+                            $query->where('description', 'LIKE', "%{$keyword}%")
+                                ->orWhere('item_Id', 'LIKE', "%{$keyword}%")
+                                ->orWhere('revenue_Id', 'LIKE', "%{$keyword}%");
+                        });
                     })
                     ->orderBy('createdat', 'desc')
                     ->get();
-    
+
                 foreach ($nurseLogEntries as $item) {
                     $data[] = [
                         'patient_Id' => $item->patient_Id,
@@ -147,19 +162,26 @@ class RequisitionController extends Controller
                     ];
                 }
             } 
-    
+
             else if ($account == 2) {
                 $nurseLogEntries = NurseLogBook::where('patient_Id', $patient_Id)
                     ->where('case_No', $case_No)
                     ->where('record_Status', 'X') // Not carried order
                     ->where(function($query) {
                         $query->where('issupplies', 1)
-                                ->orWhere('ismedicine', 1)
-                                ->orWhere('isprocedure', 1);
+                            ->orWhere('ismedicine', 1)
+                            ->orWhere('isprocedure', 1);
+                    })
+                    ->when($keyword, function($query) use ($keyword) {
+                        $query->where(function($query) use ($keyword) {
+                            $query->where('description', 'LIKE', "%{$keyword}%")
+                                ->orWhere('item_Id', 'LIKE', "%{$keyword}%")
+                                ->orWhere('revenue_Id', 'LIKE', "%{$keyword}%");
+                        });
                     })
                     ->orderBy('createdat', 'desc')
                     ->get();
-    
+
                 foreach ($nurseLogEntries as $item) {
                     $data[] = [
                         'patient_Id' => $item->patient_Id,
@@ -170,11 +192,11 @@ class RequisitionController extends Controller
                     ];
                 }
             }
-    
+
             return response()->json([
                 "data" => $data
             ], 200);
-    
+
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
@@ -518,6 +540,8 @@ class RequisitionController extends Controller
                             'requestNum'                => $requestNum,
                             'referenceNum'              => $referenceNum,
                             'stat'                      => $stat,
+                            'createdat'                 => $today,
+                            'createdby'                 => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
                         if ($this->check_is_allow_medsys) {
                             tbNurseLogBook::create([
@@ -533,6 +557,7 @@ class RequisitionController extends Controller
                                 'Amount'                => $amount,
                                 'RecordStatus'          => null,
                                 'Stat'                  => $stat,
+                                'SectionID'             => $warehouseID,
                                 'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                 'RequestNum'            => $requestNum,
                                 'ReferenceNum'          => $referenceNum,

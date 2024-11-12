@@ -8,6 +8,7 @@
             }
             .container {
                 width: 100%;
+                margin-top: 3rem;
             }
             .header {
                 display: inline-block;
@@ -212,6 +213,7 @@
             $doctorsFee = 0;
             $count = 0;
             $isFirst = true;
+            $isLast = true;
             $prevID = '';
             $currentID = '';
             $currentID = '';
@@ -559,6 +561,8 @@
             <p>NOTE: An interest of 3% per month will be cahrged if account us not paid within 15 days from date of receipt of Statement of Account</p>
 
             <div class="page-break"></div>
+        </div>
+        <div class="container">
             {!! $mainHeader($Run_Date, $Run_Time) !!}
             {!! $pageHeaderPatientInfo() !!}
 
@@ -579,13 +583,13 @@
                         @if ($isFirst && $bill['RevenueID'])
                             @php
                                 $isFirst = false;
+                                $isLast = false;
                                 $currentID = $bill['RevenueID'];
                             @endphp
                             <tr>
                                 <td colspan="7" style="font-weight: bold; padding-top: 5px;">{{ $bill['RevenueID'] . ' - ' . $bill['RevenueDesc'] }}</td>
                             </tr>
                             {!! $renderElement($bill) !!}
-
                         @elseif($bill['RevenueID'] === $prevID)
                             {!! $renderElement($bill) !!}
                         @else
@@ -636,6 +640,11 @@
                                 <tbody>
                         @endif
                     @endforeach
+                    <tr>
+                        <td colspan="5" style="text-align: right; font-weight: bold;">Sub Total : </td>
+                        <td style="text-align: right;">=====></td>
+                        <td style="border-top: 1px solid #000; text-align: right; font-weight: bold;"">{{ $sub_total }}</td>
+                    </tr>
                 </tbody>
             </table>
             <table>

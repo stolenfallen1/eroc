@@ -25,7 +25,7 @@ class InventoryTransaction extends Model
 
     // Fetching Purposes
     public function nurse_logbook() {
-        return $this->belongsTo(NurseLogBook::class, 'patient_Id', 'patient_Id');
+        return $this->belongsTo(NurseLogBook::class, 'transaction_Item_Id', 'item_Id');
     }
 
 }

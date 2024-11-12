@@ -47,6 +47,7 @@ Route::controller(PurchaseRequestController::class)->group(function () {
   Route::delete('purchase-request/{id}', [PurchaseRequestController::class, 'destroy']);
   Route::delete('remove-item/{id}', [PurchaseRequestController::class, 'removeItem']);
   Route::post('update-item-attachment/{id}', [PurchaseRequestController::class, 'updateItemAttachment']);
+  Route::get('get-all-pr', [PurchaseRequestController::class, 'allPR']);
 });
 
 Route::controller(CanvasController::class)->group(function () {

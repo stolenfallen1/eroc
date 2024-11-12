@@ -94,7 +94,7 @@ class PurchaseRequestController extends Controller
             //         'vendor'
             //     );
             // }
-        ])->where('warehouse_Id',$requestingDepartmet)->whereYear('created_at', '!=', 2022)->where('pr_Document_Number', 'LIKE', '000%')->get();
+        ])->where('warehouse_Id',$requestingDepartmet)->whereYear('created_at', '!=', 2022)->get();
         return response()->json($allpr, 200); 
     }
     public function show($id)

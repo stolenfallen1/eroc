@@ -50,7 +50,7 @@ class purchaseOrderMaster extends Model
     }
 
     public function latestdelivery(){
-        return $this->hasOne(Delivery::class, 'po_id', 'id')->orderBy('created_at', 'asc');
+        return $this->hasOne(Delivery::class, 'po_id', 'id')->orderBy('created_at', 'desc');
     }
 
     public function purchaseRequest(){

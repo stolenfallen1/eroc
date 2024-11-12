@@ -59,7 +59,44 @@ class PurchaseRequestController extends Controller
         }
         $purchase_request->update([]);
     }
-
+    
+    public function allPR(){
+        $requestingDepartmet = Request()->department_id;
+        $allpr = PurchaseRequest::with([
+            'warehouse',
+            'status',
+            'category',
+            'subcategory',
+            'itemGroup',
+            'priority',
+            'purchaseRequestAttachments',
+            'user',
+            'departmentApprovedBy',
+            'departmentDeclinedBy',
+            'administratorApprovedBy',
+            'purchaseRequestDetails' => function ($q) {
+                $q->with(['depApprovedBy', 'preparedSupplier', 'adminApprovedBy', 'conApprovedBy', 'itemMaster', 'canvases', 'recommendedCanvas' => function ($q) {
+                    $q->with('vendor', 'canvaser', 'comptroller', 'unit');
+                }, 'unit', 'PurchaseOrderDetails' => function ($query1) {
+                    $query1->with('purchaseOrder.user', 'unit', 'purchaseOrder.vendor');
+                }]);
+            },
+            // 'purchaseOrder' => function ($q) {
+            //     $q->with(
+            //         'user',
+            //         'comptroller',
+            //         'administrator',
+            //         'corporateAdmin',
+            //         'president',
+            //         'details.item',
+            //         'details.unit',
+            //         'details.purchaseRequestDetail.recommendedCanvas.vendor',
+            //         'vendor'
+            //     );
+            // }
+        ])->where('warehouse_Id',$requestingDepartmet)->whereYear('created_at', '!=', 2022)->where('pr_Document_Number', 'LIKE', '000%')->get();
+        return response()->json($allpr, 200); 
+    }
     public function show($id)
     {
         $role = Auth::user()->role->name;
@@ -356,6 +393,7 @@ class PurchaseRequestController extends Controller
     public function update(Request $request, $id)
     {
         $pr = PurchaseRequest::with('purchaseRequestAttachments')->where('id', $id)->first();
+       
         $pr->update([
             'pr_Justication' => $request->pr_Justication,
             'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
@@ -402,18 +440,45 @@ class PurchaseRequestController extends Controller
             if (isset($item["id"])) {
                 $pr->purchaseRequestDetails()->where('id', $item['id'])->update([
                     'item_Id' => $item['item_Id'],
+
+                    'item_ListCost' => $item['item_ListCost'] ?? 0,
+                    'discount' => $item['discount'] ?? 0,
                     'item_Request_Qty' => $item['item_Request_Qty'],
+                    'prepared_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id'] : 0,
+                    'recommended_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id'] : 0,
+                    'lead_time' => $item['lead_time'] ?? 0,
+                    'vat_rate' => $item['vat_rate'] ?? 0,
+                    'vat_type' => $item['vat_type'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
-                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                    // 'ismedicine' => $ismed,
+                    // 'isdietary' => $isdiet
+
+
+                    // 'item_Request_Qty' => $item['item_Request_Qty'],
+                    // 'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+                    // 'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                 ]);
             } else {
                 $pr->purchaseRequestDetails()->create([
                     'filepath' => $file[0] ?? null,
                     'filename' => $file[2] ?? null,
                     'item_Id' => $item['item_Id'],
+
+                    'item_ListCost' => $item['item_ListCost'] ?? 0,
+                    'discount' => $item['discount'] ?? 0,
                     'item_Request_Qty' => $item['item_Request_Qty'],
-                    'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                    'prepared_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id'] : 0,
+                    'recommended_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id'] : 0,
+                    'lead_time' => $item['lead_time'] ?? 0,
+                    'vat_rate' => $item['vat_rate'] ?? 0,
+                    'vat_type' => $item['vat_type'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
+                    // 'ismedicine' => $ismed,
+                    // 'isdietary' => $isdiet
+
+                    // 'item_Request_Qty' => $item['item_Request_Qty'],
+                    // 'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
+                    // 'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
             }
         }

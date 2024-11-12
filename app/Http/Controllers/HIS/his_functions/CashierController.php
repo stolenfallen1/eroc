@@ -383,8 +383,6 @@ class CashierController extends Controller
                                 'CashierShift'          => $Shift,
                             ]);
 
-
-
                         endif;
 
                         if ($ORCashInsertOnce) {

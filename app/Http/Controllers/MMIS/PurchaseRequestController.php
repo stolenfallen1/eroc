@@ -248,6 +248,7 @@ class PurchaseRequestController extends Controller
                 if (isset($item['attachment']) && $item['attachment'] != null) {
                     $filepath = storeDocument($item['attachment'], "procurements/items");
                 }
+
                 $pr->purchaseRequestDetails()->updateOrCreate(
                     [
                         'pr_request_id' => $pr['id'],
@@ -276,7 +277,8 @@ class PurchaseRequestController extends Controller
                     $item['id'] = $details->id;
                     $item['pr_id'] = $pr['id'];
                     $this->addPharmaCanvas($item);
-                }
+                }                
+                
                 if (isset($request->isconsignments) && $request->isconsignments == 1) {
                     if ($item['item_Request_Qty'] > 0) {
                         // PurchaseOrderConsignment::create([
@@ -427,6 +429,13 @@ class PurchaseRequestController extends Controller
                     // 'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                     // 'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                 ]);
+
+                if ($request->invgroup_id == 2 || $this->role->isdietary()) {
+                    $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
+                    $item['id'] = $details->id;
+                    $item['pr_id'] = $pr['id'];
+                    $this->addPharmaCanvas($item);
+                }    
             } else {
                 $pr->purchaseRequestDetails()->create([
                     'filepath' => $file[0] ?? null,

@@ -345,7 +345,7 @@ class RequisitionController extends Controller
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
-                                'PatientType'          => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                                 'RevenueID'             => $revenueID,
                                 'RequestDate'           => $today,
                                 'ItemID'                => $itemID,
@@ -353,9 +353,8 @@ class RequisitionController extends Controller
                                 'Quantity'              => $quantity,
                                 'Amount'                => $amount,
                                 'RecordStatus'          => null,
+                                'SectionID'             => $warehouseID,
                                 'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                'ProcessBy'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                'ProcessDate'           => $today,
                                 'RequestNum'            => $requestNum,
                                 'ReferenceNum'          => $referenceNum,
                             ]);
@@ -547,7 +546,7 @@ class RequisitionController extends Controller
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
-                                'PatientType'          => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                                 'RevenueID'             => $revenueID,
                                 'RequestDate'           => $today,
                                 'ItemID'                => $itemID,

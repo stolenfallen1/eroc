@@ -102,27 +102,18 @@ class CashierController extends Controller
     
             if ($refNum) {
                 $query->where('refNum', $refNum)
-                    ->where('ORNumber', null)
-                    ->whereIn('id', function($subQuery) use ($refNum) {
-                        $subQuery->select(\DB::raw('MAX(id)'))
-                            ->from('CashAssessment')
-                            ->where('refNum', $refNum)
-                            ->groupBy('refNum', 'itemID', 'case_No')
-                            ->havingRaw('SUM(quantity) > 0')
-                            ->havingRaw('SUM(amount) > 0');
-                    });
+                    ->where('ORNumber', null);
+                    // ->whereIn('id', function($subQuery) use ($refNum) {
+                    //     $subQuery->select(\DB::raw('MAX(id)'))
+                    //         ->from('CashAssessment')
+                    //         ->where('refNum', $refNum)
+                    //         ->groupBy('refNum', 'itemID', 'case_No')
+                    //         ->havingRaw('SUM(quantity) > 0')
+                    //         ->havingRaw('SUM(amount) > 0');
+                    // });
             }
     
             $cashAssessments = $query->get();
-            $revenueIDs = $cashAssessments->pluck('revenueID')->unique();
-            $cashAssessments->load(['items' => function($itemQuery) use ($revenueIDs) {
-                $itemQuery->whereIn('transaction_code', $revenueIDs); 
-            }]);
-
-            if (strpos($refNum, 'MD') === 0) {
-                $cashAssessments->load('doctor_details');
-            }
-    
             return response()->json(['data' => $cashAssessments], 200);
     
         } catch (\Exception $e) {

@@ -809,15 +809,12 @@ class OutpatientRegistrationController extends Controller
                 'patientRegistry.allergies' => function ($query)use ($today) {
                     $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
                     $query->where('isDeleted', '!=', 1);
-                    // $query->whereDate('created_at', $today);
                 }
             ]);
 
-            $data->whereHas('patientRegistry', function($query) use ($today) {
-            // $data->whereHas('patientRegistryToday', function($query) use ($today) {
+            $data->whereHas('patientRegistryToday', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2); 
                 $query->where('isRevoked', 0);
-                // $query->whereDate('registry_Date', $today);
                 $query->whereNull('discharged_Date');
 
                 if(Request()->keyword) {
@@ -829,8 +826,7 @@ class OutpatientRegistrationController extends Controller
                     });
                 }
             });
-            $data->join('CDG_PATIENT_DATA.dbo.PatientRegistry', 'CDG_PATIENT_DATA.dbo.PatientMaster.patient_Id', '=', 'CDG_PATIENT_DATA.dbo.PatientRegistry.patient_Id')
-                ->orderBy('CDG_PATIENT_DATA.dbo.PatientRegistry.case_No', 'desc');
+            $data->orderBy('patient_Id', 'desc');
 
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);

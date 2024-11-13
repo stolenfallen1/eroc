@@ -326,7 +326,7 @@ Route::get('/print-consignment-delivery/{id}', function ($id) {
     ];
     // Generate the PDF using the prepared data and set the paper size to letter in landscape
     $pdf = PDF::loadView('pdf_layout.consignment-delivery', ['pdf_data' => $pdf_data])
-        ->setPaper('letter', 'landscape');
+        ->setPaper('letter', 'portrait');
 
     // Render the PDF
     $pdf->render();

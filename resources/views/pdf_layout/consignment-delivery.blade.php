@@ -46,7 +46,7 @@
 
     .item-section {
       margin-top: 20px;
-      width: 100%;
+      /* width: 100%; */
       border-collapse: collapse;
     }
 
@@ -65,16 +65,16 @@
     }
 
     .left-width {
-      width: 130px;
+      /* width: 130px; */
     }
 
     .right-width {
-      width: 120px;
+      /* width: 120px; */
       text-transform: uppercase;
     }
 
     .mid-width {
-      width: 370px;
+      /* width: 370px; */
     }
 
     .underline {
@@ -83,11 +83,11 @@
 
 
     .item-td1 {
-      width: 300px;
+      /* width: 300px; */
     }
 
     .item-td2 {
-      width: 100px;
+      /* width: 100px; */
     }
 
     .item-td {
@@ -212,9 +212,9 @@
         </td>
       </tr>
       <tr>
-        <td colspan="3" style="padding:10px;">
+        <td colspan="3" style="padding:5px;">
           <center>
-            <h3>{{ucwords('CONSIGNMENT DELIVERY REPORT')}}</h3>
+            <h4>{{ucwords('CONSIGNMENT DELIVERY REPORT')}}</h4>
           </center>
         </td>
       </tr>
@@ -223,40 +223,41 @@
   <table class="info-section">
     <tbody>
       <tr>
-        <td class="left-width text-right">Supplier Name. :</td>
-        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_Name']}}</td>
+        <td class="left-width text-right">DEPARTMENT :</td>
+        <td class="mid-width underline">{{$pdf_data['delivery']['warehouse_description']}}</td>
         <td class="right-width  text-right">DELIVERY No. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Delivery_Receipt_No']}}</td>
         <td class="right-width  text-right">DELIVERY Date. :</td>
         <td class="underline">{{date('m-d-Y',strtotime($pdf_data['delivery']['rr_Document_Delivery_Date']))}}</td>
       </tr>
       <tr>
-        <td class="left-width  text-right">Address. :</td>
-        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_ContactPerson']}}</td>
+        <td class="left-width text-right">Supplier Name. :</td>
+        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_Name']}}</td>
         <td class="right-width  text-right">RR No. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Number']}}</td>
         <td class="right-width  text-right">RR Date. :</td>
         <td class="underline">{{date('m-d-Y',strtotime($pdf_data['delivery']['rr_Document_Transaction_Date']))}}</td>
       </tr>
-
       <tr>
-        <td class="left-width  text-right">Tel No. :</td>
-        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_TelNo']}}</td>
+        <td class="left-width  text-right">Address. :</td>
+        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_ContactPerson']}}</td>
         <td class="right-width  text-right"> PR No. :</td>
         <td class="underline">{{$pdf_data['delivery']['pr_Document_Number']}}</td>
         <td class="right-width  text-right"> PR Date. :</td>
         <td class="underline"></td>
         <td></td>
       </tr>
+
       <tr>
-        <td class="left-width"></td>
-        <td class="mid-width "></td>
+        <td class="left-width  text-right">Tel No. :</td>
+        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_TelNo']}}</td>
         <td class="right-width text-right"> PO No. :</td>
         <td class="underline">{{$pdf_data['delivery']['po_Document_Number']}}</td>
         <td class="right-width  text-right"> PO Date. :</td>
         <td class="underline"></td>
         <td></td>
       </tr>
+     
     </tbody>
   </table>
     
@@ -267,7 +268,7 @@
         <th rowspan="2">Item Description</th>
         <th rowspan="2">UOM</th>
         <th colspan="2">Batch Information</th>
-        <th colspan="1" rowspan="2">QUANTITY</th>
+        <th colspan="1" rowspan="2">QTY</th>
         <th rowspan="1" class="border-bottom-none">UNIT </th>
         <th rowspan="2">DISCOUNT</th>
         <th rowspan="2">VAT</th>
@@ -288,13 +289,13 @@
               $expirydate = '';
               $batchno = '';
               if($detail['expirydate']) {
-                $expirydate = $detail['ismedicine'] ? date('m-d-Y',strtotime($detail['expirydate'])) : '';
-                $batchno = $detail['ismedicine'] ? $detail['batchno'] : '';
+                $expirydate =  date('m-d-Y',strtotime($detail['expirydate'])) ?? '';
+                $batchno =  $detail['batchno'] ?? '';
               }
           @endphp
         <tr>
-          <td class="item-td" width="60">{{ $detail['itemcode'] }}</td>
-          <td class="item-td" width="200">{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
+          <td class="item-td">{{ $detail['itemcode'] }}</td>
+          <td class="item-td" >{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
           <td class="item-td">{{ $detail['uom'] }}</td>
           <td class="item-td">{{ $batchno }}</td>
           <td class="item-td">{{ $expirydate }}</td>
@@ -315,10 +316,13 @@
         <td colspan="9" class="border-none" ></td>
         <td colspan="2" class="item-td border-none"><br></td>
       </tr>
-
+    </tbody>
+  </table>
+  <table>
+    <tbody>
       <tr>
-        <td class="border-none" >Received By</td>
-        <td class="border-none" > : {{ucwords($pdf_data['delivery']['receivedBy'])}}</td>
+        <td class="border-none" width="60">Received By</td>
+        <td class="border-none text-left" > : {{ucwords($pdf_data['delivery']['receivedBy'])}}</td>
         <td colspan="7" class="border-none text-right" >SubTotal :</td>
         <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
       </tr>

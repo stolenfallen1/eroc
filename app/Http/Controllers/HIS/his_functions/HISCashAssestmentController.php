@@ -164,6 +164,7 @@ class HISCashAssestmentController extends Controller
                     $itemID = $charge['map_item_id'];
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
+                    $exam_description = $charge['exam_description'];
                     $specimenId = $charge['specimen'];
                     $form = $charge['form'] ?? null;
                     $charge_type = $charge['charge_type'] ?? null;
@@ -208,6 +209,7 @@ class HISCashAssestmentController extends Controller
                         'stat' => $charge_type,
                         'revenueID' => $revenueID,
                         'itemID' => $itemID,
+                        'requestDescription' => $exam_description,
                         'quantity' => $quantity,
                         'refNum' => $sequence,
                         'amount' => $amount,
@@ -251,6 +253,7 @@ class HISCashAssestmentController extends Controller
                 foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
                     $revenueID = $doctorcharges['code'];
                     $itemID = $doctorcharges['doctor_code'];
+                    $doctor_name = $doctorcharges['doctor_name'];
                     $quantity = 1;
                     $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
                     $refNum[] = $sequence;
@@ -265,6 +268,7 @@ class HISCashAssestmentController extends Controller
                         'drcr' => 'C',
                         'revenueID' => $revenueID,
                         'itemID' => $itemID,
+                        'requestDescription' => $doctor_name,
                         'quantity' => $quantity,
                         'refNum' => $sequence,
                         'amount' => $amount,

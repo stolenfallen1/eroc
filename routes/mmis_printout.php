@@ -306,7 +306,7 @@ Route::get('/print-consignment-delivery/{id}', function ($id) {
         $subTotal += (float)$itemTotal;
         $discount += (float)$item->discount;
         $vatAmount += (float)$item->vat;
-        $grandTotal += (float)$item->net_amount;
+        $grandTotal += (float)$item->net_amount + (float)$item->vat;
         if ($item->currency_id == 2) {
             $currency = '$';
         }

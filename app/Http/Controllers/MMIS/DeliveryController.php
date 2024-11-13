@@ -348,7 +348,7 @@ class DeliveryController extends Controller
                 'rr_Document_Delivery_Receipt_No' => $request['rr_Document_Invoice_No'],
                 'rr_Document_Invoice_Date' => Carbon::now(),
                 'rr_Document_Delivery_Date' => Carbon::now(),
-                'rr_Document_Terms_Id' => $vendor['term']['id'],
+                'rr_Document_Terms_Id' => $vendor['term'] ? $vendor['term']['id']: '',
                 'rr_Document_TotalGrossAmount' => $request['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $request['rr_Document_TotalDiscountAmount'],
                 'rr_Document_TotalNetAmount' => $request['rr_Document_TotalNetAmount'],

@@ -127,7 +127,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Delivery_Receipt_No' => $request['rr_Document_Delivery_Receipt_No'],
                 'rr_Document_Invoice_Date' => $request['rr_Document_Invoice_Date'],
                 'rr_Document_Delivery_Date' => Carbon::now(),
-                'rr_Document_Terms_Id' => $vendor['term']['id'],
+                'rr_Document_Terms_Id' => $vendor['term'] ? $vendor['term']['id'] : '',
                 'rr_Document_TotalGrossAmount' => $rr_Document_TotalGrossAmount,
                 'rr_Document_TotalDiscountAmount' => $rr_Document_TotalDiscountAmount,
                 'rr_Document_TotalNetAmount' => $rr_Document_TotalNetAmount,

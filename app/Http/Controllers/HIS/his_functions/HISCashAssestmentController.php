@@ -247,38 +247,57 @@ class HISCashAssestmentController extends Controller
                 }
             }
 
-            // if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
-            //     foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
-            //         $revenueID = $doctorcharges['code'];
-            //         $itemID = $doctorcharges['doctor_code'];
-            //         $quantity = 1;
-            //         $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-            //         $sequence = $revenueID . $chargeslip_sequence->seq_no;
-            //         $refNum[] = $sequence;
+            if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
+                foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
+                    $revenueID = $doctorcharges['code'];
+                    $itemID = $doctorcharges['doctor_code'];
+                    $quantity = 1;
+                    $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
+                    $refNum[] = $sequence;
 
-            //         CashAssessment::create([
-            //             'branch_id' => 1,
-            //             'patient_id' => $patient_id,
-            //             'case_no' => $case_no,
-            //             'patient_name' => $patient_name,
-            //             'transdate' => $transdate,
-            //             'assessnum' => $assessnum_sequence['MedSysCashSequence'],
-            //             'drcr' => 'C',
-            //             'revenueID' => $revenueID,
-            //             'itemID' => $itemID,
-            //             'quantity' => $quantity,
-            //             'refNum' => $sequence,
-            //             'amount' => $amount,
-            //             'requestDoctorID' => $requesting_doctor_id,
-            //             'requestDoctorName' => $requesting_doctor_name,
-            //             'departmentID' => $revenueID,
-            //             'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-            //             'hostname' => (new GetIP())->getHostname(),
-            //             'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-            //             'created_at' => Carbon::now(),
-            //         ]);
-            //     }
-            // }
+                    $saveCashAssessment = CashAssessment::create([
+                        'branch_id' => 1,
+                        'patient_id' => $patient_id,
+                        'case_no' => $case_no,
+                        'patient_name' => $patient_name,
+                        'transdate' => $transdate,
+                        'assessnum' => $assessnum_sequence['MedSysCashSequence'],
+                        'drcr' => 'C',
+                        'revenueID' => $revenueID,
+                        'itemID' => $itemID,
+                        'quantity' => $quantity,
+                        'refNum' => $sequence,
+                        'amount' => $amount,
+                        'requestDoctorID' => $requesting_doctor_id,
+                        'requestDoctorName' => $requesting_doctor_name,
+                        'departmentID' => $revenueID,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'hostname' => (new GetIP())->getHostname(),
+                        'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'created_at' => Carbon::now(),
+                    ]);
+                    if ($saveCashAssessment && $this->check_is_allow_medsys) {
+                        MedSysCashAssessment::create([
+                            'HospNum'               => $patient_id,
+                            'IdNum'                 => $case_no . 'B',
+                            'Name'                  => $patient_name,
+                            'TransDate'             => $transdate,
+                            'AssessNum'             => $assessnum_sequence['MedSysCashSequence'],
+                            'DrCr'                  => 'C',
+                            'ItemID'                => $itemID,
+                            'Quantity'              => $quantity,
+                            'RefNum'                => $sequence,
+                            'ChargeSlip'            => $sequence,
+                            'Amount'                => $amount,
+                            'DoctorName'            => $requesting_doctor_name,
+                            'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'RevenueID'             => $revenueID,
+                            'DepartmentID'          => $revenueID,
+                        ]);
+                    }
+                    
+                }
+            }
 
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_billingOut')->commit();
@@ -301,8 +320,8 @@ class HISCashAssestmentController extends Controller
         DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         try {
             $checkUser = null;
-            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
-                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            if (isset($request->user_passcode) && isset($request->user_passcode)) {
+                $checkUser = User::where([['idnumber', '=', $request->user_passcode], ['passcode', '=', $request->user_passcode]])->first();
                 if (!$checkUser) {
                     return response()->json([
                         'message' => 'Incorrect Username or Password',

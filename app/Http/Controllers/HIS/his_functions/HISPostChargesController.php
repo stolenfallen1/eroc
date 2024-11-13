@@ -131,7 +131,6 @@ class HISPostChargesController extends Controller
                 }
             }
 
-           
             if ($this->check_is_allow_medsys) {
                 $chargeSlipSequences = new GlobalChargingSequences();
             } else {
@@ -368,37 +367,54 @@ class HISPostChargesController extends Controller
                 }
             }
 
-            // if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
-            //     foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
-            //         $revenueID = $doctorcharges['code'];
-            //         $item_id = $doctorcharges['doctor_code'];
-            //         $quantity = 1;
-            //         $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-            //         $drcr = $doctorcharges['drcr'];
-            //         $lgrp = $doctorcharges['lgrp'];
-            //         $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
-            //         $refnum[] = $sequence;
-            //         HISBillingOut::create([
-            //             'patient_Id' => $patient_id,
-            //             'case_No' => $case_no,
-            //             'transDate' => $transDate,
-            //             'msc_price_scheme_id' => $msc_price_scheme_id,
-            //             'revenueID' => $revenueID,
-            //             'drcr' => $drcr,
-            //             'lgrp' => $lgrp,
-            //             'itemID' => $item_id,
-            //             'quantity' => $quantity,
-            //             'refNum' => $sequence,
-            //             'ChargeSlip' => $sequence,
-            //             'amount' => $amount,
-            //             'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-            //             'net_amount' => $amount,
-            //             'hostName' => (new GetIP())->getHostname(),
-            //             'accountnum' => $guarantor_Id,
-            //             'auto_discount' => 0,
-            //         ]);
-            //     }
-            // }
+            if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
+                foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
+                    $revenueID = $doctorcharges['code'];
+                    $item_id = $doctorcharges['doctor_code'];
+                    $quantity = 1;
+                    $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
+                    $drcr = $doctorcharges['drcr'];
+                    $lgrp = $doctorcharges['lgrp'];
+                    $refnum[] = $sequence;
+
+                    $saveCharges = HISBillingOut::create([
+                        'patient_Id' => $patient_id,
+                        'case_No' => $case_no,
+                        'transDate' => $transDate,
+                        'msc_price_scheme_id' => $msc_price_scheme_id,
+                        'revenueID' => $revenueID,
+                        'drcr' => $drcr,
+                        'lgrp' => $lgrp,
+                        'itemID' => $item_id,
+                        'quantity' => $quantity,
+                        'refNum' => $sequence,
+                        'ChargeSlip' => $sequence,
+                        'amount' => $amount,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'net_amount' => $amount,
+                        'hostName' => (new GetIP())->getHostname(),
+                        'accountnum' => $guarantor_Id,
+                        'auto_discount' => 0,
+                    ]);
+                    if ($saveCharges && $this->check_is_allow_medsys) {
+                        MedSysDailyOut::create([
+                            'HospNum'           => $patient_id,
+                            'IDNum'             => $case_no . 'B',
+                            'TransDate'         => $transDate,
+                            'RevenueID'         => $revenueID,
+                            'ItemID'            => $item_id,
+                            'DrCr'              => $drcr,
+                            'Quantity'          => $quantity,
+                            'RefNum'            => $sequence,
+                            'ChargeSlip'        => $sequence,
+                            'Amount'            => $amount,
+                            'UserID'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'HostName'          => (new GetIP())->getHostname(),
+                            'AutoDiscount'      => 0,
+                        ]);
+                    }
+                }
+            }
 
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_billingOut')->commit();
@@ -425,8 +441,8 @@ class HISPostChargesController extends Controller
         DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
         try {
             $checkUser = null;
-            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
-                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            if (isset($request->user_passcode) && isset($request->user_passcode)) {
+                $checkUser = User::where([['idnumber', '=', $request->user_passcode], ['passcode', '=', $request->user_passcode]])->first();
                 if (!$checkUser) {
                     return response()->json([
                         'message' => 'Incorrect Username or Password',

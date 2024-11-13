@@ -16,6 +16,10 @@ class UserController extends Controller
         return PurchaseRequest::with('category')->paginate(25);
     }
 
+    public function users()
+    {
+        return response()->json(DB::table('users')->where('warehouse_Id',Request()->department_id)->select('name','idnumber')->get(),200);
+    }
     public function store(Request $request){
         User::create([
             'name' => $request->name,

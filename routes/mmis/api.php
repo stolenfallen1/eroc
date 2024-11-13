@@ -26,6 +26,7 @@ Route::controller(UserController::class)->group(function () {
   Route::get('getpermission', 'getpermission');
   Route::post('verify-passcode', 'getpermission');
   Route::post('update-password', 'updatePassword');
+  Route::get('users-list','users');
 });
 
 Route::controller(DashboardController::class)->group(function () {
@@ -189,4 +190,5 @@ Route::controller(PriceListController::class)->group(function () {
   Route::post('price-list-report', 'allPriceList');  
  
 });
+
 

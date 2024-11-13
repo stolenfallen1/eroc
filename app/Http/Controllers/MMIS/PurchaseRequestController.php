@@ -19,6 +19,7 @@ use App\Http\Requests\Procurement\PRRequest;
 use App\Models\MMIS\procurement\CanvasMaster;
 use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Models\MMIS\procurement\VwPrTransactionLog;
 use App\Helpers\SearchFilter\inventory\Consignments;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
@@ -62,39 +63,7 @@ class PurchaseRequestController extends Controller
     
     public function allPR(){
         $requestingDepartmet = Request()->department_id;
-        $allpr = PurchaseRequest::with([
-            'warehouse',
-            'status',
-            'category',
-            'subcategory',
-            'itemGroup',
-            'priority',
-            'purchaseRequestAttachments',
-            'user',
-            'departmentApprovedBy',
-            'departmentDeclinedBy',
-            'administratorApprovedBy',
-            'purchaseRequestDetails' => function ($q) {
-                $q->with(['depApprovedBy', 'preparedSupplier', 'adminApprovedBy', 'conApprovedBy', 'itemMaster', 'canvases', 'recommendedCanvas' => function ($q) {
-                    $q->with('vendor', 'canvaser', 'comptroller', 'unit');
-                }, 'unit', 'PurchaseOrderDetails' => function ($query1) {
-                    $query1->with('purchaseOrder.user', 'unit', 'purchaseOrder.vendor');
-                }]);
-            },
-            // 'purchaseOrder' => function ($q) {
-            //     $q->with(
-            //         'user',
-            //         'comptroller',
-            //         'administrator',
-            //         'corporateAdmin',
-            //         'president',
-            //         'details.item',
-            //         'details.unit',
-            //         'details.purchaseRequestDetail.recommendedCanvas.vendor',
-            //         'vendor'
-            //     );
-            // }
-        ])->where('warehouse_Id',$requestingDepartmet)->whereYear('created_at', '!=', 2022)->get();
+        $allpr = VwPrTransactionLog::where('warehouse_Id',$requestingDepartmet)->get();
         return response()->json($allpr, 200); 
     }
     public function show($id)

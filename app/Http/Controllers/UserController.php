@@ -15,7 +15,7 @@ class UserController extends Controller
     {
         return response()->json(['users' => User::where('warehouse_id', Auth::user()->warehouse_id)->get()]);
     }
-
+    
     public function index()
     {
         $data = User::query();

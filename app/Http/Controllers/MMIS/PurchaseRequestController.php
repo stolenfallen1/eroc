@@ -696,6 +696,7 @@ class PurchaseRequestController extends Controller
         if ($item['discount']) {
             $discount_amount = $total_amount * ($item['discount'] / 100);
         }
+        
         $pr_id = Request()->id ?? $item['pr_id'];
 
         CanvasMaster::updateOrCreate(
@@ -725,7 +726,7 @@ class PurchaseRequestController extends Controller
                 'canvas_item_total_amount' => $total_amount,
                 'canvas_item_discount_percent' => $item['discount'],
                 'canvas_item_discount_amount' => $discount_amount,
-                'canvas_item_net_amount' => $total_amount - $discount_amount,
+                'canvas_item_net_amount' => ($total_amount - $discount_amount),
                 'canvas_lead_time' => $item['lead_time'],
                 // 'canvas_remarks' => $request->canvas_remarks,
                 'currency_id' => 1,

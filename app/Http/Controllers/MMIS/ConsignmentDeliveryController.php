@@ -103,12 +103,12 @@ class ConsignmentDeliveryController extends Controller
                         $discount_amount = $total_amount * ($item['rr_Detail_Item_TotalDiscount_Percent'] / 100);
                     }
                     if($item['rr_Detail_Item_Vat_Rate']){
-                        if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
+                        // if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
                             $vat_amount = ($total_amount - $discount_amount) * ($item['rr_Detail_Item_Vat_Rate'] / 100);
-                        }
+                        // }
                     }
                     
-                    $item_total_amount =($total_amount - $discount_amount);
+                    $item_total_amount =($total_amount - $discount_amount) + $vat_amount;
                     $rr_Document_TotalGrossAmount += round($total_amount, 4);
                     $rr_Document_TotalDiscountAmount += round($discount_amount, 4);
                     $rr_Document_TotalNetAmount += round($item_total_amount, 4);

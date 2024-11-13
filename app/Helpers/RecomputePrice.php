@@ -65,7 +65,7 @@ class RecomputePrice
       $total_item_onhand  = round($total_item_onhand, 4);
 
       $item_master->item_AverageCost        = $averagecost;
-      $item_master->item_ListCost           = $averagecost + $mark_up_in_amount;
+      // $item_master->item_ListCost           = $averagecost + $mark_up_in_amount;
       $item_master->item_OnHand             = $total_item_onhand;
       $item_master->item_Selling_Price_In   = $averagecost + $mark_up_in_amount;
       $item_master->item_Selling_Price_Out  = $averagecost + $mark_up_out_amount;

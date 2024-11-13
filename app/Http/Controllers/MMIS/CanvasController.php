@@ -97,6 +97,8 @@ class CanvasController extends Controller
 
         try {
             $itemid = isset($request->canvas_Old_Item_Id) ? $request->canvas_Old_Item_Id : $request->canvas_Item_Id;
+
+            $checkcanvas = CanvasMaster::where('pr_request_id',$request->pr_request_id)->where('canvas_Item_Id',$itemid)->where('vendor_id',$request->vendor_id)->first();
             $canvas = CanvasMaster::updateOrCreate(
                 [
                     'pr_request_id' => $request->pr_request_id,
@@ -131,7 +133,7 @@ class CanvasController extends Controller
                 'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
                 'canvas_item_vat_amount' => $vat_amount,
                 'isFreeGoods' => $request->isFreeGoods == true ? 1 : 0,
-                'isRecommended' => 0,
+                'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
             ]);
     
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {

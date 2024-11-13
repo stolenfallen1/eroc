@@ -20,11 +20,12 @@ class Consignments
   }
 
   public function searchable(){
-    $this->model->with('status', 'vendor', 'warehouse','items','items.item','items.batchs');
+    $this->model->with('status', 'vendor', 'warehouse','items','items.item','items.item.wareHouseItem','items.batchs');
     $this->byTab();
     $this->byWarehouse();
     $this->searcColumns();
     $this->model->whereNull('isactive');
+    $this->model->orderBy('id','desc');
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

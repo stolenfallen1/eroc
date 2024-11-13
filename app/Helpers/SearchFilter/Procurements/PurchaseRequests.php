@@ -420,6 +420,9 @@ class PurchaseRequests
 
   private function forAdministrator()
   {
+    if($this->role->consultant()){
+      $this->model->whereIn('warehouse_Id', $this->authUser->departments);
+    }
     $this->model->where(function ($q) {
       // $q->where(function($q1){
       //   $q1->where('branch_Id', '!=', 1)->where('branch_Id', $this->authUser->branch_id)->where('invgroup_id', 2);

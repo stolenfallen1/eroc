@@ -78,6 +78,7 @@ class ConsignmentDeliveryController extends Controller
         DB::connection('sqlsrv_mmis')->beginTransaction();
 
         try {
+
             $has_dup_invoice_no = Consignment::where('rr_Document_Delivery_Receipt_No', 'like', '%'.$request['rr_Document_Delivery_Receipt_No'].'%')->exists();
             $vendor = Vendors::with('term')->findOrFail($request['rr_Document_Vendor_Id']);
             if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
@@ -87,7 +88,7 @@ class ConsignmentDeliveryController extends Controller
             $prefix = $sequence->seq_prefix;
             $suffix = $sequence->seq_suffix;
 
-
+            $department = $request['department_id'] ?? Auth::user()->warehouse_id;
             $rr_Document_TotalGrossAmount = 0;
             $rr_Document_TotalDiscountAmount = 0;
             $rr_Document_TotalNetAmount = 0;
@@ -136,7 +137,7 @@ class ConsignmentDeliveryController extends Controller
                 
                 'rr_Document_Branch_Id' => Auth::user()->branch_id,
                 'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
-                'rr_Document_Warehouse_Id' => Auth::user()->warehouse_id,
+                'rr_Document_Warehouse_Id' => $department,
 
                 'po_Document_Number' => $request['po_Document_number'],
                 'po_Document_Prefix' => $request['po_Document_prefix'],
@@ -227,7 +228,7 @@ class ConsignmentDeliveryController extends Controller
                     ConsignmentItems::where('rr_id',$delivery->id)->where('rr_Detail_Item_Id',$batch['item_Id'])->update([
                         'rr_Detail_Item_BatchNumber' => $batchdetails['id']
                     ]);
-                    (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'out');
+                    (new RecomputePrice())->compute($department,'',$batch['item_Id'],'out');
                     $sequence1 = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                     $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Received Stocks%')->where('isActive', 1)->first();
 
@@ -283,6 +284,8 @@ class ConsignmentDeliveryController extends Controller
 
         try {
             $payload = $request->payload;
+            $department = $payload['department_id'] ?? Auth::user()->warehouse_id;
+
             $vendor = Vendors::with('term')->findOrFail($payload['rr_Document_Vendor_Id']);
             $delivery = Consignment::find($id);
             $delivery->where('id',$id)->update([
@@ -296,7 +299,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Remarks' => $payload['rr_Document_Remarks'],
                 'rr_Document_Branch_Id' => Auth::user()->branch_id,
                 'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
-                'rr_Document_Warehouse_Id' => Auth::user()->warehouse_id,
+                'rr_Document_Warehouse_Id' => $department,
                 'rr_received_by' => Auth::user()->idnumber,
 
                 'category_id' => $payload['category_id'],
@@ -359,7 +362,7 @@ class ConsignmentDeliveryController extends Controller
                         'rr_Detail_Item_BatchNumber' => $batchdetails['id']
                     ]);
 
-                    (new RecomputePrice())->compute(Auth()->user()->warehouse_id,'',$batch['item_Id'],'out');
+                    (new RecomputePrice())->compute($department,'',$batch['item_Id'],'out');
                   
                     $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
 

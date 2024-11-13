@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Helpers\RecomputePrice;
 use App\Models\BuildFile\Vendors;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BuildFile\Itemmasters;
@@ -260,6 +261,17 @@ class ConsignmentDeliveryController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
+
+            // Log the error message and stack trace
+            Log::error('Error processing delivery transaction:', [
+                'error_message' => $e->getMessage(),   // The error message
+                'error_code'    => $e->getCode(),      // The error code
+                'file'          => $e->getFile(),      // The file in which the error occurred
+                'line'          => $e->getLine(),      // The line number where the error occurred
+                'trace'         => $e->getTraceAsString()  // The stack trace
+            ]);
+
+            // DB::connection('sqlsrv_mmis')->rollback();
             return response()->json(["error" => $e->getMessage()], 200);
         }
     }

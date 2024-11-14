@@ -41,47 +41,47 @@ class InventoryTransactionObserver
             $deliveryDetails = Delivery::with('items','warehouse','vendor')->findOrFail($delivery->id);
             $maxRecordNumber = RRHeaderModel::max('RecordNumber');
             $recordNumber = $maxRecordNumber ? $maxRecordNumber + 1 : 1;
-            // $rrheader = RRHeaderModel::updateOrCreate(
-            //     [
-            //         'LocationId'            => $deliveryDetails['warehouse']['map_item_id'],
-            //         'SupplierID'            => $deliveryDetails['vendor']['map_item_id'],
-            //         'TransNum'              => $deliveryDetails['rr_Document_Number'],
-            //     ],
-            //     [
-            //         'RecordNumber'          => $recordNumber,
-            //         'LocationId'            => $deliveryDetails['warehouse']['map_item_id'],
-            //         'SupplierID'            => $deliveryDetails['vendor']['map_item_id'],
-            //         'TransNum'              => $deliveryDetails['rr_Document_Number'],
-            //         'TransDate'             => $deliveryDetails['rr_Document_Transaction_Date'],
-            //         'Status'                => 'P',
-            //         'PONumber'              => $deliveryDetails['po_Document_Number'],
-            //         'SummaryCode'           => 'PU',
-            //         'Remarks'               => '',
-            //         'RRNumber'              => $deliveryDetails['rr_Document_Number'],
-            //         'EmergencyPurchase'     => 0,
-            //         'CorrectionEntry'       => 0,
-            //         'RIVNumber'             => '',
-            //         'RIVDate'               => Carbon::now(),
-            //         'RequisitionerUserID'   => '',
-            //         // 'DeliveryStatus'        => NULL,
-            //         'PORecordNumber'        => 0,
-            //         // 'TransType'             => NULL,
-            //         'PU_ID'                 => 1,
-            //         // 'Inserted'              => NULL,
-            //         'InvoiceDate'           => $deliveryDetails['rr_Document_Invoice_Date'],
-            //         'PODate'                => Carbon::now(),
-            //         'TermsID'               => 0,
-            //         'OldRecordNumber'       => 0,
-            //         'Purchaser'             => '',
-            //         'MultiPORecNum'         => 0,
-            //         // 'docnum'                => NULL,
-            //         'InvoiceAmount'         => $deliveryDetails['rr_Document_TotalNetAmount'],
-            //         'DeliveryDate'          => $deliveryDetails['rr_Document_Transaction_Date'],
-            //         // 'Voucher'               => NULL,
-            //         // 'InvoiceDiscount'       => NULL,
-            //         'DeliveryNum'           => '',
-            //     ]
-            // );
+            $rrheader = RRHeaderModel::updateOrCreate(
+                [
+                    'LocationId'            => $deliveryDetails['warehouse']['map_item_id'],
+                    'SupplierID'            => $deliveryDetails['vendor']['map_item_id'],
+                    'TransNum'              => $deliveryDetails['rr_Document_Number'],
+                ],
+                [
+                    'RecordNumber'          => $recordNumber,
+                    'LocationId'            => $deliveryDetails['warehouse']['map_item_id'],
+                    'SupplierID'            => $deliveryDetails['vendor']['map_item_id'],
+                    'TransNum'              => $deliveryDetails['rr_Document_Number'],
+                    'TransDate'             => $deliveryDetails['rr_Document_Transaction_Date'],
+                    'Status'                => 'P',
+                    'PONumber'              => $deliveryDetails['po_Document_Number'],
+                    'SummaryCode'           => 'PU',
+                    'Remarks'               => '',
+                    'RRNumber'              => $deliveryDetails['rr_Document_Number'],
+                    'EmergencyPurchase'     => 0,
+                    'CorrectionEntry'       => 0,
+                    'RIVNumber'             => '',
+                    'RIVDate'               => Carbon::now(),
+                    'RequisitionerUserID'   => '',
+                    // 'DeliveryStatus'        => NULL,
+                    'PORecordNumber'        => 0,
+                    // 'TransType'             => NULL,
+                    'PU_ID'                 => 1,
+                    // 'Inserted'              => NULL,
+                    'InvoiceDate'           => $deliveryDetails['rr_Document_Invoice_Date'],
+                    'PODate'                => Carbon::now(),
+                    'TermsID'               => 0,
+                    'OldRecordNumber'       => 0,
+                    'Purchaser'             => '',
+                    'MultiPORecNum'         => 0,
+                    // 'docnum'                => NULL,
+                    'InvoiceAmount'         => $deliveryDetails['rr_Document_TotalNetAmount'],
+                    'DeliveryDate'          => $deliveryDetails['rr_Document_Transaction_Date'],
+                    // 'Voucher'               => NULL,
+                    // 'InvoiceDiscount'       => NULL,
+                    'DeliveryNum'           => '',
+                ]
+            );
 
 
             foreach ($deliveryDetails->items as $item) {
@@ -138,88 +138,88 @@ class InventoryTransactionObserver
                 ]);
 
 
-                // $rrheader->details()->updateOrCreate(
-                //     [
-                //         'RecordNumber'      => $rrheader['RecordNumber'],
-                //         'itemID'            => $itemdetails['map_item_id'],
-                //     ],
-                //     [
-                //         'RecordNumber'      => $rrheader['RecordNumber'],
-                //         'itemID'            => $itemdetails['map_item_id'],
-                //         'ListCost'          => $item['rr_Detail_Item_ListCost'],
-                //         'Quantity'          => $item['rr_Detail_Item_Qty_Received'],
-                //         'Packing'           => 1,
-                //         'LotNumber'         => $batch->batch_Number,
-                //         'Discount'          => $item['rr_Detail_Item_TotalDiscount_Amount'],
-                //         'Deal1'             => 0,
-                //         'Deal2'             => 0,
-                //         'ExpirationDate'    => $batch->item_Expiry_Date,
-                //         'NetCost'           => $item['rr_Detail_Item_ListCost'],
-                //         'QtyOrdered'        => $item['rr_Detail_Item_Qty_Received'],
-                //         'BackOrder'         => $item['rr_Detail_Item_Qty_BackOrder'],
-                //         'TotalNetCost'      => $item['rr_Detail_Item_TotalNetAmount'],
-                //         'VAT'               => $item['rr_Detail_Item_Vat_Amount'],
-                //         'AverageCost'       => $item['rr_Detail_Item_ListCost'],
-                //         'FreeGoods'         => $item['isFreeGoods'],
-                //         'Donation'          => 0,
-                //         'Regular'           => 0,
-                //         // 'PORecordNumber'    =>$deliveryDetails['po_Document_Number'],
-                //         'Inserted'          => 0,
-                //         'isADS'             => 0,
-                //         'PONumber'          => $deliveryDetails['po_Document_Number'],
-                //         'AddDiscount'       => 0,
-                //         'GrossAmount'       => $item['rr_Detail_Item_TotalGrossAmount'],
-                //         'isConvertPackage'  => 0,
-                //         'isConvertKit'      => 0,
-                //         'isUpdateAllLoc'    => 0,
-                //         'POSequenceNumber'  => 0,
-                //         'SequenceNumber'    => 0,
-                //         'isTrans'           => 0,
-                //         'VatInclusive'      => NULL,
-                //         'PriceStatus'       => NULL
-                //     ]
-                // );
+                $rrheader->details()->updateOrCreate(
+                    [
+                        'RecordNumber'      => $rrheader['RecordNumber'],
+                        'itemID'            => $itemdetails['map_item_id'],
+                    ],
+                    [
+                        'RecordNumber'      => $rrheader['RecordNumber'],
+                        'itemID'            => $itemdetails['map_item_id'],
+                        'ListCost'          => $item['rr_Detail_Item_ListCost'],
+                        'Quantity'          => $item['rr_Detail_Item_Qty_Received'],
+                        'Packing'           => 1,
+                        'LotNumber'         => $batch->batch_Number,
+                        'Discount'          => $item['rr_Detail_Item_TotalDiscount_Amount'],
+                        'Deal1'             => 0,
+                        'Deal2'             => 0,
+                        'ExpirationDate'    => $batch->item_Expiry_Date,
+                        'NetCost'           => $item['rr_Detail_Item_ListCost'],
+                        'QtyOrdered'        => $item['rr_Detail_Item_Qty_Received'],
+                        'BackOrder'         => $item['rr_Detail_Item_Qty_BackOrder'],
+                        'TotalNetCost'      => $item['rr_Detail_Item_TotalNetAmount'],
+                        'VAT'               => $item['rr_Detail_Item_Vat_Amount'],
+                        'AverageCost'       => $item['rr_Detail_Item_ListCost'],
+                        'FreeGoods'         => $item['isFreeGoods'],
+                        'Donation'          => 0,
+                        'Regular'           => 0,
+                        // 'PORecordNumber'    =>$deliveryDetails['po_Document_Number'],
+                        'Inserted'          => 0,
+                        'isADS'             => 0,
+                        'PONumber'          => $deliveryDetails['po_Document_Number'],
+                        'AddDiscount'       => 0,
+                        'GrossAmount'       => $item['rr_Detail_Item_TotalGrossAmount'],
+                        'isConvertPackage'  => 0,
+                        'isConvertKit'      => 0,
+                        'isUpdateAllLoc'    => 0,
+                        'POSequenceNumber'  => 0,
+                        'SequenceNumber'    => 0,
+                        'isTrans'           => 0,
+                        'VatInclusive'      => NULL,
+                        'PriceStatus'       => NULL
+                    ]
+                );
 
 
-                // $rrheader->stockCard()->updateOrCreate(
-                //     [
-                //         'RRecordNumber'      => $rrheader['RecordNumber'],
-                //         'itemID'            => $itemdetails['map_item_id'],
-                //     ],
-                //     [
-                //         'RRecordNumber'     => $rrheader['RecordNumber'],
-                //         'SummaryCode'       => 'PU',
-                //         'itemID'            => $itemdetails['map_item_id'],
-                //         'TransDate'         => $deliveryDetails['rr_Document_Transaction_Date'],
-                //         'RefNum'            => $deliveryDetails['rr_Document_Number'],
-                //         'Quantity'          => $item['rr_Detail_Item_Qty_Received'],
-                //         'NetCost'           => $item['rr_Detail_Item_ListCost'],
-                //         'UserID'            => Auth()->user()->idnumber,
-                //         'ItemType'          => 'P',
-                //         'LocationID'        => $warehouse_item['warehouse']['map_item_id'],
-                //         'TargetLocationID'  => $deliveryDetails['vendor']['map_item_id'],
-                //         'LotNumber'         => $batch->batch_Number,
-                //         'Packing'           => 1,
-                //         // 'SequenceNumber'    => $item['SequenceNumber'],
-                //         'HemoRequest'       => 0,
-                //         'isADS'             => 0,
-                //         'HostName'          => $hostname,
-                //     ]
-                // );
+                $rrheader->stockCard()->updateOrCreate(
+                    [
+                        'RRecordNumber'      => $rrheader['RecordNumber'],
+                        'itemID'            => $itemdetails['map_item_id'],
+                    ],
+                    [
+                        'RRecordNumber'     => $rrheader['RecordNumber'],
+                        'SummaryCode'       => 'PU',
+                        'itemID'            => $itemdetails['map_item_id'],
+                        'TransDate'         => $deliveryDetails['rr_Document_Transaction_Date'],
+                        'RefNum'            => $deliveryDetails['rr_Document_Number'],
+                        'Quantity'          => $item['rr_Detail_Item_Qty_Received'],
+                        'NetCost'           => $item['rr_Detail_Item_ListCost'],
+                        'UserID'            => Auth()->user()->idnumber,
+                        'ItemType'          => 'P',
+                        'LocationID'        => $warehouse_item['warehouse']['map_item_id'],
+                        'TargetLocationID'  => $deliveryDetails['vendor']['map_item_id'],
+                        'LotNumber'         => $batch->batch_Number,
+                        'Packing'           => 1,
+                        // 'SequenceNumber'    => $item['SequenceNumber'],
+                        'HemoRequest'       => 0,
+                        'isADS'             => 0,
+                        'HostName'          => $hostname,
+                    ]
+                );
 
 
-                // InventoryStock::where('LocationID',$warehouse_item['warehouse']['map_item_id'])->where('ItemID',$itemdetails['map_item_id'])->update(
-                //     [
-                //         'Markup_Out'=> $warehouse_item['item_Markup_Out'],
-                //         'Markup_In'=> $warehouse_item['item_Markup_In'],
-                //         'OnHand'=> $warehouse_item['item_OnHand'],
-                //         'SellingPriceOut'=> $warehouse_item['item_Selling_Price_Out'],
-                //         'SellingPriceIn'=> $warehouse_item['item_Selling_Price_In'],
-                //         'AverageCost'=> $warehouse_item['item_AverageCost'],
-                //         'ComputedOut'=> $warehouse_item['item_Selling_Price_Out'],
-                //         'ComputedIn'=> $warehouse_item['item_Selling_Price_In'],
-                //     ]
-                // );
+                InventoryStock::where('LocationID',$warehouse_item['warehouse']['map_item_id'])->where('ItemID',$itemdetails['map_item_id'])->update(
+                    [
+                        'Markup_Out'=> $warehouse_item['item_Markup_Out'],
+                        'Markup_In'=> $warehouse_item['item_Markup_In'],
+                        'OnHand'=> $warehouse_item['item_OnHand'],
+                        'SellingPriceOut'=> $warehouse_item['item_Selling_Price_Out'],
+                        'SellingPriceIn'=> $warehouse_item['item_Selling_Price_In'],
+                        'AverageCost'=> $warehouse_item['item_AverageCost'],
+                        'ComputedOut'=> $warehouse_item['item_Selling_Price_Out'],
+                        'ComputedIn'=> $warehouse_item['item_Selling_Price_In'],
+                    ]
+                );
             }
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MMIS;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Helpers\RecomputePrice;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -37,15 +38,15 @@ class BatchController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         try {
-            if(ItemBatchModelMaster::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => $request->item_Id, 'batch_Number' => $request->batch_Number])->exists()){
+            if(ItemBatchModelMaster::where(['warehouse_id' => $request->warehouse_id, 'item_Id' => $request->item_Id, 'batch_Number' => $request->batch_Number])->exists()){
                 return response()->json(["error" => 'Batch number is already exist'], 200);
             }
-            if(ItemBatchModelMaster::where(['warehouse_id' => Auth::user()->warehouse_id, 'item_Id' => $request->item_Id])->whereDate('item_Expiry_Date', Carbon::parse($request->item_Expiry_Date))->exists()){
-                return response()->json(["error" => 'Expiration date is already exist'], 200);
-            }
+            // if(ItemBatchModelMaster::where(['warehouse_id' => $request->warehouse_id, 'item_Id' => $request->item_Id])->whereDate('item_Expiry_Date', Carbon::parse($request->item_Expiry_Date))->exists()){
+            //     return response()->json(["error" => 'Expiration date is already exist'], 200);
+            // }
             $batch = ItemBatchModelMaster::create([
                 'branch_id' => Auth::user()->branch_id,
-                'warehouse_id' => Auth::user()->warehouse_id,
+                'warehouse_id' => $request->warehouse_id,
                 'batch_Number' => $request->batch_Number,
                 'model_Number' => $request->batch_Number,
                 'batch_Transaction_Date' => Carbon::now(),
@@ -58,7 +59,7 @@ class BatchController extends Controller
                 'price' => $request->price,
                 'mark_up' => $request->mark_up,
             ]);
-
+            
             if($request->warehouse_item_id){
                 $warehouse_item = Warehouseitems::findOrfail($request->warehouse_item_id);
 
@@ -68,10 +69,12 @@ class BatchController extends Controller
 
                 $sequence = SystemSequence::where('seq_description', 'like', '%Inventory Transaction Code Reference%')->where('branch_id', Auth::user()->branch_id)->first(); // for inventory transaction only
                 $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Physical Count%')->where('isActive', 1)->first();
+
+                (new RecomputePrice())->compute($request->warehouse_id, '', $request->item_Id, 'out');
                 InventoryTransaction::create([
                     'branch_Id' => Auth::user()->branch_id,
                     'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
-                    'warehouse_Id' => Auth()->user()->warehouse_id,
+                    'warehouse_Id' => $request->warehouse_id,
                     'transaction_Item_Id' => $request->item_Id,
                     'transaction_Date' => Carbon::now(),
                     'trasanction_Reference_Number' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
@@ -82,6 +85,7 @@ class BatchController extends Controller
                     'transaction_UserID' =>  Auth::user()->idnumber,
                     'createdBy' =>  Auth::user()->idnumber,
                     'transaction_Acctg_TransType' =>  $transaction->code ?? '',
+                    'trasanction_Acctg_Revenue_Code' =>  $transaction->code ?? '',
                 ]);
                 $sequence->update([
                     'seq_no' => (int) $sequence->seq_no + 1,

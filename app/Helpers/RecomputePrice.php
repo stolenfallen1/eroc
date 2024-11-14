@@ -20,14 +20,14 @@ class RecomputePrice
     try {
       DB::connection('sqlsrv_mmis')->beginTransaction();
       $item_batch = ItemBatchModelMaster::where('warehouse_id', $warehouse_id)
-        ->where('branch_id', auth()->user()->branch_id)
-        ->where('item_Id', $item_id)
-        ->get();
+      ->where('branch_id', auth()->user()->branch_id)
+      ->where('item_Id', $item_id)
+      ->get();
 
       $item_master = Warehouseitems::where('warehouse_Id', $warehouse_id)
-        ->where('branch_id', auth()->user()->branch_id)
-        ->where('item_Id', $item_id)
-        ->first();
+      ->where('branch_id', auth()->user()->branch_id)
+      ->where('item_Id', $item_id)
+      ->first();
 
       $total_item_qty       = 0;
       $total_item_onhand    = 0;
@@ -50,30 +50,29 @@ class RecomputePrice
       // Avoid division by zero
       $averagecost = $total_item_onhand > 0 ? (float) ($total_item_amount / $total_item_onhand) : 0;
 
-      if ($warehouse_id == '78') {
-        $markup_in          = $item_master->item_Markup_In / 100;
-        $mark_up_in_amount  = (float) $averagecost * $markup_in;
-      } else {
-        $markup_out         = $item_master->item_Markup_Out / 100;
-        $mark_up_out_amount = (float) $averagecost * $markup_out;
-      }
+      
+      $markup_in          = $item_master->item_Markup_In / 100;
+      $mark_up_in_amount  = (float) $averagecost * $markup_in;
+      
+      $markup_out         = $item_master->item_Markup_Out / 100;
+      $mark_up_out_amount = (float) $averagecost * $markup_out;
 
       // Round values to four decimal places
-      $averagecost        = round($averagecost, 4);
+      $total_averagecost        = round($averagecost, 4);
       $mark_up_in_amount  = round($mark_up_in_amount, 4);
       $mark_up_out_amount = round($mark_up_out_amount, 4);
       $total_item_onhand  = round($total_item_onhand, 4);
 
-      $item_master->item_AverageCost        = $averagecost;
+      $item_master->item_AverageCost        = $total_averagecost;
       // $item_master->item_ListCost           = $averagecost + $mark_up_in_amount;
       $item_master->item_OnHand             = $total_item_onhand;
-      $item_master->item_Selling_Price_In   = $averagecost + $mark_up_in_amount;
-      $item_master->item_Selling_Price_Out  = $averagecost + $mark_up_out_amount;
+      $item_master->item_Selling_Price_In   = $total_averagecost + $mark_up_in_amount;
+      $item_master->item_Selling_Price_Out  = $total_averagecost + $mark_up_out_amount;
       $item_master->save();
+
       DB::connection('sqlsrv_mmis')->commit();
     } catch (Exception $e) {
       DB::connection('sqlsrv_mmis')->rollBack();
-
       return response()->json($e->getMessage(), 200);
     }
   }

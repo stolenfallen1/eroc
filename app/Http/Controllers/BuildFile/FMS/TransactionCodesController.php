@@ -183,10 +183,18 @@ class TransactionCodesController extends Controller
             if(Request()->keyword){
                 $data->where('exam_description','LIKE','%'.Request()->keyword.'%');
             }
-            $data->with(['prices' => function ($q) {
-                $q->where('transaction_code', Request()->revenuecode);
-                $q->where('msc_price_scheme_id', Request()->patienttype);
-            }]);
+            // For Sir Charles ER
+            if (Request()->roleID == 27) {
+                $data->with(['prices' => function ($q) {
+                    $q->where('transaction_code', Request()->revenuecode);
+                    $q->where('msc_price_scheme_id', 2);
+                }]);
+            } else {
+                $data->with(['prices' => function ($q) {
+                    $q->where('transaction_code', Request()->revenuecode);
+                    $q->where('msc_price_scheme_id', Request()->patienttype);
+                }]);
+            }
             $data->with(['sections' => function ($q) {
                 $q->where('transaction_code', Request()->revenuecode);
                 $q->where('barcodeid_prefix', '!=', null);

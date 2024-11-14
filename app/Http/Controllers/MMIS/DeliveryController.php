@@ -128,7 +128,7 @@ class DeliveryController extends Controller
                         'rr_Detail_Item_UnitofMeasurement_Id_Received'  => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
                         'rr_Detail_Item_Qty_Convert'                    => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : NULL,
                         'rr_Detail_Item_UnitofMeasurement_Id_Convert'   => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_uom'] : NULL,
-                        'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] ?? NULL,
+                        'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] == 0 ? 0 : $detail['rr_Detail_Item_Qty_Received'],
                         'rr_Detail_Item_UnitofMeasurement_Id_BackOrder' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
                         'rr_Detail_Item_TotalGrossAmount'               => $total_amount,
                         'rr_Detail_Item_TotalDiscount_Percent'          => $discount_percent,

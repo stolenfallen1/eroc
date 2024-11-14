@@ -62,7 +62,7 @@ class Consignments
         });
       }
     }else{
-      $this->model->where('rr_Document_Warehouse_Id', $this->authUser->warehouse_id)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
+      $this->model->whereIn('rr_Document_Warehouse_Id', $this->authUser->departments)->where('rr_Document_Branch_Id', $this->authUser->branch_id);
     }
   }
 

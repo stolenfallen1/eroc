@@ -337,7 +337,7 @@ class ItemandServicesController extends Controller
                 'item_Qty' => $request->item_OnHand,
              ]);
                 
-            $onhand = ItemBatchModelMaster::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            $onhand = ItemBatchModelMaster::where(['warehouse_id' => $request['batch']['warehouse_id'], 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
 
             // if($warehouse_item->isModelNo_Required){
             //     ItemModel::where('id', $request['model']['id'])->update([
@@ -347,7 +347,7 @@ class ItemandServicesController extends Controller
             //     ItemBatch::where('id', $request['batch']['id'])->update([
             //         'item_Qty' => $request->item_OnHand,
             //     ]);
-            //     $onhand = ItemBatch::where(['warehouse_id' => Auth()->user()->warehouse_id, 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
+            //     $onhand = ItemBatch::where(['warehouse_id' => $request['batch']['warehouse_id'], 'item_Id' => $warehouse_item->item_Id])->where('isConsumed', '!=', 1)->sum('item_Qty');
             // }
             $warehouse_item->update([
                 'item_OnHand' => $onhand,
@@ -360,7 +360,7 @@ class ItemandServicesController extends Controller
             InventoryTransaction::create([
                 'branch_Id' => Auth::user()->branch_id,
                 'warehouse_Group_Id' => Auth()->user()->warehouse->warehouseGroup->id,
-                'warehouse_Id' => Auth()->user()->warehouse_id,
+                'warehouse_Id' => $request['batch']['warehouse_id'],
                 'transaction_Item_Id' => $warehouse_item->item_Id,
                 'transaction_Item_Barcode' => $request->item_Barcode,
                 'transaction_Date' => Carbon::now(),
@@ -371,12 +371,12 @@ class ItemandServicesController extends Controller
                 'transaction_Qty' => $request->item_OnHand,
                 'transaction_Item_OnHand' => $onhand,
                 'transaction_Item_ListCost' => $warehouse_item->item_ListCost,
-                'transaction_UserID' =>  Auth::user()->idnumber,
+                'transaction_UserID' =>  $request->count_by ?? Auth::user()->idnumber,
                 'createdBy' =>  Auth::user()->idnumber,
                 'transaction_count_by' =>  $request->count_by ?? Auth::user()->idnumber,
                 'transaction_Acctg_TransType' =>  $transaction->code ?? '',
             ]);
-
+            (new RecomputePrice())->compute($request['batch']['warehouse_id'], '', $warehouse_item->item_Id, 'out');
             $sequence->update([
                 'seq_no' => (int) $sequence->seq_no + 1,
                 'recent_generated' => generateCompleteSequence($sequence->seq_prefix, $sequence->seq_no, $sequence->seq_suffix, ''),
@@ -388,7 +388,7 @@ class ItemandServicesController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollBack();
-            return response()->json(["error" => $e], 200);
+            return response()->json(["error" => $e->getMessage()], 200);
         }
     }
 

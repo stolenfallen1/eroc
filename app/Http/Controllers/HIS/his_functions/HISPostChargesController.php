@@ -87,7 +87,8 @@ class HISPostChargesController extends Controller
             $query = HISBillingOut::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
-                ->where('quantity', '>', 0);
+                ->where('quantity', '>', 0)
+                ->where('refNum', 'not like', '%[REVOKED]%');
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -97,16 +98,6 @@ class HISPostChargesController extends Controller
             if (count($refnum) > 0) {
                 $query->whereIn('refNum', $refnum);
             }
-
-            $query->whereNotExists(function ($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('BillingOut as cancelled')
-                    ->whereColumn('cancelled.patient_Id', 'BillingOut.patient_Id')
-                    ->whereColumn('cancelled.case_No', 'BillingOut.case_No')
-                    ->whereColumn('cancelled.itemID', 'BillingOut.itemID')
-                    ->whereColumn('cancelled.refNum', 'BillingOut.refNum')
-                    ->where('cancelled.quantity', -1);
-            });
 
             return $query->get();
         } catch (\Exception $e) {
@@ -131,7 +122,6 @@ class HISPostChargesController extends Controller
                 }
             }
 
-           
             if ($this->check_is_allow_medsys) {
                 $chargeSlipSequences = new GlobalChargingSequences();
             } else {
@@ -165,6 +155,7 @@ class HISPostChargesController extends Controller
             $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
             $request_doctors_id = $request->payload['attending_Doctor'];
             $guarantor_Id = $request->payload['guarantor_Id'];
+            $patient_Type = $request->payload['patient_Type'];
             $refnum = [];
 
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
@@ -215,6 +206,7 @@ class HISPostChargesController extends Controller
                     $saveCharges = HISBillingOut::create([
                         'patient_Id' => $patient_id,
                         'case_No' => $case_no,
+                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
                         'transDate' => $transDate,
                         'msc_price_scheme_id' => $msc_price_scheme_id,
                         'revenueID' => $revenueID,
@@ -271,8 +263,8 @@ class HISPostChargesController extends Controller
                                         'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         'processed_Date'        => $transDate,
                                         'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                                        'request_Status'        => 'X', // Pending
-                                        'result_Status'         => 'X', // Pending
+                                        'request_Status'        => 'X',
+                                        'result_Status'         => 'X',
                                         'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         'barcode'               => $barcode,
                                         'created_at'            => Carbon::now(),
@@ -313,12 +305,12 @@ class HISPostChargesController extends Controller
                             'amount'                => 0,
                             'NetAmount'             => 0,
                             'doctor_Id'             => $request_doctors_id,
-                            'specimen_Id'           => $specimenId ?? 1, // BLOOD BY DEFAULT if no specimen
+                            'specimen_Id'           => $specimenId ?? 1,
                             'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'processed_Date'        => $transDate,
                             'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                            'request_Status'        => 'X', // Pending
-                            'result_Status'         => 'X', // Pending
+                            'request_Status'        => 'X',
+                            'result_Status'         => 'X',
                             'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'barcode'               => $barcode,
                             'created_at'            => Carbon::now(),
@@ -368,37 +360,55 @@ class HISPostChargesController extends Controller
                 }
             }
 
-            // if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
-            //     foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
-            //         $revenueID = $doctorcharges['code'];
-            //         $item_id = $doctorcharges['doctor_code'];
-            //         $quantity = 1;
-            //         $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-            //         $drcr = $doctorcharges['drcr'];
-            //         $lgrp = $doctorcharges['lgrp'];
-            //         $sequence = 'C' . $chargeslip_sequence->seq_no . 'L';
-            //         $refnum[] = $sequence;
-            //         HISBillingOut::create([
-            //             'patient_Id' => $patient_id,
-            //             'case_No' => $case_no,
-            //             'transDate' => $transDate,
-            //             'msc_price_scheme_id' => $msc_price_scheme_id,
-            //             'revenueID' => $revenueID,
-            //             'drcr' => $drcr,
-            //             'lgrp' => $lgrp,
-            //             'itemID' => $item_id,
-            //             'quantity' => $quantity,
-            //             'refNum' => $sequence,
-            //             'ChargeSlip' => $sequence,
-            //             'amount' => $amount,
-            //             'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-            //             'net_amount' => $amount,
-            //             'hostName' => (new GetIP())->getHostname(),
-            //             'accountnum' => $guarantor_Id,
-            //             'auto_discount' => 0,
-            //         ]);
-            //     }
-            // }
+            if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
+                foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
+                    $revenueID = $doctorcharges['code'];
+                    $item_id = $doctorcharges['doctor_code'];
+                    $quantity = 1;
+                    $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
+                    $drcr = $doctorcharges['drcr'];
+                    $lgrp = $doctorcharges['lgrp'];
+                    $refnum[] = $sequence;
+
+                    $saveCharges = HISBillingOut::create([
+                        'patient_Id' => $patient_id,
+                        'case_No' => $case_no,
+                        'transDate' => $transDate,
+                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
+                        'msc_price_scheme_id' => $msc_price_scheme_id,
+                        'revenueID' => $revenueID,
+                        'drcr' => $drcr,
+                        'lgrp' => $lgrp,
+                        'itemID' => $item_id,
+                        'quantity' => $quantity,
+                        'refNum' => $sequence,
+                        'ChargeSlip' => $sequence,
+                        'amount' => $amount,
+                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'net_amount' => $amount,
+                        'hostName' => (new GetIP())->getHostname(),
+                        'accountnum' => $guarantor_Id,
+                        'auto_discount' => 0,
+                    ]);
+                    if ($saveCharges && $this->check_is_allow_medsys) {
+                        MedSysDailyOut::create([
+                            'HospNum'           => $patient_id,
+                            'IDNum'             => $case_no . 'B',
+                            'TransDate'         => $transDate,
+                            'RevenueID'         => $revenueID,
+                            'ItemID'            => $item_id,
+                            'DrCr'              => $drcr,
+                            'Quantity'          => $quantity,
+                            'RefNum'            => $sequence,
+                            'ChargeSlip'        => $sequence,
+                            'Amount'            => $amount,
+                            'UserID'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'HostName'          => (new GetIP())->getHostname(),
+                            'AutoDiscount'      => 0,
+                        ]);
+                    }
+                }
+            }
 
             DB::connection('sqlsrv')->commit();
             DB::connection('sqlsrv_billingOut')->commit();
@@ -425,8 +435,8 @@ class HISPostChargesController extends Controller
         DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
         try {
             $checkUser = null;
-            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
-                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+            if (isset($request->user_passcode) && isset($request->user_passcode)) {
+                $checkUser = User::where([['idnumber', '=', $request->user_passcode], ['passcode', '=', $request->user_passcode]])->first();
                 if (!$checkUser) {
                     return response()->json([
                         'message' => 'Incorrect Username or Password',
@@ -447,6 +457,11 @@ class HISPostChargesController extends Controller
                     ->where('itemID', $item_id)
                     ->first();
                 
+                $existingData->updateOrFail([
+                    'refNum' => $refnum . '[REVOKED]',
+                    'ChargeSlip' => $refnum . '[REVOKED]',
+                ]);
+                
                 if ($existingData) {
                     HISBillingOut::create([
                         'patient_Id' => $existingData->patient_Id,
@@ -458,6 +473,7 @@ class HISPostChargesController extends Controller
                         'itemID' => $existingData->itemID,
                         'quantity' => $existingData->quantity * -1,
                         'refNum' => $existingData->refNum,
+                        'ChargeSlip' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
                         'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,

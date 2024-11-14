@@ -64,11 +64,17 @@ Route::controller(AncillaryController::class)->group(function() {
 Route::controller(PharmacyController::class)->group(function() {
     Route::get('get-opd-pharmacy-orders', 'getOPDOrders');
     Route::get('get-er-pharmacy-orders', 'getEROrders');
+    Route::get('get-pharmacy-posted-meds', 'getPostedMedicineByCaseNo');
     Route::get('get-ipd-pharmacy-orders', 'getIPDOrders');
+    Route::post('carry-pharmacy-order', 'carryOrder');
+    Route::post('cancel-pharmacy-order', 'cancelOrder');
+    Route::post('post-return-medicine', 'postReturnMedicine');
 });
 // Requisition Routes 
 Route::controller(RequisitionController::class)->group(function() {
     Route::get('get-warehouses', 'getWarehouses');
+    Route::post('get-patients-requisitions', 'getPatientRequisitions');
+    Route::post('get-rendered-transactions', 'getRenderedPatientRequisitions');
     Route::post('get-warehouse-items', 'getWarehouseItems');
     Route::post('save-supply-requisition', 'saveSupplyRequisition');
     Route::post('save-medicine-requisition', 'saveMedicineRequisition');

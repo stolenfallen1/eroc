@@ -105,32 +105,48 @@ class OutpatientRegistrationController extends Controller
                 'branch_Id'                     =>  1,
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
+                'er_Case_No'                    => null,
                 'register_Source'               => $request->payload['register_Source'] ?? null,
                 'register_Casetype'             => $request->payload['register_Casetype'] ?? null,
+                'register_Link_Case_No'         => null,
+                'register_Case_No_Consolidate'  => null,
                 'patient_Age'                   => $request->payload['age'] ?? null,
+                'er_Bedno'                      => null,
+                'room_Code'                     => null,
+                'room_Rate'                     => null,
                 'mscAccount_type'               => $request->payload['mscAccount_type'] ?? '',
                 'mscAccount_Discount_Id'        => $request->payload['mscAccount_discount_id'] ?? null,
-                'mscAccount_Trans_Types'        => $request->payload['mscAccount_Trans_Types'] ?? 5, 
+                'mscAccount_Trans_Types'        => $request->payload['mscAccount_Trans_Types'] ?? 2, 
+                'mscAdmission_Type_Id'          => null,
                 'mscPatient_Category'           => $patient_category,
                 'mscPrice_Groups'               => $request->payload['mscPrice_Groups'] ?? null,
                 'mscPrice_Schemes'              => $request->payload['mscPrice_Schemes'] ?? 100,
                 'mscService_Type'               => $request->payload['mscService_Type'] ?? null,
+                'mscDiet_Meal_Id'               => null,
+                'mscDisposition_Id'             => null,
+                'mscTriage_level_Id'            => null,
+                'mscCase_Result_Id'             => null,
+                'mscPrivileged_Card_Id'         => $request->payload['mscPrivileged_Card_Id'] ?? null,
                 'queue_number'                  => $request->payload['queue_number'] ?? null,
                 'arrived_date'                  => $request->payload['arrived_date'] ?? null,
                 'registry_Userid'               => Auth()->user()->idnumber,
                 'registry_Date'                 => Carbon::now(),
                 'registry_Status'               => $request->payload['registry_Status'] ?? null,
-                'discharged_Userid'             => $request->payload['discharged_Userid'] ?? null,
-                'discharged_Date'               => $request->payload['discharged_Date'] ?? null,
-                'billed_Userid'                 => $request->payload['billed_Userid'] ?? null,
-                'billed_Date'                   => $request->payload['billed_Date'] ?? null,
+                'discharged_Userid'             => null,
+                'discharged_Date'               => null,
+                'discharged_Hostname'           => null,
+                'billed_Userid'                 => null,
+                'billed_Date'                   => null,
+                'billed_Hostname'               => null,
                 'mscBroughtBy_Relationship_Id'  => $request->payload['mscBroughtBy_Relationship_Id'] ?? null,
                 'mscCase_Indicators_Id'         => $request->payload['mscCase_Indicators_Id'] ?? null,
                 'billed_Remarks'                => $request->payload['billed_Remarks'] ?? null,
-                'mgh_Userid'                    => $request->payload['mgh_Userid'] ?? null,
-                'mgh_Datetime'                  => $request->payload['mgh_Datetime'] ?? null,
-                'untag_Mgh_Userid'              => $request->payload['untag_Mgh_Userid'] ?? null,
-                'untag_Mgh_Datetime'            => $request->payload['untag_Mgh_Datetime'] ?? null,
+                'mgh_Userid'                    => null,
+                'mgh_Datetime'                  => null,
+                'mgh_Hostname'                  => null,
+                'untag_Mgh_Userid'              => null,
+                'untag_Mgh_Datetime'            => null,
+                'untag_Mgh_Hostname'            => null,
                 'isHoldReg'                     => $request->payload['isHoldReg'] ?? false,
                 'hold_Userid'                   => $request->payload['hold_Userid'] ?? null,
                 'hold_No'                       => $request->payload['hold_No'] ?? null,
@@ -809,15 +825,12 @@ class OutpatientRegistrationController extends Controller
                 'patientRegistry.allergies' => function ($query)use ($today) {
                     $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
                     $query->where('isDeleted', '!=', 1);
-                    // $query->whereDate('created_at', $today);
                 }
             ]);
 
-            $data->whereHas('patientRegistry', function($query) use ($today) {
-            // $data->whereHas('patientRegistryToday', function($query) use ($today) {
+            $data->whereHas('patientRegistryToday', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2); 
                 $query->where('isRevoked', 0);
-                // $query->whereDate('registry_Date', $today);
                 $query->whereNull('discharged_Date');
 
                 if(Request()->keyword) {
@@ -829,8 +842,7 @@ class OutpatientRegistrationController extends Controller
                     });
                 }
             });
-            $data->join('CDG_PATIENT_DATA.dbo.PatientRegistry', 'CDG_PATIENT_DATA.dbo.PatientMaster.patient_Id', '=', 'CDG_PATIENT_DATA.dbo.PatientRegistry.patient_Id')
-                ->orderBy('CDG_PATIENT_DATA.dbo.PatientRegistry.case_No', 'desc');
+            $data->orderBy('patient_Id', 'desc');
 
             $page = Request()->per_page ?? '50'; 
             return response()->json($data->paginate($page), 200);

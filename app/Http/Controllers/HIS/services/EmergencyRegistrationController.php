@@ -52,8 +52,9 @@ class EmergencyRegistrationController extends Controller
     
     public function index() {
         try {
-            $today = Carbon::now()->format('Y-m-d'); 
-            // $today = '2024-11-05'; 
+
+            $today = Carbon::now()->format('Y-m-d');
+            // $today = '2024-11-11';
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
@@ -75,12 +76,29 @@ class EmergencyRegistrationController extends Controller
 
             $data->with([
                 'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
-                'patientRegistry.allergies' => function ($query) use ($today) {
-                    $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
-                    $query->where('isDeleted', '!=', 1);
-                    $query->whereDate('created_at', $today);
+                'patientRegistry' => function($query) use ($today) {
+                    $query->whereDate('registry_Date', $today)
+                          ->where('mscAccount_Trans_Types', 5)
+                          ->where('isRevoked', 0)
+                          ->with(['allergies' => function($allergyQuery) use ($today) {
+                              $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+                                           ->where('isDeleted', '!=', 1)
+                                           ->whereDate('created_at', $today);
+                          }]);
                 }
             ]);
+
+            /*Previews Code
+            /*
+            // $data->with([
+            //     'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
+            //     'patientRegistry.allergies' => function ($query) use ($today) {
+            //         $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
+            //         $query->where('isDeleted', '!=', 1);
+            //         $query->whereDate('created_at', $today);
+            //     }
+            // ]);
+            */
 
             $data->orderBy('id', 'desc');
             $page = Request()->per_page ?? '50';
@@ -93,6 +111,68 @@ class EmergencyRegistrationController extends Controller
             ], 500);
         }
     }
+
+    // public function index() {
+    //     try {
+    //         // Get today's date
+    //         $today = Carbon::now()->format('Y-m-d');
+            
+    //         // Start with a basic query to test date filtering on `patientRegistry`
+    //         $data = Patient::whereHas('patientRegistry', function($query) use ($today) {
+    //             $query->where('mscAccount_Trans_Types', 5)
+    //                   ->where('isRevoked', 0)
+    //                   ->whereDate('registry_Date', $today); // Only match today's date
+    //         });
+
+    //         // $data = Patient::whereHas('patientRegistry', function($query) use ($today) {
+    //         //     $query->where('mscAccount_Trans_Types', 5)
+    //         //           ->where('isRevoked', 0)
+    //         //           ->whereDate('registry_Date', $today);
+    //         // });
+            
+    //         // Add keyword search back if needed
+    //         if (Request()->has('keyword')) {
+    //             $keyword = Request()->keyword;
+            
+    //             $data->where(function($subQuery) use ($keyword) {
+    //                 $subQuery->where('lastname', 'LIKE', '%' . $keyword . '%')
+    //                          ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
+    //                          ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
+    //             });
+    //         }
+
+    //         $data->with([
+    //             'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
+    //             'patientRegistry' => function($query) use ($today) {
+    //                 // Filter patientRegistry by today's date to only get relevant records
+    //                 $query->whereDate('registry_Date', $today)
+    //                       ->where('mscAccount_Trans_Types', 5)
+    //                       ->where('isRevoked', 0)
+    //                       ->with(['allergies' => function($allergyQuery) use ($today) {
+    //                           // Apply conditions to allergies
+    //                           $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+    //                                        ->where('isDeleted', '!=', 1)
+    //                                        ->whereDate('created_at', $today);
+    //                       }]);
+    //             }
+    //         ]);
+            
+    
+    //         // Order by ID descending to keep consistency
+    //         $data->orderBy('id', 'desc');
+    
+    //         // Fetch a small sample for inspection
+    //         $result = $data->paginate(10);
+    //         return response()->json($result, 200);
+    
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to get patients',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+    
 
 
     public function getPatientBroughtBy() {
@@ -1222,8 +1302,8 @@ class EmergencyRegistrationController extends Controller
                 
                 $patient =  Patient::updateOrCreate(
                     ['patient_Id' => $id], 
-                        $this->preparePatientData($request, $checkUser, $currentTimestamp)
-                        );
+                    $this->preparePatientData($request, $checkUser, $currentTimestamp)
+                );
 
             endif;
 
@@ -1259,7 +1339,11 @@ class EmergencyRegistrationController extends Controller
 
                 
                 $checkPatient = ['patient_Id'   => $patient_id];
-                
+                $patient =  Patient::updateOrCreate(
+                    ['patient_Id' => $id], 
+                    $this->preparePatientData($request, $checkUser, $currentTimestamp)
+                );
+
                 $pastImmunization               = $patient->past_immunization()->whereDate('created_at', $today)->first() ?: null;
                 $pastMedicalHistory             = $patient->past_medical_history()->whereDate('created_at', $today)->first() ?: null;
                 $pastMedicalProcedure           = $patient->past_medical_procedures()->whereDate('created_at', $today)->first() ?: null;
@@ -2026,12 +2110,17 @@ class EmergencyRegistrationController extends Controller
                     'informant_Suffix'                          => Arr::get($request->payload, 'informant_Suffix', optional($patientRegistry)->informant_Suffix),
                     'informant_Address'                         => Arr::get($request->payload, 'informant_Address', optional($patientRegistry)->informant_Address),
                     'informant_Relation_id'                     => Arr::get($request->payload, 'informant_Relation_id', optional($patientRegistry)->informant_Relation_id),
-                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code', optional($patientRegistry)->guarantor_Id),
-                    'guarantor_Name'                            => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_name', optional($patientRegistry)->guarantor_Name),
+                    'guarantor_Id'                              => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_code', optional($patientRegistry)->guarantor_Id ?? $patient_id),
+                    'guarantor_Name'                            => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_name') ?: (optional($patientRegistry)->guarantor_Name ?? 'Self Pay'),
                     'guarantor_Approval_code'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_code', optional($patientRegistry)->guarantor_Approval_code),
                     'guarantor_Approval_no'                     => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_no', optional($patientRegistry)->guarantor_Approval_no),
-                    'guarantor_Approval_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date', optional($patientRegistry)->guarantor_Approval_date),
-                    'guarantor_Validity_date'                   => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date', optional($patientRegistry)->guarantor_Validity_date),
+                    'guarantor_Approval_date'                   => Carbon::hasFormat(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date'), 'Y-m-d') 
+                                                                ? Carbon::parse(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Approval_date')) 
+                                                                : optional($patientRegistry)->guarantor_Approval_date,
+
+                    'guarantor_Validity_date'                   => Carbon::hasFormat(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date'), 'Y-m-d') 
+                                                                ? Carbon::parse(Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Validity_date')) 
+                                                                : optional($patientRegistry)->guarantor_Validity_date,
                     'guarantor_Approval_remarks'                => Arr::get($request->payload, 'guarantor_Approval_remarks', optional($patientRegistry)->guarantor_Approval_remarks),
                     'isWithCreditLimit'                         => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Id') ? Arr::get($request->payload, 'isWithCreditLimit', false) : false,
                     'guarantor_Credit_Limit'                    => Arr::get($request->payload, 'selectedGuarantor.0.guarantor_Credit_Limit', optional($patientRegistry)->guarantor_Credit_Limit),
@@ -3001,6 +3090,39 @@ class EmergencyRegistrationController extends Controller
     //         'transaction_num'       => $request->payload['transaction_num'] ?? null,
     //         'createdby'             => $checkUser->idnumber,
     //         'created_at'            => Carbon::now(),
+    //     ];
+    // }
+
+    // private function prepareHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+    //     return [
+    //         'branch_Id'                                 => $request->payload['branch_Id'] ?? 1,
+    //         'patient_Id'                                => $patient_id,
+    //         'case_No'                                   => $registry_id,
+    //         'brief_History'                             => $request->payload['brief_History'] ?? optional($existingData)->brief_History,
+    //         'pastMedical_History'                       => $request->payload['pastMedical_History'] ?? null,
+    //         'family_History'                            => $request->payload['family_History'] ?? null,
+    //         'personalSocial_History'                    => $request->payload['personalSocial_History'] ?? null,
+    //         'chief_Complaint_Description'               => $complaint ?? null,
+    //         'impression'                                => $request->payload['impression'] ?? null,
+    //         'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis'] ?? null,
+    //         'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis'] ?? null,
+    //         'preOperative_Diagnosis'                    => $request->payload['preOperative_Diagnosis'] ?? null,
+    //         'postOperative_Diagnosis'                   => $request->payload['postOperative_Diagnosis'] ?? null,
+    //         'surgical_Procedure'                        => $request->payload['surgical_Procedure'] ?? null,
+    //         'physicalExamination_Skin'                  => $request->payload['physicalExamination_Skin'] ?? null,
+    //         'physicalExamination_HeadEyesEarsNeck'      => $request->payload['physicalExamination_HeadEyesEarsNeck'] ?? null,
+    //         'physicalExamination_Neck'                  => $request->payload['physicalExamination_Neck'] ?? null,
+    //         'physicalExamination_ChestLungs'            => $request->payload['physicalExamination_ChestLungs'] ?? null,
+    //         'physicalExamination_CardioVascularSystem'  => $request->payload['physicalExamination_CardioVascularSystem'] ?? null,
+    //         'physicalExamination_Abdomen'               => $request->payload['physicalExamination_Abdomen'] ?? null,
+    //         'physicalExamination_GenitourinaryTract'    => $request->payload['physicalExamination_GenitourinaryTract'] ?? null,
+    //         'physicalExamination_Rectal'                => $request->payload['physicalExamination_Rectal'] ?? null,
+    //         'physicalExamination_Musculoskeletal'       => $request->payload['physicalExamination_Musculoskeletal'] ?? null,
+    //         'physicalExamination_LympNodes'             => $request->payload['physicalExamination_LympNodes'] ?? null,
+    //         'physicalExamination_Extremities'           => $request->payload['physicalExamination_Extremities'] ?? null,
+    //         'physicalExamination_Neurological'          => $request->payload['physicalExamination_Neurological'] ?? null,
+    //         'createdby'                                 => $checkUser->idnumber,
+    //         'created_at'                                => Carbon::now(),
     //     ];
     // }
         

@@ -2,6 +2,7 @@
 
 namespace App\Models\MMIS\inventory;
 
+use App\Models\HIS\his_functions\NurseLogBook;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
 use App\Models\User;
@@ -25,4 +26,10 @@ class InventoryTransaction extends Model
     public function user(){
         return $this->belongsTo(User::class, 'transaction_UserID','idnumber');
     }
+
+    // Fetching Purposes
+    public function nurse_logbook() {
+        return $this->belongsTo(NurseLogBook::class, 'transaction_Item_Id', 'item_Id');
+    }
+
 }

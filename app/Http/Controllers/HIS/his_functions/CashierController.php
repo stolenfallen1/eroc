@@ -14,10 +14,12 @@ use App\Models\HIS\his_functions\CashORMaster;
 use App\Models\HIS\his_functions\CashReceiptTerminal;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\LaboratoryMaster;
+use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\medsys\MedSysCashAssessment;
 use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbCashORMaster;
 use App\Models\HIS\medsys\tbLABMaster;
+use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use App\Models\HIS\medsys\tbInvStockCard;
@@ -25,6 +27,7 @@ use App\Models\HIS\medsys\tbNurseLogBook;
 use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\MMIS\inventory\InventoryTransaction;
 
+use App\Models\UserRevenueCodeAccess;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -102,27 +105,10 @@ class CashierController extends Controller
     
             if ($refNum) {
                 $query->where('refNum', $refNum)
-                    ->where('ORNumber', null)
-                    ->whereIn('id', function($subQuery) use ($refNum) {
-                        $subQuery->select(\DB::raw('MAX(id)'))
-                            ->from('CashAssessment')
-                            ->where('refNum', $refNum)
-                            ->groupBy('refNum', 'itemID', 'case_No')
-                            ->havingRaw('SUM(quantity) > 0')
-                            ->havingRaw('SUM(amount) > 0');
-                    });
+                    ->where('ORNumber', null);
             }
     
             $cashAssessments = $query->get();
-            $revenueIDs = $cashAssessments->pluck('revenueID')->unique();
-            $cashAssessments->load(['items' => function($itemQuery) use ($revenueIDs) {
-                $itemQuery->whereIn('transaction_code', $revenueIDs); 
-            }]);
-
-            if (strpos($refNum, 'MD') === 0) {
-                $cashAssessments->load('doctor_details');
-            }
-    
             return response()->json(['data' => $cashAssessments], 200);
     
         } catch (\Exception $e) {
@@ -157,6 +143,7 @@ class CashierController extends Controller
         try {
             $patient_Id             = $request->payload['patient_Id'];
             $case_No                = $request->payload['case_No'];
+            $patient_Type           = $request->payload['patient_Type'];
             $accountnum             = $request->payload['accountnum'];
             $request_doctors_id     = $request->payload['request_doctors_id'];
             $transDate              = Carbon::now();
@@ -191,17 +178,38 @@ class CashierController extends Controller
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
 
+                DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
+                DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
+
+                $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
+                $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
+
                 $ORCashInsertOnce = true;
 
                 foreach ($request->payload['Items'] as $item) {
                     $id = $item['id']; 
                     $itemID = $item['itemID'];
+                    $quantity = $item['quantity'];
+                    $dosage = $item['dosage'] ?? null;
                     $item_amount = $item['amount'];
-                    $form = $item['form'];
+                    $form = $item['form'] ?? null;
+                    $stat = $item['stat'] ?? null;
+                    $description = $item['exam_description'];
                     $revenueID = $item['revenueID'];
-                    $specimen = $item['specimen'];
+                    $specimen = $item['specimen'] ?? null;
                     $charge_type = $item['charge_type'];
+                    $item_ListCost = $item['item_ListCost'] ?? null;
+                    $item_Selling_Amount = $item['item_Selling_Amount'] ?? null;
+                    $item_OnHand = $item['item_OnHand'] ?? null;
+                    $patient_Name = $item['patient_Name'] ?? null;
+                    $section_Id = $item['section_Id'] ?? null;
                     $barcode = $item['barcode'] ?? null;
+                    $userId = $item['userId'] ?? null;
+                    $ismedicine = $item['ismedicine'] ?? null;
+                    $issupplies = $item['issupplies'] ?? null;
+                    $isprocedure = $item['isprocedure'] ?? null;
+                    $nurseLogReqNum = $revenueID . $tbNursePHSlipSequence->ChargeSlip;
+                    $inventoryRefNum = 'C' . $tbInvChargeSlipSequence->DispensingCSlip . 'M';
 
                     $update = CashAssessment::where('patient_Id' , $patient_Id)
                         ->where('case_No', $case_No)
@@ -219,13 +227,14 @@ class CashierController extends Controller
                         $billingOut = HISBillingOut::create([
                             'patient_Id'            => $patient_Id,
                             'case_No'               => $case_No,
+                            'patient_Type'          => $patient_Type,
                             'accountnum'            => 'CASH',
                             'transDate'             => $transDate,
                             'msc_price_scheme_id'   => 1,
                             'revenueID'             => $revenueID,
                             'drcr'                  => 'D',
                             'itemID'                => $itemID,
-                            'quantity'              => 1,
+                            'quantity'              => $quantity,
                             'refNum'                => $ORNum,
                             'ChargeSlip'            => $refNum,
                             'ornumber'              => $ORNum,
@@ -235,110 +244,236 @@ class CashierController extends Controller
                             'userid'                => Auth()->user()->idnumber,
                             'HostName'              => (new GetIP())->getHostname(),
                             'auto_discount'         => 0,
-                            'created_at'            => Carbon::now(),
+                            'created_at'            => $transDate,
                             'createdby'             => Auth()->user()->idnumber,
                         ]);
 
-                        if($this->check_is_allow_medsys && ($revenueID === 'EM' || $revenueID === 'RS')):
+                        if($this->check_is_allow_medsys && ($ismedicine == 1 || $issupplies == 1)):
+                            // Check if the Medicine / Supplies Request Needs to be rendered or not 
+                            // Meaning the user has access to the revenue code ( departmental )
+                            // If not, the request will be rendered to the CS ( Central ) or PH ( Pharmacy ) for carrying order / dispensing
+                            $transactionCode = TransactionCodes::where('code', $revenueID)->first();
+                            if ($transactionCode) {
+                                $revenueCode = $transactionCode->id;
+                                $ownDepartmentalRequest = UserRevenueCodeAccess::where('user_id', $userId)
+                                    ->where('revenue_code', $revenueCode)
+                                    ->exists();
 
-                            DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
-                            DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
-
-                            $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
-                            $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
-
-                            tbInvStockCard::create([
-                                'SummaryCode'   => $revenueID,
-                                'HospNum'       => $patient_Id,
-                                'IdNum'         => $case_No . 'B',
-                                'ItemID'        => $itemID,
-                                'TransDate'     => Carbon::now(),
-                                'RevenueID'     => $revenueID ?? null,
-                                'RefNum'        => $ORNum,
-                                'Status'        => $item['stat'] ?? null,
-                                'Quantity'      => $item['quantity'] ?? null,
-                                'Amount'        => $item_amount,
-                                'UserID'        => Auth()->user()->idnumber,
-                                'DosageID'      => $item['frequency'] ?? null,
-                                'DispenserCode' => 0,
-                                'RequestNum'    => $refNum,
-                                'HostName'      => (new GetIP())->getHostname(),
-                            ]);
-
-                            tbNurseLogBook::create([
-                                'Hospnum'       => $patient_Id,
-                                'IDnum'         => $case_No . 'B' ?? null,
-                                'PatientType'   => $request->payload[''] ?? null,
-                                'RevenueID'     => $item['code'] ?? null,
-                                'RequestDate'   => Carbon::now(),
-                                'ItemID'        => $itemID,
-                                'Description'   => $item['item_name'] ?? null,
-                                'Quantity'      => $item['quantity'] ?? null,
-                                'Dosage'        => $item['frequency'] ?? null,
-                                'Amount'        => $item_amount,
-                                'RecordStatus'  => $request->payload['RecordStatus'] ?? 'X',
-                                'UserID'        => Auth()->user()->idnumber,
-                                'ProcessBy'     => Auth()->user()->idnumber,
-                                'ProcessDate'   => Carbon::now(),
-                                'Remarks'       => $item['remarks'] ?? null,
-                                'RequestNum'    => $tbNursePHSlipSequence->ChargeSlip,
-                                'ReferenceNum'  => $tbInvChargeSlipSequence->DispensingCSlip,
-                                'Stat'          => $item['stat'] ?? null,
-                                'dcrdate'       => $request->payload['dcrdate'] ?? null,
-                                'isGeneric'     => 0,
-                                'AMPickup'      => 0,
-                            ]);
-
-                            NurseLogBook::create([
-                                'branch_Id'        => 1,
-                                'patient_Id'       => $patient_Id,
-                                'case_No'          => $case_No,
-                                'patient_Type'     => 0,
-                                'revenue_Id'       => $item['code'],
-                                'requestNum'       => $tbNursePHSlipSequence->ChargeSlip,
-                                'referenceNum'     => $tbInvChargeSlipSequence->DispensingCSlip,
-                                'item_Id'          => $itemID,
-                                'description'      => $item['frequency_description'] ?? null,
-                                'specimen_Id'      => $request->payload['specimen_Id'] ?? null,
-                                'Quantity'         => $item['quantity'] ?? null,
-                                'dosage'           => $item['frequency'] ?? null,
-                                'section_Id'       => $request->payload['section_Id'] ?? null,
-                                'amount'           => $item['amount'] ?? null,
-                                'user_Id'          => Auth()->user()->idnumber,
-                                'remarks'          => $item['remarks'] ?? null,
-                                'isGeneric'        => 0,
-                                'isMajorOperation' => 0,
-                                'createdat'        => Carbon::now(),
-                                'createdby'        => Auth()->user()->idnumber,
-                            ]);
-
-                            InventoryTransaction::create([
-                                'SummaryCode'   => $item['code'],
-                                'HospNum'       => $request->payload['patient_Id'] ?? null,
-                                'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
-                                'ItemID'        => $itemID,
-                                'TransDate'     => Carbon::now(),
-                                'RevenueID'     => $item['code'] ?? null,
-                                'RefNum'        => $tbInvChargeSlipSequence->DispensingCSlip,
-                                'Status'        => $item['stat'] ?? null,
-                                'Quantity'      => $item['quantity'] ?? null,
-                                'Balance'       => $request->payload['Balance'] ?? null,
-                                'NetCost'       => null,
-                                'Amount'        => $item['amount'] ?? null,
-                                'UserID'        => Auth()->user()->idnumber,,
-                                'DosageID'      => $item['frequency'] ?? null,
-                                'RequestByID'   => '',
-                                'CreditMemoNum' => $request->payload['CreditMemoNum'] ?? null,
-                                'DispenserCode' => 0,
-                                'RequestNum'    => $tbNursePHSlipSequence->ChargeSlip,
-                                'ListCost'      => '',
-                                'HostName'      => (new GetIP())->getHostname(),
-                            ]);
-
+                                if ($ownDepartmentalRequest) {
+                                    NurseLogBook::create([
+                                        'branch_id'                 => 1,
+                                        'patient_Id'                => $patient_Id,
+                                        'case_No'                   => $case_No,
+                                        'patient_Name'              => $patient_Name,
+                                        'patient_Type'              => $patient_Type,
+                                        'revenue_Id'                => $revenueID,
+                                        'requestNum'                => $nurseLogReqNum,
+                                        'referenceNum'              => $inventoryRefNum,
+                                        'item_Id'                   => $itemID,
+                                        'description'               => $description,
+                                        'Quantity'                  => $quantity,
+                                        'item_OnHand'               => $item_OnHand,
+                                        'item_ListCost'             => $item_ListCost,
+                                        'dosage'                    => $dosage,
+                                        'section_Id'                => $section_Id,
+                                        'price'                     => $item_Selling_Amount,
+                                        'amount'                    => $item_amount,
+                                        'record_Status'             => 'W',
+                                        'user_Id'                   => $userId, 
+                                        'processBy'                 => $userId,
+                                        'processDate'               => $transDate,
+                                        'stat'                      => $stat,
+                                        'ismedicine'                => $ismedicine,
+                                        'issupplies'                => $issupplies,
+                                        'isprocedure'               => $isprocedure,
+                                        'createdat'                 => $transDate,
+                                        'createdby'                 => $userId,
+                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
+                                    ]);
+                                    NurseCommunicationFile::create([
+                                        'branch_id'                 => 1,
+                                        'patient_Id'                => $patient_Id,
+                                        'case_No'                   => $case_No,
+                                        'patient_Name'              => $patient_Name,
+                                        'patient_Type'              => $patient_Type,
+                                        'item_Id'                   => $itemID,
+                                        'amount'                    => $item_amount,
+                                        'quantity'                  => $quantity,
+                                        'dosage'                    => $dosage,
+                                        'section_Id'                => $section_Id,
+                                        'request_Date'              => $transDate,
+                                        'revenue_Id'                => $revenueID,
+                                        'record_Status'             => 'W',
+                                        'user_Id'                   => $userId, 
+                                        'requestNum'                => $nurseLogReqNum,
+                                        'referenceNum'              => $inventoryRefNum,
+                                        'stat'                      => $stat,
+                                        'createdat'                 => $transDate,
+                                        'createdby'                 => $userId,
+                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
+                                    ]);
+                                    InventoryTransaction::create([
+                                        'branch_Id'                             => 1,
+                                        'warehouse_Id'                          => $section_Id,
+                                        'patient_Id'                            => $patient_Id,
+                                        'patient_Registry_Id'                   => $case_No,
+                                        'transaction_Item_Id'                   => $itemID,
+                                        'transaction_Date'                      => $transDate,
+                                        'transaction_Reference_Number'          => $inventoryRefNum,
+                                        'transaction_Acctg_Revenue_Code'        => $revenueID,
+                                        'transaction_Qty'                       => $quantity,
+                                        'transaction_Item_OnHand'               => $item_OnHand,
+                                        'transaction_Item_ListCost'             => $item_ListCost,
+                                        'transaction_Item_SellingAmount'        => $item_Selling_Amount,
+                                        'transaction_Item_TotalAmount'          => $item_amount,
+                                        'transaction_Item_Med_Frequency_Id'     => $dosage,
+                                        'transaction_UserID'                    => $userId,
+                                        'createdat'                             => $transDate,
+                                        'createdby'                             => $userId,
+                                    ]);
+                                    tbNurseLogBook::create([
+                                        'HospNum'                   => $patient_Id,
+                                        'IDnum'                     => $case_No . 'B',
+                                        'PatientType'               => $patient_Type,
+                                        'ItemID'                    => $itemID,
+                                        'Description'               => $description,
+                                        'Quantity'                  => $quantity,
+                                        'Dosage'                    => $dosage,
+                                        'SectionID'                 => $section_Id,
+                                        'Amount'                    => $item_amount,
+                                        'RecordStatus'              => 'W',
+                                        'UserID'                    => $userId,
+                                        'ProcessBy'                 => $userId,
+                                        'ProcessDate'               => $transDate,
+                                        'RequestNum'                => $nurseLogReqNum,
+                                        'ReferenceNum'              => $inventoryRefNum,
+                                        'Stat'                      => $stat,
+                                    ]);
+                                    tbNurseCommunicationFile::create([
+                                        'HospNum'                   => $patient_Id,
+                                        'IDnum'                     => $case_No . 'B',
+                                        'PatientType'               => $patient_Type,
+                                        'ItemID'                    => $itemID,
+                                        'Amount'                    => $item_amount,
+                                        'Quantity'                  => $quantity,
+                                        'Dosage'                    => $dosage,
+                                        'SectionID'                 => $section_Id,
+                                        'RequestDate'               => $transDate,
+                                        'RevenueID'                 => $revenueID,
+                                        'RecordStatus'              => 'W',
+                                        'UserID'                    => $userId,
+                                        'RequestNum'                => $nurseLogReqNum,
+                                        'ReferenceNum'              => $inventoryRefNum,
+                                        'Stat'                      => $stat == 1 ? 'N' : 'Y',
+                                    ]);
+                                    tbInvStockCard::create([
+                                        'SummaryCode'               => $revenueID,
+                                        'HospNum'                   => $patient_Id,
+                                        'IDnum'                     => 'CASH',
+                                        'ItemID'                    => $itemID,
+                                        'TransDate'                 => $transDate,
+                                        'RevenueID'                 => $revenueID,
+                                        'RefNum'                    => $inventoryRefNum,
+                                        'Quantity'                  => $quantity,
+                                        'Balance'                   => $item_OnHand,
+                                        'NetCost'                   => $item_ListCost,
+                                        'Amount'                    => $item_amount,
+                                        'UserID'                    => $userId,
+                                        'DosageID'                  => $dosage,
+                                        'RequestByID'               => $userId,
+                                        'LocationID'                => $revenueID == 'PH' ? 20 : ($revenueID == 'CS' ? 21 : ''),
+                                    ]);
+                                } else {
+                                    NurseLogBook::create([
+                                        'branch_id'                 => 1,
+                                        'patient_Id'                => $patient_Id,
+                                        'case_No'                   => $case_No,
+                                        'patient_Name'              => $patient_Name,
+                                        'patient_Type'              => $patient_Type,
+                                        'revenue_Id'                => $revenueID,
+                                        'requestNum'                => $nurseLogReqNum,
+                                        'referenceNum'              => $inventoryRefNum,
+                                        'item_Id'                   => $itemID,
+                                        'description'               => $description,
+                                        'Quantity'                  => $quantity,
+                                        'item_OnHand'               => $item_OnHand,
+                                        'item_ListCost'             => $item_ListCost,
+                                        'dosage'                    => $dosage,
+                                        'section_Id'                => $section_Id,
+                                        'price'                     => $item_Selling_Amount,
+                                        'amount'                    => $item_amount,
+                                        'record_Status'             => 'X',
+                                        'user_Id'                   => $userId, 
+                                        'stat'                      => $stat,
+                                        'ismedicine'                => $ismedicine,
+                                        'issupplies'                => $issupplies,
+                                        'isprocedure'               => $isprocedure,
+                                        'createdat'                 => $transDate,
+                                        'createdby'                 => $userId,
+                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
+                                    ]);
+                                    NurseCommunicationFile::create([
+                                        'branch_id'                 => 1,
+                                        'patient_Id'                => $patient_Id,
+                                        'case_No'                   => $case_No,
+                                        'patient_Name'              => $patient_Name,
+                                        'patient_Type'              => $patient_Type,
+                                        'item_Id'                   => $itemID,
+                                        'amount'                    => $item_amount,
+                                        'quantity'                  => $quantity,
+                                        'dosage'                    => $dosage,
+                                        'section_Id'                => $section_Id,
+                                        'request_Date'              => $transDate,
+                                        'revenue_Id'                => $revenueID,
+                                        'record_Status'             => 'X',
+                                        'user_Id'                   => $userId, 
+                                        'requestNum'                => $nurseLogReqNum,
+                                        'referenceNum'              => $inventoryRefNum,
+                                        'stat'                      => $stat,
+                                        'createdat'                 => $transDate,
+                                        'createdby'                 => $userId,
+                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
+                                    ]);
+                                    tbNurseLogBook::create([
+                                        'HospNum'                   => $patient_Id,
+                                        'IDnum'                     => $case_No . 'B',
+                                        'PatientType'               => $patient_Type,
+                                        'RevenueID'                 => $revenueID,
+                                        'RequestDate'               => $transDate,
+                                        'ItemID'                    => $itemID,
+                                        'Description'               => $description,
+                                        'Quantity'                  => $quantity,
+                                        'Dosage'                    => $dosage,
+                                        'SectionID'                 => $section_Id,
+                                        'Amount'                    => $item_amount,
+                                        'RecordStatus'              => null,
+                                        'UserID'                    => $userId,
+                                        'RequestNum'                => $nurseLogReqNum,
+                                        'ReferenceNum'              => $inventoryRefNum,
+                                        'Stat'                      => $stat,
+                                    ]);
+                                    tbNurseCommunicationFile::create([
+                                        'HospNum'                   => $patient_Id,
+                                        'IDnum'                     => $case_No . 'B',
+                                        'PatientType'               => $patient_Type,
+                                        'ItemID'                    => $itemID,
+                                        'Amount'                    => $item_amount,
+                                        'Quantity'                  => $quantity,
+                                        'Dosage'                    => $dosage,
+                                        'SectionID'                 => $section_Id,
+                                        'RequestDate'               => $transDate,
+                                        'RevenueID'                 => $revenueID,
+                                        'RecordStatus'              => null,
+                                        'UserID'                    => $userId,
+                                        'RequestNum'                => $nurseLogReqNum,
+                                        'ReferenceNum'              => $inventoryRefNum,
+                                        'Stat'                      => $stat == 1 ? 'N' : 'Y',
+                                    ]);
+                                }
+                            }
                         endif;
 
                         if ($this->check_is_allow_medsys):
-
                             MedSysCashAssessment::where('HospNum', $patient_Id)
                                 ->where('IdNum', $case_No . 'B')
                                 ->where('RefNum', $refNum)
@@ -347,7 +482,6 @@ class CashierController extends Controller
                                 ->update([
                                     'ORNumber'          => $ORNum,
                             ]);
-
                             MedSysDailyOut::create([
                                 'HospNum'               => $patient_Id,
                                 'IDNum'                 => 'CASH',
@@ -366,9 +500,6 @@ class CashierController extends Controller
                                 'CashierID'             => Auth()->user()->idnumber,
                                 'CashierShift'          => $Shift,
                             ]);
-
-
-
                         endif;
 
                         if ($ORCashInsertOnce) {
@@ -542,7 +673,6 @@ class CashierController extends Controller
                         }
                     }
                 }
-
                 DB::connection('sqlsrv_billingOut')->commit();
                 DB::connection('sqlsrv_laboratory')->commit();
                 DB::connection('sqlsrv_medsys_billing')->commit();
@@ -565,7 +695,7 @@ class CashierController extends Controller
             DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
             DB::connection('sqlsrv_patient_data')->rollBack();
 
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage(), 'line' => $e->getLine(), $e->getFile()], 500);
         }
     }
     public function saveOPDBill(Request $request) 
@@ -685,6 +815,7 @@ class CashierController extends Controller
                                 'CashierID'         => Auth()->user()->idnumber,
                                 'CashierShift'      => $Shift,
                             ]);
+
                             tbCashORMaster::create([
                                 'HospNum'           => $patient_Id,
                                 'IDNum'             => $case_No . 'B',

@@ -37,7 +37,7 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 
 Route::controller(SOAController::class)->group(function() {
     Route::get('generate-statement/{id}', 'createStatmentOfAccount');
-    Route::get('generate-statement-summary', 'createStatmentOfAccountSummary');
+    Route::get('generate-statement-summary/{id}', 'createStatmentOfAccountSummary');
 });
 
 Route::controller(PatientDischarge::class)->group(function(){

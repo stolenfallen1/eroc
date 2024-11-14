@@ -119,11 +119,7 @@ class DeliveryController extends Controller
                     $overall_total_amount        += $total_amount;
                 }
 
-                $delivery_item = DeliveryItems::updateOrCreate(
-                    [
-                        'rr_id'             => $delivery->id,
-                        'rr_Detail_Item_Id' => $detail['item']['id'],
-                    ],
+                $delivery_item = DeliveryItems::create(
                     [
                         'rr_id'                                         => $delivery->id,
                         'rr_Detail_Item_Id'                             => $detail['item']['id'],
@@ -141,6 +137,7 @@ class DeliveryController extends Controller
                         'rr_Detail_Item_Per_Box'                        => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['rr_Detail_Item_Per_Box'] : NULL,
                         'rr_Detail_Item_Vat_Rate'                       => $vat_rate,
                         'rr_Detail_Item_Vat_Amount'                     => $vat_amount ?? 0,
+                        'rr_canvas_id'                                  => $detail['purchase_request_detail']['recommended_canvas']['id'],
                         'isFreeGoods'                                   =>0
                     ]
                 );

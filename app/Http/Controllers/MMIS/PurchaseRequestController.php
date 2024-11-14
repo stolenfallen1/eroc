@@ -802,7 +802,51 @@ class PurchaseRequestController extends Controller
                             'canvas_item_vat_amount' => $vat_amount,
                         ]
                     );
-                } else {
+                }else if ($pr->ismedicine == 1) {
+                    $prd->update([
+                        'pr_DepartmentHead_ApprovedBy' => Auth::user()->idnumber,
+                        'pr_DepartmentHead_ApprovedDate' => Carbon::now(),
+                        'item_Request_Department_Approved_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
+                        'item_ListCost' => $item['item_ListCost'] ?? 0,
+                        'item_Request_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
+                        'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
+                    ]);
+
+                    $discount_amount = 0;
+                    $vat_amount = 0;
+                    $total_amount = $prd->item_ListCost * $prd->item_Request_Qty;
+
+                    if ($prd->discount) {
+                        $discount_amount = $total_amount * ($prd->discount / 100);
+                    }
+
+                    if ($prd->vat_rate) {
+                        $vat_amount = ($total_amount - $discount_amount) * ($prd->vat_rate / 100);
+                    }
+                    $canvas_item_total_amount = ($total_amount - $discount_amount) + $vat_amount;
+
+                    CanvasMaster::where(
+                        [
+                            'pr_request_details_id' => $prd->id,
+                            'canvas_Item_Id' => $prd->item_Id,
+                            'vendor_id' => $prd->prepared_supplier_id,
+                        ]
+                    )->update(
+                        [
+                            'vendor_id' => $prd->prepared_supplier_id,
+                            'canvas_Branch_Id' => Auth()->user()->branch_id,
+                            'canvas_Item_Qty' => $prd->item_Request_Qty,
+                            'canvas_item_amount' => $prd->item_ListCost,
+                            'canvas_item_total_amount' => $canvas_item_total_amount,
+                            'canvas_item_discount_percent' => $prd->canvas_discount_percent ?? 0,
+                            'canvas_item_discount_amount' => $discount_amount,
+                            'canvas_item_net_amount' => $canvas_item_total_amount,
+                            'canvas_lead_time' => $prd->lead_time,
+                            'canvas_item_vat_rate' => $prd->vat_rate,
+                            'canvas_item_vat_amount' => $vat_amount,
+                        ]
+                    );
+                }else {
 
                     if (Auth()->user()->warehouse_id == '36') {
                         $prd->update([

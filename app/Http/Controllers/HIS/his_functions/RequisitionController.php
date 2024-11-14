@@ -75,15 +75,27 @@ class RequisitionController extends Controller
                 return response()->json(["msg" => "Revenue code not found"], 404);
             }
 
-            $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
-            $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
-                $query->where('warehouse_Id', $request->warehouseID)
-                        ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
-            }])
-            ->whereHas('wareHouseItems', function ($query) use ($request) {
-                $query->where('warehouse_Id', $request->warehouseID);
-            })
-            ->orderBy('item_name', 'asc');
+            if ($request->roleID == 27) {
+                $priceColumn = 'item_Selling_Price_In';
+                $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
+                    $query->where('warehouse_Id', $request->warehouseID)
+                            ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
+                }])
+                ->whereHas('wareHouseItems', function ($query) use ($request) {
+                    $query->where('warehouse_Id', $request->warehouseID);
+                })
+                ->orderBy('item_name', 'asc');
+            } else {                
+                $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
+                $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
+                    $query->where('warehouse_Id', $request->warehouseID)
+                            ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
+                }])
+                ->whereHas('wareHouseItems', function ($query) use ($request) {
+                    $query->where('warehouse_Id', $request->warehouseID);
+                })
+                ->orderBy('item_name', 'asc');
+            }
             
 
             if($request->keyword) {
@@ -242,7 +254,7 @@ class RequisitionController extends Controller
             $account = $request->payload['account'];
             $requestDoctorID = $request->payload['attending_Doctor'];
             $requestDoctorName = $request->payload['attending_Doctor_fullname'];
-            $patient_type = $request->payload['patient_type'];
+            $patient_type = $request->payload['patient_Type'];
 
             if (isset($request->payload['selectedItems']) && count($request->payload['selectedItems']) > 0) {
                 foreach ($request->payload['selectedItems'] as $items) {
@@ -265,13 +277,17 @@ class RequisitionController extends Controller
                             'patient_Id'                => $patient_Id,
                             'case_No'                   => $case_No,
                             'patient_Name'              => $patient_Name,
+                            'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                             'transdate'                 => $today,
                             'assessnum'                 => $assessnum_sequence,
                             'drcr'                      => 'C',
                             'revenueID'                 => $revenueID,
                             'refNum'                    => $refNumSequence,
                             'itemID'                    => $itemID,
+                            'item_ListCost'             => $item_ListCost,
+                            'item_Selling_Amount'       => $price,
                             'quantity'                  => $quantity,
+                            'section_Id'                => $warehouseID,
                             'amount'                    => $amount,
                             'requestDescription'        => $item_name,
                             'requestDoctorID'           => $requestDoctorID,
@@ -434,7 +450,7 @@ class RequisitionController extends Controller
             $account = $request->payload['account'];
             $requestDoctorID = $request->payload['attending_Doctor'];
             $requestDoctorName = $request->payload['attending_Doctor_fullname'];
-            $patient_type = $request->payload['patient_type'];
+            $patient_type = $request->payload['patient_Type'];
 
             if (isset($request->payload['selectedItems']) && count($request->payload['selectedItems']) > 0) {
                 foreach ($request->payload['selectedItems'] as $items) {
@@ -459,13 +475,17 @@ class RequisitionController extends Controller
                             'patient_Id'                => $patient_Id,
                             'case_No'                   => $case_No,
                             'patient_Name'              => $patient_Name,
+                            'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                             'transdate'                 => $today,
                             'assessnum'                 => $assessnum_sequence,
                             'drcr'                      => 'C',
                             'revenueID'                 => $revenueID,
                             'refNum'                    => $refNumSequence,
                             'itemID'                    => $itemID,
+                            'item_ListCost'             => $item_ListCost,
+                            'item_Selling_Amount'       => $price,
                             'quantity'                  => $quantity,
+                            'section_Id'                => $warehouseID,
                             'amount'                    => $amount,
                             'requestDescription'        => $item_name,
                             'dosage'                    => $dosage,

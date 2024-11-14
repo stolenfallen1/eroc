@@ -212,7 +212,7 @@ class PurchaseOrderController extends Controller
                 $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);
                 $prefix = $sequence->seq_prefix;
                 $suffix = $sequence->seq_suffix;
-                $checkcanvas = CanvasMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
+                $checkcanvas = CanvasMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->whereNotNull('canvas_Level2_ApprovedBy')->first();
                 // $requestby = PurchaseRequest::where('id',$purchase_order['pr_request_id'])->first();
                 // if(!$checkcanvas){
                         

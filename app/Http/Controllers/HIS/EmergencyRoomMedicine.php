@@ -269,7 +269,6 @@ class EmergencyRoomMedicine extends Controller
             'amount'                => $item['amount'],
             'specimenId'            => '',
             'dosage'                => $item['frequency'] ?? null,
-            'recordStatus'          => 'X',
             'departmentID'          => 'ER',
             'requestDescription'    => $item['item_name'],
             'requestDoctorID'       => '',

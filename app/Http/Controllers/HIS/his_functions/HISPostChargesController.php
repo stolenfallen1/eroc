@@ -87,7 +87,8 @@ class HISPostChargesController extends Controller
             $query = HISBillingOut::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
-                ->where('quantity', '>', 0);
+                ->where('quantity', '>', 0)
+                ->where('refNum', 'not like', '%[REVOKED]%');
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -97,16 +98,6 @@ class HISPostChargesController extends Controller
             if (count($refnum) > 0) {
                 $query->whereIn('refNum', $refnum);
             }
-
-            $query->whereNotExists(function ($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('BillingOut as cancelled')
-                    ->whereColumn('cancelled.patient_Id', 'BillingOut.patient_Id')
-                    ->whereColumn('cancelled.case_No', 'BillingOut.case_No')
-                    ->whereColumn('cancelled.itemID', 'BillingOut.itemID')
-                    ->whereColumn('cancelled.refNum', 'BillingOut.refNum')
-                    ->where('cancelled.quantity', -1);
-            });
 
             return $query->get();
         } catch (\Exception $e) {
@@ -164,6 +155,7 @@ class HISPostChargesController extends Controller
             $msc_price_scheme_id = $request->payload['msc_price_scheme_id'];
             $request_doctors_id = $request->payload['attending_Doctor'];
             $guarantor_Id = $request->payload['guarantor_Id'];
+            $patient_Type = $request->payload['patient_Type'];
             $refnum = [];
 
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
@@ -214,6 +206,7 @@ class HISPostChargesController extends Controller
                     $saveCharges = HISBillingOut::create([
                         'patient_Id' => $patient_id,
                         'case_No' => $case_no,
+                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
                         'transDate' => $transDate,
                         'msc_price_scheme_id' => $msc_price_scheme_id,
                         'revenueID' => $revenueID,
@@ -381,6 +374,7 @@ class HISPostChargesController extends Controller
                         'patient_Id' => $patient_id,
                         'case_No' => $case_no,
                         'transDate' => $transDate,
+                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
                         'msc_price_scheme_id' => $msc_price_scheme_id,
                         'revenueID' => $revenueID,
                         'drcr' => $drcr,
@@ -463,6 +457,11 @@ class HISPostChargesController extends Controller
                     ->where('itemID', $item_id)
                     ->first();
                 
+                $existingData->updateOrFail([
+                    'refNum' => $refnum . '[REVOKED]',
+                    'ChargeSlip' => $refnum . '[REVOKED]',
+                ]);
+                
                 if ($existingData) {
                     HISBillingOut::create([
                         'patient_Id' => $existingData->patient_Id,
@@ -474,6 +473,7 @@ class HISPostChargesController extends Controller
                         'itemID' => $existingData->itemID,
                         'quantity' => $existingData->quantity * -1,
                         'refNum' => $existingData->refNum,
+                        'ChargeSlip' => $existingData->refNum,
                         'amount' => $existingData->amount * -1,
                         'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,

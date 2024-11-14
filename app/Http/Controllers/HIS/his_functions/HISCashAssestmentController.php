@@ -69,12 +69,14 @@ class HISCashAssestmentController extends Controller
     public function history($patient_id, $case_no, $code, $refNum = [])
     {
         try {
-            // $today = Carbon::now()->format('Y-m-d');
             $query = CashAssessment::with('items', 'doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
-                ->where('quantity', '>', 0);
-                // ->whereDate('transdate', $today);
+                ->where('quantity', '>', 0)
+                ->where('ismedicine', 0)
+                ->where('issupplies', 0)
+                ->where('isprocedure', 0)
+                ->where('refNum', 'not like', '%[REVOKED]%');
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -84,16 +86,6 @@ class HISCashAssestmentController extends Controller
             if (count($refNum) > 0) {
                 $query->whereIn('refNum', $refNum);
             }
-
-            $query->whereNotExists(function ($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('CashAssessment as cancelled')
-                    ->whereColumn('cancelled.patient_Id', 'CashAssessment.patient_Id')
-                    ->whereColumn('cancelled.case_No', 'CashAssessment.case_No')
-                    ->whereColumn('cancelled.itemID', 'CashAssessment.itemID')
-                    ->whereColumn('cancelled.refNum', 'CashAssessment.refNum')
-                    ->where('cancelled.quantity', -1);
-            });
 
             return $query->get();
         } catch (\Exception $e) {
@@ -156,6 +148,7 @@ class HISCashAssestmentController extends Controller
             $patient_name = $request->payload['patient_Name'];
             $requesting_doctor_id = $request->payload['attending_Doctor'];
             $requesting_doctor_name = $request->payload['attending_Doctor_fullname'];
+            $patient_Type = $request->payload['patient_Type'];
             $transdate = Carbon::now();
             
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
@@ -202,6 +195,7 @@ class HISCashAssestmentController extends Controller
                         'patient_Id' => $patient_id,
                         'case_No' => $case_no,
                         'patient_Name' => $patient_name,
+                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
                         'transdate' => $transdate,
                         'assessnum' => $assessnum_sequence['MedSysCashSequence'], 
                         'drcr' => 'C',
@@ -262,6 +256,7 @@ class HISCashAssestmentController extends Controller
                         'branch_id' => 1,
                         'patient_id' => $patient_id,
                         'case_no' => $case_no,
+                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
                         'patient_name' => $patient_name,
                         'transdate' => $transdate,
                         'assessnum' => $assessnum_sequence['MedSysCashSequence'],
@@ -348,16 +343,13 @@ class HISCashAssestmentController extends Controller
 
                 $existingData->updateOrFail([
                     'dateRevoked' => Carbon::now(),
-                    'revokedBy' => Auth()->user()->idnumber,
+                    'revokedBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                    'updatedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                    'updated_at'    => Carbon::now(),
+                    'refNum' => $refNum . '[REVOKED]',
                 ]);
 
                 if ($existingData) {
-                    $existingData->update([
-                        'dateRevoked'   => Carbon::now(),
-                        'revokedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'updatedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'updated_at'    => Carbon::now(),
-                    ]);
                     CashAssessment::create([
                         'branch_id' => 1,
                         'patient_Id' => $existingData->patient_Id,
@@ -390,6 +382,7 @@ class HISCashAssestmentController extends Controller
                             ->update([
                                 'DateRevoked'   => Carbon::now(),
                                 'RevokedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'RefNum'        => $refNum . '[REVOKED]',
                         ]);
                         MedSysCashAssessment::create([
                             'HospNum'           => $existingData->patient_Id,

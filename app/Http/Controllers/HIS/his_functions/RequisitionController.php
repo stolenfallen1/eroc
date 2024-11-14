@@ -120,7 +120,8 @@ class RequisitionController extends Controller
             if ($account == 1) {
                 $cashAssessments = CashAssessment::where('patient_Id', $patient_Id)
                     ->where('case_No', $case_No)
-                    ->where('recordStatus', 27) 
+                    ->where('recordStatus', '27')
+                    ->whereNull('ORNumber')
                     ->where(function($query) use ($keyword) {
                         $query->where('issupplies', 1)
                             ->orWhere('ismedicine', 1)
@@ -286,6 +287,7 @@ class RequisitionController extends Controller
                             'itemID'                    => $itemID,
                             'item_ListCost'             => $item_ListCost,
                             'item_Selling_Amount'       => $price,
+                            'item_OnHand'               => $item_OnHand,
                             'quantity'                  => $quantity,
                             'section_Id'                => $warehouseID,
                             'amount'                    => $amount,
@@ -484,6 +486,7 @@ class RequisitionController extends Controller
                             'itemID'                    => $itemID,
                             'item_ListCost'             => $item_ListCost,
                             'item_Selling_Amount'       => $price,
+                            'item_OnHand'               => $item_OnHand,
                             'quantity'                  => $quantity,
                             'section_Id'                => $warehouseID,
                             'amount'                    => $amount,

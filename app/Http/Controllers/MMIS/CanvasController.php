@@ -77,20 +77,25 @@ class CanvasController extends Controller
         $prefix = $sequence->seq_prefix;
         $suffix = $sequence->seq_suffix;
         
-        $discount_amount = 0;
-        $vat_amount = 0;
-        $total_amount = $request->canvas_item_amount * $request->canvas_Item_Qty;
+        $discount_amount = $request->discount_amount;
+        $vat_amount = $request->vat_amount;
+        $total_amount = $request->total_amount;
         
-        if($request->canvas_discount_percent){
-            $discount_amount = $total_amount * ($request->canvas_discount_percent / 100);
-        }
+        $canvas_item_total_amount = $request->tota_net_amount;
 
-        if($request->canvas_item_vat_rate){
-            if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
-                $vat_amount = ($total_amount - $discount_amount) * ($request->canvas_item_vat_rate / 100);
-            }
-        }
-        $canvas_item_total_amount =($total_amount - $discount_amount) + $vat_amount;
+
+        // $total_amount = $request->canvas_item_amount * $request->canvas_Item_Qty;
+        
+        // if($request->canvas_discount_percent){
+        //     $discount_amount = $total_amount * ($request->canvas_discount_percent / 100);
+        // }
+
+        // if($request->canvas_item_vat_rate){
+        //     if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
+        //         $vat_amount = ($total_amount - $discount_amount) * ($request->canvas_item_vat_rate / 100);
+        //     }
+        // }
+        // $canvas_item_total_amount =($total_amount - $discount_amount) + $vat_amount;
 
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
@@ -123,7 +128,7 @@ class CanvasController extends Controller
                 'canvas_Item_Qty' => $request->canvas_Item_Qty,
                 'canvas_Item_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
                 'canvas_item_amount' => $request->canvas_item_amount,
-                'canvas_item_total_amount' => $canvas_item_total_amount,
+                'canvas_item_total_amount' => $total_amount,
                 'canvas_item_discount_percent' => $request->canvas_discount_percent,
                 'canvas_item_discount_amount' => $discount_amount,
                 'canvas_item_net_amount' => $canvas_item_total_amount,
@@ -132,6 +137,7 @@ class CanvasController extends Controller
                 'currency_id' => $request->currency_id,
                 'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
                 'canvas_item_vat_amount' => $vat_amount,
+                'vat_type' => $request->vat_type,
                 'isFreeGoods' => $request->isFreeGoods == true ? 1 : 0,
                 'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
             ]);
@@ -226,7 +232,7 @@ class CanvasController extends Controller
         } catch (\Exception $e) {
             DB::connection('sqlsrv')->rollback();
             DB::connection('sqlsrv_mmis')->rollback();
-            return response()->json(["error" => $e], 200);
+            return response()->json(["error" => $e->getMessage()], 200);
         }
 
     }

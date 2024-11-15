@@ -64,7 +64,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
             $itemTotal = $item->order_qty * $item->price;
             $subTotalNonFreeGoods += (float)$itemTotal;
             $Nondiscount += (float)$item->discount;
-            $vatAmount += (float)$item->vat;
+            $vatAmount += (float)$item->vat_amount;
             $grandTotalNonFreeGoods += (float)$item->net_amount;
             if ($item->currency_id == 2) {
                 $currency = '$';

@@ -79,6 +79,7 @@ Route::controller(RequisitionController::class)->group(function() {
     Route::post('save-supply-requisition', 'saveSupplyRequisition');
     Route::post('save-medicine-requisition', 'saveMedicineRequisition');
     Route::post('save-procedure-requisition', 'saveProcedureRequisition');
+    Route::post('cancel-requisition-request', 'onRevokeRequisition');
 });
 // OPD SPECIFIC - Routes
 // Post Medicine / Supplies Routes

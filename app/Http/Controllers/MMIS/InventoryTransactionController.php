@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MMIS\inventory\InventoryTransaction;
+use App\Models\MMIS\procurement\VwReOrderPR;
 
 class InventoryTransactionController extends Controller
 {
@@ -19,4 +20,10 @@ class InventoryTransactionController extends Controller
         return response()->json($data, 200);
     }
 
+    public function reorderitem()
+    {
+        $data = VwReOrderPR::whereNotIn('pr_id',[Request()->prid])->whereIn('warehouse_Id', Auth::user()->departments)->whereIn('item_Id',Request()->items)->orderBy('PRNumber','asc')->get();
+        return response()->json($data, 200);
+    }
+    
 }

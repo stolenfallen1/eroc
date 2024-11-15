@@ -266,6 +266,10 @@ class PurchaseRequestController extends Controller
                         'lead_time' => $item['lead_time'] ?? 0,
                         'vat_rate' => $item['vat_rate'] ?? 0,
                         'vat_type' => $item['vat_type'] ?? 0,
+                        'discount_amount' => $item['discount_amount'] ?? 0,
+                        'vat_amount' => $item['vat_amount'] ?? 0,
+                        'total_amount' => $item['total_amount'] ?? 0,
+                        'total_net' => $item['total_net'] ?? 0,
                         'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                         'ismedicine' => $ismed,
                         'isdietary' => $isdiet
@@ -275,8 +279,17 @@ class PurchaseRequestController extends Controller
                 if ($request->invgroup_id == 2 || $this->role->isdietary()) {
                     $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
                     $item['id'] = $details->id;
+                    $item['vat_rate'] = $details->vat_rate;
+                    $item['vat_type'] = $details->vat_type;
+                    $item['discount'] = $details->discount;
+                    $item['discount_amount'] = $details->discount_amount;
+                    $item['vat_rate'] = $details->vat_rate;
+                    $item['vat_amount'] = $details->vat_amount;
+                    $item['total_amount'] = $details->total_amount;
+                    $item['total_net'] = $details->total_net;
+                    $item['lead_time'] = $details->lead_time;
                     $item['pr_id'] = $pr['id'];
-                    $this->addPharmaCanvas($item);
+                    $this->addPharmaCanvas($item,);
                 }                
                 
                 if (isset($request->isconsignments) && $request->isconsignments == 1) {
@@ -419,7 +432,12 @@ class PurchaseRequestController extends Controller
                     'recommended_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id'] : 0,
                     'lead_time' => $item['lead_time'] ?? 0,
                     'vat_rate' => $item['vat_rate'] ?? 0,
-                    'vat_type' => $item['vat_type'] ?? 0,
+                    'vat_type' => $item['vat_type'] ?? 1,
+                    'discount_amount' => $item['discount_amount'] ?? 0,
+                    'vat_amount' => $item['vat_amount'] ?? 0,
+                    'total_amount' => $item['total_amount'] ?? 0,
+                    'total_net' => $item['total_net'] ?? 0,
+
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                     // 'ismedicine' => $ismed,
                     // 'isdietary' => $isdiet
@@ -434,6 +452,15 @@ class PurchaseRequestController extends Controller
                     $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
                     $item['id'] = $details->id;
                     $item['pr_id'] = $pr['id'];
+                    $item['vat_rate'] = $details->vat_rate;
+                    $item['vat_type'] = $details->vat_type;
+                    $item['discount'] = $details->discount;
+                    $item['discount_amount'] = $details->discount_amount;
+                    $item['vat_rate'] = $details->vat_rate;
+                    $item['vat_amount'] = $details->vat_amount;
+                    $item['total_amount'] = $details->total_amount;
+                    $item['total_net'] = $details->total_net;
+                    $item['lead_time'] = $details->lead_time;
                     $this->addPharmaCanvas($item);
                 }    
             } else {
@@ -682,20 +709,33 @@ class PurchaseRequestController extends Controller
         $prefix = $sequence->seq_prefix;
         $suffix = $sequence->seq_suffix;
 
-        $discount_amount = 0;
-        $vat_amount = 0;
-        $total_amount = $item['item_ListCost'] * $item['item_Request_Qty'];
-        if ($item['vat_rate']) {
-            if ($vendor->isVATInclusive == 0) {
-                $vat_amount = $total_amount * ($item['vat_rate'] / 100);
-                $total_amount += $vat_amount;
-            } else {
-                $vat_amount = $total_amount * ($item['vat_rate'] / 100);
-            }
-        }
-        if ($item['discount']) {
-            $discount_amount = $total_amount * ($item['discount'] / 100);
-        }
+        // $discount_amount = 0;
+        // $vat_amount = 0;
+        // $total_amount = $item['item_ListCost'] * $item['item_Request_Qty'];
+        // if ($item['vat_rate']) {
+        //     if ($vendor->isVATInclusive == 0) {
+        //         $vat_amount = $total_amount * ($item['vat_rate'] / 100);
+        //         $total_amount += $vat_amount;
+        //     } else {
+        //         $vat_amount = $total_amount * ($item['vat_rate'] / 100);
+        //     }
+        // }
+        // if ($item['discount']) {
+        //     $discount_amount = $total_amount * ($item['discount'] / 100);
+        // }
+
+       
+        // if ($item['vat_rate']) {
+        //     if ($vendor->isVATInclusive == 0) {
+        //         $vat_amount = $total_amount * ($item['vat_rate'] / 100);
+        //         $total_amount += $vat_amount;
+        //     } else {
+        //         $vat_amount = $total_amount * ($item['vat_rate'] / 100);
+        //     }
+        // }
+        // if ($item['discount']) {
+        //     $discount_amount = $total_amount * ($item['discount'] / 100);
+        // }
         
         $pr_id = Request()->id ?? $item['pr_id'];
 
@@ -723,15 +763,17 @@ class PurchaseRequestController extends Controller
                 'canvas_Item_Qty' => $item['item_Request_Qty'],
                 'canvas_Item_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 'canvas_item_amount' => $item['item_ListCost'],
-                'canvas_item_total_amount' => $total_amount,
+
+                'canvas_item_total_amount' => $item['total_amount'],
                 'canvas_item_discount_percent' => $item['discount'],
-                'canvas_item_discount_amount' => $discount_amount,
-                'canvas_item_net_amount' => ($total_amount - $discount_amount),
+                'canvas_item_discount_amount' => $item['discount_amount'],
+                'canvas_item_net_amount' => $item['total_net'],
                 'canvas_lead_time' => $item['lead_time'],
                 // 'canvas_remarks' => $request->canvas_remarks,
                 'currency_id' => 1,
-                'canvas_item_vat_rate' => $item['vat_rate'],
-                'canvas_item_vat_amount' => $vat_amount,
+                'canvas_item_vat_rate' =>$item['vat_rate'],
+                'canvas_item_vat_amount' => $item['vat_amount'],
+                'vat_type' => $item['vat_type'],
                 // 'isFreeGoods' => $request->isFreeGoods,
                 'isRecommended' => 1,
                 // 'canvas_Level2_ApprovedBy' => Request()->pr_RequestedBy,
@@ -792,14 +834,17 @@ class PurchaseRequestController extends Controller
                             'vendor_id' => $prd->prepared_supplier_id,
                             'canvas_Branch_Id' => Auth()->user()->branch_id,
                             'canvas_Item_Qty' => $prd->item_Request_Qty,
-                            'canvas_item_amount' => $prd->item_ListCost,
-                            'canvas_item_total_amount' => $canvas_item_total_amount,
-                            'canvas_item_discount_percent' => $prd->canvas_discount_percent ?? 0,
-                            'canvas_item_discount_amount' => $discount_amount,
-                            'canvas_item_net_amount' => $canvas_item_total_amount,
+                           'canvas_item_amount' => $prd->item_ListCost,
+                            'canvas_item_total_amount' => $prd->total_amount,
+                            'canvas_item_discount_percent' => $prd->discount,
+                            'canvas_item_discount_amount' => $prd->discount_amount,
+                            'canvas_item_net_amount' => $prd->total_net,
                             'canvas_lead_time' => $prd->lead_time,
-                            'canvas_item_vat_rate' => $prd->vat_rate,
-                            'canvas_item_vat_amount' => $vat_amount,
+                            // 'canvas_remarks' => $request->canvas_remarks,
+                            'currency_id' => 1,
+                            'canvas_item_vat_rate' =>$prd->vat_rate,
+                            'canvas_item_vat_amount' => $prd->vat_amount,
+                            'vat_type' => $prd->vat_type,
                         ]
                     );
                 }else if ($pr->ismedicine == 1) {
@@ -811,6 +856,8 @@ class PurchaseRequestController extends Controller
                         'item_Request_Qty' => $item['item_Request_Qty'] ?? $item['item_Request_Qty'],
                         'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                     ]);
+
+
 
                     $discount_amount = 0;
                     $vat_amount = 0;
@@ -837,13 +884,16 @@ class PurchaseRequestController extends Controller
                             'canvas_Branch_Id' => Auth()->user()->branch_id,
                             'canvas_Item_Qty' => $prd->item_Request_Qty,
                             'canvas_item_amount' => $prd->item_ListCost,
-                            'canvas_item_total_amount' => $canvas_item_total_amount,
-                            'canvas_item_discount_percent' => $prd->canvas_discount_percent ?? 0,
-                            'canvas_item_discount_amount' => $discount_amount,
-                            'canvas_item_net_amount' => $canvas_item_total_amount,
+                            'canvas_item_total_amount' => $prd->total_amount,
+                            'canvas_item_discount_percent' => $prd->discount,
+                            'canvas_item_discount_amount' => $prd->discount_amount,
+                            'canvas_item_net_amount' => $prd->total_net,
                             'canvas_lead_time' => $prd->lead_time,
-                            'canvas_item_vat_rate' => $prd->vat_rate,
-                            'canvas_item_vat_amount' => $vat_amount,
+                            // 'canvas_remarks' => $request->canvas_remarks,
+                            'currency_id' => 1,
+                            'canvas_item_vat_rate' =>$prd->vat_rate,
+                            'canvas_item_vat_amount' => $prd->vat_amount,
+                            'vat_type' => $prd->vat_type,
                         ]
                     );
                 }else {

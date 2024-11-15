@@ -150,7 +150,6 @@ class EmergencyRoomMedicine extends Controller
         
         foreach ($request->payload[$itemType] as $index => $item) {
 
-            
               /********************************************/
              /*             Increment Sequences          */
             /********************************************/
@@ -176,12 +175,12 @@ class EmergencyRoomMedicine extends Controller
               /**************************************/
              /*     Prepare data for insertion     */
             /**************************************/
-            $tbNurseLogBookData = $this->prepareMedsysLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $tbInvStockCardData = $this->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost);
-            $cashAssessment = $this->prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
-            $tbCashAssessment = $this->prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
-            $nurseLogBookData = $this->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $inventoryTransactionData = $this->prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock);
+            $tbNurseLogBookData         = $this->prepareMedsysLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
+            $tbInvStockCardData         = $this->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost);
+            $cashAssessment             = $this->prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
+            $tbCashAssessment           = $this->prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
+            $nurseLogBookData           = $this->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
+            $inventoryTransactionData   = $this->prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock);
     
               /**************************************/
              /*            Insert Records          */
@@ -271,6 +270,8 @@ class EmergencyRoomMedicine extends Controller
             'dosage'                => $item['frequency'] ?? null,
             'departmentID'          => 'ER',
             'requestDescription'    => $item['item_name'],
+            'ismedicine'            => $item['code'] === 'EM' ? 1 : 0,
+            'issupplies'            => $item['code'] === 'RS' ? 1 : 0,
             'requestDoctorID'       => '',
             'requestDoctorName'     => '',
             'hostname'              => (new GetIP())->getHostname(),
@@ -349,8 +350,7 @@ class EmergencyRoomMedicine extends Controller
             'updatedby'                     => $checkUser->idnumber,
         ];
     }
-
-
+    
     public function getMedicineSupplyCharges($id) {
         try {
 

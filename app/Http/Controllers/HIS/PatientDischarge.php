@@ -16,6 +16,8 @@ use App\Models\HIS\SOA\OutPatient;
 use App\Models\HIS\MedsysAdmittingCommunication;
 use App\Models\HIS\AdmittingCommunicationFile;
 use App\Helpers\HIS\SysGlobalSetting;
+use App\Models\Profesional\Doctors;
+use App\Models\HIS\mscPatientStatus;
 
 class PatientDischarge extends Controller
 {
@@ -28,7 +30,7 @@ class PatientDischarge extends Controller
     //
     public function mayGoHome(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
-        try {
+        // try {
 
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
             if(!$checkUser):
@@ -36,16 +38,30 @@ class PatientDischarge extends Controller
             endif;
 
             $registry_data = [
-                'queue_Number'      => 0,
-                'mscDisposition_Id' => $request->payload['mscDisposition_Id'],
-                'mgh_Userid'        => $checkUser->idnumber,
-                'mgh_Datetime'      => Carbon::now(),
-                'mgh_Hostname'      => (new GetIP())->getHostname(),
+                'queue_Number'              => 0,
+                'mscDisposition_Id'         => $request->payload['mscDisposition_Id'],
+                'mscCase_Result_Id'         => $request->payload['ERpatient_result'],
+                'mgh_Userid'                => $checkUser->idnumber,
+                'mgh_Datetime'              => Carbon::now(),
+                'mgh_Hostname'              => (new GetIP())->getHostname(),
+                'isreferredFrom'            => intval($request->mscDisposition_Id) === 3 ? 1 : 0,
+                'referred_From_HCI'         => $request->payload['refered_Form_HCI'] ?? null,
+                'referred_From_HCI_address' => $request->payload['FromHCIAddress'] ?? null,
+                'referred_From_HCI_code'    => $request->payload['refered_From_HCI_code'] ?? null,
+                'referred_To_HCI'           => $request->payload['refered_To_HCI'] ?? null,
+                'referred_To_HCI_address'   => $request->payload['ToHCIAddress'] ?? null,
+                'referred_To_HCI_code'      => $request->payload['refered_To_HCI_code'] ?? null,
+                'referring_Doctor'          => $request->payload['refering_Doctor'] ?? null,
+                'referral_Reason'           => $request->payload['referal_Reason'] ?? null,
+                'typeOfDeath_id'            => $request->payload['typeOfDeath_id'] ?? null,
+                'dateOfDeath'               => $request->payload['dateOfDate'] ?? null,
+                'updatedBy'                 => $checkUser->idnumber,
+                'updated_at'                => Carbon::now()
             ];
 
             $history_data = [
-                'impression'            => $request->payload['initial_impression'],
-                'discharge_Diagnosis'   => $request->payload['discharge_diagnosis']
+                'impression'            => $request->payload['initial_impression'] ?? null,
+                'discharge_Diagnosis'   => $request->payload['discharge_diagnosis'] ?? null
             ];
 
             $patient_registry = PatientRegistry::where('case_No', $id)->first();
@@ -66,13 +82,13 @@ class PatientDischarge extends Controller
                 ], 200);
             }
 
-        } catch(\Exception $e) {
+        // } catch(\Exception $e) {
             
-            DB::connection('sqlsrv_patient_data')->rollBack();
-            return response()->json([
-                'message' => 'Failed to update patient registry or patient history'
-            ], 500);
-        }
+        //     DB::connection('sqlsrv_patient_data')->rollBack();
+        //     return response()->json([
+        //         'message' => 'Failed to update patient registry or patient history'
+        //     ], 500);
+        // }
     }
 
 
@@ -366,5 +382,36 @@ class PatientDischarge extends Controller
         }
         
     }
+
+    public function getDoctorsList() {
+        try {
+            $query = Doctors::select('id', 'doctor_code', 'lastname', 'firstname', 'middlename')
+                            ->where('isactive', 1);
+    
+            if (Request()->keyword) {
+                $query->where('lastname', 'LIKE', '%' . Request()->keyword . '%')
+                    ->orWhere('firstname', 'LIKE', '%' . Request()->keyword . '%')
+                    ->orWhere('doctor_code', 'LIKE', '%' . Request()->keyword . '%');
+            }
+            $query->orderBy('id', 'asc');
+            $page = Request()->per_page ?? '50';
+            return response()->json($query->paginate($page), 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getPatientStatusList() {
+        try {
+            $patientStatus = mscPatientStatus::select('id', 'description')
+                                                ->where('isactive', 1)
+                                                ->orderBy('id', 'asc')
+                                                ->get();
+            return response()->json($patientStatus, 200);
+        } catch(\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+    
     
 }

@@ -122,6 +122,7 @@ class RequisitionController extends Controller
                     ->where('case_No', $case_No)
                     ->where('recordStatus', '27')
                     ->whereNull('ORNumber')
+                    ->whereNotNull('refNum')
                     ->where(function($query) use ($keyword) {
                         $query->where('issupplies', 1)
                             ->orWhere('ismedicine', 1)
@@ -642,5 +643,124 @@ class RequisitionController extends Controller
         } catch(\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
-    }    
+    }
+    public function onRevokeRequisition(Request $request) 
+    {
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
+        try {
+            $checkUser = null;
+            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
+                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+                if (!$checkUser) {
+                    return response()->json([
+                        'message' => 'Incorrect Username or Password',
+                    ], 404);
+                }
+            }
+
+            $today = Carbon::now();
+            $remarks = $request->payload['remarks'];
+            $account = $request->payload['account'];
+            
+            if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
+                foreach ($request->payload['Items'] as $items) {
+                    $patient_Id = $items['patient_Id'];
+                    $case_No = $items['case_No'];
+                    if (isset($items['details'])) {
+                        $revenueID = $items['details']['revenueID'] ?? $items['details']['revenue_Id'];
+                        $itemID = $items['details']['itemID'] ?? $items['details']['item_Id'];
+                        $refNum = $items['details']['refNum'] ?? $items['details']['requestNum'];
+
+                        if ($account == 1) {
+                            // Cash Transaction
+                            CashAssessment::where('patient_Id', $patient_Id)
+                            ->where('case_No', $case_No)
+                            ->where('revenueID', $revenueID)
+                            ->where('itemID', $itemID)
+                            ->where('refNum', $refNum)
+                            ->update([
+                                'refNum'        => null,
+                                'Remarks'       => $remarks,
+                                'updatedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'updated_at'    => $today,
+                            ]);
+                            if ($this->check_is_allow_medsys) {
+                                MedSysCashAssessment::where('HospNum', $patient_Id)
+                                    ->where('IdNum', $case_No . 'B')
+                                    ->where('RevenueID', $revenueID)
+                                    ->where('ItemID', $itemID)
+                                    ->where('RefNum', $refNum)
+                                    ->update([
+                                        'RefNum'        => null,
+                                        'RevokedBy'     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                        'DateRevoked'   => $today,
+                                    ]);
+                            }
+
+                        } else if ($account == 2) {
+                            // Insurance Transaction
+                            NurseLogBook::where('patient_Id', $patient_Id)
+                                ->where('case_No', $case_No)
+                                ->where('requestNum', $refNum)
+                                ->where('item_Id', $itemID)
+                                ->update([
+                                    'remarks'           => $remarks,
+                                    'record_Status'     => 'R',
+                                    'cancelBy'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                    'cancelDate'        => $today,
+                                    'updatedat'         => $today,
+                                    'updatedby'         => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                ]);
+                            NurseCommunicationFile::where('patient_Id', $patient_Id)
+                                ->where('case_No', $case_No)
+                                ->where('requestNum', $refNum)
+                                ->where('item_Id', $itemID)
+                                ->update([
+                                    'remarks'           => $remarks,
+                                    'record_Status'     => 'R',
+                                    'cancelBy'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                    'cancelDate'        => $today,
+                                    'updatedat'         => $today,
+                                    'updatedby'         => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                ]);
+                            if ($this->check_is_allow_medsys) {
+                                tbNurseLogBook::where('Hospnum', $patient_Id)
+                                    ->where('IDnum', $case_No . 'B')
+                                    ->where('RequestNum', $refNum)
+                                    ->where('ItemID', $itemID)
+                                    ->update([
+                                        'Remarks'           => $remarks,
+                                        'RecordStatus'      => 'R',
+                                    ]);
+                                tbNurseCommunicationFile::where('HospNum', $patient_Id)
+                                    ->where('IDnum', $case_No . 'B')
+                                    ->where('RequestNum', $refNum)
+                                    ->where('ItemID', $itemID)
+                                    ->update([
+                                        'Remarks'           => $remarks,
+                                        'RecordStatus'      => 'R',
+                                    ]);
+                            }
+                        }
+                    }
+                }
+                DB::connection('sqlsrv_billingOut')->commit();
+                DB::connection('sqlsrv_medsys_billing')->commit();
+                DB::connection('sqlsrv_patient_data')->commit();
+                DB::connection('sqlsrv_medsys_nurse_station')->commit();
+                return response()->json(['message' => 'Revoked Successfully'], 200); 
+            }
+
+
+        } catch(\Exception $e) {
+            DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_medsys_nurse_station')->commit();
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
 }

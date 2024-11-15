@@ -115,7 +115,7 @@ class HISPatientRegistryObserver
                         'ServiceID1'            =>  10,          
                         'OpdStatus'             =>  'E',
                         'OpdType'               =>  'O',
-                        'HosPlan'               =>  'C',
+                        'HosPlan'               =>  $patientRegistry->mscPrice_Schemes == 1 ? 'P' : 'C',
                         'PatientType'           =>  'C',
                         'DoctorID1'             =>  $patientRegistry->attending_Doctor   ?? '',
                         'AccountNum'            =>  $patientRegistry->guarantor_Id   

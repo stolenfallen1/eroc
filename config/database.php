@@ -113,15 +113,6 @@ return [
             ],
         ],
 
-        /*
-    DB_CONNECTION_SERVICE_RECORD=sqlsrv
-    DB_HOST_SERVICE_RECORD=10.4.15.101
-    DB_PORT_SERVICE_RECORD=1433
-    DB_DATABASE_SERVICE_RECORD=CDH_PAYROLL_temp
-    DB_USERNAME_SERVICE_RECORD=sa
-    DB_PASSWORD_SERVICE_RECORD=P@ssw0rd!
-    */
-
         'sqlsrv_service_record' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),

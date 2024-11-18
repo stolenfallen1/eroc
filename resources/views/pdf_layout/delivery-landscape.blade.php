@@ -271,19 +271,20 @@
         <th rowspan="2">Item Description</th>
         <th rowspan="2">UOM</th>
         <th colspan="2">Batch Information</th>
-        <th colspan="3">QUANTITY</th>
+        <th colspan="2">QUANTITY</th>
         <th rowspan="1" class="border-bottom-none">UNIT </th>
-        <th rowspan="2">DISCOUNT</th>
+        <th rowspan="1" class="border-bottom-none">DISC.</th>
         <th rowspan="2">NET PRICE</th>
         <th rowspan="2">Amount</th>
       </tr>
       <tr>
         <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
         <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
-        <th rowspan="1" class="border-top-none">ORDER</th>
+        <!-- <th rowspan="1" class="border-top-none">ORDER</th> -->
         <th rowspan="1" class="border-top-none">SERVED</th>
         <th rowspan="1" class="border-top-none">BALANCE</th>
         <th rowspan="1" class="border-top-none">PRICE</th>
+        <th rowspan="1" class="border-top-none">AMOUNT</th>
       </tr>
     </thead>
     <tbody>
@@ -307,7 +308,7 @@
         <td class="item-td">{{ $detail['uom'] }}</td>
         <td class="item-td">{{ $batchno }}</td>
         <td class="item-td">{{ $expirydate }}</td>
-        <td class="item-td">{{ intval($detail['order_qty']) }}</td>
+        <!-- <td class="item-td">{{ intval($detail['order_qty']) }}</td> -->
         <td class="item-td">{{ intval($detail['served_qty']) }}</td>
         <td class="item-td">{{ intval(($detail['order_qty'] - $total)) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
@@ -318,17 +319,17 @@
       @endforeach
       @else
       <tr>
-        <td colspan="12"> No Record found</td>
+        <td colspan="11"> No Record found</td>
       </tr>
       @endif
       @if(count($pdf_data['free_goods_delivery_items']) > 0)
       <tr>
-        <td colspan="12" class="item-td border-none text-left">
+        <td colspan="11" class="item-td border-none text-left">
           <div><br></div>
         </td>
       </tr>
       <tr>
-        <td colspan="12" class="item-td border-none text-left">
+        <td colspan="11" class="item-td border-none text-left">
           All Free Goods
         </td>
       </tr>
@@ -340,7 +341,7 @@
           <th colspan="2">Batch Information</th>
           <th colspan="3">QUANTITY</th>
           <th rowspan="1" class="border-bottom-none">UNIT </th>
-          <th rowspan="2">DISCOUNT</th>
+          <th rowspan="2">DISC</th>
           <th rowspan="2">NET PRICE</th>
           <th rowspan="2">Amount</th>
         </tr>
@@ -381,7 +382,7 @@
       @endif
       <tr>
         <td colspan="10" class="border-none"></td>
-        <td colspan="2" class="item-td border-none"><br></td>
+        <td colspan="1" class="item-td border-none"><br></td>
       </tr>
 
 

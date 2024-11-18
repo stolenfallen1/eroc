@@ -11,6 +11,7 @@ use App\Models\BuildFile\Warehouseitems;
 use App\Models\HIS\his_functions\CashAssessment;
 use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\his_functions\NurseLogBook;
+use App\Models\HIS\medsys\MedSysCashAssessment;
 use App\Models\HIS\medsys\tbInvStockCard;
 use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\medsys\tbNurseLogBook;
@@ -110,7 +111,7 @@ class OPDMedicinesSuppliesController extends Controller
                     $item_list_cost = $medicine['item_ListCost'];
                     $price = floatval(str_replace([',', '₱'], '', $medicine['price']));
                     $remarks = $medicine['remarks'];
-                    $stat = $medicine['stat'];
+                    $stat = $medicine['stat'] ?? null;
                     $amount = floatval(str_replace([',', '₱'], '', $medicine['amount']));
                     $requestNum = $revenueID . $medSysRequestNum;
                     $referenceNum = 'C' . $medSysReferenceNum . 'M';
@@ -147,6 +148,27 @@ class OPDMedicinesSuppliesController extends Controller
                             'createdBy'                 => Auth()->user()->idnumber,
                             'created_at'                => $today,
                         ]);
+                        if ($this->check_is_allow_medsys):
+                            MedSysCashAssessment::create([
+                                'HospNum'           => $patient_Id,
+                                'IdNum'             => $case_No . 'B',
+                                'Name'              => $patient_Name,
+                                'TransDate'         => $today,
+                                'AssessNum'         => $assessnum_sequence,
+                                'DrCr'              => 'C',
+                                'ItemID'            => $itemID,
+                                'Quantity'          => $requestQuantity,
+                                'RefNum'            => $refNumSequence,
+                                'ChargeSlip'        => $refNumSequence,
+                                'Amount'            => $amount,
+                                'Barcode'           => null,
+                                'STAT'              => $stat,
+                                'DoctorName'        => $doctor_name,
+                                'UserID'            => Auth()->user()->idnumber,
+                                'RevenueID'         => $revenueID,
+                                'DepartmentID'      => $revenueID,
+                            ]);
+                        endif;
                     } else if ($charge_to == 'Company / Insurance') {
                         NurseLogBook::create([
                             'branch_Id'                 => 1,
@@ -203,9 +225,8 @@ class OPDMedicinesSuppliesController extends Controller
                             'patient_Registry_Id'                   => $case_No,
                             'transaction_Item_Id'                   => $itemID,
                             'transaction_Date'                      => $today,
-                            'transaction_Reference_Number'          => $referenceNum,
+                            'trasanction_Reference_Number'          => $referenceNum,
                             'transaction_Acctg_TransType'           => $revenueID,
-                            'transaction_Acctg_Revenue_Code'        => $revenueID,
                             'transaction_Qty'                       => $requestQuantity,
                             'transaction_Item_OnHand'               => $item_OnHand,
                             'transaction_Item_ListCost'             => $item_list_cost,
@@ -288,6 +309,7 @@ class OPDMedicinesSuppliesController extends Controller
                     $item_name = $supplies['item_name'];
                     $requestQuantity = $supplies['quantity'];
                     $item_list_cost = $supplies['item_ListCost'];
+                    $stat = $supplies['stat'] ?? null;
                     $price = floatval(str_replace([',', '₱'], '', $supplies['price']));
                     $remarks = $supplies['remarks'];
                     $amount = floatval(str_replace([',', '₱'], '', $supplies['amount']));
@@ -324,6 +346,27 @@ class OPDMedicinesSuppliesController extends Controller
                             'createdBy'                 => Auth()->user()->idnumber,
                             'created_at'                => $today,
                         ]);
+                        if ($this->check_is_allow_medsys):
+                            MedSysCashAssessment::create([
+                                'HospNum'           => $patient_Id,
+                                'IdNum'             => $case_No . 'B',
+                                'Name'              => $patient_Name,
+                                'TransDate'         => $today,
+                                'AssessNum'         => $assessnum_sequence,
+                                'DrCr'              => 'C',
+                                'ItemID'            => $itemID,
+                                'Quantity'          => $requestQuantity,
+                                'RefNum'            => $refNumSequence,
+                                'ChargeSlip'        => $refNumSequence,
+                                'Amount'            => $amount,
+                                'Barcode'           => null,
+                                'STAT'              => $stat,
+                                'DoctorName'        => $doctor_name,
+                                'UserID'            => Auth()->user()->idnumber,
+                                'RevenueID'         => $revenueID,
+                                'DepartmentID'      => $revenueID,
+                            ]);
+                        endif;
                     } else if ($charge_to == 'Company / Insurance') {
                         NurseLogBook::create([
                             'branch_Id'                 => 1,
@@ -377,9 +420,8 @@ class OPDMedicinesSuppliesController extends Controller
                             'patient_Registry_Id'                   => $case_No,
                             'transaction_Item_Id'                   => $itemID,
                             'transaction_Date'                      => $today,
-                            'transaction_Reference_Number'          => $referenceNum,
+                            'trasanction_Reference_Number'          => $referenceNum,
                             'transaction_Acctg_TransType'           => $revenueID,
-                            'transaction_Acctg_Revenue_Code'        => $revenueID,
                             'transaction_Qty'                       => $requestQuantity,
                             'transaction_Item_OnHand'               => $item_OnHand,
                             'transaction_Item_ListCost'             => $item_list_cost,
@@ -476,14 +518,42 @@ class OPDMedicinesSuppliesController extends Controller
     public function history($patient_Id, $case_No) 
     {
         try {
-            $query = NurseLogBook::where('patient_Id', $patient_Id)
+            $cashAssessmentResults = CashAssessment::where('patient_Id', $patient_Id)
+                ->where('case_No', $case_No)
+                ->whereNull('ORNumber')
+                ->whereNotNull('refNum')
+                ->where(function($query) {
+                    $query->where('issupplies', 1)
+                        ->orWhere('ismedicine', 1);
+                })
+                ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'")
+                ->orderBy('id', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    $item->source = 'CashAssessment'; 
+                    return $item;
+                });
+    
+            $nurseLogBookResults = NurseLogBook::where('patient_Id', $patient_Id)
                 ->where('case_No', $case_No)
                 ->where('record_Status', '!=', 'R')
                 ->whereNotNull('requestNum')
-                ->orderBy('id', 'asc');
-
-            return $query->get();
-        } catch(\Exception $e) {
+                ->where(function($query) {
+                    $query->where('issupplies', 1)
+                        ->orWhere('ismedicine', 1);
+                })
+                ->whereRaw("requestNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'")
+                ->orderBy('id', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    $item->source = 'NurseLogBook';
+                    return $item;
+                });
+    
+            $combinedResults = $cashAssessmentResults->merge($nurseLogBookResults);
+    
+            return $combinedResults;
+        } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
@@ -499,86 +569,207 @@ class OPDMedicinesSuppliesController extends Controller
             foreach ($items as $item) {
                 $patient_Id = $item['patient_Id'];
                 $case_No = $item['case_No'];
-                $item_Id = $item['item_Id'];
-                $requestNum = $item['requestNum'];
-                $referenceNum = $item['referenceNum'];
+                $item_Id = $item['item_Id'] ?? $item['itemID'];
+                $requestNum = $item['requestNum'] ?? null;
+                $referenceNum = $item['referenceNum'] ?? $item['refNum'];
                 $charge_type = $item['charge_type'];
                 $item_type = $item['item_type'];
+                $source = $item['source'];
 
-                $existingNurseLogs = NurseLogBook::where('patient_Id', $patient_Id)
-                    ->where('case_No', $case_No)
-                    ->where('item_Id', $item_Id)
-                    ->where('requestNum', $requestNum)
-                    ->where('referenceNum', $referenceNum)
-                    ->first();
+                if ($source == 'NurseLogBook') {
+                    // Revoke Option for Nurse Log Book ( Company / Insurance )
+                    $existingNurseLogs = NurseLogBook::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('item_Id', $item_Id)
+                        ->where('requestNum', $requestNum)
+                        ->where('referenceNum', $referenceNum)
+                        ->first();
 
-                $existingNurseLogs->update([
-                    'record_Status' => 'R',
-                    'updatedat' => $today,
-                    'updatedby' => Auth()->user()->idnumber,
-                ]);
+                    $existingNurseCommunicationFile = NurseCommunicationFile::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('item_Id', $item_Id)
+                        ->where('requestNum', $requestNum)
+                        ->where('referenceNum', $referenceNum)
+                        ->first();
 
-                $existingInvestoryLogs = InventoryTransaction::where('patient_Id', $patient_Id)
-                    ->where('patient_Registry_Id', $case_No)
-                    ->where('transaction_Item_Id', $item_Id)
-                    ->where('trasanction_Reference_Number', $referenceNum)
-                    ->first();
-
-                if ($existingNurseLogs && $existingInvestoryLogs) {
-                    InventoryTransaction::create([
-                        'branch_Id'                         => 1,
-                        'warehouse_Id'                      => $existingInvestoryLogs->warehouse_Id,
-                        'patient_Id'                        => $existingInvestoryLogs->patient_Id,
-                        'patient_Registry_Id'               => $existingInvestoryLogs->patient_Registry_Id,
-                        'transaction_Item_Id'               => $existingInvestoryLogs->transaction_Item_Id,
-                        'transaction_Date'                  => $today,
-                        'trasanction_Reference_Number'      => $existingInvestoryLogs->trasanction_Reference_Number,
-                        'transaction_Acctg_TransType'       => $existingInvestoryLogs->transaction_Acctg_TransType,
-                        'transaction_Qty'                   => $existingInvestoryLogs->transaction_Qty * -1,
-                        'transaction_Item_OnHand'           => $existingInvestoryLogs->transaction_Item_OnHand,
-                        'transaction_Item_ListCost'         => $existingInvestoryLogs->transaction_Item_ListCost * -1,
-                        'transaction_Item_SellingAmount'    => $existingInvestoryLogs->transaction_Item_SellingAmount * -1,
-                        'transaction_Item_TotalAmount'      => $existingInvestoryLogs->transaction_Item_TotalAmount * -1,
-                        'transaction_Item_Med_Frequency_Id' => $existingInvestoryLogs->transaction_Item_Med_Frequency_Id,
-                        'transaction_Remarks'               => 'Revoke Charge',
-                        'transaction_UserID'                => Auth()->user()->idnumber,
-                        'created_at'                        => $today,
-                        'createdBy'                         => Auth()->user()->idnumber,
+                    $existingInvestoryLogs = InventoryTransaction::where('patient_Id', $patient_Id)
+                        ->where('patient_Registry_Id', $case_No)
+                        ->where('transaction_Item_Id', $item_Id)
+                        ->where('trasanction_Reference_Number', $referenceNum)
+                        ->first();
+    
+                    $existingNurseLogs->update([
+                        'record_Status' => 'R',
+                        'requestNum' => $requestNum . '[REVOKED]',
+                        'updatedat' => $today,
+                        'updatedby' => Auth()->user()->idnumber,
                     ]);
-                    if ($this->check_is_allow_medsys): 
 
-                        $medSysWarehouseID = DB::connection('sqlsrv')
-                            ->table('CDG_CORE.dbo.fmsTransactionCodes')
-                            ->where('warehouse_id', $existingInvestoryLogs->warehouse_Id)
-                            ->value('warehouse_map_itemid');
+                    $existingNurseCommunicationFile->update([
+                        'record_Status' => 'R',
+                        'requestNum' => $requestNum . '[REVOKED]',
+                        'updatedat' => $today,
+                        'updatedby' => Auth()->user()->idnumber,
+                    ]);
 
-                        tbNurseLogBook::where('Hospnum', $patient_Id)
-                            ->where('IDnum', $case_No . 'B')
-                            ->where('ItemID', $item_Id)
-                            ->where('RequestNum', $requestNum)
-                            ->where('ReferenceNum', $referenceNum)
-                            ->update([
-                                'RecordStatus' => 'R',
+                    $existingInvestoryLogs->updateOrFail([
+                        'trasanction_Reference_Number' => $referenceNum . '[REVOKED]',
+                        'updated_at' => $today,
+                        'updatedBy' => Auth()->user()->idnumber,
+                    ]);
+
+                    if ($existingNurseLogs && $existingNurseCommunicationFile && $existingInvestoryLogs) {
+                        InventoryTransaction::create([
+                            'branch_Id'                         => 1,
+                            'warehouse_Id'                      => $existingInvestoryLogs->warehouse_Id,
+                            'patient_Id'                        => $existingInvestoryLogs->patient_Id,
+                            'patient_Registry_Id'               => $existingInvestoryLogs->patient_Registry_Id,
+                            'transaction_Item_Id'               => $existingInvestoryLogs->transaction_Item_Id,
+                            'transaction_Date'                  => $today,
+                            'trasanction_Reference_Number'      => $existingInvestoryLogs->trasanction_Reference_Number,
+                            'transaction_Acctg_TransType'       => $existingInvestoryLogs->transaction_Acctg_TransType,
+                            'transaction_Qty'                   => $existingInvestoryLogs->transaction_Qty * -1,
+                            'transaction_Item_OnHand'           => $existingInvestoryLogs->transaction_Item_OnHand,
+                            'transaction_Item_ListCost'         => $existingInvestoryLogs->transaction_Item_ListCost * -1,
+                            'transaction_Item_SellingAmount'    => $existingInvestoryLogs->transaction_Item_SellingAmount * -1,
+                            'transaction_Item_TotalAmount'      => $existingInvestoryLogs->transaction_Item_TotalAmount * -1,
+                            'transaction_Item_Med_Frequency_Id' => $existingInvestoryLogs->transaction_Item_Med_Frequency_Id,
+                            'transaction_UserID'                => Auth()->user()->idnumber,
+                            'created_at'                        => $today,
+                            'createdBy'                         => Auth()->user()->idnumber,
+                        ]);
+                        if ($this->check_is_allow_medsys): 
+    
+                            $medSysWarehouseID = DB::connection('sqlsrv')
+                                ->table('CDG_CORE.dbo.fmsTransactionCodes')
+                                ->where('warehouse_id', $existingInvestoryLogs->warehouse_Id)
+                                ->value('warehouse_map_itemid');
+    
+                            tbNurseLogBook::where('Hospnum', $patient_Id)
+                                ->where('IDnum', $case_No . 'B')
+                                ->where('ItemID', $item_Id)
+                                ->where('RequestNum', $requestNum)
+                                ->where('ReferenceNum', $referenceNum)
+                                ->update([
+                                    'RequestNum' => $requestNum . '[REVOKED]',
+                                    'RecordStatus' => 'R',
+                                ]);
+
+                            tbNurseCommunicationFile::where('Hospnum', $patient_Id)
+                                ->where('IDnum', $case_No . 'B')
+                                ->where('ItemID', $item_Id)
+                                ->where('RequestNum', $requestNum)
+                                ->where('ReferenceNum', $referenceNum)
+                                ->update([
+                                    'RequestNum' => $requestNum . '[REVOKED]',
+                                    'RecordStatus' => 'R',
+                                ]);
+
+                            $medSysInv = tbInvStockCard::where('Hospnum', $patient_Id)
+                                ->where('IdNum', $case_No . 'B')
+                                ->where('ItemID', $item_Id)
+                                ->where('RefNum', $referenceNum)
+                                ->first();
+                            
+                            $medSysInv->updateOrFail([
+                                'RefNum' => $referenceNum . '[REVOKED]',
                             ]);
 
-                        tbInvStockCard::create([
-                            'SummaryCode'       => $item_type == 'Medicine' ? 'PH' : 'CS',
-                            'Hospnum'           => $existingInvestoryLogs->patient_Id,
-                            'IdNum'             => $charge_type == 'Self-Pay' ? 'CASH' : $existingInvestoryLogs->patient_Registry_Id . 'B',
-                            'ItemID'            => $existingInvestoryLogs->transaction_Item_Id,
-                            'TransDate'         => $today,
-                            'RevenueID'         => $item_type == 'Medicine' ? 'PH' : 'CS',
-                            'RefNum'            => $existingInvestoryLogs->trasanction_Reference_Number,
-                            'Quantity'          => $existingInvestoryLogs->transaction_Qty * -1,
-                            'Balance'           => $existingInvestoryLogs->transaction_Item_OnHand,
-                            'NetCost'           => $existingInvestoryLogs->transaction_Item_ListCost * -1,
-                            'Amount'            => $existingInvestoryLogs->transaction_Item_SellingAmount * -1,
-                            'UserID'            => Auth()->user()->idnumber,
-                            'RequestByID'       => Auth()->user()->idnumber,
-                            'LocationID'        => $medSysWarehouseID ?? null,
-                            'Remarks'           => 'Revoke Charge',
+                            if ($medSysInv) {
+                                tbInvStockCard::create([
+                                    'SummaryCode'       => $item_type == 'Medicine' ? 'PH' : 'CS',
+                                    'Hospnum'           => $medSysInv->Hospnum,
+                                    'IdNum'             => $medSysInv->IdNum,
+                                    'ItemID'            => $medSysInv->ItemID,
+                                    'TransDate'         => Carbon::now(),
+                                    'RevenueID'         => $item_type == 'Medicine' ? 'PH' : 'CS',
+                                    'RefNum'            => $medSysInv->RefNum,
+                                    'Quantity'          => $medSysInv->Quantity * -1,
+                                    'Balance'           => $medSysInv->Balance,
+                                    'NetCost'           => $medSysInv->NetCost * -1,
+                                    'Amount'            => $medSysInv->Amount * -1,
+                                    'UserID'            => Auth()->user()->idnumber,
+                                    'RequestByID'       => Auth()->user()->idnumber,
+                                    'LocationID'        => $medSysWarehouseID ?? null,
+                                ]);
+                            }
+
+                        endif;
+                    }
+
+                } else if ($source == 'CashAssessment') {
+                    // Revoke Option for Cash Assessment ( Self-Pay ) Since in the front-end you cannot revoke a charge that is already paid meaning nasulod nas NurseLogBook ang data
+                    $existingCashAssessment = CashAssessment::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('itemID', $item_Id)
+                        ->where('refNum', $referenceNum)
+                        ->first();
+                    
+                    $existingCashAssessment->updateOrFail([
+                        'dateRevoked' => Carbon::now(),
+                        'revokedBy' => Auth()->user()->idnumber,
+                        'updatedBy'     => Auth()->user()->idnumber,
+                        'updated_at'    => Carbon::now(),
+                        'refNum' => $referenceNum . '[REVOKED]',
+                    ]);
+
+                    if ($existingCashAssessment) {
+                        CashAssessment::create([
+                            'branch_id' => 1,
+                            'patient_Id' => $existingCashAssessment->patient_Id,
+                            'case_No' => $existingCashAssessment->case_No,
+                            'patient_Name' => $existingCashAssessment->patient_Name,
+                            'assessnum' => $existingCashAssessment->assessnum,
+                            'transdate' => Carbon::now(),
+                            'drcr' => 'C',
+                            'revenueID' => $existingCashAssessment->revenueID,
+                            'itemID' => $existingCashAssessment->itemID,
+                            'quantity' => $existingCashAssessment->quantity * -1,
+                            'refNum' => $existingCashAssessment->refNum,
+                            'amount' => $existingCashAssessment->amount * -1,
+                            'specimenId' => $existingCashAssessment->specimenId,
+                            'requestDoctorID' => $existingCashAssessment->requestDoctorID,
+                            'requestDoctorName' => $existingCashAssessment->requestDoctorName,
+                            'departmentID' => $existingCashAssessment->departmentID,
+                            'userId' => Auth()->user()->idnumber,
+                            'Barcode' => null,
+                            'hostname' => (new GetIP())->getHostname(),
+                            'createdBy' => Auth()->user()->idnumber,
+                            'created_at' => Carbon::now(),
                         ]);
-                    endif;
+                        if ($this->check_is_allow_medsys): 
+                            MedSysCashAssessment::where('HospNum', $patient_Id)
+                                ->where('IdNum', $case_No . 'B')
+                                ->where('ItemID', $item_Id)
+                                ->where('RefNum', $referenceNum)
+                                ->update([
+                                    'DateRevoked'   => Carbon::now(),
+                                    'RevokedBy'     => Auth()->user()->idnumber,
+                                    'RefNum'        => $referenceNum . '[REVOKED]',
+                                    'Chargeslip'    => $referenceNum . '[REVOKED]',
+                            ]);
+                            MedSysCashAssessment::create([
+                                'HospNum'           => $existingCashAssessment->patient_Id,
+                                'IdNum'             => $existingCashAssessment->case_No . 'B',
+                                'Name'              => $existingCashAssessment->patient_Name,
+                                'TransDate'         => Carbon::now(),
+                                'AssessNum'         => $existingCashAssessment->assessnum,
+                                'DrCr'              => 'C',
+                                'ItemID'            => $existingCashAssessment->itemID,
+                                'Quantity'          => $existingCashAssessment->quantity * -1,
+                                'RefNum'            => $existingCashAssessment->refNum,
+                                'ChargeSlip'        => $existingCashAssessment->refNum,
+                                'Amount'            => $existingCashAssessment->amount * -1,
+                                'Barcode'           => null,
+                                'STAT'              => null,
+                                'DoctorName'        => $existingCashAssessment->requestDoctorName ?? null,
+                                'UserID'            => Auth()->user()->idnumber,
+                                'RevenueID'         => $existingCashAssessment->revenueID,
+                                'DepartmentID'      => $existingCashAssessment->departmentID,
+                            ]);
+                        endif;
+                    }
+
                 }
             }
             DB::connection('sqlsrv_medsys_inventory')->commit();

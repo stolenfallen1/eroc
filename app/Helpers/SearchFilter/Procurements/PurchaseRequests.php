@@ -586,7 +586,8 @@ class PurchaseRequests
           $q2->where(function ($q3) {
             $q3->where('pr_Branch_Level2_ApprovedBy', '!=', null)->orWhereNull('pr_Branch_Level2_ApprovedBy');
           })
-            ->where('invgroup_id', 2)->whereHas('purchaseRequestDetails', function ($q3) {
+            // ->where('invgroup_id', 2)
+            ->whereHas('purchaseRequestDetails', function ($q3) {
               $q3->where(function ($q4) {
                 if ($q4->where('isdietary', 1)->exists() || $q4->where('ismedicine', 1)->exists()) {
                   $q4->where('pr_Branch_Level2_ApprovedBy', '!=', null)->orWhereNull('pr_Branch_Level2_ApprovedBy');

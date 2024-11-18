@@ -179,7 +179,7 @@ class PurchaseRequestController extends Controller
 
         try {
             $ismed = NULL;
-            if ($request->invgroup_id == 2) {
+            if ($this->role->pharmacy_warehouse()) {
                 $ismed = 1;
             }
             if ($request->isconsignments && $request->isconsignments == 1) {
@@ -276,7 +276,7 @@ class PurchaseRequestController extends Controller
                     ]
                 );
 
-                if ($request->invgroup_id == 2 || $this->role->isdietary()) {
+                if ($this->role->pharmacy_warehouse() || $this->role->isdietary()) {
                     $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
                     $item['id'] = $details->id;
                     $item['vat_rate'] = $details->vat_rate;
@@ -289,7 +289,7 @@ class PurchaseRequestController extends Controller
                     $item['total_net'] = $details->total_net;
                     $item['lead_time'] = $details->lead_time;
                     $item['pr_id'] = $pr['id'];
-                    $this->addPharmaCanvas($item,);
+                    $this->addPharmaCanvas($item);
                 }                
                 
                 if (isset($request->isconsignments) && $request->isconsignments == 1) {
@@ -448,7 +448,7 @@ class PurchaseRequestController extends Controller
                     // 'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                 ]);
 
-                if ($request->invgroup_id == 2 || $this->role->isdietary()) {
+                if ($this->role->pharmacy_warehouse() || $this->role->isdietary()) {
                     $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
                     $item['id'] = $details->id;
                     $item['pr_id'] = $pr['id'];
@@ -556,7 +556,7 @@ class PurchaseRequestController extends Controller
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
                 // return Auth::user()->role->name;
                 if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant) {
-                    // if($request->invgroup_id == 2){
+                    // if($this->role->pharmacy_warehouse()){
                     //     $this->addPharmaCanvas($item);
                     // }
                 }
@@ -776,6 +776,7 @@ class PurchaseRequestController extends Controller
                 'vat_type' => $item['vat_type'],
                 // 'isFreeGoods' => $request->isFreeGoods,
                 'isRecommended' => 1,
+                'terms_id' => 10,
                 // 'canvas_Level2_ApprovedBy' => Request()->pr_RequestedBy,
                 // 'canvas_Level2_ApprovedDate' => Carbon::now(),
             ]

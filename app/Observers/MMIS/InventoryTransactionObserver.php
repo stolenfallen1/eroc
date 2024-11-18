@@ -38,7 +38,7 @@ class InventoryTransactionObserver
         // DB::connection('sqlsrv_mmis')->beginTransaction();
         DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
         try {
-            if (in_array($delivery->rr_Document_Warehouse_Id, [78, 66])) {
+            if ($this->role->pharmacy_warehouse()) {
                 if (Auth()->user()->branch_id == 1) {
                     $sequence = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth()->user()->branch_id)->first(); // for inventory transaction only
                 } else {
@@ -264,7 +264,7 @@ class InventoryTransactionObserver
 
        
         try {
-            if (in_array($delivery->rr_Document_Warehouse_Id, [78, 66])) {
+            if ($this->role->pharmacy_warehouse()) {
                 if (Auth()->user()->branch_id == 1) {
                     $sequence = SystemSequence::where('code', 'ITCR1')->where('branch_id', Auth()->user()->branch_id)->first(); // for inventory transaction only
                 } else {

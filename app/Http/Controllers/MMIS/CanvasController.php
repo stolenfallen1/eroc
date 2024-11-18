@@ -140,6 +140,7 @@ class CanvasController extends Controller
                 'vat_type' => $request->vat_type,
                 'isFreeGoods' => $request->isFreeGoods == true ? 1 : 0,
                 'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
+                'terms_id'=>  $request->terms_id ?? 10,
             ]);
     
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {

@@ -18,6 +18,7 @@ use App\Models\MMIS\procurement\purchaseOrderMaster;
 use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Helpers\SearchFilter\Procurements\PurchaseOrders;
+use App\Models\BuildFile\Vendors;
 use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 
 class PurchaseOrderController extends Controller
@@ -242,6 +243,7 @@ class PurchaseOrderController extends Controller
                             return round($item['recommended_canvas']['canvas_item_net_amount'], 4);
                         }, $purchase_order['items']));
                     }
+                    $vendor = Vendors::where('id',$purchase_order['po_Document_vendor_id'])->first();
                     $po = purchaseOrderMaster::whereNull('comptroller_approved_by')->updateOrCreate(
                         [
                             'pr_request_id' => $purchase_order['pr_request_id'],
@@ -288,6 +290,7 @@ class PurchaseOrderController extends Controller
                         ]);
                     }
                     foreach ($purchase_order['items'] as $item) {
+                            
                             $po->details()->updateOrCreate(
                                 [
                                     'po_Detail_item_id'=>  $item['item_Id'],
@@ -309,7 +312,12 @@ class PurchaseOrderController extends Controller
                                 'canvas_id' => $item['recommended_canvas']['id'],
                                 'isFreeGoods' => $item['recommended_canvas']['isFreeGoods'],
                             ]);
-
+                            $updatePO = purchaseOrderMaster::where('id', $po['id'])->first();
+                            if($updatePO){
+                                purchaseOrderMaster::where('id', $po['id'])->update([
+                                    'po_Document_terms_id'=> $item['recommended_canvas']['terms_id'] ?? $vendor->id
+                                ]);
+                            }
                             $checkifconsignment = PurchaseOrderConsignment::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->first();
                             if($checkifconsignment){
                             
@@ -342,7 +350,6 @@ class PurchaseOrderController extends Controller
                                     'updatedby' => $authUser->idnumber
                                 ]);
                             } 
-                            
                         
                     }
                     $getFreeGoods = CanvasMaster::where('pr_request_id',$purchase_order['pr_request_id'])->where('vendor_id',$purchase_order['po_Document_vendor_id'])->where('isFreeGoods',1)->get();

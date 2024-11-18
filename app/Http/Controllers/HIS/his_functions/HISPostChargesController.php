@@ -88,7 +88,7 @@ class HISPostChargesController extends Controller
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
                 ->where('quantity', '>', 0)
-                ->where('refNum', 'not like', '%[REVOKED]%');
+                ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);

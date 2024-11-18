@@ -76,7 +76,7 @@ class HISCashAssestmentController extends Controller
                 ->where('ismedicine', 0)
                 ->where('issupplies', 0)
                 ->where('isprocedure', 0)
-                ->where('refNum', 'not like', '%[REVOKED]%');
+                ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);

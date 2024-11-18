@@ -187,6 +187,8 @@ class PurchaseOrders
         }else if(Request()->approver == 4){
           $this->model->where(function($q){
             $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
+          })->whereHas('PurchaseRequest',function($q){
+             $q->where('ismedicine','!=',1);
           })
           // $this->model->where('comptroller_approved_date', '!=', null)->where('corp_admin_approved_date', '!=', null)
           ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])
@@ -292,7 +294,9 @@ class PurchaseOrders
         ->orWhere(function($query) {
             $query->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_currency_id', 1)->where('po_Document_total_net_amount', '>', 99999);
         })
-        
+        ->whereHas('PurchaseRequest',function($q){
+          $q->where('ismedicine','!=',1);
+        })
         ->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null]);
         // ->where('po_Document_total_net_amount', '>', 99999)->where('po_Document_total_net_amount', '>', 2000)->where(function($q){
         //   $q->where('currency_id')->orWhere('currency_id');

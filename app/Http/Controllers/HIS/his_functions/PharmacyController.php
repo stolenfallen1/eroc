@@ -341,7 +341,6 @@ class PharmacyController extends Controller
                             'Balance'               => $item_OnHand,
                             'NetCost'               => $item_ListCost,
                             'Amount'                => $amount,
-                            // 'Remarks'               => 'Dispensing',
                             'UserID'                => Auth()->user()->idnumber,
                             'RequestByID'           => Auth()->user()->idnumber,
                             'LocationID'            => 20,

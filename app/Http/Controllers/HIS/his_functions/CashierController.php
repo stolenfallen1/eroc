@@ -576,7 +576,7 @@ class CashierController extends Controller
                         }
 
                         if ($billingOut) {
-                            if ($revenueID == 'LB' && $form == 'C') {
+                            if ($revenueID == 'LB' && ($form == 'C' || $form == 'P')) {
                                 $labProfileData = $this->getLabItems($itemID);
                                 if ($labProfileData->getStatusCode() === 200) {
                                     $labItems = $labProfileData->getData()->data;

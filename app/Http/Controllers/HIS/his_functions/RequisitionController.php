@@ -9,9 +9,12 @@ use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\BuildFile\Itemmasters;
 use App\Models\HIS\his_functions\CashAssessment;
+use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\HIS\medsys\MedSysCashAssessment;
+use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\medsys\tbNurseLogBook;
 use App\Models\MMIS\inventory\InventoryTransaction;
@@ -29,6 +32,36 @@ class RequisitionController extends Controller
     public function __construct() 
     {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+    }
+    public function getBarCode($barcode_prefix, $sequence, $specimenId) 
+    {
+        $barcode = $barcode_prefix . $sequence . $specimenId;
+        $barcodeLength = strlen($barcode);
+        switch ($barcodeLength) {
+            case 4: 
+                $barcode = 'XXXXXXXX' . $barcode;
+                break;
+            case 5:
+                $barcode = 'XXXXXXX' . $barcode;
+                break;
+            case 6:
+                $barcode = 'XXXXXX' . $barcode;
+            case 7:
+                $barcode = 'XXXXX' . $barcode;
+                break;
+            case 8:
+                $barcode = 'XXXX' . $barcode;
+                break;
+            case 9: 
+                $barcode = 'XXX' . $barcode;
+            case 10: 
+                $barcode = 'XX' . $barcode;
+                break;
+            case 11:
+                $barcode = 'X' . $barcode;
+                break;
+        }
+        return $barcode;
     }
     public function getWarehouses() 
     {
@@ -625,7 +658,213 @@ class RequisitionController extends Controller
     }
     public function saveProcedureRequisition(Request $request) 
     {
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_laboratory')->beginTransaction();
+        DB::connection('sqlsrv_medsys_laboratory')->beginTransaction();
+        try {
+            $checkUser = null;
+            if (isset($request->payload['user_userid']) && isset($request->payload['user_passcode'])) {
+                $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
+                if (!$checkUser) {
+                    return response()->json([
+                        'message' => 'Incorrect Username or Password',
+                    ], 404);
+                }
+            }
 
+            $cashAssessmentSequences = new GlobalChargingSequences();
+            $cashAssessmentSequences->incrementSequence(); 
+
+            if ($this->check_is_allow_medsys) {
+                $assessnum_sequence = $cashAssessmentSequences->getSequence();
+            } else {
+                $chargeslip_sequence = SystemSequence::where('code', 'GCN')->first();
+                $assessnum_sequence = SystemSequence::where('code', 'GAN')->first();
+
+                if ($chargeslip_sequence && $assessnum_sequence) {
+                    $chargeslip_sequence->increment('seq_no');
+                    $chargeslip_sequence->increment('recent_generated');
+                    $assessnum_sequence->increment('seq_no');
+                    $assessnum_sequence->increment('recent_generated');
+                } else {
+                    throw new \Exception('Sequences not found');
+                }
+            }
+
+            $revenueCodeSequences = [
+                'LB'    => 'MedSysLabSequence',
+                'XR'    => 'MedSysXrayUltraSoundSequence',
+                'US'    => 'MedSysXrayUltraSoundSequence',
+                'CT'    => 'MedSysCTScanSequence',
+                'MI'    => 'MedSysMRISequence',
+                'MM'    => 'MedSysMammoSequence',
+                'WC'    => 'MedSysCentreForWomenSequence',
+                'NU'    => 'MedSysNuclearMedSequence',
+                'ER'    => 'MedSysCashSequence'
+            ];
+
+            $sequenceGenerated = [];
+            $xr_us_codes = ['XR', 'US'];
+            $xr_us_incremented = false;
+
+            $today = Carbon::now();
+            $patient_Id = $request->payload['patient_Id'];
+            $case_No = $request->payload['case_No'];
+            $patient_Name = $request->payload['patient_Name'];
+            $account = $request->payload['account'];
+            $doctor_id = $request->payload['attending_Doctor'];
+            $doctor_name = $request->payload['attending_Doctor_fullname'];
+            $patient_type = $request->payload['patient_Type'];
+            $guarantor_Id = $request->payload['guarantor_Id'];
+
+            if (isset($request->payload['selectedItems']) && count($request->payload['selectedItems']) > 0) {
+                foreach ($request->payload['selectedItems'] as $procedure) {
+                    $revenue_Id = $procedure['code'];
+                    $item_Id = $procedure['map_item_id'];
+                    $item_name = $procedure['item_name'];
+                    $quantity = $procedure['quantity'];
+                    $stat = $procedure['stat'];
+                    $specimen = $procedure['specimen'] ?? null;
+                    $amount = floatval(str_replace([',', '₱'], '', $procedure['amount']));
+                    $barcode_prefix = $procedure['barcode_prefix'] ?? null;
+                    $drcr = $procedure['drcr'];
+                    $lgrp = $procedure['lgrp'];
+                    $form = $procedure['form'] ?? null;
+
+                    if (in_array($revenue_Id, $xr_us_codes)) {
+                        if (!$xr_us_incremented) {
+                            $cashAssessmentSequences->incrementSequence('XR'); // Increment XR and US sequence once only for both
+                            $chargeslip_sequence = $cashAssessmentSequences->getSequence();
+                            $xr_us_incremented = true;
+                        }
+                    } else {
+                        if (!isset($sequenceGenerated[$revenue_Id])) {
+                            $cashAssessmentSequences->incrementSequence($revenue_Id);
+                            $chargeslip_sequence = $cashAssessmentSequences->getSequence();
+                            $sequenceGenerated[$revenue_Id] = true;
+                        }
+                    }
+
+                    if (array_key_exists($revenue_Id, $revenueCodeSequences)) {
+                        $sequenceType = $revenueCodeSequences[$revenue_Id];
+                        $sequence = $revenue_Id . ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType]) 
+                            ? $chargeslip_sequence[$sequenceType] 
+                            : $chargeslip_sequence['seq_no']);
+                    }
+
+                    if ($barcode_prefix === null) {
+                        $barcode = '';
+                    } else {
+                        $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimen);
+                    }
+
+                    if ($account == 'Cash Transaction') {
+                        CashAssessment::create([
+                            'branch_id'                     => 1,
+                            'patient_Id'                    => $patient_Id,
+                            'case_No'                       => $case_No,
+                            'patient_Name'                  => $patient_Name,
+                            'patient_Type'                  => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'transdate'                     => $today,
+                            'assessnum'                     => $assessnum_sequence['MedSysCashSequence'],
+                            'drcr'                          => 'C',
+                            'form'                          => $form,
+                            'stat'                          => $stat,
+                            'revenueID'                     => $revenue_Id,
+                            'itemID'                        => $item_Id,
+                            'requestDescription'            => $item_name,
+                            'quantity'                      => $quantity,
+                            'refNum'                        => $sequence,
+                            'amount'                        => $amount,
+                            'specimenId'                    => $specimen,
+                            'requestDoctorID'               => $doctor_id,
+                            'requestDoctorName'             => $doctor_name,
+                            'departmentID'                  => $revenue_Id,
+                            'Barcode'                       => $barcode,
+                            'userId'                        => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'hostname'                      => (new GetIP())->getHostname(),
+                            'createdBy'                     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'created_at'                    => $today,
+                        ]);
+                        if ($this->check_is_allow_medsys):
+                            MedSysCashAssessment::create([
+                                'HospNum'                   => $patient_Id,
+                                'IdNum'                     => $case_No . 'B',
+                                'Name'                      => $patient_Name,
+                                'TransDate'                 => $today,
+                                'AssessNum'                 => $assessnum_sequence['MedSysCashSequence'],
+                                'DrCr'                      => 'C',
+                                'ItemID'                    => $item_Id,
+                                'Quantity'                  => $quantity,
+                                'RefNum'                    => $sequence,
+                                'ChargeSlip'                => $sequence,
+                                'Amount'                    => $amount,
+                                'SpecimenId'                => $specimen,
+                                'Barcode'                   => $barcode,
+                                'STAT'                      => $stat,
+                                'DoctorName'                => $doctor_name,
+                                'UserID'                    => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'RevenueID'                 => $revenue_Id,
+                                'DepartmentID'              => $revenue_Id,
+                            ]);
+                        endif;
+                    } else if ($account == 'Insurance Transaction') {
+                        HISBillingOut::create([
+                            'patient_Id'                    => $patient_Id,
+                            'case_No'                       => $case_No,
+                            'patient_Type'                  => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'accountnum'                    => $guarantor_Id,  
+                            'transDate'                     => $today,
+                            'msc_price_scheme_id'           => 2,
+                            'revenueID'                     => $revenue_Id,
+                            'drcr'                          => $drcr,
+                            'lgrp'                          => $lgrp,
+                            'itemID'                        => $item_Id,
+                            'quantity'                      => $quantity,
+                            'refNum'                        => $sequence,
+                            'ChargeSlip'                    => $sequence,
+                            'amount'                        => $amount,
+                            'userId'                        => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'request_doctors_id'            => $doctor_id,
+                            'net_amount'                    => $amount,
+                            'hostName'                      => (new GetIP())->getHostname(),
+                            'auto_discount'                 => 0,
+                        ]);
+                        if ($this->check_is_allow_medsys):
+                            MedSysDailyOut::create([
+                                'HospNum'                   => $patient_Id,
+                                'IDNum'                     => $case_No . 'B',
+                                'TransDate'                 => $today,
+                                'RevenueID'                 => $revenue_Id,
+                                'ItemID'                    => $item_Id,
+                                'DrCr'                      => $drcr,
+                                'Quantity'                  => $quantity,
+                                'RefNum'                    => $sequence,
+                                'ChargeSlip'                => $sequence,
+                                'Amount'                    => $amount,
+                                'UserID'                    => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'HostName'                  => (new GetIP())->getHostname(),
+                                'AutoDiscount'              => 0,
+                            ]);
+                        endif;
+                    }
+                }
+                DB::connection('sqlsrv_billingOut')->commit();
+                DB::connection('sqlsrv_medsys_billing')->commit();
+                DB::connection('sqlsrv_laboratory')->commit();
+                DB::connection('sqlsrv_medsys_laboratory')->commit();
+
+                return response()->json(['message' => 'Requisition Saved Successfully'], 200);
+            }
+
+        } catch(\Exception $e) {
+            DB::connection('sqlsrv_billingOut')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_laboratory')->rollBack();
+            DB::connection('sqlsrv_medsys_laboratory')->rollBack();
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
     }
     public function getRenderedPatientRequisitions(Request $request) 
     {

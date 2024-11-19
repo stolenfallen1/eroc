@@ -209,7 +209,7 @@ class CashierController extends Controller
                     $issupplies = $item['issupplies'] ?? null;
                     $isprocedure = $item['isprocedure'] ?? null;
                     $nurseLogReqNum = $revenueID . $tbNursePHSlipSequence->ChargeSlip;
-                    $inventoryRefNum = 'C' . $tbInvChargeSlipSequence->DispensingCSlip . 'M';
+                    $inventoryRefNum = 'C' . $tbInvChargeSlipSequence->DispensingCSlip . 'M'; 
 
                     $update = CashAssessment::where('patient_Id' , $patient_Id)
                         ->where('case_No', $case_No)
@@ -228,7 +228,7 @@ class CashierController extends Controller
                             'patient_Id'            => $patient_Id,
                             'case_No'               => $case_No,
                             'patient_Type'          => $patient_Type,
-                            'accountnum'            => 'CASH',
+                            'accountnum'            => $patient_Id,
                             'transDate'             => $transDate,
                             'msc_price_scheme_id'   => 1,
                             'revenueID'             => $revenueID,
@@ -258,6 +258,7 @@ class CashierController extends Controller
                                 $ownDepartmentalRequest = UserRevenueCodeAccess::where('user_id', $userId)
                                     ->where('revenue_code', $revenueCode)
                                     ->exists();
+                                echo $ownDepartmentalRequest;
 
                                 if ($ownDepartmentalRequest) {
                                     NurseLogBook::create([
@@ -267,7 +268,7 @@ class CashierController extends Controller
                                         'patient_Name'              => $patient_Name,
                                         'patient_Type'              => $patient_Type,
                                         'revenue_Id'                => $revenueID,
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'item_Id'                   => $itemID,
                                         'description'               => $description,
@@ -305,7 +306,7 @@ class CashierController extends Controller
                                         'revenue_Id'                => $revenueID,
                                         'record_Status'             => 'W',
                                         'user_Id'                   => $userId, 
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'stat'                      => $stat,
                                         'createdat'                 => $transDate,
@@ -345,7 +346,7 @@ class CashierController extends Controller
                                         'UserID'                    => $userId,
                                         'ProcessBy'                 => $userId,
                                         'ProcessDate'               => $transDate,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat,
                                     ]);
@@ -362,7 +363,7 @@ class CashierController extends Controller
                                         'RevenueID'                 => $revenueID,
                                         'RecordStatus'              => 'W',
                                         'UserID'                    => $userId,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat == 1 ? 'N' : 'Y',
                                     ]);

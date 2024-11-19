@@ -91,6 +91,15 @@ class EmergencyRoomMedicine extends Controller
             if (!$checkUser) {
                 return response()->json(['message' => 'Incorrect Username or Password'], 404);
             }
+
+              /**************************************/
+             /*          Increment Sequence        */ 
+            /**************************************/
+
+            DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
+            DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
+            DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('AssessmentNum');
+            DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('RequestNum');
     
               /**************************************/
              /*          Process Medicines         */ 
@@ -139,11 +148,7 @@ class EmergencyRoomMedicine extends Controller
     }
     
     private function processItems($request, $checkUser, $itemType) {
-        DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
-        DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
-        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('AssessmentNum');
-        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('RequestNum');
-
+       
         $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
         $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
         $medsysCashAssessmentSequence = DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->first();
@@ -269,6 +274,7 @@ class EmergencyRoomMedicine extends Controller
             'specimenId'            => '',
             'dosage'                => $item['frequency'] ?? null,
             'departmentID'          => 'ER',
+            'userId'                => $checkUser->idnumber,
             'requestDescription'    => $item['item_name'],
             'ismedicine'            => $item['code'] === 'EM' ? 1 : 0,
             'issupplies'            => $item['code'] === 'RS' ? 1 : 0,
@@ -370,11 +376,13 @@ class EmergencyRoomMedicine extends Controller
                     'ca.dosage',
                     'ca.recordStatus',
                     'ca.requestDescription',
+                    'ca.ORNumber',
                     'mscD.description as frequency'
                 )
                 ->leftJoin('CDG_CORE.dbo.mscDosages as mscD', 'ca.dosage', '=', 'mscD.dosage_id')
                 ->where('ca.case_No', '=', $id)
-                ->where('ca.recordStatus', '!=', '27')
+                ->where('ca.recordStatus', '!=', 'R')
+                ->where('ca.quantity', '>=', 1)
                 ->get();
 
             } else {
@@ -414,7 +422,8 @@ class EmergencyRoomMedicine extends Controller
                     'amount'        => $item->amount                        ?? $item->amount,
                     'referenceNum'  => $item->referenceNum                  ?? $item->refNum,
                     'assessnum'     => $item->assessnum                     ?? null,
-                    'frequency'     => $item->frequency                     ?? null
+                    'frequency'     => $item->frequency                     ?? null,
+                    'ORN'           => $item->ORNumber                      ?? null
                 ];
                 
             });
@@ -533,6 +542,7 @@ class EmergencyRoomMedicine extends Controller
                     'itemID'                =>  $getCashAssessment->itemID,
                     'quantity'              =>  intval($getCashAssessment->quantity) * -1,
                     'amount'                => floatval($getCashAssessment->amount) * -1,
+                    'recordStatus'          => 'R',
                     'requestDescription'    => $getCashAssessment->requestDescription,
                     'hostname'              => (new GetIP())->getHostname(),
                     'updatedBy'             => $checkUser->idnumber,
@@ -547,6 +557,7 @@ class EmergencyRoomMedicine extends Controller
                     'AssessNum'     =>  $getMedsysCashAssessment->AssessNum,
                     'Indicator'     =>  $getMedsysCashAssessment->Indicator,
                     'DrCr'          =>  'D',
+                    'RecordStatus'  =>  'R',
                     'ItemID'        =>  $getMedsysCashAssessment->ItemID,
                     'Quantity'      =>  intval($getMedsysCashAssessment->Quantity) * -1,
                     'RefNum'        =>  $getMedsysCashAssessment->RefNum,

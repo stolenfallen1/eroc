@@ -43,6 +43,7 @@ Route::controller(SOAController::class)->group(function() {
 Route::controller(PatientDischarge::class)->group(function(){
     Route::get('doctors-list', 'getDoctorsList');
     Route::get('patient-status', 'getPatientStatusList');
+    Route::get('patient-billing-charges/{id}', 'getPatientChargesStatus');
     Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
     Route::put('untag-patient-maygohome/{id}', 'untagMGH');
     Route::put('discharge-patient/{id}', 'dischargePatient');

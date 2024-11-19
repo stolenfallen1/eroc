@@ -56,6 +56,7 @@ Route::get('/generate-statement-summary', [SOAController::class, 'createStatment
 Route::get('/patient-balance', [PatientDischarge::class, 'getTotalCharges']);
 Route::get('/doctors-list', [PatientDischarge::class, 'getDoctorsList']);
 Route::get('/patient-status', [PatientDischarge::class, 'getPatientStatusList']);
+Route::get('/patient-billing-charges', [PatientDischarge::class, 'getPatientChargesStatus']);
 Route::get('/get-staff-id', [EmergencyRegistrationController::class, 'getStaffId']);
 Route::get('get-transaction-codes', [TransactionCodesController::class, 'list']);
 Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);

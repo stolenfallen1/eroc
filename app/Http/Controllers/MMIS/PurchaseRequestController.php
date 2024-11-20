@@ -774,7 +774,7 @@ class PurchaseRequestController extends Controller
                 'canvas_item_vat_rate' =>$item['vat_rate'],
                 'canvas_item_vat_amount' => $item['vat_amount'],
                 'vat_type' => $item['vat_type'],
-                // 'isFreeGoods' => $request->isFreeGoods,
+                'isFreeGoods' => null,
                 'isRecommended' => 1,
                 'terms_id' => 10,
                 // 'canvas_Level2_ApprovedBy' => Request()->pr_RequestedBy,

@@ -258,7 +258,6 @@ class CashierController extends Controller
                                 $ownDepartmentalRequest = UserRevenueCodeAccess::where('user_id', $userId)
                                     ->where('revenue_code', $revenueCode)
                                     ->exists();
-                                echo $ownDepartmentalRequest;
 
                                 if ($ownDepartmentalRequest) {
                                     NurseLogBook::create([
@@ -392,7 +391,7 @@ class CashierController extends Controller
                                         'patient_Name'              => $patient_Name,
                                         'patient_Type'              => $patient_Type,
                                         'revenue_Id'                => $revenueID,
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'item_Id'                   => $itemID,
                                         'description'               => $description,
@@ -428,7 +427,7 @@ class CashierController extends Controller
                                         'revenue_Id'                => $revenueID,
                                         'record_Status'             => 'X',
                                         'user_Id'                   => $userId, 
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'stat'                      => $stat,
                                         'createdat'                 => $transDate,
@@ -449,7 +448,7 @@ class CashierController extends Controller
                                         'Amount'                    => $item_amount,
                                         'RecordStatus'              => null,
                                         'UserID'                    => $userId,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat,
                                     ]);
@@ -466,7 +465,7 @@ class CashierController extends Controller
                                         'RevenueID'                 => $revenueID,
                                         'RecordStatus'              => null,
                                         'UserID'                    => $userId,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat == 1 ? 'N' : 'Y',
                                     ]);

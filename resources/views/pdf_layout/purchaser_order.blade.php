@@ -274,11 +274,11 @@
           <th>Item Description</th>
           <th>UOM</th>
           <th>QTY </th>
-          <th class="border-bottom-none">UNIT PRICE</th>
+          <th class="border-bottom-none">PRICE</th>
+          <th>TOTAL</th>
           <th>DISC. AMOUNT</th>
           <th>VAT AMOUNT</th>
-          <th>NET PRICE</th>
-          <th>Amount</th>
+          <th>NET AMOUNT</th>
         </tr>
         
       </thead>
@@ -288,12 +288,12 @@
           <td class="item-td" width="60">{{ $detail['itemcode'] }}</td>
           <td class="item-td" >{{ $detail['itemname'] }}</td>
           <td class="item-td">{{ $detail['uom'] }}</td>
-          <td class="item-td">{{ intval($detail['order_qty']) }}</td>
-          <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
-          <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
-          <td class="item-td" width="40">{{$pdf_data['currency']}}{{ number_format($detail['po_Detail_vat_amount'],2) }}</td>
-          <td class="item-td" width="50">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>
-          <td class="item-td" width="60">{{$pdf_data['currency']}}{{ number_format($detail['net_amount'],2) }}</td>
+          <td class="item-td" width="40">{{ intval($detail['order_qty']) }}</td>
+          <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
+          <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],2) }}</td>
+          <td class="item-td" width="50">{{ number_format($detail['disc_amount'],2) }}</td>
+          <td class="item-td" width="30">{{ number_format($detail['vat_amount'],2) }}</td>
+          <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],2) }}</td>
         </tr>
         @endforeach
       @endif

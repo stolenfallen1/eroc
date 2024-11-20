@@ -104,11 +104,13 @@ class CanvasController extends Controller
             $itemid = isset($request->canvas_Old_Item_Id) ? $request->canvas_Old_Item_Id : $request->canvas_Item_Id;
 
             $checkcanvas = CanvasMaster::where('pr_request_id',$request->pr_request_id)->where('canvas_Item_Id',$itemid)->where('vendor_id',$request->vendor_id)->first();
+            $freegoods = $request->isFreeGoods == true ? 1 : 0;
             $canvas = CanvasMaster::updateOrCreate(
                 [
                     'pr_request_id' => $request->pr_request_id,
                     'canvas_Item_Id' => $itemid,
-                    'vendor_id' => $request->vendor_id
+                    'vendor_id' => $request->vendor_id,
+                    'isFreeGoods' => $freegoods
                 ],
                 [
                 'canvas_Document_Number' => $number,
@@ -138,7 +140,7 @@ class CanvasController extends Controller
                 'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
                 'canvas_item_vat_amount' => $vat_amount,
                 'vat_type' => $request->vat_type,
-                'isFreeGoods' => $request->isFreeGoods == true ? 1 : 0,
+                'isFreeGoods' => $freegoods,
                 'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
                 'terms_id'=>  $request->terms_id ?? 10,
             ]);
@@ -247,16 +249,17 @@ class CanvasController extends Controller
     public function destroy($id)
     {
         $canvas = CanvasMaster::with('attachments')->where('id', $id)->first();
+        // if($canvas->isFreeGoods == 1){
+        //     $prDetails = PurchaseRequestDetails::where('pr_request_id',$canvas->pr_request_id)->where('item_Id',$canvas->canvas_Item_Id)->first();
+        //     $prDetails->delete();
+        // }
         foreach ($canvas->attachments as $key => $attachment) {
             File::delete(public_path().$attachment->filepath);
             $attachment->delete();
         }
         $canvas->delete();
 
-        if($canvas->isFreeGoods == 1){
-            $prDetails = PurchaseRequestDetails::where('pr_request_id',$canvas->pr_request_id)->where('item_Id',$canvas->canvas_Item_Id)->first();
-            $prDetails->delete();
-        }
+       
         
         return response()->json(['message' => 'success'], 200);
     }

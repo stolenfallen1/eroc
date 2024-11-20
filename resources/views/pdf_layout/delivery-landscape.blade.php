@@ -339,19 +339,20 @@
           <th rowspan="2">Item Description</th>
           <th rowspan="2">UOM</th>
           <th colspan="2">Batch Information</th>
-          <th colspan="3">QUANTITY</th>
+          <th colspan="2">QUANTITY</th>
           <th rowspan="1" class="border-bottom-none">UNIT </th>
-          <th rowspan="2">DISC</th>
+          <th rowspan="1" class="border-bottom-none">DISC.</th>
           <th rowspan="2">NET PRICE</th>
           <th rowspan="2">Amount</th>
         </tr>
         <tr>
           <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
           <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
+          <!-- <th rowspan="1" class="border-top-none">ORDER</th> -->
           <th rowspan="1" class="border-top-none">FREE</th>
-          <th rowspan="1" class="border-top-none">SERVED</th>
           <th rowspan="1" class="border-top-none">BALANCE</th>
           <th rowspan="1" class="border-top-none">PRICE</th>
+          <th rowspan="1" class="border-top-none">AMOUNT</th>
         </tr>
       </thead>
 
@@ -365,14 +366,14 @@
       }
       @endphp
       <tr>
-        <td class="item-td" width="60">{{ $detail['itemcode'] }}</td>
-        <td class="item-td" width="200">{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
+        <td class="item-td">{{ $detail['itemcode'] }}</td>
+        <td class="item-td">{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
         <td class="item-td">{{ $detail['uom'] }}</td>
         <td class="item-td">{{ $batchno }}</td>
         <td class="item-td">{{ $expirydate }}</td>
-        <td class="item-td">{{ intval($detail['order_qty']) }}</td>
+        <!-- <td class="item-td">{{ intval($detail['order_qty']) }}</td> -->
         <td class="item-td">{{ intval($detail['served_qty']) }}</td>
-        <td class="item-td">{{ intval($detail['balance']) }}</td>
+        <td class="item-td"></td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>
@@ -384,9 +385,6 @@
         <td colspan="10" class="border-none"></td>
         <td colspan="1" class="item-td border-none"><br></td>
       </tr>
-
-
-
     </tbody>
   </table>
   <table>

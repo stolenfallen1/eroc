@@ -59,7 +59,11 @@ Route::controller(LaboratoryController::class)->group(function() {
 });
 // Ancillary Routes
 Route::controller(AncillaryController::class)->group(function() {
-    Route::get('get-ancillary-patients', 'getAncillaryPatients');
+    Route::get('get-opd-ancillary-orders', 'getOPDOrders');
+    Route::get('get-er-ancillary-orders', 'getEROrders');
+    Route::get('get-ipd-ancillary-orders', 'getIPDOrders');
+    Route::post('carry-ancillary-order', 'carryOrder');
+    Route::post('cancel-ancillary-order', 'cancelOrder');
 });
 // Pharmacy Routes
 Route::controller(PharmacyController::class)->group(function() {

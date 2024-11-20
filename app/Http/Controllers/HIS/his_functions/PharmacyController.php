@@ -341,6 +341,7 @@ class PharmacyController extends Controller
                             'Balance'               => $item_OnHand,
                             'NetCost'               => $item_ListCost,
                             'Amount'                => $amount,
+                            'DosageID'              => $frequency,
                             'UserID'                => Auth()->user()->idnumber,
                             'RequestByID'           => Auth()->user()->idnumber,
                             'LocationID'            => 20,
@@ -385,6 +386,7 @@ class PharmacyController extends Controller
                         ->update([
                             'remarks'           => $remarks,
                             'record_Status'     => 'R',
+                            'requestNum'        => $requestNum . '[REVOKED]',
                             'cancelBy'          => Auth()->user()->idnumber,
                             'cancelDate'        => $today,
                             'updatedat'         => $today,
@@ -398,6 +400,7 @@ class PharmacyController extends Controller
                         ->update([
                             'remarks'           => $remarks,
                             'record_Status'     => 'R',
+                            'requestNum'        => $requestNum . '[REVOKED]',
                             'cancelBy'          => Auth()->user()->idnumber,
                             'cancelDate'        => $today,
                             'updatedat'         => $today,
@@ -412,6 +415,7 @@ class PharmacyController extends Controller
                                 ->where('ItemID', $item_Id)
                                 ->update([
                                     'Remarks'           => $remarks,
+                                    'RequestNum'        => $requestNum . '[REVOKED]',
                                     'RecordStatus'      => 'R',
                                 ]);
 
@@ -421,6 +425,7 @@ class PharmacyController extends Controller
                                 ->where('ItemID', $item_Id)
                                 ->update([
                                     'Remarks'           => $remarks,
+                                    'RequestNum'        => $requestNum . '[REVOKED]',
                                     'RecordStatus'      => 'R',
                                 ]);
                         endif;

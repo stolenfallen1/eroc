@@ -104,7 +104,11 @@ class CanvasController extends Controller
             $itemid = isset($request->canvas_Old_Item_Id) ? $request->canvas_Old_Item_Id : $request->canvas_Item_Id;
 
             $checkcanvas = CanvasMaster::where('pr_request_id',$request->pr_request_id)->where('canvas_Item_Id',$itemid)->where('vendor_id',$request->vendor_id)->first();
-            $freegoods = $request->isFreeGoods == true ? 1 : NULL;
+            $freegood  = 1;
+            if($request->isFreeGoods == 0 || $request->isFreeGoods == null){
+                $freegood = NULL;
+            }
+            $freegoods = $freegood;
             $canvas = CanvasMaster::updateOrCreate(
                 [
                     'pr_request_id' => $request->pr_request_id,

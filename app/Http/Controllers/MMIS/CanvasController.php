@@ -104,50 +104,87 @@ class CanvasController extends Controller
             $itemid = isset($request->canvas_Old_Item_Id) ? $request->canvas_Old_Item_Id : $request->canvas_Item_Id;
 
             $checkcanvas = CanvasMaster::where('pr_request_id',$request->pr_request_id)->where('canvas_Item_Id',$itemid)->where('vendor_id',$request->vendor_id)->first();
-            $freegood  = 1;
-            if($request->isFreeGoods == 0 || $request->isFreeGoods == null){
+            $freegood = 1;
+            if(isset($request->isFreeGoods) || $request->isFreeGoods == 0){
                 $freegood = NULL;
             }
             $freegoods = $freegood;
-            $canvas = CanvasMaster::updateOrCreate(
-                [
-                    'pr_request_id' => $request->pr_request_id,
-                    'canvas_Item_Id' => $itemid,
+            if($freegoods){
+                $canvas = CanvasMaster::create(
+                    [
+                    'canvas_Document_Number' => $number,
+                    'canvas_Document_Prefix' => $prefix,
+                    'canvas_Document_Suffix' => $suffix,
+                    'canvas_Document_CanvassBy' => Auth::user()->idnumber,
+                    'canvas_Document_Transaction_Date' => Carbon::now(),
+                    'created_at' => Carbon::now(),
+                    'requested_date' => Carbon::parse($request->requested_date),
+                    'canvas_Branch_Id' => $authUser->branch_id,
+                    'canvas_Warehouse_Group_Id' => $authUser->warehouse->warehouse_Group_Id,
+                    'canvas_Warehouse_Id' => $pr->warehouse_Id,
                     'vendor_id' => $request->vendor_id,
-                    'isFreeGoods' => $freegoods
-                ],
-                [
-                'canvas_Document_Number' => $number,
-                'canvas_Document_Prefix' => $prefix,
-                'canvas_Document_Suffix' => $suffix,
-                'canvas_Document_CanvassBy' => Auth::user()->idnumber,
-                'canvas_Document_Transaction_Date' => Carbon::now(),
-                'created_at' => Carbon::now(),
-                'requested_date' => Carbon::parse($request->requested_date),
-                'canvas_Branch_Id' => $authUser->branch_id,
-                'canvas_Warehouse_Group_Id' => $authUser->warehouse->warehouse_Group_Id,
-                'canvas_Warehouse_Id' => $pr->warehouse_Id,
-                'vendor_id' => $request->vendor_id,
-                'pr_request_id' => $request->pr_request_id,
-                'pr_request_details_id' => $request->pr_request_details_id,
-                'canvas_Item_Id' => $request->canvas_Item_Id,
-                'canvas_Item_Qty' => $request->canvas_Item_Qty,
-                'canvas_Item_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
-                'canvas_item_amount' => $request->canvas_item_amount,
-                'canvas_item_total_amount' => $total_amount,
-                'canvas_item_discount_percent' => $request->canvas_discount_percent,
-                'canvas_item_discount_amount' => $discount_amount,
-                'canvas_item_net_amount' => $canvas_item_total_amount,
-                'canvas_lead_time' => $request->canvas_lead_time,
-                'canvas_remarks' => $request->canvas_remarks,
-                'currency_id' => $request->currency_id,
-                'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
-                'canvas_item_vat_amount' => $vat_amount,
-                'vat_type' => $request->vat_type,
-                'isFreeGoods' => $freegoods,
-                'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
-                'terms_id'=>  $request->terms_id ?? 10,
-            ]);
+                    'pr_request_id' => $request->pr_request_id,
+                    'pr_request_details_id' => $request->pr_request_details_id,
+                    'canvas_Item_Id' => $request->canvas_Item_Id,
+                    'canvas_Item_Qty' => $request->canvas_Item_Qty,
+                    'canvas_Item_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
+                    'canvas_item_amount' => $request->canvas_item_amount,
+                    'canvas_item_total_amount' => $total_amount,
+                    'canvas_item_discount_percent' => $request->canvas_discount_percent,
+                    'canvas_item_discount_amount' => $discount_amount,
+                    'canvas_item_net_amount' => $canvas_item_total_amount,
+                    'canvas_lead_time' => $request->canvas_lead_time,
+                    'canvas_remarks' => $request->canvas_remarks,
+                    'currency_id' => $request->currency_id,
+                    'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
+                    'canvas_item_vat_amount' => $vat_amount,
+                    'vat_type' => $request->vat_type,
+                    'isFreeGoods' => $freegoods,
+                    'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
+                    'terms_id'=>  $request->terms_id ?? 10,
+                ]);
+            }else{
+                $canvas = CanvasMaster::updateOrCreate(
+                    [
+                        'pr_request_id' => $request->pr_request_id,
+                        'canvas_Item_Id' => $itemid,
+                        'vendor_id' => $request->vendor_id,
+                        'isFreeGoods' => $freegoods
+                    ],
+                    [
+                    'canvas_Document_Number' => $number,
+                    'canvas_Document_Prefix' => $prefix,
+                    'canvas_Document_Suffix' => $suffix,
+                    'canvas_Document_CanvassBy' => Auth::user()->idnumber,
+                    'canvas_Document_Transaction_Date' => Carbon::now(),
+                    'created_at' => Carbon::now(),
+                    'requested_date' => Carbon::parse($request->requested_date),
+                    'canvas_Branch_Id' => $authUser->branch_id,
+                    'canvas_Warehouse_Group_Id' => $authUser->warehouse->warehouse_Group_Id,
+                    'canvas_Warehouse_Id' => $pr->warehouse_Id,
+                    'vendor_id' => $request->vendor_id,
+                    'pr_request_id' => $request->pr_request_id,
+                    'pr_request_details_id' => $request->pr_request_details_id,
+                    'canvas_Item_Id' => $request->canvas_Item_Id,
+                    'canvas_Item_Qty' => $request->canvas_Item_Qty,
+                    'canvas_Item_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
+                    'canvas_item_amount' => $request->canvas_item_amount,
+                    'canvas_item_total_amount' => $total_amount,
+                    'canvas_item_discount_percent' => $request->canvas_discount_percent,
+                    'canvas_item_discount_amount' => $discount_amount,
+                    'canvas_item_net_amount' => $canvas_item_total_amount,
+                    'canvas_lead_time' => $request->canvas_lead_time,
+                    'canvas_remarks' => $request->canvas_remarks,
+                    'currency_id' => $request->currency_id,
+                    'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
+                    'canvas_item_vat_amount' => $vat_amount,
+                    'vat_type' => $request->vat_type,
+                    'isFreeGoods' => $freegoods,
+                    'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
+                    'terms_id'=>  $request->terms_id ?? 10,
+                ]);
+            }
+          
     
             if (isset($request->attachments) && $request->attachments != null && sizeof($request->attachments) > 0) {
                 foreach($request->attachments as $key => $attachment){

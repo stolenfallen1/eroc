@@ -309,10 +309,10 @@
         <td class="item-td">{{ $detail['uom'] }}</td>
         <td class="item-td">{{ $batchno }}</td>
         <td class="item-td">{{ $expirydate }}</td>
-        <td class="item-td">{{ intval($detail['order_qty']) }}</td>
-        <td class="item-td">{{ intval($detail['served_qty']) }}</td>
-        <td class="item-td">{{ intval($total) }}</td>
-        <td class="item-td">{{ intval(($detail['order_qty'] - $total)) }}</td>
+        <td class="item-td">{{ $detail['order_qty'] }}</td>
+        <td class="item-td">{{ $detail['served_qty'] }}</td>
+        <td class="item-td">{{ $total }}</td>
+        <td class="item-td">{{ ($detail['order_qty'] - $total) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
         <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>
@@ -371,7 +371,7 @@
       <td class="item-td">{{ $detail['uom'] }}</td>
       <td class="item-td">{{ $batchno }}</td>
       <td class="item-td">{{ $expirydate }}</td>
-      <td class="item-td">{{ intval($detail['served_qty']) }}</td>
+      <td class="item-td">{{ $detail['served_qty'] }}</td>
       <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
       <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
       <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>

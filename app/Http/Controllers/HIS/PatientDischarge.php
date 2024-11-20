@@ -413,6 +413,44 @@ class PatientDischarge extends Controller
         }
     }
 
+    // public function getPatientChargesStatus($id) {
+    //     try {
+    //         $patientRegistry = PatientRegistry::where('case_No', $id)->first();
+
+    //         if(!$patientRegistry) {
+    //             return response()->json(['message' => 'Record Not Found'], 404);
+    //         }
+
+    //         if($patientRegistry->guarantor_Name === 'Self Pay') {
+    //             $query = DB::table('CDG_BILLING.dbo.CashAssessment as ca')
+    //             ->select(
+    //                 'ca.patient_Id',
+    //                 'ca.case_No',
+    //                 'ca.revenueID as revenue_Id',
+    //                 'ca.recordStatus',
+    //                 'ca.ORNumber',
+    //             )
+    //             ->where('ca.case_No', '=', $id);
+    //         } else {
+    //             $query = DB::table('CDG_PATIENT_DATA.dbo.NurseLogBook as cdgLB')
+    //                 ->select(
+    //                     'cdgLB.patient_Id',
+    //                     'cdgLB.case_No',
+    //                     'cdgLB.revenue_Id',
+    //                     'cdgLB.record_Status as recordStatus',
+    //                 )
+    //                 ->where('cdgLB.case_No', '=', $id);
+    //         }
+    //         $dataCharges = $query->get();
+    //         if($dataCharges->isEmpty()) {
+    //             return response()->json(['message' => 'No pending charges or request'], 404);
+    //         }
+    //         return response()->json($dataCharges, 200);
+    //     } catch(\Exception $e) {
+    //         return response()->json(['message' => $e->getMessage()]);
+    //     }
+    // }
+
     public function getPatientChargesStatus($id) {
         try {
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
@@ -421,8 +459,7 @@ class PatientDischarge extends Controller
                 return response()->json(['message' => 'Record Not Found'], 404);
             }
 
-            if($patientRegistry->guarantor_Name === 'Self Pay') {
-                $query = DB::table('CDG_BILLING.dbo.CashAssessment as ca')
+            $queryCashAssessment = DB::table('CDG_BILLING.dbo.CashAssessment as ca')
                 ->select(
                     'ca.patient_Id',
                     'ca.case_No',
@@ -431,20 +468,24 @@ class PatientDischarge extends Controller
                     'ca.ORNumber',
                 )
                 ->where('ca.case_No', '=', $id);
-            } else {
-                $query = DB::table('CDG_PATIENT_DATA.dbo.NurseLogBook as cdgLB')
-                    ->select(
-                        'cdgLB.patient_Id',
-                        'cdgLB.case_No',
-                        'cdgLB.revenue_Id',
-                        'cdgLB.record_Status as recordStatus',
-                    )
-                    ->where('cdgLB.case_No', '=', $id);
-            }
-            $dataCharges = $query->get();
+
+            $queryNurseLogBook = DB::table('CDG_PATIENT_DATA.dbo.NurseLogBook as cdgLB')
+                ->select(
+                    'cdgLB.patient_Id',
+                    'cdgLB.case_No',
+                    'cdgLB.revenue_Id',
+                    'cdgLB.record_Status as recordStatus',
+                    DB::raw('NULL as ORNumber')
+                )
+                ->where('cdgLB.case_No', '=', $id);
+            $dataCharges =$queryCashAssessment
+            ->unionAll($queryNurseLogBook)
+            ->get();
+
             if($dataCharges->isEmpty()) {
                 return response()->json(['message' => 'No pending charges or request'], 404);
             }
+            
             return response()->json($dataCharges, 200);
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage()]);

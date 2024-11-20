@@ -341,47 +341,51 @@ class ConsignmentDeliveryController extends Controller
                     ]);
                     
                     $batchdetails = ItemBatchModelMaster::where('item_Id', $batch['item_Id'])->where('warehouse_id', $warehouse_item->warehouse_Id)->first();     
-                    $batchdetails->update([
-                        'branch_id' => $delivery->rr_Document_Branch_Id,
-                        'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
-                        'batch_Number' => $batch['batch_Number'],
-                        'batch_Transaction_Date' => Carbon::now(),
-                        'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
-                        'item_Id' => $batch['item_Id'],
-                        'item_Qty' => $batch['item_Qty'],
-                        'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
-                        'isConsumed' => 0,
-                        'delivery_item_id' => $delivery_item->id,
-                        'price' => $delivery_item->rr_Detail_Item_ListCost,
-                        'mark_up' => $batch['mark_up'] ?? 0,
-                        'isconsignment' => 1
-                    ]);
                    
-                    ConsignmentItems::where('rr_id',$id)->where('rr_Detail_Item_Id',$batch['item_Id'])->update([
-                        'rr_Detail_Item_BatchNumber' => $batchdetails['id']
-                    ]);
+                   
+                 
+                    if($batchdetails){
+                        $batchdetails->update([
+                            'branch_id' => $delivery->rr_Document_Branch_Id,
+                            'warehouse_id' => $delivery->rr_Document_Warehouse_Id,
+                            'batch_Number' => $batch['batch_Number'],
+                            'batch_Transaction_Date' => Carbon::now(),
+                            'batch_Remarks' => $batch['batch_Remarks'] ?? NULL,
+                            'item_Id' => $batch['item_Id'],
+                            'item_Qty' => $batch['item_Qty'],
+                            'item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                            'item_Expiry_Date' => isset($batch['item_Expiry_Date']) ? Carbon::parse($batch['item_Expiry_Date']) : NULL,
+                            'isConsumed' => 0,
+                            'delivery_item_id' => $delivery_item->id,
+                            'price' => $delivery_item->rr_Detail_Item_ListCost,
+                            'mark_up' => $batch['mark_up'] ?? 0,
+                            'isconsignment' => 1
+                        ]);
+                        ConsignmentItems::where('rr_id',$id)->where('rr_Detail_Item_Id',$batch['item_Id'])->update([
+                            'rr_Detail_Item_BatchNumber' => $batchdetails['id']
+                        ]);
+                        (new RecomputePrice())->compute($department,'',$batch['item_Id'],'out');
+                        $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
 
-                    (new RecomputePrice())->compute($department,'',$batch['item_Id'],'out');
+                        // return $detail['purchase_request_detail'];
+                        InventoryTransaction::where('transaction_Item_Batch_Detail', $batchdetails['id'])->where('transaction_Item_Id',$batch['item_Id'])->update([
+                            'branch_Id' => $delivery->rr_Document_Branch_Id,
+                            'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
+                            'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
+                            'transaction_Item_Id' =>  $batch['item_Id'],
+                            'transaction_Item_Batch_Detail' => $batchdetails['id'],
+                            'transaction_Date' => Carbon::now(),
+                            'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
+                            'transaction_Qty' => $batch['item_Qty'],
+                            'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $batch['item_Qty'],
+                            'transaction_Item_ListCost' => $delivery_item->rr_Detail_Item_ListCost,
+                            'transaction_UserID' =>  Auth::user()->idnumber,
+                            'createdBy' =>  Auth::user()->idnumber,
+                            'transaction_Acctg_TransType' =>  $transaction->code ?? '',
+                        ]);
+                    }
                   
-                    $transaction = FmsTransactionCode::where('description', 'like', '%Inventory Purchased Items%')->where('isActive', 1)->first();
-
-                    // return $detail['purchase_request_detail'];
-                    InventoryTransaction::where('transaction_Item_Batch_Detail', $batchdetails['id'])->where('transaction_Item_Id',$batch['item_Id'])->update([
-                        'branch_Id' => $delivery->rr_Document_Branch_Id,
-                        'warehouse_Group_Id' => $delivery->rr_Document_Warehouse_Group_Id,
-                        'warehouse_Id' => $delivery->rr_Document_Warehouse_Id,
-                        'transaction_Item_Id' =>  $batch['item_Id'],
-                        'transaction_Item_Batch_Detail' => $batchdetails['id'],
-                        'transaction_Date' => Carbon::now(),
-                        'transaction_Item_UnitofMeasurement_Id' => $batch['item_UnitofMeasurement_Id'],
-                        'transaction_Qty' => $batch['item_Qty'],
-                        'transaction_Item_OnHand' => $warehouse_item->item_OnHand + $batch['item_Qty'],
-                        'transaction_Item_ListCost' => $delivery_item->rr_Detail_Item_ListCost,
-                        'transaction_UserID' =>  Auth::user()->idnumber,
-                        'createdBy' =>  Auth::user()->idnumber,
-                        'transaction_Acctg_TransType' =>  $transaction->code ?? '',
-                    ]);
+                   
                     
                 }
             }

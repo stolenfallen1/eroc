@@ -23,6 +23,7 @@ use App\Models\MMIS\inventory\ConsignmentItems;
 use App\Helpers\SearchFilter\inventory\Deliveries;
 use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
+use App\Models\MMIS\procurement\CanvasMaster;
 
 class DeliveryController extends Controller
 {
@@ -97,23 +98,33 @@ class DeliveryController extends Controller
                 $total_net          = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_net_amount'];
                 $total_amount       = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_total_amount'];
                 $vat_rate           = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_vat_rate'];
+                $vat_amount         = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_vat_amount'];
+                $vat_type           = $detail['purchase_request_detail']['recommended_canvas']['vat_type'];
                 $item_amount        = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_amount'];
                 $discount_percent   = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_percent'];
-                $discount_amount    = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_amount'];
+                $discount_amount = $detail['purchase_request_detail']['recommended_canvas']['canvas_item_discount_amount'];
 
                 if ($delivery->rr_Status == 5 || $delivery->rr_Status == 11 || isset($detail['rr_Detail_Item_ListCost'])) {
                     $item_amount    = $detail['rr_Detail_Item_ListCost'] ?? $item_amount;
-                    $total_amount   = $item_amount * $detail['rr_Detail_Item_Qty_Received'];
-                    if ($vat_rate) {
-                        // if($request['vendor']['isVATInclusive'] == 0){
+                    $qty            = $detail['rr_Detail_Item_Qty_Received'];
+                    $total_amount   = $item_amount * $qty;
+                
+                    // Handle VAT based on vat_type
+                    if ($vat_type == 1) { // Exclusive VAT
                         $vat_amount     = $total_amount * ($vat_rate / 100);
                         $total_amount   += $vat_amount;
-                        // }
+                    } elseif ($vat_type == 2) { // Inclusive VAT
+                        $vat_amount     = $total_amount * ($vat_rate / (100 + $vat_rate)); // Extract VAT from total
+                    } elseif ($vat_type == 3) { // Exempt VAT
+                        $vat_amount     = 0; // No VAT for exempt
                     }
+                
+                    // Apply discount if applicable
                     if ($discount_percent) {
                         $discount_amount         = $total_amount * ($discount_percent / 100);
                         $overall_discount_amount += $discount_amount;
                     }
+                
                     $total_net                   = $total_amount - $discount_amount;
                     $overall_total_net           += $total_net;
                     $overall_total_amount        += $total_amount;
@@ -138,7 +149,7 @@ class DeliveryController extends Controller
                         'rr_Detail_Item_Vat_Rate'                       => $vat_rate,
                         'rr_Detail_Item_Vat_Amount'                     => $vat_amount ?? 0,
                         'rr_canvas_id'                                  => $detail['purchase_request_detail']['recommended_canvas']['id'],
-                        'isFreeGoods'                                   =>0
+                        'isFreeGoods'                                   => 0
                     ]
                 );
 
@@ -166,10 +177,9 @@ class DeliveryController extends Controller
 
                         (new RecomputePrice())->compute($warehouse_id, '', $batch['item_Id'], 'out');
 
-                        $this->StorebatchDetails($batch,$delivery,$delivery_item,$item_amount);
-
+                        $this->StorebatchDetails($batch, $delivery, $delivery_item, $item_amount);
                     }
-                }else{
+                } else {
                     (new RecomputePrice())->compute($warehouse_id, '', $detail['item']['id'], 'out');
                 }
 
@@ -178,39 +188,40 @@ class DeliveryController extends Controller
                 // }
             }
 
-            if(count($request['podetails']) > 0){
+            if (count($request['podetails']) > 0) {
                 foreach ($request['podetails'] as $key => $detail) {
                     
                     $delivery_item = DeliveryItems::create(
                         [
                             'rr_id'                                         => $delivery->id,
                             'rr_Detail_Item_Id'                             => $detail['item']['id'],
-                            'rr_Detail_Item_ListCost'                       => 0,
+                            'rr_Detail_Item_ListCost'                       => $detail['po_Detail_item_listcost'] ?? 0,
                             'rr_Detail_Item_Qty_Received'                   => $detail['rr_Detail_Item_Qty_Received'],
                             'rr_Detail_Item_UnitofMeasurement_Id_Received'  => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
                             'rr_Detail_Item_Qty_Convert'                    => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : NULL,
                             'rr_Detail_Item_UnitofMeasurement_Id_Convert'   => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_uom'] : NULL,
                             'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] ?? NULL,
                             'rr_Detail_Item_UnitofMeasurement_Id_BackOrder' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
-                            'rr_Detail_Item_TotalGrossAmount'               => 0,
-                            'rr_Detail_Item_TotalDiscount_Percent'          => 0,
-                            'rr_Detail_Item_TotalDiscount_Amount'           => 0,
-                            'rr_Detail_Item_TotalNetAmount'                 => 0,
+                            'rr_Detail_Item_TotalGrossAmount'               => ($detail['po_Detail_item_listcost'] * $detail['rr_Detail_Item_Qty_Received']) ?? 0,
+                            'rr_Detail_Item_TotalDiscount_Percent'          => $detail['po_Detail_item_discount_percent'] ?? 0,
+                            'rr_Detail_Item_TotalDiscount_Amount'           => $detail['po_Detail_item_discount_amount'] ?? 0,
+                            'rr_Detail_Item_TotalNetAmount'                 => $detail['po_Detail_net_amount'] ?? 0,
                             'rr_Detail_Item_Per_Box'                        => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['rr_Detail_Item_Per_Box'] : NULL,
-                            'rr_Detail_Item_Vat_Rate'                       => 0,
-                            'rr_Detail_Item_Vat_Amount'                     => 0,
-                            'isFreeGoods'                                   =>1
+                            'rr_Detail_Item_Vat_Rate'                       => $detail['po_Detail_vat_percent'] ?? 0,
+                            'rr_Detail_Item_Vat_Amount'                     => $detail['po_Detail_vat_amount'] ?? 0,
+                            'rr_canvas_id'                                  => $detail['canvas_id'],
+                            'isFreeGoods'                                   => 1
                         ]
                     );
 
                     if ($detail['item']['isLotNo_Required'] != "1" && $detail['rr_Detail_Item_Qty_Received'] > 0) {
                         $batch_seq = SystemSequence::where('seq_description', 'like', '%Receiving Batch NUmber%')->where('branch_id', Auth::user()->branch_id)->first();
-    
+
                         $batch_number = str_pad($batch_seq->seq_no, $batch_seq->digit, "0", STR_PAD_LEFT);
                         $batch_suffix = $batch_seq->seq_suffix;
                         $batch_prefix = $batch_seq->seq_prefix;
                         $generated_seq = generateCompleteSequence($batch_prefix, $batch_number, $batch_suffix, "");
-    
+
                         $detail['batches']                                  = [];
                         $detail['batches'][0]['item_Id']                    = $detail['item']['id'];
                         $detail['batches'][0]['batch_Number']               = $generated_seq;
@@ -220,21 +231,18 @@ class DeliveryController extends Controller
                         $detail['batches'][0]['item_Expiry_Date']           = Carbon::now();
                         $detail['batches'][0]['mark_up']                    = 0;
                     }
-    
+
                     if (isset($detail['batches'])) {
-    
+
                         foreach ($detail['batches'] as $key1 => $batch) {
-    
+
                             (new RecomputePrice())->compute($warehouse_id, '', $batch['item_Id'], 'out');
-    
-                            $this->StorebatchDetails($batch,$delivery,$delivery_item,0);
-    
+
+                            $this->StorebatchDetails($batch, $delivery, $delivery_item, 0);
                         }
-                    }else{
+                    } else {
                         (new RecomputePrice())->compute($warehouse_id, '', $detail['item']['id'], 'out');
                     }
-
-                    
                 }
             }
 
@@ -266,13 +274,13 @@ class DeliveryController extends Controller
                 'line'          => $e->getLine(),      // The line number where the error occurred
                 'trace'         => $e->getTraceAsString()  // The stack trace
             ]);
-            
+
             return response()->json(["error" => $e->getMessage()], 200);
         }
     }
 
 
-    public function StorebatchDetails($batch, $delivery, $delivery_item,$item_amount)
+    public function StorebatchDetails($batch, $delivery, $delivery_item, $item_amount)
     {
         $warehouse_item = Warehouseitems::where(
             [
@@ -317,7 +325,7 @@ class DeliveryController extends Controller
             ]
         );
     }
-    
+
 
     public function storeConsignment(Request $request)
     {
@@ -345,7 +353,7 @@ class DeliveryController extends Controller
                 'rr_Document_Delivery_Receipt_No' => $request['rr_Document_Invoice_No'],
                 'rr_Document_Invoice_Date' => Carbon::now(),
                 'rr_Document_Delivery_Date' => Carbon::now(),
-                'rr_Document_Terms_Id' => $vendor['term'] ? $vendor['term']['id']: '',
+                'rr_Document_Terms_Id' => $vendor['term'] ? $vendor['term']['id'] : '',
                 'rr_Document_TotalGrossAmount' => $request['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $request['rr_Document_TotalDiscountAmount'],
                 'rr_Document_TotalNetAmount' => $request['rr_Document_TotalNetAmount'],

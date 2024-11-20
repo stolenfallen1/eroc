@@ -167,7 +167,7 @@ class DeliveryController extends Controller
                     $detail['batches'][0]['batch_Remarks']              = 'auto generated';
                     $detail['batches'][0]['item_Qty']                   = $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : $detail['rr_Detail_Item_Qty_Received'];
                     $detail['batches'][0]['item_UnitofMeasurement_Id']  = 2;
-                    $detail['batches'][0]['item_Expiry_Date']           = Carbon::now();
+                    $detail['batches'][0]['item_Expiry_Date']           = Carbon::now()->addDays(30);
                     $detail['batches'][0]['mark_up']                    = 0;
                 }
 
@@ -228,7 +228,7 @@ class DeliveryController extends Controller
                         $detail['batches'][0]['batch_Remarks']              = 'auto generated';
                         $detail['batches'][0]['item_Qty']                   = $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : $detail['rr_Detail_Item_Qty_Received'];
                         $detail['batches'][0]['item_UnitofMeasurement_Id']  = 2;
-                        $detail['batches'][0]['item_Expiry_Date']           = Carbon::now();
+                        $detail['batches'][0]['item_Expiry_Date']           = Carbon::now()->addDays(30);
                         $detail['batches'][0]['mark_up']                    = 0;
                     }
 

@@ -76,6 +76,4 @@ class Itemmasters extends Model
         return $this->hasMany(DeliveryItems::class, 'rr_Detail_Item_Id', 'id');
     }
 
-    
-
 }

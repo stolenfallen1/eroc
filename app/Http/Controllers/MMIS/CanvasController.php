@@ -104,9 +104,9 @@ class CanvasController extends Controller
             $itemid = isset($request->canvas_Old_Item_Id) ? $request->canvas_Old_Item_Id : $request->canvas_Item_Id;
 
             $checkcanvas = CanvasMaster::where('pr_request_id',$request->pr_request_id)->where('canvas_Item_Id',$itemid)->where('vendor_id',$request->vendor_id)->first();
-            $freegood = 1;
-            if(isset($request->isFreeGoods) || $request->isFreeGoods == 0){
-                $freegood = NULL;
+            $freegood = NULL;
+            if($request->isFreeGoods== true || $request->isFreeGoods == 1){
+                $freegood = 1;
             }
             $freegoods = $freegood;
             if($freegoods){

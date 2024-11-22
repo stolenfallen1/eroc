@@ -48,14 +48,16 @@ Route::controller(SOAController::class)->group(function () {
 });
 // Laboratory Routes
 Route::controller(LaboratoryController::class)->group(function() {
-    Route::get('get-discharged-patient-today', 'getDischargedPatientToday');
     Route::get('get-opd-patients', 'getOPDPatients');
     Route::get('get-er-patients', 'getERPatients');
     Route::get('get-ipd-patients', 'getIPDPatient');
+    Route::get('get-laboratory-opd-orders', 'getOPDPendingLabRequest');
+    Route::get('get-laboratory-er-orders', 'getERPendingLabRequest');
+    Route::get('get-laboratory-ipd-orders', 'getIPDPendingLabRequest');
     Route::post('get-laboratory-exams', 'getAllLabExamsByPatient'); // Get All Laboratory Exams
     Route::post('get-lab-exams-uncancelled', 'getUncancelledLabExamsByPatient'); // Get All Uncancelled Laboratory Exams
-    Route::post('archive-lab-exam', 'archivePatientLabItem'); // For Staff access cancellation
-    Route::post('cancel-lab-exam', 'cancelPatientLabItem'); // For Head of Laboratory access cancellation
+    Route::post('carry-laboratory-exam', 'carryOrder');
+    Route::post('cancel-laboratory-exam', 'cancelOrder'); 
 });
 // Ancillary Routes
 Route::controller(AncillaryController::class)->group(function() {

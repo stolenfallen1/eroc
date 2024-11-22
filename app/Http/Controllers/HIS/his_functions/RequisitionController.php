@@ -11,10 +11,12 @@ use App\Models\BuildFile\Itemmasters;
 use App\Models\HIS\his_functions\CashAssessment;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\HISBillingOut;
+use App\Models\HIS\his_functions\LaboratoryMaster;
 use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\HIS\medsys\MedSysCashAssessment;
 use App\Models\HIS\medsys\MedSysDailyOut;
+use App\Models\HIS\medsys\tbLABMaster;
 use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\medsys\tbNurseLogBook;
 use App\Models\MMIS\inventory\InventoryTransaction;
@@ -29,9 +31,22 @@ class RequisitionController extends Controller
 {
     //
     protected $check_is_allow_medsys;
+    protected $check_is_allow_laboratory_auto_rendering;
     public function __construct() 
     {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+        $this->check_is_allow_laboratory_auto_rendering = (new SysGlobalSetting())->check_is_allow_laboratory_auto_rendering();
+    }
+    public function getLabItems($item_id) 
+    {
+        try {
+            $data = ExamLaboratoryProfiles::with('lab_exams')
+                ->where('map_profile_id', $item_id)
+                ->get();
+            return response()->json(['data' => $data]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
     public function getBarCode($barcode_prefix, $sequence, $specimenId) 
     {
@@ -290,6 +305,7 @@ class RequisitionController extends Controller
             $requestDoctorID = $request->payload['attending_Doctor'];
             $requestDoctorName = $request->payload['attending_Doctor_fullname'];
             $patient_type = $request->payload['patient_Type'];
+            $guarantor_Id = $request->payload['guarantor_Id'];
 
             if (isset($request->payload['selectedItems']) && count($request->payload['selectedItems']) > 0) {
                 foreach ($request->payload['selectedItems'] as $items) {
@@ -354,6 +370,27 @@ class RequisitionController extends Controller
                             ]);
                         }
                     } else if ($account == 'Insurance Transaction') {
+                        HISBillingOut::create([
+                            'patient_Id'                => $patient_Id,
+                            'case_No'                   => $case_No,
+                            'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'transDate'                 => $today,
+                            'msc_price_scheme_id'       => 1,
+                            'revenueID'                 => $revenueID,
+                            'itemID'                    => $itemID,
+                            'quantity'                  => $quantity,
+                            'refNum'                    => $requestNum,
+                            'ChargeSlip'                => $requestNum,
+                            'amount'                    => $amount,
+                            'userId'                    => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'request_doctors_id'        => $requestDoctorID,
+                            'net_amount'                => $amount,
+                            'hostName'                  => (new GetIP())->getHostname(),
+                            'accountnum'                => $guarantor_Id,
+                            'auto_discount'             => 0,
+                            'createdby'                 => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'created_at'                => $today,
+                        ]);
                         NurseLogBook::create([
                             'branch_id'                 => 1,
                             'patient_Id'                => $patient_Id,
@@ -395,6 +432,20 @@ class RequisitionController extends Controller
                             'referenceNum'              => $referenceNum,
                         ]);
                         if ($this->check_is_allow_medsys) {
+                            MedSysDailyOut::create([
+                                'Hospnum'               => $patient_Id,
+                                'IDNum'                 => $case_No . 'B',
+                                'TransDate'             => $today,
+                                'RevenueID'             => $revenueID,
+                                'ItemID'                => $itemID,
+                                'Quantity'              => $quantity,
+                                'RefNum'                => $requestNum,
+                                'ChargeSlip'            => $requestNum,
+                                'Amount'                => $amount,
+                                'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'HostName'              => (new GetIP())->getHostname(),
+                                'AutoDiscount'          => 0,
+                            ]);
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
@@ -487,6 +538,7 @@ class RequisitionController extends Controller
             $requestDoctorID = $request->payload['attending_Doctor'];
             $requestDoctorName = $request->payload['attending_Doctor_fullname'];
             $patient_type = $request->payload['patient_Type'];
+            $guarantor_Id = $request->payload['guarantor_Id'];
 
             if (isset($request->payload['selectedItems']) && count($request->payload['selectedItems']) > 0) {
                 foreach ($request->payload['selectedItems'] as $items) {
@@ -555,6 +607,27 @@ class RequisitionController extends Controller
                             ]);
                         }
                     } else if ($account == 'Insurance Transaction') {
+                        HISBillingOut::create([
+                            'patient_Id'                => $patient_Id,
+                            'case_No'                   => $case_No,
+                            'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'transDate'                 => $today,
+                            'msc_price_scheme_id'       => 1,
+                            'revenueID'                 => $revenueID,
+                            'itemID'                    => $itemID,
+                            'quantity'                  => $quantity,
+                            'refNum'                    => $requestNum,
+                            'ChargeSlip'                => $requestNum,
+                            'amount'                    => $amount,
+                            'userId'                    => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'request_doctors_id'        => $requestDoctorID,
+                            'net_amount'                => $amount,
+                            'hostName'                  => (new GetIP())->getHostname(),
+                            'accountnum'                => $guarantor_Id,
+                            'auto_discount'             => 0,
+                            'createdby'                 => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'created_at'                => $today,
+                        ]);
                         NurseLogBook::create([
                             'branch_id'                 => 1,
                             'patient_Id'                => $patient_Id,
@@ -602,6 +675,20 @@ class RequisitionController extends Controller
                             'createdby'                 => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
                         if ($this->check_is_allow_medsys) {
+                            MedSysDailyOut::create([
+                                'Hospnum'               => $patient_Id,
+                                'IDNum'                 => $case_No . 'B',
+                                'TransDate'             => $today,
+                                'RevenueID'             => $revenueID,
+                                'ItemID'                => $itemID,
+                                'Quantity'              => $quantity,
+                                'RefNum'                => $requestNum,
+                                'ChargeSlip'            => $requestNum,
+                                'Amount'                => $amount,
+                                'UserID'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'HostName'              => (new GetIP())->getHostname(),
+                                'AutoDiscount'          => 0,
+                            ]);
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
@@ -782,6 +869,7 @@ class RequisitionController extends Controller
                             'requestDoctorName'             => $doctor_name,
                             'departmentID'                  => $revenue_Id,
                             'Barcode'                       => $barcode,
+                            'isprocedure'                   => 1,
                             'userId'                        => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'hostname'                      => (new GetIP())->getHostname(),
                             'createdBy'                     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
@@ -825,11 +913,14 @@ class RequisitionController extends Controller
                             'refNum'                        => $sequence,
                             'ChargeSlip'                    => $sequence,
                             'amount'                        => $amount,
+                            'Barcode'                       => $barcode,
                             'userId'                        => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             'request_doctors_id'            => $doctor_id,
                             'net_amount'                    => $amount,
                             'hostName'                      => (new GetIP())->getHostname(),
                             'auto_discount'                 => 0,
+                            'created_at'                    => $today,
+                            'createdby'                     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         ]);
                         if ($this->check_is_allow_medsys):
                             MedSysDailyOut::create([
@@ -848,6 +939,114 @@ class RequisitionController extends Controller
                                 'AutoDiscount'              => 0,
                             ]);
                         endif;
+                        // Throw the data to the respective table for the procedure para ma carry order / render 
+                        switch ($revenue_Id) {
+                            case 'LB':
+                                $recordStatus = $this->check_is_allow_laboratory_auto_rendering ? 'W' : 'X';
+                                $processedBy = $this->check_is_allow_laboratory_auto_rendering ? ($checkUser ? $checkUser->idnumber : Auth()->user()->idnumber) : null;
+                                $processedDate = $this->check_is_allow_laboratory_auto_rendering ? $today : null;
+                                if ($form == 'C' || $form == 'P') {
+                                    $labProfileData = $this->getLabItems($item_Id);
+                                    if ($labProfileData->getStatusCode() === 200) {
+                                        $labItems = $labProfileData->getData()->data;
+                                        foreach ($labItems as $labItem) {
+                                            foreach ($labItem->lab_exams as $exam) {
+                                                LaboratoryMaster::create([
+                                                    'patient_Id'            => $patient_Id,
+                                                    'case_No'               => $case_No,
+                                                    'transdate'             => $today,
+                                                    'refNum'                => $sequence,
+                                                    'profileId'             => $exam->map_profile_id,
+                                                    'item_Charged'          => $exam->map_profile_id,
+                                                    'itemId'                => $exam->map_exam_id,
+                                                    'quantity'              => $quantity,
+                                                    'amount'                => 0, // As per sir joe instructions, wala pay price per exam sa panel / package
+                                                    'NetAmount'             => 0, // As per sir joe instructions, wala pay price per exam sa panel / package
+                                                    'doctor_Id'             => $doctor_id,
+                                                    'specimen_Id'           => $exam->map_specimen_id,
+                                                    'processed_By'          => $processedBy,
+                                                    'processed_Date'        => $processedDate,
+                                                    'isrush'                => $stat == 1 ? 'N' : 'Y',
+                                                    'request_Status'        => $recordStatus,
+                                                    'result_Status'         => $recordStatus,
+                                                    'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                                    'barcode'               => $barcode,
+                                                    'created_at'            => $today,
+                                                    'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                                ]);
+                                                if ($this->check_is_allow_medsys):
+                                                    tbLABMaster::create([
+                                                        'HospNum'           => $patient_Id,
+                                                        'IdNum'             => $case_No . 'B',
+                                                        'RefNum'            => $sequence,
+                                                        'RequestStatus'     => $recordStatus,
+                                                        'ItemId'            => $exam->map_exam_id,
+                                                        'Amount'            => 0,
+                                                        'Transdate'         => $today,
+                                                        'DoctorId'          => $doctor_id,
+                                                        'SpecimenId'        => $exam->map_specimen_id,
+                                                        'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                                        'Quantity'          => $quantity,
+                                                        'ResultStatus'      => $recordStatus,
+                                                        'Barcode'           => $barcode,
+                                                        'RUSH'              => $stat == 1 ? 'N' : 'Y',
+                                                        'ProfileId'         => $exam->map_profile_id,
+                                                        'ItemCharged'       => $exam->map_profile_id,
+                                                    ]);
+                                                endif;
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    LaboratoryMaster::create([
+                                        'patient_Id'            => $patient_Id,
+                                        'case_No'               => $case_No,
+                                        'transdate'             => $today,
+                                        'refNum'                => $sequence,
+                                        'profileId'             => $item_Id,
+                                        'item_Charged'          => $item_Id,
+                                        'itemId'                => $item_Id,
+                                        'quantity'              => $quantity,
+                                        'amount'                => 0, // Kani kay nag libug ko should I use the amount sa procedure? or in-ani lang usa?
+                                        'NetAmount'             => 0, // Kani kay nag libug ko should I use the amount sa procedure? or in-ani lang usa?
+                                        'doctor_Id'             => $doctor_id,
+                                        'specimen_Id'           => $specimen,
+                                        'processed_By'          => $processedBy,
+                                        'processed_Date'        => $processedDate,
+                                        'isrush'                => $stat == 1 ? 'N' : 'Y',
+                                        'request_Status'        => $recordStatus,
+                                        'result_Status'         => $recordStatus,
+                                        'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                        'barcode'               => $barcode,
+                                        'created_at'            => $today,
+                                        'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                    ]);
+                                    if ($this->check_is_allow_medsys):
+                                        tbLABMaster::create([
+                                            'HospNum'           => $patient_Id,
+                                            'IdNum'             => $case_No . 'B',
+                                            'RefNum'            => $sequence,
+                                            'RequestStatus'     => $recordStatus,
+                                            'ItemId'            => $item_Id,
+                                            'Amount'            => 0,
+                                            'Transdate'         => $today,
+                                            'DoctorId'          => $doctor_id,
+                                            'SpecimenId'        => $specimen,
+                                            'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                            'Quantity'          => $quantity,
+                                            'ResultStatus'      => $recordStatus,
+                                            'RUSH'              => $stat == 1 ? 'N' : 'Y',
+                                            'ProfileId'         => $item_Id,
+                                            'ItemCharged'       => $item_Id,
+                                        ]);
+                                    endif;
+                                }
+                                break;
+                            // ADD MORE CASES HERE
+                            default: 
+                                echo "TABLE FOR GENERAL PROCEDURE's asa i labay?";
+                                break;
+                        }
                     }
                 }
                 DB::connection('sqlsrv_billingOut')->commit();

@@ -11,5 +11,6 @@ class MedSysDailyOut extends Model
     protected $connection = 'sqlsrv_medsys_billing';
     protected $table = 'BILLING.dbo.tbBillOPDailyOut';
     protected $guarded = []; 
+    protected $primaryKey = 'HospNum';
     public $timestamps = false;
 }

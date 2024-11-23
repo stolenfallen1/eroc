@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use App\Http\Controllers\HIS\PatientDischarge;
+use App\Http\Controllers\HIS\NursingService\ReportMaster;
 
 Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);
@@ -38,6 +39,10 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 Route::controller(SOAController::class)->group(function() {
     Route::get('generate-statement/{id}', 'createStatmentOfAccount');
     Route::get('generate-statement-summary/{id}', 'createStatmentOfAccountSummary');
+});
+
+Route::controller(ReportMaster::class)->group(function() {
+    Route::get('generate-er-daily-report', 'ERDailyCensusReport');
 });
 
 Route::controller(PatientDischarge::class)->group(function(){

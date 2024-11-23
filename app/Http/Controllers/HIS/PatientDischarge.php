@@ -149,7 +149,7 @@ class PatientDischarge extends Controller
                 }
 
                 if($is_To_Medsys) {
-                    $discharged_patient = $patient_registry->update($registry_data);
+                    $discharged_patient = $patient_registry->where('case_No', $id)->update($registry_data);
                     $is_To_CDG = AdmittingCommunicationFile::updateOrCreate(['case_No' => $case_No],  $send_to_CDG_ComFile_data);
                 }
 
@@ -407,58 +407,42 @@ class PatientDischarge extends Controller
     public function checkPatientEligibilityForDischarge($id) {
         try {
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
-            if(!$patientRegistry) {
+    
+            if (!$patientRegistry) {
                 return response()->json(['message' => 'Record Not Found'], 404);
             }
-            if(
-                $patientRegistry && 
-                (
-                    $patientRegistry->mgh_Userid === '' || 
-                    $patientRegistry->mgh_Userid === null || 
-                    $patientRegistry->mgh_Datetime === '' ||
-                    $patientRegistry->mgh_Datetime === null ||
-                    $patientRegistry->discharged_Userid === '' || 
-                    $patientRegistry->discharged_Userid === null ||
-                    $patientRegistry->discharged_Date === '' ||
-                    $patientRegistry->discharged_Date === null
-                )
-            ) {
+    
+            $hasMGH = !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
+            $isDischarged = !empty($patientRegistry->discharged_Userid) && !empty($patientRegistry->discharged_Date);
+    
+            if (!$hasMGH && !$isDischarged) {
                 $data = [
-                    'isEligible'    => 0,
-                    'isDischarged'  => 0,
-                ];
-                return response()->json($data, 201);
-
-            } else if(
-                $patientRegistry && 
-                (
-                    $patientRegistry->mgh_Userid !== '' || 
-                    $patientRegistry->mgh_Userid !== null || 
-                    $patientRegistry->mgh_Datetime !== '' ||
-                    $patientRegistry->mgh_Datetime !== null ||
-                    $patientRegistry->discharged_Userid !== '' || 
-                    $patientRegistry->discharged_Userid !== null ||
-                    $patientRegistry->discharged_Date !== '' ||
-                    $patientRegistry->discharged_Date !== null
-                )
-            ) {
-                $data = [
-                    'isEligible'    => 0,
-                    'isDischarged'  => 1,
-                ];
-                return response()->json($data, 201);
-
-            }else {
-                $data = [
-                    'isEligible' => 1,
-                    'isDischarged' => 0
+                    'isEligible' => 0, 
+                    'isDischarged' => 0 
                 ];
                 return response()->json($data, 200);
             }
-        } catch(\Exception $e) {
-            return response()->json(['message' => 'ERROR!' . $e->getMessage()], 500);
+    
+            if ($hasMGH && $isDischarged) {
+                $data = [
+                    'isEligible' => 0,
+                    'isDischarged' => 1 
+                ];
+                return response()->json($data, 200);
+            }
+         
+            $data = [
+                'isEligible' => 1,
+                'isDischarged' => 0 
+            ];
+            return response()->json($data, 200);
+    
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'ERROR: ' . $e->getMessage()], 500);
         }
     }
+    
+    
     
 
     public function getPatientChargesStatus($id) {

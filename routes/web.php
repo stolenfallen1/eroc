@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HIS\NursingService\ReportMaster;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\OldMMIS\Branch;
@@ -61,3 +62,4 @@ Route::get('/get-staff-id', [EmergencyRegistrationController::class, 'getStaffId
 Route::get('get-transaction-codes', [TransactionCodesController::class, 'list']);
 Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);
 Route::get('get-charge-items', [EmergencyRoomMedicine::class, 'getMedicineSupplyCharges']);
+Route::get('er-patient-daily-report', [ReportMaster::class, 'ERDailyCensusReport']);

@@ -54,7 +54,7 @@ class EmergencyRegistrationController extends Controller
         try {
 
             $today = Carbon::now()->format('Y-m-d');
-            // $today = '2024-11-18';
+            // $today = '2024-11-21';
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {

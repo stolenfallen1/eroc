@@ -464,4 +464,55 @@ class LaboratoryController extends Controller
             ], 500);
         }
     }
+    public function checkPatientLabStatusRequest(Request $request) 
+    {
+        // Sa medsys, nga in-ani nga function sa ilaha legend wala gi apil ang mga wala pa na bayran ( if cash assessment / cash based transaction)
+        try {
+            $query = LaboratoryExamsView::query()
+                ->whereNotNull('caseno')
+                ->where('requestStatus', '!=', 'X')
+                ->where('resultStatus', '!=', 'X');
+    
+            if ($request->has('case_No') && ($request->case_No != null || $request->case_No != '')) {
+                $query->where('caseno', $request->case_No);
+            }
+    
+            if ($request->has('lastname') && ($request->lastname != null || $request->lastname != '')) {
+                $query->where('lastname', 'like', '%' . $request->lastname . '%'); 
+            }
+    
+            if ($request->has('filter_date')) {
+                $filterDate = $request->filter_date;
+                if ($filterDate == 'Today') {
+                    $query->whereDate('renderdate', Carbon::today())
+                        ->orWhereDate('cancelleddate', Carbon::today());
+                } elseif ($filterDate == 'Yesterday') {
+                    $query->whereDate('renderdate', Carbon::yesterday())
+                        ->orWhereDate('cancelleddate', Carbon::yesterday());
+                } else {
+                    throw new \Exception('Invalid filter date');
+                }
+            }
+    
+            if ($request->has('date_from') && $request->has('date_to')) {
+                $query->whereBetween('renderdate', [$request->date_from, $request->date_to])
+                    ->orWhereBetween('cancelleddate', [$request->date_from, $request->date_to]);
+            }
+
+            // // Optionally, filter by today's date if no filter options is used ( So technically during first load / open sa user kanang wala pa siyay gi use as filter options )
+            if (!$request->has('case_No') && !$request->has('lastname') && !$request->has('filter_date') && !$request->has('date_from') && !$request->has('date_to')) {
+                $query->whereDate('renderdate', Carbon::today())
+                    ->orWhereDate('cancelleddate', Carbon::today());
+            }
+    
+            $data = $query->orderBy('refNum', 'desc')->get();
+            return response()->json($data, 200);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to check patient lab status request',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

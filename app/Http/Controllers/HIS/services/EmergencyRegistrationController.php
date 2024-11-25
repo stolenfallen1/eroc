@@ -80,9 +80,9 @@ class EmergencyRegistrationController extends Controller
                           ->where('mscAccount_Trans_Types', 5)
                           ->where('isRevoked', 0)
                           ->with(['allergies' => function($allergyQuery) use ($today) {
-                              $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
-                                           ->where('isDeleted', '!=', 1)
-                                           ->whereDate('created_at', $today);
+                                $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+                                             ->where('isDeleted', '!=', 1)
+                                             ->whereDate('created_at', $today);
                           }]);
                 }
             ]);

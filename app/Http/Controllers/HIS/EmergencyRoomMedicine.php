@@ -453,9 +453,12 @@ class EmergencyRoomMedicine extends Controller
                 return response()->json(['message' => 'Incorrect Username or Password'], 404);
             }
 
-            if($request->payload['charge_to'] === 'Company / Insurance') {
-                $cdg_mmis_inventory = InventoryTransaction::where('trasanction_Reference_Number', $request->payload['reference_id'])->first();
-                $medsys_inventory = tbInvStockCard::where('RefNum', $request->payload['reference_id'])->first();
+            $cdg_mmis_inventory = InventoryTransaction::where('trasanction_Reference_Number', $request->payload['reference_id'])->first();
+            $medsys_inventory = tbInvStockCard::where('RefNum', $request->payload['reference_id'])->first();
+            $getCashAssessment = CashAssessment::where('RefNum', $request->payload['reference_id'])->first();
+            $getMedsysCashAssessment = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->first();
+                
+            if($cdg_mmis_inventory && $medsys_inventory) {
 
                 $cdg_mmis_inventory_data = [
                     'branch_Id'                         => 1,
@@ -518,38 +521,38 @@ class EmergencyRoomMedicine extends Controller
                 }
 
             } else {
-                $getCashAssessment = CashAssessment::where('RefNum', $request->payload['reference_id'])->first();
-                $getMedsysCashAssessment = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->first();
-
+               
                 $cdg_cash_assessment_data = [
-                    'branch_id'             => 1,
-                    'patient_id'            => $request->payload['patient_Id'],
-                    'case_No'               => $request->payload['case_No'],
-                    'patient_Name'          => $request->payload['patient_Name'],
-                    'transdate'             => Carbon::now(),
-                    'assessnum'             => $getCashAssessment->assessnum,
-                    'drcr'                  => 'C',
-                    'stat'                  => 1,
+                    'branch_id'             =>  1,
+                    'patient_id'            =>  $request->payload['patient_Id'],
+                    'case_No'               =>  $request->payload['case_No'],
+                    'patient_Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
+                    'transdate'             =>  Carbon::now(),
+                    'assessnum'             =>  $getCashAssessment->assessnum,
+                    'drcr'                  =>  'C',
+                    'stat'                  =>  1,
                     'revenueID'             =>  $getCashAssessment->revenueID,
                     'refNum'                =>  $getCashAssessment->refNum,
                     'itemID'                =>  $getCashAssessment->itemID,
                     'quantity'              =>  intval($getCashAssessment->quantity) * -1,
-                    'amount'                => floatval($getCashAssessment->amount) * -1,
-                    'requestDescription'    => $getCashAssessment->requestDescription,
-                    'hostname'              => (new GetIP())->getHostname(),
-                    'updatedBy'             => $checkUser->idnumber,
-                    'updated_at'            => Carbon::now(),
+                    'amount'                =>  floatval($getCashAssessment->amount) * -1,
+                    'recordStatus'          => 'R',
+                    'requestDescription'    =>  $getCashAssessment->requestDescription,
+                    'hostname'              =>  (new GetIP())->getHostname(),
+                    'updatedBy'             =>  $checkUser->idnumber,
+                    'updated_at'            =>  Carbon::now(),
                 ];
     
                 $medsys_cash_assessment_data = [
                     'IdNum'         =>  $request->payload['case_No'] . 'B',
                     'HospNum'       =>  $request->payload['patient_Id'],
-                    'Name'          =>  $request->payload['patient_Name'],
+                    'Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
                     'TransDate'     =>  Carbon::now() ?? null,
                     'AssessNum'     =>  $getMedsysCashAssessment->AssessNum,
                     'Indicator'     =>  $getMedsysCashAssessment->Indicator,
                     'DrCr'          =>  'D',
                     'ItemID'        =>  $getMedsysCashAssessment->ItemID,
+                    'RecordStatus'  => 'R',
                     'Quantity'      =>  intval($getMedsysCashAssessment->Quantity) * -1,
                     'RefNum'        =>  $getMedsysCashAssessment->RefNum,
                     'Amount'        =>  floatval($getMedsysCashAssessment->Amount) * -1,

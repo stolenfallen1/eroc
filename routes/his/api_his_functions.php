@@ -55,9 +55,9 @@ Route::controller(LaboratoryController::class)->group(function() {
     Route::get('get-laboratory-er-orders', 'getERPendingLabRequest');
     Route::get('get-laboratory-ipd-orders', 'getIPDPendingLabRequest');
     Route::post('get-laboratory-exams', 'getAllLabExamsByPatient'); // Get All Laboratory Exams
-    Route::post('get-lab-exams-uncancelled', 'getUncancelledLabExamsByPatient'); // Get All Uncancelled Laboratory Exams
     Route::post('carry-laboratory-exam', 'carryOrder');
     Route::post('cancel-laboratory-exam', 'cancelOrder'); 
+    Route::post('get-patient-lab-request-status', 'checkPatientLabStatusRequest');
 });
 // Ancillary Routes
 Route::controller(AncillaryController::class)->group(function() {

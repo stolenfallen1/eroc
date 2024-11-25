@@ -898,6 +898,43 @@ class RequisitionController extends Controller
                             ]);
                         endif;
                     } else if ($account == 'Insurance Transaction') {
+                        NurseLogBook::create([
+                            'branch_id'                     => 1,
+                            'patient_Id'                    => $patient_Id,
+                            'case_No'                       => $case_No,
+                            'patient_Name'                  => $patient_Name,
+                            'patient_Type'                  => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'revenue_Id'                    => $revenue_Id,
+                            'requestNum'                    => $sequence,
+                            'item_Id'                       => $item_Id,
+                            'description'                   => $item_name,
+                            'Quantity'                      => $quantity,
+                            'amount'                        => $amount,
+                            'isprocedure'                   => 1,
+                            'record_Status'                 => 'X',
+                            'stat'                          => $stat,
+                            'user_Id'                       => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'createdat'                     => $today,
+                            'createdby'                     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        ]);
+                        NurseCommunicationFile::create([
+                            'branch_id'                     => 1,
+                            'patient_Id'                    => $patient_Id,
+                            'case_No'                       => $case_No,
+                            'patient_Name'                  => $patient_Name,
+                            'patient_Type'                  => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                            'item_Id'                       => $item_Id,
+                            'amount'                        => $amount,
+                            'quantity'                      => $quantity,
+                            'request_Date'                  => $today,
+                            'revenue_Id'                    => $revenue_Id,
+                            'record_Status'                 => 'X',
+                            'user_Id'                       => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                            'requestNum'                    => $sequence,
+                            'stat'                          => $stat,
+                            'createdat'                     => $today,
+                            'createdby'                     => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        ]);
                         HISBillingOut::create([
                             'patient_Id'                    => $patient_Id,
                             'case_No'                       => $case_No,
@@ -1068,13 +1105,10 @@ class RequisitionController extends Controller
     public function getRenderedPatientRequisitions(Request $request) 
     {
         try {
-            $data = InventoryTransaction::with('nurse_logbook')
-                ->where('patient_Id', $request->patient_Id)
-                ->where('patient_Registry_Id', $request->case_No)
-                ->whereHas('nurse_logbook', function ($query) {
-                    $query->where('record_Status', 'W');
-                })
-                ->orderBy('created_at', 'desc')
+            $data = NurseLogBook::where('patient_Id', $request->patient_Id)
+                ->where('case_No', $request->case_No)
+                ->where('record_Status', 'W')
+                ->orderBy('createdat', 'desc')
                 ->get();
     
             return response()->json($data, 200);

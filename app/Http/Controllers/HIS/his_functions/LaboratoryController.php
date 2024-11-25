@@ -10,8 +10,12 @@ use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\LaboratoryExamsView;
 use App\Models\HIS\his_functions\LaboratoryMaster;
+use App\Models\HIS\his_functions\NurseCommunicationFile;
+use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbLABMaster;
+use App\Models\HIS\medsys\tbNurseCommunicationFile;
+use App\Models\HIS\medsys\tbNurseLogBook;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
 use App\Helpers\GetIP;
@@ -308,6 +312,28 @@ class LaboratoryController extends Controller
                             'updatedby' => Auth()->user()->idnumber,
                             'updated_at' => Carbon::now(),
                         ]);
+                    NurseLogBook::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('requestNum', $refNum)
+                        ->where('item_Id', $profileId)
+                        ->where('record_Status', 'X')
+                        ->update([
+                            'record_Status'     => 'W',
+                            'process_By'        => Auth()->user()->idnumber,
+                            'process_Date'      => Carbon::now(),
+                            'updatedby'         => Auth()->user()->idnumber,
+                            'updatedat'         => Carbon::now(),
+                        ]);
+                    NurseCommunicationFile::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('requestNum', $refNum)
+                        ->where('item_Id', $profileId)
+                        ->where('record_Status', 'X')
+                        ->update([
+                            'record_Status'     => 'W',
+                            'updatedby'         => Auth()->user()->idnumber,
+                            'updatedat'         => Carbon::now(),
+                        ]);
                     if ($this->check_is_allow_medsys):
                         tbLABMaster::where('HospNum', $patient_Id)
                             ->where('IdNum', $case_No . 'B')
@@ -319,6 +345,24 @@ class LaboratoryController extends Controller
                             ->update([
                                 'RequestStatus' => 'W',
                                 'ResultStatus' => 'W',
+                            ]);
+                        tbNurseLogBook::where('Hospnum', $patient_Id)
+                            ->where('IDnum', $case_No . 'B')
+                            ->where('RequestNum', $refNum)
+                            ->where('ItemID', $profileId)
+                            ->where('RecordStatus', 'X')
+                            ->update([
+                                'RecordStatus'      => 'W',
+                                'ProcessBy'         => Auth()->user()->idnumber,
+                                'ProcessDate'       => Carbon::now(),
+                            ]);
+                        tbNurseCommunicationFile::where('Hospnum', $patient_Id)
+                            ->where('IDnum', $case_No . 'B')
+                            ->where('RequestNum', $refNum)
+                            ->where('ItemID', $profileId)
+                            ->where('RecordStatus', 'X')
+                            ->update([
+                                'RecordStatus'      => 'W',
                             ]);
                         endif;
                 }
@@ -356,7 +400,7 @@ class LaboratoryController extends Controller
                     $profileId = $items['profileId'];
                     $itemId = $items['itemId'];
 
-                    $updateLabMaster = LaboratoryMaster::where('patient_Id', $patient_Id)
+                    LaboratoryMaster::where('patient_Id', $patient_Id)
                         ->where('case_No', $case_No)
                         ->where('refNum', $refNum)
                         ->where('profileId', $profileId)
@@ -372,8 +416,34 @@ class LaboratoryController extends Controller
                             'updatedby' => Auth()->user()->idnumber,
                             'updated_at' => Carbon::now(),
                         ]);
+                    NurseLogBook::where('patient_ID', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('requestNum', $refNum)
+                        ->where('item_Id', $profileId)
+                        ->update([
+                            'remarks'           => $remarks,
+                            'record_Status'     => 'R',
+                            'requestNum'        => $refNum . '[REVOKED]',
+                            'cancelBy'          => Auth()->user()->idnumber,
+                            'cancelDate'        => Carbon::now(),
+                            'updatedby'         => Auth()->user()->idnumber,
+                            'updatedat'         => Carbon::now(),
+                        ]);
+                    NurseCommunicationFile::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('requestNum', $refNum)
+                        ->where('item_Id', $profileId)
+                        ->update([
+                            'remarks'           => $remarks,
+                            'record_Status'     => 'R',
+                            'requestNum'        => $refNum . '[REVOKED]',
+                            'cancelBy'          => Auth()->user()->idnumber,
+                            'cancelDate'        => Carbon::now(),
+                            'updatedby'         => Auth()->user()->idnumber,
+                            'updatedat'         => Carbon::now(),
+                        ]);
             
-                    if ($updateLabMaster && $this->check_is_allow_medsys):
+                    if ($this->check_is_allow_medsys):
                         tbLABMaster::where('HospNum', $patient_Id)
                             ->where('IdNum', $case_No . 'B')
                             ->where('RefNum', $refNum)
@@ -385,6 +455,24 @@ class LaboratoryController extends Controller
                                 'RequestStatus' => 'R',
                                 'ResultStatus' => 'R',
                                 'Remarks' => $remarks,
+                            ]);
+                        tbNurseLogBook::where('Hospnum', $patient_Id)
+                            ->where('IDnum', $case_No . 'B')
+                            ->where('RequestNum', $refNum)
+                            ->where('ItemID', $profileId)
+                            ->update([
+                                'Remarks'           => $remarks,
+                                'RequestNum'        => $refNum . '[REVOKED]',
+                                'RecordStatus'      => 'R',
+                            ]);
+                        tbNurseCommunicationFile::where('Hospnum', $patient_Id)
+                            ->where('IDnum', $case_No . 'B')
+                            ->where('RequestNum', $refNum)
+                            ->where('ItemID', $profileId)
+                            ->update([
+                                'Remarks'           => $remarks,
+                                'RequestNum'        => $refNum . '[REVOKED]',
+                                'RecordStatus'      => 'R',
                             ]);
                     endif;
 

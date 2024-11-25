@@ -474,6 +474,51 @@ class CashierController extends Controller
                         endif;
 
                         if($this->check_is_allow_medsys && $isprocedure == 1):
+                            /**
+                             *  For now adding in the NurseLogBook and NurseCommunication akoa usang gi butang dre 
+                             * But can be changed in the near future samot nag mag depende sa procedure nga gi requestan
+                             * Kay I made a setting in for the lab nga ma switch off an on if auto render ba siya or dili 
+                             * If so mas nindot nga i balhin nalang ang pag insert sa nurselogbook og nursecommunication file individually
+                             * per switch case item sa procedure. :) But for now since lab paman pd ang pwede nga i request sa requistion
+                             * Since wala pa na finalize ni sir joe ang ubang department like raidology ( Ultrasound and X-Ray ) and etc.
+                             *  */ 
+                            NurseLogBook::create([
+                                'branch_id'                 => 1,
+                                'patient_Id'                => $patient_Id,
+                                'case_No'                   => $case_No,
+                                'patient_Name'              => $patient_Name,
+                                'patient_Type'              => $patient_Type,
+                                'revenue_Id'                => $revenueID,
+                                'requestNum'                => $refNum,
+                                'item_Id'                   => $itemID,
+                                'description'               => $description,
+                                'Quantity'                  => $quantity,
+                                'amount'                    => $item_amount,
+                                'isprocedure'               => $isprocedure,
+                                'record_Status'             => 'X',
+                                'stat'                      => $stat,
+                                'user_Id'                   => $userId,
+                                'createdat'                 => $transDate,
+                                'createdby'                 => Auth()->user()->idnumber,
+                            ]);
+                            NurseCommunicationFile::create([
+                                'branch_id'                 => 1,
+                                'patient_Id'                => $patient_Id,
+                                'case_No'                   => $case_No,
+                                'patient_Name'              => $patient_Name,
+                                'patient_Type'              => $patient_Type,
+                                'item_Id'                   => $itemID,
+                                'amount'                    => $item_amount,
+                                'quantity'                  => $quantity,
+                                'request_Date'              => $transDate,
+                                'revenue_Id'                => $revenueID,
+                                'record_Status'             => 'X',
+                                'user_Id'                   => $userId,
+                                'requestNum'                => $refNum,
+                                'stat'                      => $stat,
+                                'createdat'                 => $transDate,
+                                'createdby'                 => Auth()->user()->idnumber,
+                            ]);
                             switch ($revenueID) {
                                 case 'LB':
                                         $recordStatus = $this->check_is_allow_laboratory_auto_rendering ? 'W' : 'X';

@@ -31,12 +31,10 @@ class PatientDischarge extends Controller
     public function mayGoHome(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
-
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
             if(!$checkUser):
                 return response()->json([$message='Incorrect Username or Password'], 404);
             endif;
-
             $registry_data = [
                 'queue_Number'              => 0,
                 'mscDisposition_Id'         => $request->payload['mscDisposition_Id'],
@@ -58,32 +56,23 @@ class PatientDischarge extends Controller
                 'updatedBy'                 => $checkUser->idnumber,
                 'updated_at'                => Carbon::now()
             ];
-
             $history_data = [
                 'impression'            => $request->payload['initial_impression'] ?? null,
                 'discharge_Diagnosis'   => $request->payload['discharge_diagnosis'] ?? null
             ];
-
             $patient_registry = PatientRegistry::where('case_No', $id)->first();
-
             if($patient_registry) {
-
                 $updated_registry   = $patient_registry->where('case_No', $id)->update($registry_data);
                 $updated_history    = $patient_registry->history()->where('case_No', $id)->update($history_data);
-
                 if(!$updated_registry && !$updated_history) {
                     throw new \Exception('Error');
                 } 
-
                 DB::connection('sqlsrv_patient_data')->commit();
-
                 return response()->json([
                     'message' => 'Patient is tagged as may go home successfully'
                 ], 200);
             }
-
         } catch(\Exception $e) {
-            
             DB::connection('sqlsrv_patient_data')->rollBack();
             return response()->json([
                 'message' => 'Failed to update patient registry or patient history'
@@ -92,14 +81,10 @@ class PatientDischarge extends Controller
     }
 
     public function dischargePatient(Request $request, $id) {
-
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
-
         try {
-
             $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
-            
             if(!$checkUser):
                 return response()->json([$message='Incorrect Username or Password'], 404);
             endif;
@@ -107,7 +92,6 @@ class PatientDischarge extends Controller
             $patient_id = $patientRegistry->patient_Id;
             $case_No = $patientRegistry->case_No;
             $OPDIDnum = $patientRegistry->case_No . 'B';
-
             $registry_data = [
                 'discharged_Userid'         => $checkUser->idnumber,
                 'discharged_Date'           => Carbon::now(),
@@ -119,7 +103,6 @@ class PatientDischarge extends Controller
                 'updatedBy'                 => $checkUser->idnumber,
                 'updated_at'                => Carbon::now()
             ];
-
             $send_to_CDG_ComFile_data = [
                 'patient_Id'    => $patient_id,
                 'case_No'       => $case_No,
@@ -130,51 +113,39 @@ class PatientDischarge extends Controller
                 'updatedby'     => $checkUser->idnumber,
                 'updatedat'     => Carbon::now()
             ];
-
             $send_to_Medsys_CompFile_data = [
                 'HospNum'       => $patient_id,
                 'OPDIDnum'      => $OPDIDnum,
                 'RequestDate'   =>Carbon::now(),
                 'RequestBy'     => $checkUser->idnumber   
             ];
-
             $patient_registry = PatientRegistry::where('case_No', $id)->first();
-
             if($patient_registry) {
-
                 if($this->check_is_allow_medsys) {
                     $is_To_Medsys = MedsysAdmittingCommunication::updateOrCreate(['OPDIDnum' => $OPDIDnum], $send_to_Medsys_CompFile_data);
                 } else {
                     return response()->json(['message' => 'Medsys does not allow to save data' ], 500);
                 }
-
                 if($is_To_Medsys) {
                     $discharged_patient = $patient_registry->where('case_No', $id)->update($registry_data);
                     $is_To_CDG = AdmittingCommunicationFile::updateOrCreate(['case_No' => $case_No],  $send_to_CDG_ComFile_data);
                 }
-
                 if(!$discharged_patient || !$is_To_CDG) {
                     throw new \Exception('Error');
                 }
             }
-
             DB::connection('sqlsrv_patient_data')->commit();
             DB::connection('sqlsrv_medsys_patient_data')->commit();
-
             return response()->json([
                 'message' => 'Patient has been discharged successfuly'
             ], 200);
-
         } catch(\Exception $e) {
-
             DB::connection('sqlsrv_patient_data')->rollBack();
             DB::connection('sqlsrv_medsys_patient_data')->rollBack();
-
             return response()->json([
                 'message' => 'Failed to Discharged Patient, Pleas call IT Department'
             ], 500);
         }
-       
     }
 
     public function erResult() {
@@ -187,9 +158,7 @@ class PatientDischarge extends Controller
                     'message'   => 'No data is Found!'
                 ], 404);
             }
-
             return response()->json($data, 200);
-
         } catch(\Exception $e) {
             return response()->json([
                 'message'   => 'Error' . $e->getMessage()
@@ -198,90 +167,72 @@ class PatientDischarge extends Controller
     }
 
     public function untagMGH(Request $request, $id) {
-
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
-        
         try {
-
             $checkUser = User::where([
                 ['idnumber', '=', $request->payload['user_userid']], 
                 ['passcode', '=', $request->payload['user_passcode']]
             ])->first();
-    
             if (!$checkUser) {
-
                 return response()->json(['message' => 'Incorrect Username or Password'], 404);
-                
             }
-    
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
-       
-            if ($patientRegistry && !$patientRegistry->discharged_Userid) {
-                
-                $registry_data = [
-                    'queue_Number'          => 0,
-                    'mscDisposition_Id'     => null,
-                    'mgh_Userid'            => null,
-                    'mgh_Datetime'          => null,
-                    'mgh_Hostname'          => null,
-                    'untag_Mgh_Userid'      => $checkUser->idnumber,
-                    'untag_Mgh_Datetime'    => Carbon::now(),
-                    'untag_Mgh_Hostname'    => (new GetIP())->getHostname(),
-                    'updatedBy'             => $checkUser->idnumber,
-                    'updated_at'            => Carbon::now()
-                ];
-        
-                $history_data = [
-                    'impression'            => null,
-                    'discharge_Diagnosis'   => null,
-                    'updatedby'             => $checkUser->idnumber,
-                    'updated_at'            => Carbon::now()
-                ];
-    
-                $updated_registry = $patientRegistry->update($registry_data);
-                $updated_history  = $patientRegistry->history()->where('case_No', $id)->update($history_data);
-                
-                if ($updated_registry && $updated_history) {
-
-                    DB::connection('sqlsrv_patient_data')->commit();
-                    DB::connection('sqlsrv_medsys_patient_data')->commit();
-        
-                    return response()->json(['message' => 'Patient discharge approval has been successfully canceled.'], 200);
+            if ($patientRegistry) {
+                $hasMGH = !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
+                $isNotDischarged = empty($patientRegistry->discharged_Userid) && empty($patientRegistry->discharged_Date);
+                if($hasMGH && $isNotDischarged) {
+                    $registry_data = [
+                        'queue_Number'          => 0,
+                        'mscDisposition_Id'     => null,
+                        'mgh_Userid'            => null,
+                        'mgh_Datetime'          => null,
+                        'mgh_Hostname'          => null,
+                        'untag_Mgh_Userid'      => $checkUser->idnumber,
+                        'untag_Mgh_Datetime'    => Carbon::now(),
+                        'untag_Mgh_Hostname'    => (new GetIP())->getHostname(),
+                        'updatedBy'             => $checkUser->idnumber,
+                        'updated_at'            => Carbon::now()
+                    ];
+                    $history_data = [
+                        'impression'            => null,
+                        'discharge_Diagnosis'   => null,
+                        'updatedby'             => $checkUser->idnumber,
+                        'updated_at'            => Carbon::now()
+                    ];
+                    $updated_registry = $patientRegistry->update($registry_data);
+                    $updated_history  = $patientRegistry->history()->where('case_No', $id)->update($history_data);
+                    if ($updated_registry && $updated_history) {
+                        DB::connection('sqlsrv_patient_data')->commit();
+                        DB::connection('sqlsrv_medsys_patient_data')->commit();
+                        return response()->json(['message' => 'Patient discharge approval has been successfully canceled.'], 200);
+                    }
+                } else {
+                    return response()->json(['message' => 'Patient is not been tagged yet for May Go Home and or Patient already has a discharged order']);
                 }
             } else {
-
                 return response()->json(['message' => 'Patient has already been discharged.'], 400);
             }
-    
         } catch(\Exception $e) {
-
             DB::connection('sqlsrv_patient_data')->rollBack();
             DB::connection('sqlsrv_medsys_patient_data')->rollBack();
-
             return response()->json(['message' => 'Error! ' . $e->getMessage()], 500);
         }
     }
 
     public function getTotalCharges($id) {
-
         $data = OutPatient::with(['patientBillingInfo' => function($query) {
             $query->orderBy('revenueID', 'asc'); 
                 }])
                 ->where('case_No', $id)
                 ->take(1)
                 ->get();
-        
         if($data->isEmpty()) {
-
             return response()->json([
                 'message'   => 'Cannot issue statement, billing is empty'
             ], 404);
-
         } else {
-           
             $billsPayment = DB::connection('sqlsrv_billingOut')->select('EXEC sp_billing_SOACompleteSummarized ?', [$id]);
-
             $totalChargesSummary = collect($billsPayment)
                 ->groupBy('RevenueID') 
                 ->map(function($groupedItems) {
@@ -290,95 +241,66 @@ class PatientDischarge extends Controller
                         return floatval(str_replace(',', '', $billing->Charges ?? 0));
                     });
                 });
-
                 $firstRow = true;
                 $runningBalance = 0; 
                 $totalCharges = 0;
                 $prevID = '';
-                
                 $patientBill = $data->flatMap(function($item) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
-
                     return $item->patientBillingInfo->map(function($billing) use (&$firstRow, &$runningBalance, &$totalCharges, &$prevID) {
-
                         $charges = floatval(str_replace(',', '', ($billing->amount * intval($billing->quantity))));  
-                
                         if ($firstRow && ($billing->drcr === 'D' || $billing->drcr === 'P')) {
-
                             $runningBalance = $charges;
                             $totalCharges = $charges;
                             $firstRow = false;
-
                         } elseif($firstRow && $billing->drcr === 'C') {
-
                             $runningBalance = 0;
                             $totalCharges = 0;
                             $firstRow = false;
-
                         } else {
-
                             if ((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID) !== 0) {
-
                                 $runningBalance = 0;
                                 $runningBalance += $charges;
                                 $totalCharges += $charges;
-
                             } elseif((strcasecmp($billing->drcr, 'D') === 0 || strcasecmp($billing->drcr, 'P') === 0) && strcasecmp($billing->revenueID, $prevID)=== 0) {
-
                                 $runningBalance += $charges;
                                 $totalCharges += $charges;
-
                             } else {
-
                                 $runningBalance -= $charges;
                                 $totalCharges -= $charges;
                             }
-
                         }
-
                         $prevID = $billing->revenueID;
-
                         return [
-                            
                             'Charges'               => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
                                                     ? number_format(0, 2)
                                                     : number_format($charges,2),
-
                             'Credit'                => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
                                                     ? number_format($charges,2)
                                                     : number_format(0, 2),
-
                             'Balance'               => number_format($runningBalance, 2)
                         ];
 
                     });
                 });
-
-                
                 $totalCharges = $patientBill->sum(function($bill) {
                     return floatval(str_replace(',', '', $bill['Charges']));
                 });
-                
                 $totalCredits = $patientBill->sum(function($bill) {
                     return floatval(str_replace(',', '', $bill['Credit']));
                 });
-    
                 $patientBillInfo = [
                     'Charges' => number_format($totalCharges, 2),
                     'Credit' => number_format($totalCredits, 2),
                     'Total_Charges'     =>  number_format($totalCharges, 2),
                 ]; 
-
             return response()->json($patientBillInfo, 200);
-
         }
-        
     }
 
     public function getDoctorsList() {
         try {
             $query = Doctors::select('id', 'doctor_code', 'lastname', 'firstname', 'middlename')
                             ->where('isactive', 1);
-    
             if (Request()->keyword) {
                 $query->where('lastname', 'LIKE', '%' . Request()->keyword . '%')
                     ->orWhere('firstname', 'LIKE', '%' . Request()->keyword . '%')
@@ -411,10 +333,8 @@ class PatientDischarge extends Controller
             if (!$patientRegistry) {
                 return response()->json(['message' => 'Record Not Found'], 404);
             }
-    
             $hasMGH = !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
             $isDischarged = !empty($patientRegistry->discharged_Userid) && !empty($patientRegistry->discharged_Date);
-    
             if (!$hasMGH && !$isDischarged) {
                 $data = [
                     'isEligible' => 0, 
@@ -422,7 +342,6 @@ class PatientDischarge extends Controller
                 ];
                 return response()->json($data, 200);
             }
-    
             if ($hasMGH && $isDischarged) {
                 $data = [
                     'isEligible' => 0,
@@ -430,13 +349,11 @@ class PatientDischarge extends Controller
                 ];
                 return response()->json($data, 200);
             }
-
             $data = [
                 'isEligible' => 1,
                 'isDischarged' => 0 
             ];
             return response()->json($data, 200);
-    
         } catch (\Exception $e) {
             return response()->json(['message' => 'ERROR: ' . $e->getMessage()], 500);
         }
@@ -445,20 +362,15 @@ class PatientDischarge extends Controller
     public function getPatientChargesStatus($id) {
         try {
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
-
             if(!$patientRegistry) {
                 return response()->json(['message' => 'Record Not Found'], 404);
             } else {
-
                 $hasMGH = !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
-                
                 if($hasMGH) {
                     $isTagAsMGH = [
                         'isMayGoHome' => 1
                     ]; 
-
                     return response()->json($isTagAsMGH, 200);
-
                 } else {
                     $queryCashAssessment = DB::table('CDG_BILLING.dbo.CashAssessment as ca')
                     ->select(
@@ -469,7 +381,6 @@ class PatientDischarge extends Controller
                         'ca.ORNumber',
                     )
                     ->where('ca.case_No', '=', $id);
-
                     $queryNurseLogBook = DB::table('CDG_PATIENT_DATA.dbo.NurseLogBook as cdgLB')
                         ->select(
                             'cdgLB.patient_Id',
@@ -482,7 +393,6 @@ class PatientDischarge extends Controller
                     $dataCharges =$queryCashAssessment
                     ->unionAll($queryNurseLogBook)
                     ->get();
-
                     if($dataCharges->isEmpty()) {
                         return response()->json(['message' => 'No pending charges or request'], 404);
                     }

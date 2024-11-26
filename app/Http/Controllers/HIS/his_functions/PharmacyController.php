@@ -444,7 +444,9 @@ class PharmacyController extends Controller
     {
         try {
             $case_No = $request->query('case_No');
-            $patient_details = PatientRegistry::where('case_No', $case_No)->first();
+            $patient_details = PatientRegistry::with('patient_details')
+                        ->where('case_No', $case_No)
+                        ->first();
 
             if (!$patient_details) {
                 return response()->json(['msg' => 'Patient not found'], 404);
@@ -462,8 +464,12 @@ class PharmacyController extends Controller
                     'patient_details' => [
                         'patient_Id' => $patient_details->patient_Id,
                         'case_No' => $patient_details->case_No,
+                        'patient_Name' => $patient_details->patient_details->lastname . ', ' . $patient_details->patient_details->firstname . ' ' . $patient_details->patient_details->middlename,
                         'age' => $patient_details->patient_Age,
+                        'sex' => $patient_details->patient_details->sex_id,
+                        'birthdate' => $patient_details->patient_details->birthdate,
                         'doctor' => $patient_details->attending_Doctor_fullname,
+                        'mscPrice_Schemes' => $patient_details->mscPrice_Schemes,
                         'discharged_Userid' => $patient_details->discharged_Userid,
                         'discharged_Date' => $patient_details->discharged_Date,
                         'inventory_data' => $medicine_data->toArray(),

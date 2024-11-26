@@ -38,8 +38,9 @@ class LaboratoryController extends Controller
             $data = PatientRegistry::with('patient_details')
                 ->whereHas('lab_services', function($query) {
                     $query->whereNotNull('case_No')
-                        ->where('request_Status', 'W')
-                        ->where('result_Status', 'W');
+                        ->where('request_Status', '!=', 'X')
+                        ->where('result_Status', '!=', 'X')
+                        ->whereDate('processed_Date', Carbon::today());
                 })
                 ->where('mscAccount_Trans_Types', 2) 
                 ->orderBy('id', 'desc');
@@ -57,7 +58,10 @@ class LaboratoryController extends Controller
         try {
             $data = PatientRegistry::with('patient_details')
                 ->whereHas('lab_services', function($query) {
-                    $query->whereNotNull('case_No');
+                    $query->whereNotNull('case_No')
+                        ->where('request_Status', '!=', 'X')
+                        ->where('result_Status', '!=', 'X')
+                        ->whereDate('processed_Date', Carbon::today());
                 })
                 ->where('mscAccount_Trans_Types', 5) 
                 ->orderBy('id', 'desc');
@@ -75,7 +79,10 @@ class LaboratoryController extends Controller
         try {
             $data = PatientRegistry::with('patient_details')
                 ->whereHas('lab_services', function($query) {
-                    $query->whereNotNull('case_No');
+                    $query->whereNotNull('case_No')
+                        ->where('request_Status', '!=', 'X')
+                        ->where('result_Status', '!=', 'X')
+                        ->whereDate('processed_Date', Carbon::today());
                 })
                 ->where('mscAccount_Trans_Types', 6) 
                 ->orderBy('id', 'desc');

@@ -82,6 +82,7 @@ Route::controller(RequisitionController::class)->group(function() {
     Route::get('get-warehouses', 'getWarehouses');
     Route::post('get-patients-requisitions', 'getPatientRequisitions');
     Route::post('get-rendered-transactions', 'getRenderedPatientRequisitions');
+    Route::post('get-cancelled-transactions', 'getCancelledRequisitions');
     Route::post('get-warehouse-items', 'getWarehouseItems');
     Route::post('save-supply-requisition', 'saveSupplyRequisition');
     Route::post('save-medicine-requisition', 'saveMedicineRequisition');

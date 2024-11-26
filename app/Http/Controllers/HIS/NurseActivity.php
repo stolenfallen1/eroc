@@ -64,7 +64,7 @@ public function getChargeList($id) {
                 'cdgLB.user_Id as userId',
                 'cdgLB.createdby as requestBy',
                 'cdgLB.updatedby as updatedBy',
-                'cdgLB.createdat',
+                'cdgLB.createdat as created_at',
                 'cdgLB.updatedat as updated_at',
                 'cdgLB.process_By',
                 'cdgLB.process_Date',
@@ -73,11 +73,49 @@ public function getChargeList($id) {
             )
             ->leftJoin('CDG_CORE.dbo.mscDosages as mscD', 'cdgLB.dosage', '=', 'mscD.dosage_id')
             ->leftJoin('CDG_CORE.dbo.fmsTransactionCodes as fmstc', 'cdgLB.revenue_Id', '=', 'fmstc.code')
-            ->where('cdgLB.case_No', '=', $id);
+            ->where('cdgLB.case_No', '=', $id)
+            ->where('cdgLB.record_Status', '!=', 'R');
 
-        $dataCharges = $cashAssessmentQuery
-            ->unionAll($nurseLogBookQuery)
-            ->get();
+        // $billingOutQuery = DB::table('CDG_BILLING.dbo.BillingOut as bo')
+        //     ->select(
+        //         'bo.patient_id',
+        //         'bo.case_No',
+        //         DB::raw('NULL as assessnum'),
+        //         'bo.revenueID as revenue_id',
+        //         'bo.refNum as referenceNum',
+        //         DB::raw('itemID as item_Id'),
+        //         'bo.quantity',
+        //         'bo.amount',
+        //         DB::raw('Null as dosage'),
+        //         DB::raw('NULL as record_Status'),
+        //         DB::raw('fmsPI.exam_description as description'),
+        //         DB::raw('NULL as ORN'),
+        //         DB::raw('NULL as user_Id'),
+        //         'bo.createdby as requestBy',
+        //         'bo.updatedBy as updatedBy',
+        //         'bo.created_at as created_at',
+        //         'bo.updated_at',
+        //         DB::raw('NULL as process_By'),
+        //         DB::raw('NULL as process_Date'),
+        //         DB::raw('NULL as frequency'),
+        //         'fmstc.description as department'
+        //     )
+        //     ->leftJoin('CDG_CORE.dbo.fmsTransactionCodes as fmstc', 'bo.revenueID', '=', 'fmstc.code')
+        //     ->leftJoin('CDG_CORE.dbo.fmsExamProcedureItems as fmsPI', function($join) {
+        //         $join->on('bo.revenueID', '=', 'fmsPI.transaction_code')
+        //             ->on('bo.itemID', '=', 'fmsPI.map_item_id');
+        //     })
+        //     ->where('bo.case_No', '=', $id);
+        // if($accountType !== 'Self Pay') {
+        //     $dataCharges = $cashAssessmentQuery
+        //         ->union($nurseLogBookQuery)
+        //         ->unionAll($billingOutQuery)
+        //         ->get();
+        // } else {
+            $dataCharges = $cashAssessmentQuery
+                ->unionAll($nurseLogBookQuery)
+                ->get();
+        // }
 
         if ($dataCharges->isEmpty()) {
             return response()->json([

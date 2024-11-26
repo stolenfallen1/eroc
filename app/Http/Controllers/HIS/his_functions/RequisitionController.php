@@ -1116,6 +1116,20 @@ class RequisitionController extends Controller
             return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
+    public function getCancelledRequisitions(Request $request) 
+    {
+        try {
+            $data = NurseLogBook::where('patient_Id', $request->patient_Id)
+                ->where('case_No', $request->case_No)
+                ->where('record_Status', 'R')
+                ->orderBy('createdat', 'desc')
+                ->get();
+    
+            return response()->json($data, 200);
+        } catch(\Exception $e) {
+            return response()->json(["msg" => $e->getMessage()], 500);
+        }
+    }
     public function onRevokeRequisition(Request $request) 
     {
         DB::connection('sqlsrv_billingOut')->beginTransaction();
@@ -1145,6 +1159,7 @@ class RequisitionController extends Controller
                         $revenueID = $items['details']['revenueID'] ?? $items['details']['revenue_Id'];
                         $itemID = $items['details']['itemID'] ?? $items['details']['item_Id'];
                         $refNum = $items['details']['refNum'] ?? $items['details']['requestNum'];
+                        $isprocedure = $items['details']['isprocedure'] ?? null;
 
                         if ($account == 1) {
                             // Cash Transaction
@@ -1198,7 +1213,47 @@ class RequisitionController extends Controller
                                     'updatedat'         => $today,
                                     'updatedby'         => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                 ]);
-                            if ($this->check_is_allow_medsys) {
+                            // Revoke the data in the respective table for the procedures 
+                            if ($isprocedure == 1) {
+                                switch ($revenueID) {
+                                    case 'LB':
+                                        LaboratoryMaster::where('patient_Id', $patient_Id)
+                                            ->where('case_No', $case_No)
+                                            ->where('refNum', $refNum)
+                                            ->where('profileId', $itemID)
+                                            ->where('request_Status', 'X')
+                                            ->where('result_Status', 'X')
+                                            ->update([
+                                                'request_Status'    => 'R',
+                                                'result_Status'     => 'R',
+                                                'remarks'           => $remarks,
+                                                'canceled_By'       => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                                'canceled_Date'     => $today,
+                                                'updated_at'        => $today,
+                                                'updatedby'         => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                            ]);
+                                        if ($this->check_is_allow_medsys):
+                                            tbLABMaster::where('HospNum', $patient_Id)
+                                                ->where('IdNum', $case_No . 'B')
+                                                ->where('RefNum', $refNum)
+                                                ->where('ProfileId', $itemID)
+                                                ->where('RequestStatus', 'X')
+                                                ->where('ResultStatus', 'X')
+                                                ->update([
+                                                    'RequestStatus'     => 'R',
+                                                    'ResultStatus'      => 'R',
+                                                    'Remarks'           => $remarks,
+                                                ]);
+                                        endif;
+                                        break;
+                                    // ADD MORE CASES HERE
+                                    default:
+                                    // Kani para sa mga general procedures?? 
+                                        break;
+                                }
+                            }
+
+                            if ($this->check_is_allow_medsys):
                                 tbNurseLogBook::where('Hospnum', $patient_Id)
                                     ->where('IDnum', $case_No . 'B')
                                     ->where('RequestNum', $refNum)
@@ -1215,7 +1270,7 @@ class RequisitionController extends Controller
                                         'Remarks'           => $remarks,
                                         'RecordStatus'      => 'R',
                                     ]);
-                            }
+                            endif;
                         }
                     }
                 }

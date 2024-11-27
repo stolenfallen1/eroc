@@ -19,6 +19,8 @@ use App\Models\HIS\medsys\tbNurseLogBook;
 use App\Models\User;
 use App\Helpers\GetIP;
 use App\Helpers\HIS\SysGlobalSetting;
+use App\Models\HIS\his_functions\HISBillingOut;
+use App\Models\HIS\medsys\MedSysDailyOut;
 
 class EmergencyRoomMedicine extends Controller
 {
@@ -443,6 +445,8 @@ class EmergencyRoomMedicine extends Controller
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
 
         try{
             $checkUser = User::where([
@@ -454,21 +458,42 @@ class EmergencyRoomMedicine extends Controller
                 return response()->json(['message' => 'Incorrect Username or Password'], 404);
             }
 
-            $cdg_mmis_inventory = InventoryTransaction::where('trasanction_Reference_Number', $request->payload['reference_id'])->first();
-            $medsys_inventory = tbInvStockCard::where('RefNum', $request->payload['reference_id'])->first();
-            $getCashAssessment = CashAssessment::where('RefNum', $request->payload['reference_id'])->first();
-            $getMedsysCashAssessment = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->first();
-            $isUseReferenceNumber = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->first();
-            $isUseRequestNumber = NurseLogBook::where('requestNum', $request->payload['reference_id'])->first();
+            $cdg_mmis_inventory         = InventoryTransaction::where('trasanction_Reference_Number', $request->payload['reference_id'])->first();
+            $medsys_inventory           = tbInvStockCard::where('RefNum', $request->payload['reference_id'])->first();
+            $getCashAssessment          = CashAssessment::where('RefNum', $request->payload['reference_id'])->first();
+            $getMedsysCashAssessment    = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->first();
+            $isUseReferenceNumber       = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->first();
+            $isUseRequestNumber         = NurseLogBook::where('requestNum', $request->payload['reference_id'])->first();
+            $billingOut                 = HISBillingOut::where('refNum', $request->payload['reference_id'])->first();
+            $medsys_billingOut          = MedSysDailyOut::where('RefNum', $request->payload['reference_id'])->first();
 
             $is_MMIS_Created_Successfuly = true; 
             $isCreated_medsys_Inventory_successfuly = true; 
             $is_update_successful = true;
+            $is_revoked_billing = true;
            
 
             $isHMO =  ($cdg_mmis_inventory && $medsys_inventory) || $request->payload['account'] !== 'Self Pay';
 
             if($isHMO) {
+
+                if($billingOut) {
+                    $is_updated_billingOut = HISBillingOut::where('refNum',  $request->payload['reference_id'])
+                        ->update([
+                            'refNum' => $request->payload['reference_id'] . '[REVOKED]',
+                            'ChargeSlip' => $request->payload['reference_id'] . '[REVOKED]',
+                        ]);
+
+                    $is_updated_medsys_billingOut = MedSysDailyOut::where('RefNum', $request->payload['reference_id'])
+                        ->update([
+                            'RefNum' => $request->payload['reference_id'] . '[REVOKED]',
+                            'ChargeSlip' => $request->payload['reference_id'] . '[REVOKED]',
+                        ]);
+                    
+                    $is_created_billing = HISBillingOut::create($this->BillingOutData($request, $billingOut, $checkUser));
+                    $is_created_medsys_billing = MedSysDailyOut::create($this->MedsysBillingOutData($request,  $medsys_billingOut, $checkUser));
+                    $is_revoked_billing = $is_updated_billingOut && $is_created_billing  && $is_updated_medsys_billingOut && $is_created_medsys_billing ?  true : false;
+                }
 
                 if($cdg_mmis_inventory) {
                     $isCreated_cdg_MMIS = InventoryTransaction::create($this->CDGMMISInventoryData($request, $cdg_mmis_inventory, $checkUser));
@@ -490,8 +515,7 @@ class EmergencyRoomMedicine extends Controller
                     $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
                 }
 
-                if(! $is_MMIS_Created_Successfuly || !$isCreated_medsys_Inventory_successfuly || !$is_update_successful) {
-                
+                if(!$is_MMIS_Created_Successfuly || !$isCreated_medsys_Inventory_successfuly || !$is_update_successful || !$is_revoked_billing) {
                     throw new Exception('Failed to cancel charges');
                 }
 
@@ -531,6 +555,8 @@ class EmergencyRoomMedicine extends Controller
             DB::connection('sqlsrv_patient_data')->commit();
             DB::connection('sqlsrv_mmis')->commit();
             DB::connection('sqlsrv_medsys_billing')->commit();
+            DB::connection('sqlsrv_billingOut')->commit();
+            DB::connection('sqlsrv_medsys_billing')->commit();
 
             return response()->json([
                 'message'   => 'Item Charged has been successfully Canceleled'
@@ -541,6 +567,8 @@ class EmergencyRoomMedicine extends Controller
             DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
             DB::connection('sqlsrv_patient_data')->rollBack();
             DB::connection('sqlsrv_mmis')->rollBack();
+            DB::connection('sqlsrv_medsys_billing')->rollBack();
+            DB::connection('sqlsrv_billingOut')->rollBack();
             DB::connection('sqlsrv_medsys_billing')->rollBack();
 
             return response()->json([
@@ -649,6 +677,47 @@ class EmergencyRoomMedicine extends Controller
             'UserID'        =>  $checkUser->idnumber,
             'RevenueID'     =>  $getMedsysCashAssessment->RevenueID,
             'UnitPrice'     =>  $getMedsysCashAssessment->UnitPrice ? floatval($getMedsysCashAssessment->UnitPrice) : null,
+        ];
+    }
+
+    private function BillingOutData($request,  $billingOut, $checkUser) {
+        return [
+            'patient_Id'            => $request->payload['patient_Id'],
+            'case_No'               => $request->payload['case_No'],
+            'accountnum'            => $billingOut->accountnum,
+            'msc_price_scheme_id'   => $billingOut->msc_price_scheme_id,
+            'revenueID'             => $billingOut->revenueID,
+            'drcr'                  => 'C',
+            'itemID'                => $billingOut->itemID,
+            'quantity'              => ($billingOut->quantity * -1),
+            'refNum'                => $billingOut->refNum . '[REVOKED]',
+            'chargeSlip'            => $billingOut->ChargeSlip . '[REVOKED]',
+            'amount'                => ($billingOut->amount * -1),
+            'net_amount'            => ($billingOut->net_amount * -1),
+            'userId'                => $checkUser->idnumber,
+            'hostName'              => (new GetIP())->getHostname(),
+            'updatedBy'             => $checkUser->idnumber,
+            'updated_at'            => Carbon::now(),
+            'request_doctors_id'    => $billingOut->request_doctors_id,
+            'transDate'             => Carbon::now(),
+
+        ];
+    }
+
+    private function MedsysBillingOutData($request,  $medsys_billingOut, $checkUser) {
+        return [
+            'IDNum'         => $request->payload['case_No'] . 'B',
+            'HospNum'       => $request->payload['patient_Id'],
+            'TransDate'     => Carbon::now(),
+            'RevenueID'     => $medsys_billingOut->RevenueID,
+            'DrCr'          => 'C',
+            'ItenID'        => $medsys_billingOut->itemID,
+            'Quantity'      => ($medsys_billingOut->Quantity * -1),
+            'RefNum'        => $medsys_billingOut->RefNum . '[REVOKED]',
+            'Amount'        => ($medsys_billingOut->Amount * -1),
+            'UserID'        => $checkUser->idnumber,
+            'ChargeSlip'    => $medsys_billingOut->ChargeSlip . '[REVOKED]',
+            'HostName'      => (new GetIP())->getHostname(),
         ];
     }
 }

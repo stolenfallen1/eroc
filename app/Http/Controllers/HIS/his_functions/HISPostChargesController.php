@@ -442,10 +442,10 @@ class HISPostChargesController extends Controller
 
             $items = $request->items;
             foreach ($items as $item) {
-                $patient_id = $item['patient_Id'];
-                $case_no = $item['case_No'];
-                $refnum = $item['refNum'];
-                $item_id = $item['itemID'];
+                $patient_id = $item['patient_Id'] ?? $request->patient_Id;
+                $case_no = $item['case_No'] ?? $request->case_No;
+                $refnum = $item['refNum'] ?? $item['request_num'];
+                $item_id = $item['itemID'] ?? $item['code'];
                 
                 $existingData = HISBillingOut::where('patient_Id', $patient_id)
                     ->where('case_No', $case_no)
@@ -453,12 +453,13 @@ class HISPostChargesController extends Controller
                     ->where('itemID', $item_id)
                     ->first();
                 
-                $existingData->updateOrFail([
-                    'refNum' => $refnum . '[REVOKED]',
-                    'ChargeSlip' => $refnum . '[REVOKED]',
-                ]);
+                    $existingData->updateOrFail([
+                        'refNum' => $refnum . '[REVOKED]',
+                        'ChargeSlip' => $refnum . '[REVOKED]'
+                    ]);
                 
-                if ($existingData) {
+                if ($existingData || $existingData === null) {
+                    
                     HISBillingOut::create([
                         'patient_Id' => $existingData->patient_Id,
                         'case_No' => $existingData->case_No,

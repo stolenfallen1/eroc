@@ -105,7 +105,9 @@ public function getChargeList($id) {
                 $join->on('bo.revenueID', '=', 'fmsPI.transaction_code')
                     ->on('bo.itemID', '=', 'fmsPI.map_item_id');
             })
-            ->where('bo.case_No', '=', $id);
+            ->where('bo.case_No', '=', $id)
+            ->where('bo.quantity', '>=', 1)
+            ->where('bo.refNum', 'NOT LIKE', '%[REVOKED]%');
         if($accountType !== 'Self Pay') {
             $dataCharges = $cashAssessmentQuery
                 ->unionAll($nurseLogBookQuery)

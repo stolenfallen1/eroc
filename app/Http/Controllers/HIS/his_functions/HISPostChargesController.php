@@ -254,7 +254,8 @@ class HISPostChargesController extends Controller
                     // Since This is handled by CDG_CORE to only post charges for Laboratory ( Lab users only or whom is assigned )
                     // If not assigned well request Lab procedure in Requisition
                     if ($revenueID == 'LB') {
-                        if ($item_Id != 160 && ($form == 'C' || $form == 'P')) {
+                        // Way labot sa bungkag ang CBC, Routine Urinalysis and Stool Exam Routine
+                        if (($item_Id != 160 && $item_Id != 149 && $item_Id != 145) && ($form == 'C' || $form == 'P')) {
                             $labProfileData = $this->getLabItems($item_id);
                             if ($labProfileData->getStatusCode() === 200) {
                                 $labItems = $labProfileData->getData()->data;

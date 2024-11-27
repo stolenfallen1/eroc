@@ -524,7 +524,7 @@ class CashierController extends Controller
                                         $recordStatus = $this->check_is_allow_laboratory_auto_rendering ? 'W' : 'X';
                                         $processedBy = $this->check_is_allow_laboratory_auto_rendering ? $userId : null;
                                         $processDate = $this->check_is_allow_laboratory_auto_rendering ? $transDate : null;
-                                        if ($form == 'C' || $form == 'P') {
+                                        if ($item_Id != 160 && ($form == 'C' || $form == 'P')) {
                                             $labProfileData = $this->getLabItems($itemID);
                                             if ($labProfileData->getStatusCode() === 200) {
                                                 $labItems = $labProfileData->getData()->data;

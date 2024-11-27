@@ -982,7 +982,8 @@ class RequisitionController extends Controller
                                 $recordStatus = $this->check_is_allow_laboratory_auto_rendering ? 'W' : 'X';
                                 $processedBy = $this->check_is_allow_laboratory_auto_rendering ? ($checkUser ? $checkUser->idnumber : Auth()->user()->idnumber) : null;
                                 $processedDate = $this->check_is_allow_laboratory_auto_rendering ? $today : null;
-                                if ($form == 'C' || $form == 'P') {
+                                // Way labot sa bungkag ang CBC: map_item_id / item_Id = 160
+                                if ($item_Id != 160 && ($form == 'C' || $form == 'P')) {
                                     $labProfileData = $this->getLabItems($item_Id);
                                     if ($labProfileData->getStatusCode() === 200) {
                                         $labItems = $labProfileData->getData()->data;

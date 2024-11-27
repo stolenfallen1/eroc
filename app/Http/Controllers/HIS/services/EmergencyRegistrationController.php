@@ -53,8 +53,8 @@ class EmergencyRegistrationController extends Controller
     public function index() {
         try {
 
-            // $today = Carbon::now()->format('Y-m-d');
-            $today = '2024-11-26';
+            $today = Carbon::now()->format('Y-m-d');
+            // $today = '2024-11-26';
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {

@@ -307,6 +307,7 @@ class EmergencyRoomMedicine extends Controller
             'branch_Id'        => 1,
             'patient_Id'       => $request->payload['patient_Id'],
             'case_No'          => $request->payload['case_No'],
+            'patient_Name'     => $request->payload['patient_Name'],
             'patient_Type'     => 0,
             'revenue_Id'       => $item['code'],
             'requestNum'       => $tbNursePHSlipSequence->ChargeSlip,
@@ -457,115 +458,47 @@ class EmergencyRoomMedicine extends Controller
             $medsys_inventory = tbInvStockCard::where('RefNum', $request->payload['reference_id'])->first();
             $getCashAssessment = CashAssessment::where('RefNum', $request->payload['reference_id'])->first();
             $getMedsysCashAssessment = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->first();
+            $isUseReferenceNumber = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->first();
+            $isUseRequestNumber = NurseLogBook::where('requestNum', $request->payload['reference_id'])->first();
+
+            $is_MMIS_Created_Successfuly = true; 
+            $isCreated_medsys_Inventory_successfuly = true; 
+            $is_update_successful = true;
+           
+
+            $isHMO =  ($cdg_mmis_inventory && $medsys_inventory) || $request->payload['account'] !== 'Self Pay';
+
+            if($isHMO) {
+
+                if($cdg_mmis_inventory) {
+                    $isCreated_cdg_MMIS = InventoryTransaction::create($this->CDGMMISInventoryData($request, $cdg_mmis_inventory, $checkUser));
+                    $is_MMIS_Created_Successfuly = $isCreated_cdg_MMIS ? true : false;
+                }
                 
-            if($cdg_mmis_inventory && $medsys_inventory) {
+                if($medsys_inventory) {
+                    $isCreated_medsys_Inventory  = tbInvStockCard::create($this->MedsysStockCardData($request,  $medsys_inventory, $checkUser));
+                    $isCreated_medsys_Inventory_successfuly = $isCreated_medsys_Inventory ? true : false;
+                }
+                if($isUseReferenceNumber) {
+                    $isUpdated_cdg_lb  = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
+                    $isUpdated_medsys_lb  = tbNurseLogBook::where('ReferenceNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+                    $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
+                } 
+                if($isUseRequestNumber) {
+                    $isUpdated_cdg_lb  = NurseLogBook::where('requestNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
+                    $isUpdated_medsys_lb  = tbNurseLogBook::where('RequestNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+                    $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
+                }
 
-                $cdg_mmis_inventory_data = [
-                    'branch_Id'                         => 1,
-                    'warehouse_Group_Id'                => $cdg_mmis_inventory->warehouse_Group_Id,
-                    'warehouse_Id'                      => $cdg_mmis_inventory->warehouse_Id,
-                    'patient_Id'                        => $cdg_mmis_inventory->patient_Id,
-                    'patient_Registry_Id'               => $cdg_mmis_inventory->patient_Registry_Id,    
-                    'transaction_Item_Id'               => $cdg_mmis_inventory->transaction_Item_Id,
-                    'transaction_Date'                  => Carbon::now(),
-                    'trasanction_Reference_Number'      => $cdg_mmis_inventory->trasanction_Reference_Number,
-                    'transaction_Acctg_TransType'       => $cdg_mmis_inventory->transaction_Acctg_TransType,
-                    'transaction_Qty'                   => (intval($cdg_mmis_inventory->transaction_Qty) * -1),
-                    'transaction_Item_OnHand'           => $cdg_mmis_inventory->transaction_Item_OnHand,
-                    'transaction_Item_ListCost'         => $cdg_mmis_inventory->transaction_Item_ListCost,
-                    'transaction_Requesting_Number'     => $cdg_mmis_inventory->transaction_Requesting_Number,
-                    'transaction_UserId'                => $checkUser->idnumber,
-                    'created_at'                        => Carbon::now(),
-                    'createdBy'                         => $checkUser->idnumber,
-                    'updated_at'                        => Carbon::now(),
-                    'updatedby'                         => $checkUser->idnumber,
-                ];
-
-                $medsys_inventory_data = [
-                    'SummaryCode'   => $medsys_inventory->SummaryCode,
-                    'HospNum'       => $request->payload['patient_Id'] ?? null,
-                    'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
-                    'ItemID'        => $medsys_inventory->ItemID,
-                    'TransDate'     => Carbon::now(),
-                    'RevenueID'     => $medsys_inventory->RevenueID,
-                    'RefNum'        => $medsys_inventory->RefNum,
-                    'Status'        => $medsys_inventory->Status,
-                    'Quantity'      => intval($medsys_inventory->Quantity) * -1,
-                    'Balance'       => isset($medsys_inventory->Balance) 
-                                    ? $medsys_inventory->Balance 
-                                    : null,
-                    'NetCost'       => isset($medsys_inventory->NetCost) 
-                                    ? floatval($medsys_inventory->NetCost) 
-                                    : null,
-                    'Amount'        => floatval($medsys_inventory->Amount) * -1,
-                    'UserID'        => $checkUser->idnumber,
-                    'DosageID'      => $medsys_inventory->DosageID,
-                    'RequestByID'   => $checkUser->idnumber,
-                    'DispenserCode' => $medsys_inventory->DispenserCode,
-                    'RequestNum'    => $medsys_inventory->RequestNum,
-                    'ListCost'      => isset($medsys_inventory->ListCost) 
-                                    ? $medsys_inventory->ListCost 
-                                    : null,
-                    'RecordStatus'  => 'R',
-                    'HostName'      => (new GetIP())->getHostname(),
-                ];
-
-                $isCreated_cdg_MMIS                 = InventoryTransaction::create($cdg_mmis_inventory_data);
-                $isCreated_medsys_Inventory         = tbInvStockCard::create($medsys_inventory_data);
-                $isUpdated_cdg_lb                   = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
-                $isUpdated_cdg_medsys_lb            = tbNurseLogBook::where('ReferenceNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
-
-                if(!$isCreated_cdg_MMIS || !$isCreated_medsys_Inventory || !$isUpdated_cdg_lb || !$isUpdated_cdg_medsys_lb) {
+                if(! $is_MMIS_Created_Successfuly || !$isCreated_medsys_Inventory_successfuly || !$is_update_successful) {
                 
                     throw new Exception('Failed to cancel charges');
                 }
 
             } else {
-               
-                $cdg_cash_assessment_data = [
-                    'branch_id'             =>  1,
-                    'patient_id'            =>  $request->payload['patient_Id'],
-                    'case_No'               =>  $request->payload['case_No'],
-                    'patient_Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
-                    'transdate'             =>  Carbon::now(),
-                    'assessnum'             =>  $getCashAssessment->assessnum,
-                    'drcr'                  =>  'C',
-                    'stat'                  =>  1,
-                    'revenueID'             =>  $getCashAssessment->revenueID,
-                    'refNum'                =>  $getCashAssessment->refNum,
-                    'itemID'                =>  $getCashAssessment->itemID,
-                    'item_ListCost'         =>  $getCashAssessment->item_ListCost,
-                    'item_Selling_Amount'   =>  $getCashAssessment->item_Selling_Amount,
-                    'item_OnHand'           =>  $getCashAssessment->item_OnHand,
-                    'quantity'              =>  intval($getCashAssessment->quantity) * -1,
-                    'amount'                =>  floatval($getCashAssessment->amount) * -1,
-                    'dosage'                =>  $getCashAssessment->dosage,
-                    'recordStatus'          =>  'R',
-                    'requestDescription'    =>  $getCashAssessment->requestDescription,
-                    'departmentID'          =>  $getCashAssessment->departmentID,
-                    'userId'                =>  $checkUser->idnumber,
-                    'hostname'              =>  (new GetIP())->getHostname(),
-                    'updatedBy'             =>  $checkUser->idnumber,
-                    'updated_at'            =>  Carbon::now(),
-                ];
-    
-                $medsys_cash_assessment_data = [
-                    'IdNum'         =>  $request->payload['case_No'] . 'B',
-                    'HospNum'       =>  $request->payload['patient_Id'],
-                    'Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
-                    'TransDate'     =>  Carbon::now() ?? null,
-                    'AssessNum'     =>  $getMedsysCashAssessment->AssessNum,
-                    'Indicator'     =>  $getMedsysCashAssessment->Indicator,
-                    'DrCr'          =>  'D',
-                    'ItemID'        =>  $getMedsysCashAssessment->ItemID,
-                    'RecordStatus'  =>  'R',
-                    'Quantity'      =>  intval($getMedsysCashAssessment->Quantity) * -1,
-                    'RefNum'        =>  $getMedsysCashAssessment->RefNum,
-                    'Amount'        =>  floatval($getMedsysCashAssessment->Amount) * -1,
-                    'UserID'        =>  $checkUser->idnumber,
-                    'RevenueID'     =>  $getMedsysCashAssessment->RevenueID,
-                    'UnitPrice'     =>  $getMedsysCashAssessment->UnitPrice ? floatval($getMedsysCashAssessment->UnitPrice) : null,
-                ];
+                
+               $is_Row_Created_Successfuly = true;
+               $is_Medsys_Row_Created_Successfuly = true;
 
                $isUpdatedRow = CashAssessment::where('refNum', $request->payload['reference_id'])->update([
                     'recordStatus'  => 'R',
@@ -573,7 +506,10 @@ class EmergencyRoomMedicine extends Controller
                     'revokedBy'     => $checkUser->idnumber,
                 ]);
 
-                $isRowCreated = CashAssessment::create( $cdg_cash_assessment_data);
+                if($getCashAssessment) {
+                    $isRowCreated = CashAssessment::create($this->CDGCashAssessmentData($request, $getCashAssessment, $checkUser));
+                    $is_Row_Created_Successfuly = $isRowCreated ? true : false;
+                }
 
                 $isMedysUpdatedRow = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->update([
                     'RecordStatus'  => 'R',
@@ -581,9 +517,12 @@ class EmergencyRoomMedicine extends Controller
                     'RevokedBy'     => $checkUser->idnumber
                 ]);
 
-                $isMedsysRowCreated = MedsysCashAssessment::create($medsys_cash_assessment_data);
+                if($getMedsysCashAssessment) {
+                    $isMedsysRowCreated = MedsysCashAssessment::create($this->MedsysCashAssessmentData($request, $getMedsysCashAssessment, $checkUser));
+                    $is_Medsys_Row_Created_Successfuly = $isMedsysRowCreated ? true : false;
+                }
 
-                if(!$isUpdatedRow || !$isRowCreated || !$isMedysUpdatedRow || !$isMedsysRowCreated) {
+                if(!$isUpdatedRow || !$is_Row_Created_Successfuly || !$isMedysUpdatedRow || !$is_Medsys_Row_Created_Successfuly) {
                     throw new Exception('Failed to cancel charges');
                 }
             }
@@ -608,5 +547,108 @@ class EmergencyRoomMedicine extends Controller
                 'message' => 'Error!' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function CDGMMISInventoryData($request,  $cdg_mmis_inventory, $checkUser) {
+        return [
+            'branch_Id'                         => 1,
+            'warehouse_Group_Id'                => $cdg_mmis_inventory->warehouse_Group_Id,
+            'warehouse_Id'                      => $cdg_mmis_inventory->warehouse_Id,
+            'patient_Id'                        => $cdg_mmis_inventory->patient_Id,
+            'patient_Registry_Id'               => $cdg_mmis_inventory->patient_Registry_Id,    
+            'transaction_Item_Id'               => $cdg_mmis_inventory->transaction_Item_Id,
+            'transaction_Date'                  => Carbon::now(),
+            'trasanction_Reference_Number'      => $cdg_mmis_inventory->trasanction_Reference_Number,
+            'transaction_Acctg_TransType'       => $cdg_mmis_inventory->transaction_Acctg_TransType,
+            'transaction_Qty'                   => (intval($cdg_mmis_inventory->transaction_Qty) * -1),
+            'transaction_Item_OnHand'           => $cdg_mmis_inventory->transaction_Item_OnHand,
+            'transaction_Item_ListCost'         => $cdg_mmis_inventory->transaction_Item_ListCost,
+            'transaction_Requesting_Number'     => $cdg_mmis_inventory->transaction_Requesting_Number,
+            'transaction_UserId'                => $checkUser->idnumber,
+            'created_at'                        => Carbon::now(),
+            'createdBy'                         => $checkUser->idnumber,
+            'updated_at'                        => Carbon::now(),
+            'updatedby'                         => $checkUser->idnumber,
+        ];
+    }
+
+    private function MedsysStockCardData($request,  $medsys_inventory, $checkUser) {
+        return [
+            'SummaryCode'   => $medsys_inventory->SummaryCode,
+            'HospNum'       => $request->payload['patient_Id'] ?? null,
+            'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
+            'ItemID'        => $medsys_inventory->ItemID,
+            'TransDate'     => Carbon::now(),
+            'RevenueID'     => $medsys_inventory->RevenueID,
+            'RefNum'        => $medsys_inventory->RefNum,
+            'Status'        => $medsys_inventory->Status,
+            'Quantity'      => intval($medsys_inventory->Quantity) * -1,
+            'Balance'       => isset($medsys_inventory->Balance) 
+                            ? $medsys_inventory->Balance 
+                            : null,
+            'NetCost'       => isset($medsys_inventory->NetCost) 
+                            ? floatval($medsys_inventory->NetCost) 
+                            : null,
+            'Amount'        => floatval($medsys_inventory->Amount) * -1,
+            'UserID'        => $checkUser->idnumber,
+            'DosageID'      => $medsys_inventory->DosageID,
+            'RequestByID'   => $checkUser->idnumber,
+            'DispenserCode' => $medsys_inventory->DispenserCode,
+            'RequestNum'    => $medsys_inventory->RequestNum,
+            'ListCost'      => isset($medsys_inventory->ListCost) 
+                            ? $medsys_inventory->ListCost 
+                            : null,
+            'RecordStatus'  => 'R',
+            'HostName'      => (new GetIP())->getHostname(),
+        ];
+    }
+
+    private function CDGCashAssessmentData($request, $getCashAssessment, $checkUser) {
+        return [
+            'branch_id'             =>  1,
+            'patient_id'            =>  $request->payload['patient_Id'],
+            'case_No'               =>  $request->payload['case_No'],
+            'patient_Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
+            'transdate'             =>  Carbon::now(),
+            'assessnum'             =>  $getCashAssessment->assessnum,
+            'drcr'                  =>  'C',
+            'stat'                  =>  1,
+            'revenueID'             =>  $getCashAssessment->revenueID,
+            'refNum'                =>  $getCashAssessment->refNum,
+            'itemID'                =>  $getCashAssessment->itemID,
+            'item_ListCost'         =>  $getCashAssessment->item_ListCost,
+            'item_Selling_Amount'   =>  $getCashAssessment->item_Selling_Amount,
+            'item_OnHand'           =>  $getCashAssessment->item_OnHand,
+            'quantity'              =>  intval($getCashAssessment->quantity) * -1,
+            'amount'                =>  floatval($getCashAssessment->amount) * -1,
+            'dosage'                =>  $getCashAssessment->dosage,
+            'recordStatus'          =>  'R',
+            'requestDescription'    =>  $getCashAssessment->requestDescription,
+            'departmentID'          =>  $getCashAssessment->departmentID,
+            'userId'                =>  $checkUser->idnumber,
+            'hostname'              =>  (new GetIP())->getHostname(),
+            'updatedBy'             =>  $checkUser->idnumber,
+            'updated_at'            =>  Carbon::now(),
+        ];
+    }
+
+    private function MedsysCashAssessmentData($request, $getMedsysCashAssessment, $checkUser) {
+        return [
+            'IdNum'         =>  $request->payload['case_No'] . 'B',
+            'HospNum'       =>  $request->payload['patient_Id'],
+            'Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
+            'TransDate'     =>  Carbon::now() ?? null,
+            'AssessNum'     =>  $getMedsysCashAssessment->AssessNum,
+            'Indicator'     =>  $getMedsysCashAssessment->Indicator,
+            'DrCr'          =>  'D',
+            'ItemID'        =>  $getMedsysCashAssessment->ItemID,
+            'RecordStatus'  =>  'R',
+            'Quantity'      =>  intval($getMedsysCashAssessment->Quantity) * -1,
+            'RefNum'        =>  $getMedsysCashAssessment->RefNum,
+            'Amount'        =>  floatval($getMedsysCashAssessment->Amount) * -1,
+            'UserID'        =>  $checkUser->idnumber,
+            'RevenueID'     =>  $getMedsysCashAssessment->RevenueID,
+            'UnitPrice'     =>  $getMedsysCashAssessment->UnitPrice ? floatval($getMedsysCashAssessment->UnitPrice) : null,
+        ];
     }
 }

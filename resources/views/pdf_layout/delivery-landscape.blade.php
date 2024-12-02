@@ -70,12 +70,12 @@
     }
 
     .right-width {
-      width: 100px;
+      /* width: 100px; */
       text-transform: uppercase;
     }
 
     .mid-width {
-      width: 370px;
+      /* width: 370px; */
       text-transform: uppercase;
     }
 
@@ -85,7 +85,7 @@
 
 
     .item-td1 {
-      width: 300px;
+      /* width: 300px; */
     }
 
     .item-td2 {
@@ -165,7 +165,7 @@
 
     .item-section th {
       text-transform: uppercase !important;
-      font-size: 10px !important;
+      font-size: 9px !important;
       font-family: 'DejaVu Sans', sans-serif;
     }
 
@@ -175,7 +175,7 @@
 
     .item-section td {
       text-transform: uppercase !important;
-      font-size: 10px !important;
+      font-size:9px !important;
       padding: 4px;
     }
 
@@ -272,8 +272,8 @@
         <th rowspan="2">UOM</th>
         <th colspan="2">Batch Information</th>
         <th colspan="4">QUANTITY</th>
-        <th rowspan="1" class="border-bottom-none">UNIT </th>
-        <th rowspan="1" class="border-bottom-none">DISC.</th>
+        <th rowspan="2" class="border-bottom-none">UNIT PRICE</th>
+        <th rowspan="2" class="border-bottom-none">DISC. AMOUNT</th>
         <th rowspan="2">NET PRICE</th>
         <th rowspan="2">Amount</th>
       </tr>
@@ -284,8 +284,6 @@
         <th rowspan="1" class="border-top-none">RECEIVED</th>
         <th rowspan="1" class="border-top-none">SERVED</th>
         <th rowspan="1" class="border-top-none">BALANCE</th>
-        <th rowspan="1" class="border-top-none">PRICE</th>
-        <th rowspan="1" class="border-top-none">AMOUNT</th>
       </tr>
     </thead>
     <tbody>
@@ -395,7 +393,7 @@
     <tr>
       <td class="border-none  text-right">Printed Date</td>
       <td class="border-none  text-left"> : {{ date('m-d-Y H:i:s A')}}</td>
-      <td colspan="8" class="border-none  text-right">Discount :</td>
+      <td colspan="8" class="border-none  text-right">Total Discount :</td>
       <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
     </tr>
 

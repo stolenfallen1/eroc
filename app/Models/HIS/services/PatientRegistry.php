@@ -37,6 +37,7 @@ use App\Models\BuildFile\Hospital\Doctor;
 use App\Models\BuildFile\Hospital\TransactionType;
 use App\Models\BuildFile\PriceGroup;
 use App\Models\BuildFile\PriceScheme;
+use App\Models\MMIS\inventory\InventoryTransaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +62,9 @@ class PatientRegistry extends Model
     }
     public function lab_services() {
         return $this->hasMany(LaboratoryMaster::class, 'case_No', 'case_No');
+    }
+    public function inventoryTransactions() {
+        return $this->hasMany(InventoryTransaction::class, 'patient_Registry_Id', 'case_No');
     }
     public function accountType() {
         return $this->belongsTo(AccountType::class, 'mscAccount_type', 'id');

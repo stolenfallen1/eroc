@@ -9,26 +9,48 @@ use App\Models\HIS\services\PatientRegistry;
 use \Carbon\Carbon;
 use PDF;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+
 
 class ReportMaster extends Controller
 {
     //
-    public function ERDailyCensusReport() {
+    public function ERDailyCensusReport(Request $request) {
+        $reportDate = $request->query('reportDate');
         $today = Carbon::now()->format('Y-m-d');
-        $data = Patient::whereHas('patientRegistry', function($query) use ($today) {
-              $query->where('mscAccount_Trans_Types', 5)
-                    -> whereDate('registry_Date', $today);
-        })->with([
-            'sex', 
-            'civilStatus', 
-            'patientRegistry' => function($query) use ($today) {
-                $query->whereDate('registry_Date', $today)
-                      ->where('mscAccount_Trans_Types', 5)
-                      ->where('isRevoked', 0);
-            }
-        ])
-        ->orderBy('created_at', 'asc')
-        ->get();
+        if($reportDate !== 'undefined' && $reportDate !== '') {
+           
+            $data = Patient::whereHas('patientRegistry', function($query) use ( $reportDate) {
+                $query->where('mscAccount_Trans_Types', 5)
+                      -> whereDate('registry_Date',  $reportDate);
+          })->with([
+              'sex', 
+              'civilStatus', 
+              'patientRegistry' => function($query) use ( $reportDate) {
+                  $query->whereDate('registry_Date',  $reportDate)
+                        ->where('mscAccount_Trans_Types', 5)
+                        ->where('isRevoked', 0);
+              }
+            ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+        } else {
+            $data = Patient::whereHas('patientRegistry', function($query) use ($today) {
+                $query->where('mscAccount_Trans_Types', 5)
+                      -> whereDate('registry_Date', $today);
+          })->with([
+              'sex', 
+              'civilStatus', 
+              'patientRegistry' => function($query) use ($today) {
+                  $query->whereDate('registry_Date', $today)
+                        ->where('mscAccount_Trans_Types', 5)
+                        ->where('isRevoked', 0);
+              }
+            ])
+            ->orderBy('created_at', 'asc')
+            ->get();
+        }
+    
 
         $total = $data->count();
         

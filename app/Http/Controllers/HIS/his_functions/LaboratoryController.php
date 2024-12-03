@@ -135,7 +135,6 @@ class LaboratoryController extends Controller
                         ->where('result_Status', 'X');
                 })
                 ->where('mscAccount_Trans_Types', 2)
-                ->whereNull('discharged_Date')
                 ->get()
                 ->map(function ($patient) {
                     $labServicesWithDescriptions = $patient->lab_services->filter(function ($service) {
@@ -191,7 +190,6 @@ class LaboratoryController extends Controller
                         ->where('result_Status', 'X');
                 })
                 ->where('mscAccount_Trans_Types', 5)
-                ->whereNull('discharged_Date')
                 ->get()
                 ->map(function ($patient) {
                     $labServicesWithDescriptions = $patient->lab_services->filter(function ($service) {
@@ -247,7 +245,6 @@ class LaboratoryController extends Controller
                         ->where('result_Status', 'X');
                 })
                 ->where('mscAccount_Trans_Types', 6)
-                ->whereNull('discharged_Date')
                 ->get()
                 ->map(function ($patient) {
                     $labServicesWithDescriptions = $patient->lab_services->filter(function ($service) {

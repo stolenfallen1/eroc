@@ -26,10 +26,7 @@ class InventoryTransaction extends Model
     public function user(){
         return $this->belongsTo(User::class, 'transaction_UserID','idnumber');
     }
-
-    // Fetching Purposes
-    public function nurse_logbook() {
-        return $this->belongsTo(NurseLogBook::class, 'transaction_Item_Id', 'item_Id');
+    public function nurse_logbook(){
+        return $this->hasOne(NurseLogBook::class, 'item_Id', 'transaction_Item_Id');
     }
-
 }

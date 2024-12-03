@@ -3,6 +3,7 @@
 use App\Http\Controllers\HIS\his_functions\AncillaryController;
 use App\Http\Controllers\HIS\his_functions\CashierController;
 use App\Http\Controllers\HIS\his_functions\HISCashAssestmentController;
+use App\Http\Controllers\HIS\his_functions\HISGlobalController;
 use App\Http\Controllers\HIS\his_functions\LaboratoryController;
 use App\Http\Controllers\HIS\his_functions\opd_specific\OPDMedicinesSuppliesController;
 use App\Http\Controllers\HIS\his_functions\PharmacyController;
@@ -64,8 +65,10 @@ Route::controller(AncillaryController::class)->group(function() {
     Route::get('get-opd-ancillary-orders', 'getOPDOrders');
     Route::get('get-er-ancillary-orders', 'getEROrders');
     Route::get('get-ipd-ancillary-orders', 'getIPDOrders');
+    Route::get('get-ancillary-posted-supplies', 'getPostedSuppliesByCaseNo');
     Route::post('carry-ancillary-order', 'carryOrder');
     Route::post('cancel-ancillary-order', 'cancelOrder');
+    Route::post('post-return-supplies', 'postReturnSupplies');
 });
 // Pharmacy Routes
 Route::controller(PharmacyController::class)->group(function() {
@@ -107,4 +110,10 @@ Route::controller(EmergencyRoomMedicine::class)->group(function() {
 
 Route::controller(NurseActivity::class)->group(function() {
     Route::get('get-charges-list/{id}', 'getChargeList');
+});
+
+// Naa dre ang mga reusable nga functions for the HIS LIKE GENERAL NGA REPORTING
+Route::controller(HISGlobalController::class)->group(function() {
+    Route::get('daily-income-report', 'printDailyIncomeReport');
+    Route::get('monthly-income-report', 'printMonthlyIncomeReport');
 });

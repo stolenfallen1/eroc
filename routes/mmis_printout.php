@@ -15,6 +15,7 @@ use App\Models\MMIS\inventory\VwConsignmentDelivery;
 use App\Models\MMIS\inventory\VwPurchaseOrderMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Contracts\Encryption\DecryptException;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Http\Controllers\MMIS\PriceList\PriceListController;
 use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 
@@ -22,10 +23,12 @@ use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 // <!====================================== PURCHASE ORDER  ====================================== !> 
 
 Route::get('/print-purchase-order/{id}', function ($pid) {
-    
+
     $id = Crypt::decrypt($pid);
     try {
-        $purchase_order = VwPurchaseOrderMaster::with('items')->findOrFail($id);
+        $purchase_order = VwPurchaseOrderMaster::with('items')->where('id',$id)->first();
+        $po = purchaseOrderMaster::where('id',$id)->first();
+        $consignment = VwConsignmentMaster::where('po_Document_Number',$po->po_Document_number)->first();
         // Generate the QR code for the purchase-order
         $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
 
@@ -63,6 +66,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
         foreach ($nonFreeGoods as $item) {
             $itemTotal = $item->order_qty * $item->price;
             $subTotalNonFreeGoods += (float)$itemTotal;
+           
             $Nondiscount += (float)$item->discount;
             $vatAmount += (float)$item->vat_amount;
             $grandTotalNonFreeGoods += (float)$item->net_amount;
@@ -82,6 +86,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
             'discount' => $Nondiscount,
             'vat_amount' => $vatAmount,
             'grand_total' => $grandTotalNonFreeGoods,
+            'consignment'=>$consignment,
             'currency' => $currency,
         ];
 
@@ -207,7 +212,8 @@ Route::get('/print-delivery/{id}', function ($pid) {
 
 
     // 12% VAT rate and a discount (adjust as needed)
-    $vatAmount = 0; // 12% VAT
+    $vatAmount = 0; // 12% VAT totalVatAmount
+    $totalVatAmount = 0; // 12% VAT totalVatAmount
     $discount = 0; // 10% discount
 
     // Calculate item totals, discount, VAT, and overall total
@@ -220,13 +226,13 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $freeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 1;
     });
-
+    $groupedFreeGoods = $freeGoods->groupBy('itemname');
     $nonFreeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 0;
     });
 
+    $qty = 0;
     foreach ($nonFreeGoods as $item) {
-    
         $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
         $subTotal += (float)$itemTotal;
         $discount += (float)$item->discount;
@@ -237,6 +243,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
         }
     }
 
+    $groupedNonFreeGoods = $nonFreeGoods->groupBy('itemname');
     // Calculate overall total
 
     // Prepare the data for the PDF
@@ -245,10 +252,12 @@ Route::get('/print-delivery/{id}', function ($pid) {
         'qr' => $qrSrc,
         'delivery' => $delivery,
         'delivery_items' => $nonFreeGoods,
+        'groupedFreeGoods' => $groupedFreeGoods,
+        'groupedNonFreeGoods' => $groupedNonFreeGoods,
         'free_goods_delivery_items' => $freeGoods,
         'sub_total' => $subTotal,
         'discount' => $discount,
-        'vat_amount' => $vatAmount,
+        'vat_amount' => $totalVatAmount,
         'grand_total' => $grandTotal,
         'currency' => $currency
     ];
@@ -352,7 +361,7 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
         $po_id = $request->input('po_id');
         // $id = Crypt::decrypt($pid);
         // Fetch the delivery details along with related models
-        $delivery = VwConsignmentMaster::with('items')->where('id', $id)->first();
+        $delivery = VwConsignmentMaster::with('items','warehouse')->where('id', $id)->first();
         // Generate the QR code for the delivery
         $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
 

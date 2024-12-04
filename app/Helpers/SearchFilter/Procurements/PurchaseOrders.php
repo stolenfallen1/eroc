@@ -284,9 +284,7 @@ class PurchaseOrders
     else if($this->role->president()){
       if(Request()->branch == 1){
 
-        $this->model
-       
-        ->where(function($q){
+        $this->model->where(function($q){
           $q->whereNotNull('corp_admin_approved_date')->orWhereNotNull('admin_approved_date');
         })
        

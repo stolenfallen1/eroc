@@ -290,6 +290,7 @@ class PurchaseRequestController extends Controller
                     $item['total_net'] = $details->total_net;
                     $item['lead_time'] = $details->lead_time;
                     $item['pr_id'] = $pr['id'];
+                    $item['warehouse_id'] = $pr['warehouse_Id'];
                     $this->addPharmaCanvas($item);
                 }
 
@@ -473,6 +474,7 @@ class PurchaseRequestController extends Controller
                     $item['total_amount'] = $details->total_amount;
                     $item['total_net'] = $details->total_net;
                     $item['lead_time'] = $details->lead_time;
+                    $item['warehouse_id'] = $request->department_id;
                     $this->addPharmaCanvas($item);
                 }
             } else {
@@ -510,6 +512,7 @@ class PurchaseRequestController extends Controller
                     $item['total_amount'] = $details->total_amount;
                     $item['total_net'] = $details->total_net;
                     $item['lead_time'] = $details->lead_time;
+                    $item['warehouse_id'] = $request->department_id;
                     $this->addPharmaCanvas($item);
                 }
             }
@@ -782,7 +785,7 @@ class PurchaseRequestController extends Controller
                 'requested_date' => Carbon::now(),
                 'canvas_Branch_Id' => Auth()->user()->branch_id,
                 'canvas_Warehouse_Group_Id' => Request()->warehouse['warehouse_Group_Id'] ?? '1',
-                'canvas_Warehouse_Id' =>  Request()->warehouse_Id,
+                'canvas_Warehouse_Id' =>  $item['warehouse_id'],
                 'vendor_id' => $vendor->id,
                 'pr_request_id' => $pr_id,
                 'pr_request_details_id' => $item['id'],

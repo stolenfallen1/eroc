@@ -25,7 +25,9 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
     
     $id = Crypt::decrypt($pid);
     try {
-        $purchase_order = VwPurchaseOrderMaster::with('items')->findOrFail($id);
+        $purchase_order = VwPurchaseOrderMaster::with('items')->where('id',$id)->first();
+        $po = purchaseOrderMaster::where('id',$id)->first();
+        $consignment = VwConsignmentMaster::where('po_Document_Number',$po->po_Document_number)->first();
         // Generate the QR code for the purchase-order
         $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-purchase-order/' . $id);
 
@@ -82,6 +84,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
             'discount' => $Nondiscount,
             'vat_amount' => $vatAmount,
             'grand_total' => $grandTotalNonFreeGoods,
+            'consignment'=>$consignment,
             'currency' => $currency,
         ];
 

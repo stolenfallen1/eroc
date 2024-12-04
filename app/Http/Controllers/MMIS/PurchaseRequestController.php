@@ -379,6 +379,17 @@ class PurchaseRequestController extends Controller
     {
         $pr = PurchaseRequest::with('purchaseRequestAttachments')->where('id', $id)->first();
 
+        $ismed = NULL;
+        if ($this->role->pharmacy_warehouse()) {
+            $ismed = 1;
+        }
+        if ($pr->isconsignment && $pr->isconsignment == 1) {
+            $ismed = 1;
+        }
+        $isdiet = NULL;
+        if ($this->role->isdietary()  || $this->role->isdietaryhead()) {
+            $isdiet = 1;
+        }
         $pr->update([
             'pr_Justication' => $request->pr_Justication,
             'pr_Transaction_Date_Required' => Carbon::parse($request->pr_Transaction_Date_Required),
@@ -440,8 +451,8 @@ class PurchaseRequestController extends Controller
                     'total_net' => $item['total_net'] ?? 0,
 
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
-                    // 'ismedicine' => $ismed,
-                    // 'isdietary' => $isdiet
+                    'ismedicine' => $ismed,
+                    'isdietary' => $isdiet
 
 
                     // 'item_Request_Qty' => $item['item_Request_Qty'],
@@ -479,13 +490,28 @@ class PurchaseRequestController extends Controller
                     'vat_rate' => $item['vat_rate'] ?? 0,
                     'vat_type' => $item['vat_type'] ?? 0,
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
-                    // 'ismedicine' => $ismed,
-                    // 'isdietary' => $isdiet
+                    'ismedicine' => $ismed,
+                    'isdietary' => $isdiet
 
                     // 'item_Request_Qty' => $item['item_Request_Qty'],
                     // 'prepared_supplier_id' => $item['prepared_supplier_id'] ?? 0,
                     // 'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                 ]);
+                if ($this->role->pharmacy_warehouse() || $this->role->isdietary()) {
+                    $details =  $pr->purchaseRequestDetails()->where('pr_request_id', $pr['id'])->where('item_Id', $item['item_Id'])->first();
+                    $item['id'] = $details->id;
+                    $item['pr_id'] = $pr['id'];
+                    $item['vat_rate'] = $details->vat_rate;
+                    $item['vat_type'] = $details->vat_type;
+                    $item['discount'] = $details->discount;
+                    $item['discount_amount'] = $details->discount_amount;
+                    $item['vat_rate'] = $details->vat_rate;
+                    $item['vat_amount'] = $details->vat_amount;
+                    $item['total_amount'] = $details->total_amount;
+                    $item['total_net'] = $details->total_net;
+                    $item['lead_time'] = $details->lead_time;
+                    $this->addPharmaCanvas($item);
+                }
             }
         }
 
@@ -872,55 +898,55 @@ class PurchaseRequestController extends Controller
 
 
 
-                    $discount_amount = 0;
-                    $total_discount = 0;
-                    $vat_amount = 0;
-                    $total_amount = $listcost * $qty;
+                    // $discount_amount = 0;
+                    // $total_discount = 0;
+                    // $vat_amount = 0;
+                    // $total_amount = $listcost * $qty;
 
-                    // Handle VAT based on vat_type
-                    if ($canvas->vat_type == 1) { // Exclusive VAT
-                        $vat_amount     = $total_amount * ($vat / 100);
-                        $total_amount   += $vat_amount;
-                    } elseif ($canvas->vat_type == 2) { // Inclusive VAT
-                        $vat_amount     = $total_amount * ($vat / (100 + $vat)); // Extract VAT from total
-                    } elseif ($canvas->vat_type == 3) { // Exempt VAT
-                        $vat_amount     = 0; // No VAT for exempt
-                    }
+                    // // Handle VAT based on vat_type
+                    // if ($canvas->vat_type == 1) { // Exclusive VAT
+                    //     $vat_amount     = $total_amount * ($vat / 100);
+                    //     $total_amount   += $vat_amount;
+                    // } elseif ($canvas->vat_type == 2) { // Inclusive VAT
+                    //     $vat_amount     = $total_amount * ($vat / (100 + $vat)); // Extract VAT from total
+                    // } elseif ($canvas->vat_type == 3) { // Exempt VAT
+                    //     $vat_amount     = 0; // No VAT for exempt
+                    // }
 
-                    // Apply discount if applicable
-                    if ($discount) {
-                        $discount_amount         = $total_amount * ($discount / 100);
-                        $total_discount += $discount_amount;
-                    }
+                    // // Apply discount if applicable
+                    // if ($discount) {
+                    //     $discount_amount         = $total_amount * ($discount / 100);
+                    //     $total_discount += $discount_amount;
+                    // }
 
-                    $total_net                   = $total_amount - $discount_amount;
+                    // $total_net                   = $total_amount - $discount_amount;
 
-                    // Calculate final total amount including VAT
-                    $canvas_item_total_amount = ($total_amount - $discount_amount) + $vat_amount;
-                    CanvasMaster::where(
-                        [
-                            'pr_request_details_id' => $prd->id,
-                            'canvas_Item_Id' => $prd->item_Id,
-                            'vendor_id' => $prd->prepared_supplier_id,
-                        ]
-                    )->update(
-                        [
-                            'vendor_id' => $prd->prepared_supplier_id,
-                            'canvas_Branch_Id' => Auth()->user()->branch_id,
-                            'canvas_Item_Qty' => $qty,
-                            'canvas_item_amount' => $listcost,
-                            'canvas_item_total_amount' => $total_amount,
-                            'canvas_item_discount_percent' => $discount,
-                            'canvas_item_discount_amount' => $discount_amount,
-                            'canvas_item_net_amount' => $total_net,
-                            'canvas_lead_time' => $canvas->canvas_lead_time,
-                            // 'canvas_remarks' => $request->canvas_remarks,
-                            'currency_id' => 1,
-                            'canvas_item_vat_rate' => $vat,
-                            'canvas_item_vat_amount' => $vat_amount,
-                            'vat_type' => $canvas->vat_type,
-                        ]
-                    );
+                    // // Calculate final total amount including VAT
+                    // $canvas_item_total_amount = ($total_amount - $discount_amount) + $vat_amount;
+                    // CanvasMaster::where(
+                    //     [
+                    //         'pr_request_details_id' => $prd->id,
+                    //         'canvas_Item_Id' => $prd->item_Id,
+                    //         'vendor_id' => $prd->prepared_supplier_id,
+                    //     ]
+                    // )->update(
+                    //     [
+                    //         'vendor_id' => $prd->prepared_supplier_id,
+                    //         'canvas_Branch_Id' => Auth()->user()->branch_id,
+                    //         'canvas_Item_Qty' => $qty,
+                    //         'canvas_item_amount' => $listcost,
+                    //         'canvas_item_total_amount' => $total_amount,
+                    //         'canvas_item_discount_percent' => $discount,
+                    //         'canvas_item_discount_amount' => $discount_amount,
+                    //         'canvas_item_net_amount' => $total_net,
+                    //         'canvas_lead_time' => $canvas->canvas_lead_time,
+                    //         // 'canvas_remarks' => $request->canvas_remarks,
+                    //         'currency_id' => 1,
+                    //         'canvas_item_vat_rate' => $vat,
+                    //         'canvas_item_vat_amount' => $vat_amount,
+                    //         'vat_type' => $canvas->vat_type,
+                    //     ]
+                    // );
                 } else {
 
                     if (Auth()->user()->warehouse_id == '36') {

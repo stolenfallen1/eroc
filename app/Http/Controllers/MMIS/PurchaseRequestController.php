@@ -804,6 +804,7 @@ class PurchaseRequestController extends Controller
                 'isFreeGoods' => null,
                 'isRecommended' => 1,
                 'terms_id' => 10,
+                'created_at' => Carbon::now(),
                 // 'canvas_Level2_ApprovedBy' => Request()->pr_RequestedBy,
                 // 'canvas_Level2_ApprovedDate' => Carbon::now(),
             ]

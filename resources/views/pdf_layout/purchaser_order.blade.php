@@ -221,10 +221,18 @@
       <tr>
         <td class="left-width text-right">Terms :</td>
         <td class="mid-width underline">{{$pdf_data['purchase_order']['description']??''}}</td>
+        @if($pdf_data['consignment'])
+        <td class="right-width text-right">DR No. :</td>
+        <td class="underline">{{$pdf_data['consignment'] ? $pdf_data['consignment']['rr_Document_Delivery_Receipt_No'] : ''}}</td>
+        @endif
       </tr>
       <tr>
         <td class="left-width text-right">Remarks :</td>
-        <td class="mid-width underline" colspan="3">{{$pdf_data['purchase_order']['remarks']??''}}</td>
+        <td class="mid-width underline">{{$pdf_data['purchase_order']['remarks']??''}}</td>
+        @if($pdf_data['consignment'])
+        <td class="right-width text-right">DR Date :</td>
+        <td class="underline">{{$pdf_data['consignment'] ? date('m/d/Y',strtotime($pdf_data['consignment']['receivedDate'])) : ''}}</td>
+        @endif
       </tr>
     </tbody>
   </table>

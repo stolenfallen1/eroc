@@ -838,7 +838,7 @@ class PurchaseRequestController extends Controller
                             'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                             'is_submitted' => 1,
                         ]);
-                       if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
+                     
                             $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id',$prd->item_Id)->where('isRecommended',1)->first();
 
                             $canvas->update([
@@ -848,7 +848,6 @@ class PurchaseRequestController extends Controller
                             ]);
                             $this->autoCreatePO($pr,$canvas);
 
-                        }
                     } else {
                         $prd->update([
                             'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
@@ -911,12 +910,10 @@ class PurchaseRequestController extends Controller
                         'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
                         'pr_Status_Id' => 6
                     ]);
-                    if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                         $sequence->update([
                             'seq_no' => (int) $sequence->seq_no + 1,
                             'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
                         ]);
-                    }
 
                 } else {
                     $pr->update([

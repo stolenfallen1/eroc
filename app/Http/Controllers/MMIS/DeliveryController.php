@@ -293,7 +293,8 @@ class DeliveryController extends Controller
         if (!$warehouse_item) return response()->json(['error' => 'Item id: ' . $batch['item_Id'] . ' not found in your location'], 200);
 
         $warehouse_item->update([
-            'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+            'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+            'lastsupplierid' => $delivery->rr_Document_Vendor_Id ?? $warehouse_item->lastsupplierid
         ]);
         $batchdetails = ItemBatchModelMaster::where('batch_Number', $batch['batch_Number'])->where('item_Id', $batch['item_Id'])->where('warehouse_id', $delivery->rr_Document_Warehouse_Id)->first();
         $batchqty = 0;
@@ -301,13 +302,13 @@ class DeliveryController extends Controller
             $batchqty = $batchdetails->item_Qty;
         }
 
-        ItemBatchModelMaster::updateOrCreate(
-            [
-                'branch_id'         => $delivery->rr_Document_Branch_Id,
-                'warehouse_id'      => $delivery->rr_Document_Warehouse_Id,
-                'batch_Number'      => $batch['batch_Number'],
-                'item_Id'           => $batch['item_Id'],
-            ],
+        ItemBatchModelMaster::create(
+            // [
+            //     'branch_id'         => $delivery->rr_Document_Branch_Id,
+            //     'warehouse_id'      => $delivery->rr_Document_Warehouse_Id,
+            //     'batch_Number'      => $batch['batch_Number'],
+            //     'item_Id'           => $batch['item_Id'],
+            // ],
             [
                 'branch_id'                 => $delivery->rr_Document_Branch_Id,
                 'warehouse_id'              => $delivery->rr_Document_Warehouse_Id,

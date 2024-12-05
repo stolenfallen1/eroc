@@ -105,7 +105,7 @@ class BatchController extends Controller
 
     public function checkAvailability()
     {
-        if(ItemBatchModelMaster::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item])->exists()){
+        if(ItemBatchModelMaster::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item,'warehouse_id'=>Auth::user()->warehouse_id])->exists()){
             return response()->json(['message' => 'duplicate'], 200);
         }
         return response()->json(['message' => 'available'], 200);

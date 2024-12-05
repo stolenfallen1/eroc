@@ -210,7 +210,8 @@ Route::get('/print-delivery/{id}', function ($pid) {
 
 
     // 12% VAT rate and a discount (adjust as needed)
-    $vatAmount = 0; // 12% VAT
+    $vatAmount = 0; // 12% VAT totalVatAmount
+    $totalVatAmount = 0; // 12% VAT totalVatAmount
     $discount = 0; // 10% discount
 
     // Calculate item totals, discount, VAT, and overall total
@@ -223,23 +224,27 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $freeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 1;
     });
+   
+    $groupedFreeGoods = $freeGoods->groupBy('itemname');
 
     $nonFreeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 0;
     });
-
+    $qty = 0;
     foreach ($nonFreeGoods as $item) {
-    
-        $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
-        $subTotal += (float)$itemTotal;
-        $discount += (float)$item->discount;
-        $vatAmount += (float)$item->vat;
-        $grandTotal += (float)$item->net_amount;
-        if ($item->currency_id == 2) {
-            $currency = '$';
-        }
+        
+            $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
+            $subTotal += (float)$itemTotal;
+            $discount += (float)$item->discount;
+            $vatAmount += (float)$item->vat;
+            $grandTotal += (float)$item->net_amount;
+            if ($item->currency_id == 2) {
+                $currency = '$';
+            }
+      
     }
 
+    $groupedNonFreeGoods = $nonFreeGoods->groupBy('itemname');
     // Calculate overall total
 
     // Prepare the data for the PDF
@@ -248,6 +253,8 @@ Route::get('/print-delivery/{id}', function ($pid) {
         'qr' => $qrSrc,
         'delivery' => $delivery,
         'delivery_items' => $nonFreeGoods,
+        'groupedFreeGoods' => $groupedFreeGoods,
+        'groupedNonFreeGoods' => $groupedNonFreeGoods,
         'free_goods_delivery_items' => $freeGoods,
         'sub_total' => $subTotal,
         'discount' => $discount,

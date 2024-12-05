@@ -591,7 +591,7 @@ class PurchaseRequestController extends Controller
         $po_Document_total_gross_amount = 0;
         $vendor_id = $canvas_details['vendor_id'];  
 
-        $canvas = CanvasMaster::where('pr_request_id', $pr->id)->whereNull('canvas_Level2_CancelledBy')->where('vendor_id',$vendor_id)->get();
+        $canvas = CanvasMaster::where('pr_request_id', $pr->id)->whereNull('canvas_Level2_CancelledBy')->where('vendor_id',$vendor_id)->whereNull('isFreeGoods')->get();
 
         $terms_id  = $canvas_details['terms_id'];           
         $currency_id  = $canvas_details['currency_id'];           

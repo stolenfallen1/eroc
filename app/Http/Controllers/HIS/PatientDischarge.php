@@ -27,7 +27,6 @@ class PatientDischarge extends Controller
     public function __construct() {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
     }
-    //
     public function mayGoHome(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
@@ -329,79 +328,64 @@ class PatientDischarge extends Controller
     public function checkPatientEligibilityForDischarge($id) {
         try {
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
-    
             if (!$patientRegistry) {
                 return response()->json(['message' => 'Record Not Found'], 404);
+            } 
+            
+            $hasMGH = $this->checkHasMGH($patientRegistry);
+            $hasDischarged = $this->checkDischargePatient($patientRegistry);
+
+            if(!$hasMGH && !$hasDischarged) {
+                return response()->json(['isEligible' => 0, 'isDischarged' => 0], 200);
+            } else if($hasMGH && $hasDischarged) {
+                return response()->json(['isEligible' => 0, 'isDischarged' => 1], 200);
+            } else {
+                return response()->json(['isEligible' => 1, 'isDischarged' => 0], 200);
             }
-            $hasMGH = !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
-            $isDischarged = !empty($patientRegistry->discharged_Userid) && !empty($patientRegistry->discharged_Date);
-            if (!$hasMGH && !$isDischarged) {
-                $data = [
-                    'isEligible' => 0, 
-                    'isDischarged' => 0 
-                ];
-                return response()->json($data, 200);
-            }
-            if ($hasMGH && $isDischarged) {
-                $data = [
-                    'isEligible' => 0,
-                    'isDischarged' => 1 
-                ];
-                return response()->json($data, 200);
-            }
-            $data = [
-                'isEligible' => 1,
-                'isDischarged' => 0 
-            ];
-            return response()->json($data, 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'ERROR: ' . $e->getMessage()], 500);
         }
     }
-    
+
     public function getPatientChargesStatus($id) {
         try {
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
             if(!$patientRegistry) {
                 return response()->json(['message' => 'Record Not Found'], 404);
             } else {
-                $hasMGH = !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
+                $hasMGH = $this->checkHasMGH($patientRegistry);
                 if($hasMGH) {
                     $isTagAsMGH = [
                         'isMayGoHome' => 1
                     ]; 
                     return response()->json($isTagAsMGH, 200);
                 } else {
-                    $queryCashAssessment = DB::table('CDG_BILLING.dbo.CashAssessment as ca')
-                    ->select(
-                        'ca.patient_Id',
-                        'ca.case_No',
-                        'ca.revenueID as revenue_Id',
-                        'ca.recordStatus',
-                        'ca.ORNumber',
-                    )
-                    ->where('ca.case_No', '=', $id);
-                    $queryNurseLogBook = DB::table('CDG_PATIENT_DATA.dbo.NurseLogBook as cdgLB')
-                        ->select(
-                            'cdgLB.patient_Id',
-                            'cdgLB.case_No',
-                            'cdgLB.revenue_Id',
-                            'cdgLB.record_Status as recordStatus',
-                            DB::raw('NULL as ORNumber')
-                        )
-                        ->where('cdgLB.case_No', '=', $id);
-                    $dataCharges =$queryCashAssessment
-                    ->unionAll($queryNurseLogBook)
-                    ->get();
-                    if($dataCharges->isEmpty()) {
-                        return response()->json(['message' => 'No pending charges or request'], 404);
-                    }
+                    $dataCharges = $this->getPendingCharges($id);
                     return response()->json($dataCharges, 200);
                 }
             }
-            
         } catch(\Exception $e) {
             return response()->json(['message' => $e->getMessage()]);
         }
     }
+
+    private function checkHasMGH($patientRegistry) {
+        return !empty($patientRegistry->mgh_Userid) && !empty($patientRegistry->mgh_Datetime);
+    }
+
+    private function checkDischargePatient($patientRegistry) {
+        return !empty($patientRegistry->discharged_Userid) && !empty($patientRegistry->discharged_Date);
+    }
+
+    private function getPendingCharges($id) {
+        $queryCashAssessment = DB::table('CDG_BILLING.dbo.CashAssessment as ca')
+            ->select('ca.patient_Id', 'ca.case_No', 'ca.revenueID as revenue_Id', 'ca.recordStatus', 'ca.ORNumber')
+            ->where('ca.case_No', '=', $id);
+
+        $queryNurseLogBook = DB::table('CDG_PATIENT_DATA.dbo.NurseLogBook as cdgLB')
+            ->select('cdgLB.patient_Id', 'cdgLB.case_No', 'cdgLB.revenue_Id', 'cdgLB.record_Status as recordStatus', DB::raw('NULL as ORNumber'))
+            ->where('cdgLB.case_No', '=', $id);
+        return $queryCashAssessment->union($queryNurseLogBook)->get();
+    }
+    
 }

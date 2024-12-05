@@ -302,16 +302,21 @@ class PurchaseRequests
             ->with('purchaseRequestDetails.itemMaster');
         }
       } else {
-        $this->model->where(function ($query) {
-          $query->whereNotNull('pr_DepartmentHead_ApprovedBy');
-        })
-          ->whereNull('pr_Branch_Level2_ApprovedBy')
-          ->whereNull('pr_Branch_Level2_CancelledBy')
-          ->where('invgroup_id', 2)
-          ->whereNull('pr_Branch_Level1_ApprovedBy')
-          ->whereNull('pr_Branch_Level1_CancelledBy')
-          ->whereNotNull('pr_DepartmentHead_ApprovedBy')
-          ->with('purchaseRequestDetails.itemMaster', 'purchaseRequestDetails.changedRecommendedCanvas', 'purchaseRequestDetails.changedRecommendedCanvas.vendor');
+        $this->model
+        ->whereNull('pr_Branch_Level2_ApprovedBy')
+        ->whereNull('pr_Branch_Level2_CancelledBy')
+        ->where('invgroup_id', 2)
+        ->whereNull('pr_Branch_Level1_ApprovedBy')
+        ->whereNull('pr_Branch_Level1_CancelledBy')
+        ->whereNotNull('pr_DepartmentHead_ApprovedBy')
+        ->with([
+            'purchaseRequestDetails'=>function($query){
+              $query->where('pr_DepartmentHead_ApprovedBy','!=','')->where(['pr_DepartmentHead_CancelledBy' => null]);
+            },
+            'purchaseRequestDetails.itemMaster',
+            'purchaseRequestDetails.changedRecommendedCanvas',
+            'purchaseRequestDetails.changedRecommendedCanvas.vendor'
+        ]);
       }
     }
     // Apply the common ordering

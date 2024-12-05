@@ -773,6 +773,8 @@ class PurchaseRequestController extends Controller
             $items = isset($request->items) ? $request->items : $request->purchase_request_details;
             foreach ($items as $key => $item) {
                 $prd  = PurchaseRequestDetails::where('id', $item['id'])->first();
+                
+                $pr  = PurchaseRequest::where('id',$prd->pr_request_id)->first();
                 // return Auth::user()->role->name;
                 if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant) {
                     // if($this->role->pharmacy_warehouse()){

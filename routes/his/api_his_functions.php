@@ -76,6 +76,7 @@ Route::controller(PharmacyController::class)->group(function() {
     Route::get('get-er-pharmacy-orders', 'getEROrders');
     Route::get('get-pharmacy-posted-meds', 'getPostedMedicineByCaseNo');
     Route::get('get-ipd-pharmacy-orders', 'getIPDOrders');
+    Route::get('pharmacy-unit-dose-report', 'printDailyPatientUnitDoseReport');
     Route::post('carry-pharmacy-order', 'carryOrder');
     Route::post('cancel-pharmacy-order', 'cancelOrder');
     Route::post('post-return-medicine', 'postReturnMedicine');

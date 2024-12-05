@@ -197,24 +197,18 @@ class AncillaryController extends Controller
                 return response()->json(['msg' => 'Patient not found'], 404);
             }
     
-            $patient_Type = $patient_details->mscAccount_Trans_Types == 2 ? 'O' :
-                            ($patient_details->mscAccount_Trans_Types == 5 ? 'E' : 'I');
-    
-            $medicine_data = InventoryTransaction::where('patient_Registry_Id', $case_No)
+            $supplies_data = InventoryTransaction::where('patient_Registry_Id', $case_No)
+                            ->where('transaction_Acctg_TransType', 'CS')
                             ->orderBy('created_at', 'desc')
                             ->get();
 
-            $medicine_data->each(function ($item) use ($case_No) {
+            $supplies_data->each(function ($item) use ($case_No) {
                 $item->load(['nurse_logbook' => function ($query) use ($item, $case_No) {
                     $query->where('case_No', $case_No)
                         ->whereNotNull('requestNum')
                         ->where('item_Id', $item->transaction_Item_Id);
                 }]);
             });
-    
-            if ($medicine_data->isEmpty()) {
-                return response()->json(['msg' => 'No supplies found for this case'], 404);
-            }
     
             $response = [
                 'patient_details' => [
@@ -229,7 +223,7 @@ class AncillaryController extends Controller
                     'mscAccount_Trans_Types' => $patient_details->mscAccount_Trans_Types,
                     'discharged_Userid' => $patient_details->discharged_Userid,
                     'discharged_Date' => $patient_details->discharged_Date,
-                    'inventory_data' => $medicine_data->toArray(),
+                    'inventory_data' => $supplies_data->toArray(),
                 ],
             ];
     
@@ -541,7 +535,7 @@ class AncillaryController extends Controller
                         tbNurseLogBook::create([
                             'Hospnum'                   => $patient_Id,
                             'IDnum'                     => $case_No . 'B',
-                            'PatientType'               => $patient_Type,
+                            'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                             'RevenueID'                 => $revenue_Id,
                             'RequestDate'               => $today,
                             'ItemID'                    => $item_Id,
@@ -558,7 +552,7 @@ class AncillaryController extends Controller
                         tbNurseCommunicationFile::create([
                             'Hospnum'                   => $patient_Id,
                             'IDnum'                     => $case_No . 'B',
-                            'PatientType'               => $patient_Type,
+                            'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                             'ItemID'                    => $item_Id,
                             'Amount'                    => $return_total_amount * -1,
                             'Quantity'                  => $Quantity_To_return * -1,

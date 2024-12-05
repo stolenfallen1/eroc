@@ -5,6 +5,7 @@ namespace App\Models\HIS\services;
 use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\HospitalPatientCategories;
 use App\Models\HIS\his_functions\LaboratoryMaster;
+use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\HIS\PatientAdministeredMedicines;
 use App\Models\HIS\PatientAllergies;
 use App\Models\HIS\PatientHistory;
@@ -65,6 +66,9 @@ class PatientRegistry extends Model
     }
     public function inventoryTransactions() {
         return $this->hasMany(InventoryTransaction::class, 'patient_Registry_Id', 'case_No');
+    }
+    public function nurse_logbook() {
+        return $this->hasMany(NurseLogBook::class, 'case_No', 'case_No');
     }
     public function accountType() {
         return $this->belongsTo(AccountType::class, 'mscAccount_type', 'id');

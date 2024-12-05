@@ -390,6 +390,9 @@ class PurchaseRequests
       $q->with(['itemMaster', 'changedRecommendedCanvas', 'changedRecommendedCanvas.vendor']) // Correctly reference nested relationships
         ->whereNotNull('pr_DepartmentHead_ApprovedBy'); // Simplified where condition
     }]);
+    $this->model->whereHas('purchaseRequestDetails', function ($q1) {
+      $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where(['pr_DepartmentHead_CancelledBy' => null]);
+    });
     // $this->model->with(['purchaseRequestDetails' => function ($q) {
     //   $q->with('itemMaster','purchaseRequestDetails.changedRecommendedCanvas','purchaseRequestDetails.changedRecommendedCanvas.vendor')
     //     ->where(function ($q) {

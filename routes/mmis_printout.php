@@ -194,7 +194,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     // Decrypt the ID from the encrypted parameter
     $id = Crypt::decrypt($pid);
     // Fetch the delivery details along with related models
-    $delivery = VwDeliveryMaster::with('items')->where('id', $id)->first();
+    $delivery = VwDeliveryMaster::with('items',','warehouse')->where('id', $id)->first();
 
     // Generate the QR code for the delivery
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);

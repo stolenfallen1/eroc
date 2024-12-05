@@ -404,7 +404,7 @@
         <th rowspan="2" width="40">Code</th>
         <th rowspan="2">Item Description</th>
         <th rowspan="2">UOM</th>
-        <th colspan="2">Batch Information</th>
+        <th colspan="3">Batch Information</th>
         <th>QUANTITY</th>
         <th rowspan="1" class="border-bottom-none">UNIT </th>
         <th rowspan="1" class="border-bottom-none">DISC.</th>
@@ -413,6 +413,7 @@
       </tr>
       <tr>
         <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
+        <th rowspan="1" class="border-top-none border-bottom-none" width="50">QTY</th>
         <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
         <th rowspan="1" class="border-top-none">FREE</th>
         <th rowspan="1" class="border-top-none">PRICE</th>
@@ -465,12 +466,12 @@
 
     @else
     <tr>
-      <td colspan="13"> No Record found</td>
+      <td colspan="11"> No Record found</td>
     </tr>
     @endif
     <tr>
       <td colspan="7" class="border-none"></td>
-      <td colspan="3" class="item-td border-none"><br></td>
+      <td colspan="4" class="item-td border-none"><br></td>
     </tr>
   </table>
   @endif

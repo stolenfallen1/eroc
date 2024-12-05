@@ -294,6 +294,7 @@ class DeliveryController extends Controller
 
         $warehouse_item->update([
             'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+            'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
             'lastsupplierid' => $delivery->rr_Document_Vendor_Id ?? $warehouse_item->lastsupplierid
         ]);
         $batchdetails = ItemBatchModelMaster::where('batch_Number', $batch['batch_Number'])->where('item_Id', $batch['item_Id'])->where('warehouse_id', $delivery->rr_Document_Warehouse_Id)->first();

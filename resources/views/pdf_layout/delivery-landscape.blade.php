@@ -175,7 +175,7 @@
 
     .item-section td {
       text-transform: uppercase !important;
-      font-size:9px !important;
+      font-size: 9px !important;
       padding: 4px;
     }
 
@@ -227,6 +227,14 @@
   <table class="info-section">
     <tbody>
       <tr>
+        <td class="left-width text-right">DEPARTMENT:</td>
+        <td class="mid-width underline">{{$pdf_data['delivery']['warehouse'] ? $pdf_data['delivery']['warehouse']['warehouse_description'] : ''}}</td>
+        <td class="right-width  text-right"></td>
+        <td class=""></td>
+        <td class="right-width  text-right"></td>
+        <td class=""></td>
+      </tr>
+      <tr>
         <td class="left-width text-right">Supplier Name. :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['vendor_Name']}}</td>
         <td class="right-width  text-right">INVOICE No. :</td>
@@ -270,15 +278,16 @@
         <th rowspan="2" width="40">Code</th>
         <th rowspan="2">Item Description</th>
         <th rowspan="2">UOM</th>
-        <th colspan="2">Batch Information</th>
+        <th colspan="3">Batch Information</th>
         <th colspan="4">QUANTITY</th>
-        <th rowspan="2" class="border-bottom-none">UNIT PRICE</th>
+        <th rowspan="2" class="border-bottom-none">PRICE</th>
         <th rowspan="2" class="border-bottom-none">DISC. AMOUNT</th>
-        <th rowspan="2">NET PRICE</th>
-        <th rowspan="2">Amount</th>
+        <th rowspan="2">VAT AMOUNT</th>
+        <th rowspan="2">NET Amount</th>
       </tr>
       <tr>
         <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
+        <th rowspan="1" class="border-top-none border-bottom-none" width="50">QTY</th>
         <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
         <th rowspan="1" class="border-top-none">ORDER</th>
         <th rowspan="1" class="border-top-none">RECEIVED</th>
@@ -286,49 +295,105 @@
         <th rowspan="1" class="border-top-none">BALANCE</th>
       </tr>
     </thead>
+
     <tbody>
-      @if(count($pdf_data['delivery_items']) > 0)
-      @php $total = 0; @endphp;
-      @foreach ($pdf_data['delivery_items'] as $detail)
-
-
+      @if(count($pdf_data['groupedNonFreeGoods']) > 0)
+      @foreach ($pdf_data['groupedNonFreeGoods'] as $itemName => $items)
+      @foreach ($items as $index => $item)
       @php
-      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$detail['po_Document_Number'])->where('itemcode',$detail['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
       $expirydate = '';
       $batchno = '';
-      if($detail['expirydate']) {
-      $expirydate = $detail['ismedicine'] ? date('m-d-Y',strtotime($detail['expirydate'])) : '';
-      $batchno = $detail['ismedicine'] ? $detail['batchno'] : '';
+      $qty = '';
+      if($batchdetails) {
+     
       }
       @endphp
       <tr>
-        <td class="item-td">{{ $detail['itemcode'] }}</td>
-        <td class="item-td">{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
-        <td class="item-td">{{ $detail['uom'] }}</td>
-        <td class="item-td">{{ $batchno }}</td>
-        <td class="item-td">{{ $expirydate }}</td>
-        <td class="item-td">{{ $detail['order_qty'] }}</td>
-        <td class="item-td">{{ $detail['served_qty'] }}</td>
-        <td class="item-td">{{ $total }}</td>
-        <td class="item-td">{{ ($detail['order_qty'] - $total) }}</td>
-        <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
-        <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
-        <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>
-        <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['net_amount'],2) }}</td>
+        @if ($index == 0)
+        <td class="item-td" rowspan="{{ count($items) }}">{{ $item['itemcode'] }}</td>
+        <td class="item-td" rowspan="{{ count($items) }}">{{ $itemName }}</td>
+        @endif
+        <!-- Display individual item details -->
+        <td class="item-td">{{ $item['uom'] }}</td>
+        <td class="item-td">
+          @foreach($batchdetails  as $batch)
+            <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td">
+          @foreach($batchdetails  as $batch)
+            <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td">
+          @foreach($batchdetails  as $batch)
+            <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td ">{{ $item['order_qty'] }}</td>
+        <td class="item-td ">{{ $item['served_qty'] }}</td>
+        <td class="item-td ">{{ $total }}</td>
+        <td class="item-td ">{{ ($item['order_qty'] - $total) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],2) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],2) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vat'],2) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],2) }}</td>
       </tr>
       @endforeach
+      @endforeach
+
       @else
       <tr>
-        <td colspan="13"> No Record found</td>
+        <td colspan="14"> No Record found</td>
       </tr>
       @endif
       <tr>
-        <td colspan="13" class="border-none"><br></td>
+        <td colspan="14" class="border-none"><br></td>
       </tr>
-     
     </tbody>
   </table>
-  
+  <table>
+    <tr>
+      <td class="border-none text-right"></td>
+      <td class="border-none  text-left "> </td>
+      <td colspan="8" class="border-none text-right">Gross Amount :</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+    </tr>
+
+    <tr>
+      <td colspan="10" width="150" class="border-none  text-right">Less : Discount :</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+    </tr>
+    <tr>
+      <td colspan="10" width="150" class="border-none  text-right"></td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['discount']), 2)}}</td>
+    </tr>
+    <tr>
+      <td colspan="10" width="150" class="border-none  text-right"></td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left"><br></td>
+    </tr>
+
+    <tr>
+      <td colspan="10" width="150" class=" border-none  text-right">VAT SALES:</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}</td>
+    </tr>
+    <tr>
+      <td colspan="10" width="150" class=" border-none  text-right">VAT :</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
+    </tr>
+    <!-- <tr>
+      <td class="border-none text-right"></td>
+      <td class="border-none  text-left "> </td>
+      <td colspan="8" class="border-none text-right">SubTotal (Vat Exclusive):</td>
+      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+    </tr> -->
+    <tr>
+      <td colspan="10" class="border-none  text-right">TOTAL AMOUNT DUE :</td>
+      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
+    </tr>
+  </table>
   @if(count($pdf_data['free_goods_delivery_items']) > 0)
   <table class="item-section">
     <thead>
@@ -354,28 +419,55 @@
         <th rowspan="1" class="border-top-none">AMOUNT</th>
       </tr>
     </thead>
-    @foreach ($pdf_data['free_goods_delivery_items'] as $detail)
+    @if(count($pdf_data['groupedFreeGoods']) > 0)
+    @foreach ($pdf_data['groupedFreeGoods'] as $itemName => $items)
+    @foreach ($items as $index => $item)
     @php
+    $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+    $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
     $expirydate = '';
     $batchno = '';
-    if($detail['expirydate']) {
-    $expirydate = $detail['ismedicine'] ? date('m-d-Y',strtotime($detail['expirydate'])) : '';
-    $batchno = $detail['ismedicine'] ? $detail['batchno'] : '';
+    if($item['expirydate']) {
+    $expirydate = $item['ismedicine'] ? date('m-d-Y',strtotime($item['expirydate'])) : '';
+    $batchno = $item['ismedicine'] ? $item['batchno'] : '';
     }
     @endphp
     <tr>
-      <td class="item-td">{{ $detail['itemcode'] }}</td>
-      <td class="item-td">{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
-      <td class="item-td">{{ $detail['uom'] }}</td>
-      <td class="item-td">{{ $batchno }}</td>
-      <td class="item-td">{{ $expirydate }}</td>
-      <td class="item-td">{{ $detail['served_qty'] }}</td>
-      <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
-      <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['discount'],2) }}</td>
-      <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['gross_amount'],2) }}</td>
-      <td class="item-td">{{$pdf_data['currency']}}{{ number_format($detail['net_amount'],2) }}</td>
+      @if ($index == 0)
+      <td class="item-td" rowspan="{{ count($items) }}">{{ $item['itemcode'] }}</td>
+      <td class="item-td" rowspan="{{ count($items) }}">{{ $itemName }}</td>
+      @endif
+      <!-- Display individual item details -->
+      <td class="item-td">{{ $item['uom'] }}</td>
+      <td class="item-td">
+        @foreach($batchdetails  as $batch)
+          <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
+        @endforeach
+      </td>
+      <td class="item-td">
+        @foreach($batchdetails  as $batch)
+          <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+        @endforeach
+      </td>
+      <td class="item-td">
+        @foreach($batchdetails  as $batch)
+          <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+        @endforeach
+      </td>
+      <td class="item-td ">{{ $item['served_qty'] }}</td>
+      <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],2) }}</td>
+      <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],2) }}</td>
+      <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['gross_amount'],2) }}</td>
+      <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],2) }}</td>
     </tr>
     @endforeach
+    @endforeach
+
+    @else
+    <tr>
+      <td colspan="13"> No Record found</td>
+    </tr>
+    @endif
     <tr>
       <td colspan="7" class="border-none"></td>
       <td colspan="3" class="item-td border-none"><br></td>
@@ -384,28 +476,19 @@
   @endif
   <table>
     <tr>
-      <td class="border-none text-right">Received By</td>
-      <td class="border-none  text-left "> : {{ucwords($pdf_data['delivery']['receivedBy'])}}</td>
-      <td colspan="8" class="border-none text-right">SubTotal :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+      <td class="border-none text-left">Received By : {{ucwords($pdf_data['delivery']['receivedBy'])}}</td>
+      <td class="border-none  text-left "></td>
+      <td colspan="8" class="border-none text-right"></td>
+      <td colspan="2" class="text-left"></td>
     </tr>
 
     <tr>
-      <td class="border-none  text-right">Printed Date</td>
-      <td class="border-none  text-left"> : {{ date('m-d-Y H:i:s A')}}</td>
-      <td colspan="8" class="border-none  text-right">Total Discount :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+      <td class="border-none  text-left">Printed Date : {{ date('m-d-Y H:i:s A')}}</td>
+      <td class="border-none  text-left"> </td>
+      <td colspan="8" class="border-none  text-right"></td>
+      <td colspan="2" class="text-left"></td>
     </tr>
 
-    <tr>
-      <td colspan="10" class=" border-none  text-right">Total Vat :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
-    </tr>
-
-    <tr>
-      <td colspan="10" class="border-none  text-right">TOTAL AMOUNT DUE :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
-    </tr>
   </table>
   <!-- <p class="csstransforms">THIS DOCUMENT IS NOT VALID <br/> FOR CLAIM OF INPUT TAXES</p> -->
   <div class="spacer"></div>

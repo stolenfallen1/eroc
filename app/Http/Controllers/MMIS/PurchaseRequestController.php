@@ -719,7 +719,7 @@ class PurchaseRequestController extends Controller
                 ]);
             } 
         }
-        $getFreeGoods = CanvasMaster::where('pr_request_id',$pr->id)->where('vendor_id',$vendor_id)->where('isFreeGoods',1)->get();
+        $getFreeGoods = CanvasMaster::where('pr_request_id',$pr->id)->where('vendor_id',$vendor_id)->whereNull('canvas_Level2_CancelledBy')->where('isFreeGoods',1)->get();
                 
         if(count($getFreeGoods) > 0){
             $PurchaseOrderDetails = PurchaseOrderDetails::where('po_id',$po->id)->first();
@@ -838,7 +838,7 @@ class PurchaseRequestController extends Controller
                             'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                             'is_submitted' => 1,
                         ]);
-                        if ($this->role->pharmacy_warehouse()){
+                       if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                             $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id',$prd->item_Id)->where('isRecommended',1)->first();
 
                             $canvas->update([
@@ -911,7 +911,7 @@ class PurchaseRequestController extends Controller
                         'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
                         'pr_Status_Id' => 6
                     ]);
-                    if ($this->role->pharmacy_warehouse()){
+                    if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                         $sequence->update([
                             'seq_no' => (int) $sequence->seq_no + 1,
                             'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),

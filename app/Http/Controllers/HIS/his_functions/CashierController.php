@@ -332,10 +332,12 @@ class CashierController extends Controller
                                         'created_at'                            => $transDate,
                                         'createdBy'                             => Auth()->user()->idnumber,
                                     ]);
+                                    // Also "O" daw ang patient_Type sa Emergency for meds and supplies para sa medsys
+                                    // So here gi override nako
                                     tbNurseLogBook::create([
                                         'HospNum'                   => $patient_Id,
                                         'IDnum'                     => $case_No . 'B',
-                                        'PatientType'               => $patient_Type,
+                                        'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                                         'ItemID'                    => $itemID,
                                         'Description'               => $description,
                                         'Quantity'                  => $quantity,
@@ -353,7 +355,7 @@ class CashierController extends Controller
                                     tbNurseCommunicationFile::create([
                                         'HospNum'                   => $patient_Id,
                                         'IDnum'                     => $case_No . 'B',
-                                        'PatientType'               => $patient_Type,
+                                        'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                                         'ItemID'                    => $itemID,
                                         'Amount'                    => $item_amount,
                                         'Quantity'                  => $quantity,
@@ -437,7 +439,7 @@ class CashierController extends Controller
                                     tbNurseLogBook::create([
                                         'HospNum'                   => $patient_Id,
                                         'IDnum'                     => $case_No . 'B',
-                                        'PatientType'               => $patient_Type,
+                                        'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                                         'RevenueID'                 => $revenueID,
                                         'RequestDate'               => $transDate,
                                         'ItemID'                    => $itemID,
@@ -455,7 +457,7 @@ class CashierController extends Controller
                                     tbNurseCommunicationFile::create([
                                         'HospNum'                   => $patient_Id,
                                         'IDnum'                     => $case_No . 'B',
-                                        'PatientType'               => $patient_Type,
+                                        'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                                         'ItemID'                    => $itemID,
                                         'Amount'                    => $item_amount,
                                         'Quantity'                  => $quantity,

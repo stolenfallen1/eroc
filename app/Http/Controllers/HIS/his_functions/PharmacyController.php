@@ -386,7 +386,7 @@ class PharmacyController extends Controller
                         ->update([
                             'remarks'           => $remarks,
                             'record_Status'     => 'R',
-                            'requestNum'        => $requestNum . '[REVOKED]',
+                            'requestNum'        => $requestNum,
                             'cancelBy'          => Auth()->user()->idnumber,
                             'cancelDate'        => $today,
                             'updatedat'         => $today,
@@ -400,7 +400,7 @@ class PharmacyController extends Controller
                         ->update([
                             'remarks'           => $remarks,
                             'record_Status'     => 'R',
-                            'requestNum'        => $requestNum . '[REVOKED]',
+                            'requestNum'        => $requestNum,
                             'cancelBy'          => Auth()->user()->idnumber,
                             'cancelDate'        => $today,
                             'updatedat'         => $today,
@@ -415,7 +415,7 @@ class PharmacyController extends Controller
                                 ->where('ItemID', $item_Id)
                                 ->update([
                                     'Remarks'           => $remarks,
-                                    'RequestNum'        => $requestNum . '[REVOKED]',
+                                    'RequestNum'        => $requestNum,
                                     'RecordStatus'      => 'R',
                                 ]);
 
@@ -425,7 +425,7 @@ class PharmacyController extends Controller
                                 ->where('ItemID', $item_Id)
                                 ->update([
                                     'Remarks'           => $remarks,
-                                    'RequestNum'        => $requestNum . '[REVOKED]',
+                                    'RequestNum'        => $requestNum,
                                     'RecordStatus'      => 'R',
                                 ]);
                         endif;
@@ -444,6 +444,7 @@ class PharmacyController extends Controller
     {
         try {
             $case_No = $request->query('case_No');
+
             $patient_details = PatientRegistry::with('patient_details')
                         ->where('case_No', $case_No)
                         ->first();
@@ -452,13 +453,18 @@ class PharmacyController extends Controller
                 return response()->json(['msg' => 'Patient not found'], 404);
             }
 
-            $medicine_data = InventoryTransaction::with('nurse_logbook')
-                ->where('patient_Registry_Id', $case_No)
-                ->whereHas('nurse_logbook', function ($query) {
-                    $query->where('record_Status', 'W');
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $medicine_data = InventoryTransaction::where('patient_Registry_Id', $case_No)
+                            ->where('transaction_Acctg_TransType', 'PH')
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+
+            $medicine_data->each(function ($item) use ($case_No) {
+                $item->load(['nurse_logbook' => function ($query) use ($item, $case_No) {
+                    $query->where('case_No', $case_No)
+                        ->whereNotNull('requestNum')
+                        ->where('item_Id', $item->transaction_Item_Id);
+                }]);
+            });
 
                 $response = [
                     'patient_details' => [
@@ -470,6 +476,7 @@ class PharmacyController extends Controller
                         'birthdate' => $patient_details->patient_details->birthdate,
                         'doctor' => $patient_details->attending_Doctor_fullname,
                         'mscPrice_Schemes' => $patient_details->mscPrice_Schemes,
+                        'mscAccount_Trans_Types' => $patient_details->mscAccount_Trans_Types,
                         'discharged_Userid' => $patient_details->discharged_Userid,
                         'discharged_Date' => $patient_details->discharged_Date,
                         'inventory_data' => $medicine_data->toArray(),
@@ -495,15 +502,14 @@ class PharmacyController extends Controller
             $case_No = $request->payload['case_No'];
             $patient_Name = $request->payload['patient_Name'];
             $remarks = $request->payload['remarks'];
+            $patient_Type = $request->payload['patient_Type'] == 2 ? 'O' : ($request->payload['patient_Type'] == 5 ? 'E' : 'I');
 
             if (isset($request->payload['Items']) && count($request->payload['Items']) > 0) {
                 foreach ($request->payload['Items'] as $items) {
                     if (isset($items['nurse_logbook'])) {
-                        $requestNum = $items['nurse_logbook']['requestNum'];
-                        $referenceNum = $items['nurse_logbook']['referenceNum'];
-                        $patient_Type = $items['nurse_logbook']['patient_Type'];
                         $description = $items['nurse_logbook']['description'];
                     }
+                    $referenceNum = $items['trasanction_Reference_Number'];
                     $warehouse_Id = $items['warehouse_Id'];
                     $revenue_Id = $items['transaction_Acctg_TransType'];
                     $item_Id = $items['transaction_Item_Id'];
@@ -519,10 +525,9 @@ class PharmacyController extends Controller
                         'patient_Name'          => $patient_Name,
                         'patient_Type'          => $patient_Type,
                         'revenue_Id'            => $revenue_Id,
-                        'requestNum'            => $requestNum,
                         'referenceNum'          => $referenceNum,
                         'item_Id'               => $item_Id,
-                        'description'           => $description . '[RETURNED]',
+                        'description'           => $description,
                         'Quantity'              => $Quantity_To_return * -1,
                         'item_ListCost'         => $list_cost,
                         'price'                 => $price,
@@ -552,7 +557,6 @@ class PharmacyController extends Controller
                         'record_Status'         => 'W',
                         'remarks'               => $remarks,
                         'user_Id'               => Auth()->user()->idnumber,
-                        'requestNum'            => $requestNum,
                         'referenceNum'          => $referenceNum,
                         'createdat'             => $today,
                         'createdby'             => Auth()->user()->idnumber,
@@ -578,11 +582,11 @@ class PharmacyController extends Controller
                         tbNurseLogBook::create([
                             'Hospnum'                   => $patient_Id,
                             'IDnum'                     => $case_No . 'B',
-                            'PatientType'               => $patient_Type,
+                            'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                             'RevenueID'                 => $revenue_Id,
                             'RequestDate'               => $today,
                             'ItemID'                    => $item_Id,
-                            'Description'               => $description . '[RETURNED]',
+                            'Description'               => $description,
                             'Quantity'                  => $Quantity_To_return * -1,
                             'Amount'                    => $return_total_amount * -1,
                             'RecordStatus'              => 'W',
@@ -591,13 +595,12 @@ class PharmacyController extends Controller
                             'ProcessBy'                 => Auth()->user()->idnumber,
                             'ProcessDate'               => $today,
                             'Remarks'                   => $remarks,
-                            'RequestNum'                => $requestNum,
                             'ReferenceNum'              => $referenceNum,
                         ]);
                         tbNurseCommunicationFile::create([
                             'Hospnum'                   => $patient_Id,
                             'IDnum'                     => $case_No . 'B',
-                            'PatientType'               => $patient_Type,
+                            'PatientType'               => $patient_Type == 'E' ? 'O' : $patient_Type,
                             'ItemID'                    => $item_Id,
                             'Amount'                    => $return_total_amount * -1,
                             'Quantity'                  => $Quantity_To_return * -1,
@@ -606,7 +609,6 @@ class PharmacyController extends Controller
                             'RevenueID'                 => $revenue_Id,
                             'RecordStatus'              => 'W',
                             'UserID'                    => Auth()->user()->idnumber,
-                            'RequestNum'                => $requestNum,
                             'ReferenceNum'              => $referenceNum,
                             'Remarks'                   => $remarks,
                         ]);
@@ -640,5 +642,43 @@ class PharmacyController extends Controller
             DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+    public function printPatientUnitDoseReport(Request $request) 
+    {
+        // NOT YET DONE
+        try {
+            $patient_Type = $request->query('patient_Type');
+            if ($patient_Type) {
+                $patient_Type = $patient_Type == 1 ? 'O' : ($patient_Type == 2 ? 'E' : 'I');
+            }
+
+            $transactions = PatientRegistry::with('patient_details', 'nurse_logbook')
+                ->whereNotNull('case_No')
+                ->whereHas('nurse_logbook', function ($query) use ($patient_Type) {
+                    $query->where('patient_Type', $patient_Type)
+                        ->where('record_Status', 'W')
+                        ->where('revenue_Id', 'PH');
+                })
+                ->get()
+                ->orderBy('created_at', 'desc');
+
+            $pdf_data = [
+                'transactions' => $transactions,
+                'title' => 'Pharmacy',
+                'sub_title' => 'Patient Unit Dose Report',
+                'revenueID' => 'PH',
+                'currency' => '₱',
+                'printed_By' => Auth()->user()->idnumber,
+            ];
+
+            $pdf = PDF::loadView('his.report.pharmacy.patient_unit_dose_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
+            $pdf->render();
+            return $pdf->stream('Patient Unit Dose Report' . '.pdf');
+
+            
+
+        } catch(\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        } 
     }
 }

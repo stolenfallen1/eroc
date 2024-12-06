@@ -236,7 +236,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
             $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
             $subTotal += (float)$itemTotal;
             $discount += (float)$item->discount;
-            $vatAmount += (float)$item->vat;
+            $vatAmount += (float)$item->vatamount;
             $grandTotal += (float)$item->net_amount;
             if ($item->currency_id == 2) {
                 $currency = '$';

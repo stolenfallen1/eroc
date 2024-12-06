@@ -338,7 +338,7 @@
         <td class="item-td ">{{ ($item['order_qty'] - $total) }}</td>
         <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],2) }}</td>
         <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],2) }}</td>
-        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vat'],2) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vatamount'],2) }}</td>
         <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],2) }}</td>
       </tr>
       @endforeach

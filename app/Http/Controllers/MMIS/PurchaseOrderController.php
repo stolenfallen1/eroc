@@ -243,6 +243,7 @@ class PurchaseOrderController extends Controller
                             return round($item['recommended_canvas']['canvas_item_net_amount'], 4);
                         }, $purchase_order['items']));
                     }
+
                     $vendor = Vendors::where('id',$purchase_order['po_Document_vendor_id'])->first();
                     $po = purchaseOrderMaster::whereNull('comptroller_approved_by')->updateOrCreate(
                         [

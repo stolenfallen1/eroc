@@ -662,7 +662,7 @@ class PurchaseRequestController extends Controller
                             'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $item['item_Request_Department_Approved_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                             'is_submitted' => 1,
                         ]);
-                        if ($this->role->pharmacy_warehouse()){
+                        // if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                             $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id',$prd->item_Id)->where('isRecommended',1)->first();
 
                             $canvas->update([
@@ -672,7 +672,7 @@ class PurchaseRequestController extends Controller
                             ]);
                             $this->autoCreatePO($pr,$canvas);
 
-                        }
+                        // }
                     } else {
                         $prd->update([
                             'pr_Branch_Level2_CancelledBy' => Auth::user()->idnumber,
@@ -735,7 +735,7 @@ class PurchaseRequestController extends Controller
                         'pr_Branch_Level2_ApprovedDate' => Carbon::now(),
                         'pr_Status_Id' => 6
                     ]);
-                    if ($this->role->pharmacy_warehouse()){
+                    if (!Auth()->user()->isDepartmentHead && Auth()->user()->isConsultant){
                         $sequence->update([
                             'seq_no' => (int) $sequence->seq_no + 1,
                             'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
@@ -780,7 +780,7 @@ class PurchaseRequestController extends Controller
         $po_Document_total_gross_amount = 0;
         $vendor_id = $canvas_details['vendor_id'];  
 
-        $canvas = CanvasMaster::where('pr_request_id', $pr->id)->where('vendor_id',$vendor_id)->get();
+        $canvas = CanvasMaster::where('pr_request_id', $pr->id)->whereNull('canvas_Level2_CancelledBy')->where('vendor_id',$vendor_id)->whereNull('isFreeGoods')->get();
 
         $terms_id  = $canvas_details['terms_id'];           
         $currency_id  = $canvas_details['currency_id'];           
@@ -909,7 +909,6 @@ class PurchaseRequestController extends Controller
             } 
         }
         $getFreeGoods = CanvasMaster::where('pr_request_id',$pr->id)->where('vendor_id',$vendor_id)->where('isFreeGoods',1)->get();
-                
         if(count($getFreeGoods) > 0){
             $PurchaseOrderDetails = PurchaseOrderDetails::where('po_id',$po->id)->first();
             foreach ($getFreeGoods as $item) {
@@ -974,7 +973,7 @@ class PurchaseRequestController extends Controller
                 'requested_date' => Carbon::now(),
                 'canvas_Branch_Id' => Auth()->user()->branch_id,
                 'canvas_Warehouse_Group_Id' => Request()->warehouse['warehouse_Group_Id'] ?? '1',
-                'canvas_Warehouse_Id' =>  Request()->warehouse_Id,
+                'canvas_Warehouse_Id' =>  $item['warehouse_id'],
                 'vendor_id' => $vendor->id,
                 'pr_request_id' => $pr_id,
                 'pr_request_details_id' => $item['id'],
@@ -1091,29 +1090,33 @@ class PurchaseRequestController extends Controller
                         'item_Request_Department_Approved_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'] ?? $item['item_Request_UnitofMeasurement_Id'],
                     ]);
 
+
+
                     // $discount_amount = 0;
+                    // $total_discount = 0;
                     // $vat_amount = 0;
                     // $total_amount = $listcost * $qty;
-                    
-                    // Handle VAT based on vat_type
+
+                    // // Handle VAT based on vat_type
                     // if ($canvas->vat_type == 1) { // Exclusive VAT
-                    //     $vat_amount = $total_amount * ($vat / 100);
-                    //     $total_amount += $vat_amount; // Add VAT to total amount
+                    //     $vat_amount     = $total_amount * ($vat / 100);
+                    //     $total_amount   += $vat_amount;
                     // } elseif ($canvas->vat_type == 2) { // Inclusive VAT
-                    //     // Extract VAT from total amount
-                    //     $vat_amount = $total_amount * ($vat / (100 + $vat));
-                    //     $total_amount = $total_amount - $vat_amount; // Subtract VAT from total amount
+                    //     $vat_amount     = $total_amount * ($vat / (100 + $vat)); // Extract VAT from total
                     // } elseif ($canvas->vat_type == 3) { // Exempt VAT
-                    //     $vat_amount = 0; // No VAT for exempt
+                    //     $vat_amount     = 0; // No VAT for exempt
                     // }
-                    
+
                     // // Apply discount if applicable
                     // if ($discount) {
-                    //     $discount_amount = $total_amount * ($discount / 100); // Calculate discount on net amount (before discount)
+                    //     $discount_amount         = $total_amount * ($discount / 100);
+                    //     $total_discount += $discount_amount;
                     // }
-                    
-                    // // Calculate total net amount after applying the discount
-                    // $total_net = $total_amount - $discount_amount;
+
+                    // $total_net                   = $total_amount - $discount_amount;
+
+                    // // Calculate final total amount including VAT
+                    // $canvas_item_total_amount = ($total_amount - $discount_amount) + $vat_amount;
                     // CanvasMaster::where(
                     //     [
                     //         'pr_request_details_id' => $prd->id,
@@ -1170,6 +1173,16 @@ class PurchaseRequestController extends Controller
                     'pr_Branch_Level1_CancelledBy' => 'auto',
                     'pr_Branch_Level1_CancelledDate' => Carbon::now(),
                 ]);
+
+                if ($this->role->pharmacy_warehouse()) {
+                    $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id', $prd->item_Id)->where('vendor_id', $prd->prepared_supplier_id)->first();
+                    $canvas->update(
+                       [
+                        'canvas_Level2_CancelledBy' => Auth::user()->idnumber,
+                        'canvas_Level2_CancelledDate' => Carbon::now()
+                       ]
+                    );
+                }
             }
         }
 
@@ -1199,6 +1212,7 @@ class PurchaseRequestController extends Controller
                 'pr_DepartmentHead_Cancelled_Remarks' => $request->remarks,
                 'pr_Status_Id' => 3
             ]);
+            
         }
     }
 

@@ -122,10 +122,6 @@ class OutpatientRegistrationController extends Controller
                 'mscPrice_Groups'               => $request->payload['mscPrice_Groups'] ?? null,
                 'mscPrice_Schemes'              => $request->payload['mscPrice_Schemes'] ?? 100,
                 'mscService_Type'               => $request->payload['mscService_Type'] ?? null,
-                'mscDiet_Meal_Id'               => null,
-                'mscDisposition_Id'             => null,
-                'mscTriage_level_Id'            => null,
-                'mscCase_Result_Id'             => null,
                 'mscPrivileged_Card_Id'         => $request->payload['mscPrivileged_Card_Id'] ?? null,
                 'queue_number'                  => $request->payload['queue_number'] ?? null,
                 'arrived_date'                  => $request->payload['arrived_date'] ?? null,
@@ -811,9 +807,10 @@ class OutpatientRegistrationController extends Controller
         return $uniqueRecords;
     }
     public function index() {
-        try { 
+        try {
             $today = Carbon::now()->format('Y-m-d');
             $data = Patient::query();
+            
             $data->with([
                 'sex', 
                 'civilStatus', 
@@ -822,31 +819,34 @@ class OutpatientRegistrationController extends Controller
                 'municipality', 
                 'barangay', 
                 'countries',
-                'patientRegistry.allergies' => function ($query)use ($today) {
-                    $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
-                    $query->where('isDeleted', '!=', 1);
+                'patientRegistry' => function ($query) use ($today) {
+                            $query->whereDate('registry_Date', $today);
+                },
+                'patientRegistry.allergies' => function ($query) {
+                    $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+                            ->where('isDeleted', '!=', 1);
                 }
             ]);
 
-            $data->whereHas('patientRegistryToday', function($query) use ($today) {
-                $query->where('mscAccount_Trans_Types', 2); 
-                $query->where('isRevoked', 0);
-                $query->whereNull('discharged_Date');
-
-                if(Request()->keyword) {
+            $data->whereHas('patientRegistry', function ($query) use ($today) {
+                $query->where('mscAccount_Trans_Types', 2)
+                        ->where('isRevoked', 0)
+                        ->whereNull('discharged_Date')
+                        ->whereDate('registry_Date', $today);
+                if (Request()->keyword) {
                     $query->where(function($subQuery) {
                         $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
-                                ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
-                                ->orWhere('patient_Id', 'LIKE', '%'.Request()->keyword.'%')
-                                ->orWhere('case_No', 'LIKE', '%'.Request()->keyword.'%');
+                                    ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%')
+                                    ->orWhere('patient_Id', 'LIKE', '%'.Request()->keyword.'%')
+                                    ->orWhere('case_No', 'LIKE', '%'.Request()->keyword.'%');
                     });
                 }
             });
-            $data->orderBy('patient_Id', 'desc');
-
-            $page = Request()->per_page ?? '50'; 
+    
+            $data->orderBy('id', 'desc');
+            $page = Request()->per_page ?? '50';
             return response()->json($data->paginate($page), 200);
-
+    
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to get outpatient patients',
@@ -854,7 +854,6 @@ class OutpatientRegistrationController extends Controller
             ], 500);
         }
     }
-
     public function register(Request $request) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
@@ -1100,11 +1099,6 @@ class OutpatientRegistrationController extends Controller
                 SystemSequence::where('code', 'MOPD')->increment('recent_generated');
             }
 
-            $registry_sequence = SystemSequence::where('code', 'MOPD')
-                ->select('seq_no', 'recent_generated')
-                ->where('branch_id', 1)
-                ->first();
-
             $medsys_registry_sequence = DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->select('OPDId')->first();
 
             if ($isPatientRegistered) {
@@ -1112,17 +1106,11 @@ class OutpatientRegistrationController extends Controller
                     $registry_id = PatientRegistry::where('patient_Id', $patient_id)
                         ->whereDate('registry_Date', $today)
                         ->value('case_No');
-                } else {
-                    $registry_id = PatientRegistry::where('patient_Id', $patient_id)
-                        ->whereDate('registry_Date', $today)
-                        ->value('case_No');
-                }
+                } 
             } else {
                 if ($this->check_is_allow_medsys) {
                     $registry_id = $medsys_registry_sequence->OPDId;
-                } else {
-                    $registry_id = $request->payload['case_No'] ?? intval($registry_sequence->seq_no);
-                }
+                } 
             }
 
             $registerData = $this->getRegisterPatientData($request, $patient_id, $registry_id);

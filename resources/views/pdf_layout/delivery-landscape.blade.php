@@ -228,7 +228,7 @@
     <tbody>
       <tr>
         <td class="left-width text-right">DEPARTMENT:</td>
-        <td class="mid-width underline">{{$pdf_data['delivery']['vendor_Name']}}</td>
+        <td class="mid-width underline">{{$pdf_data['delivery']['warehouse'] ? $pdf_data['delivery']['warehouse']['warehouse_description'] : ''}}</td>
         <td class="right-width  text-right"></td>
         <td class=""></td>
         <td class="right-width  text-right"></td>
@@ -278,7 +278,7 @@
         <th rowspan="2" width="40">Code</th>
         <th rowspan="2">Item Description</th>
         <th rowspan="2">UOM</th>
-        <th colspan="2">Batch Information</th>
+        <th colspan="3">Batch Information</th>
         <th colspan="4">QUANTITY</th>
         <th rowspan="2" class="border-bottom-none">PRICE</th>
         <th rowspan="2" class="border-bottom-none">DISC. AMOUNT</th>
@@ -287,10 +287,11 @@
       </tr>
       <tr>
         <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
-        <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
-        <th rowspan="1" class="border-top-none">ORDER</th>
-        <th rowspan="1" class="border-top-none">RECEIVED</th>
-        <th rowspan="1" class="border-top-none">SERVED</th>
+        <th rowspan="1" class="border-top-none border-bottom-none">QTY</th>
+        <th rowspan="1" class="border-top-none border-bottom-none" width="15">EXPIRY</th>
+        <th rowspan="1" class="border-top-none" width="15">ORDER</th>
+        <th rowspan="1" class="border-top-none" width="15">RECEIVED</th>
+        <th rowspan="1" class="border-top-none" width="15">SERVED</th>
         <th rowspan="1" class="border-top-none">BALANCE</th>
       </tr>
     </thead>
@@ -300,12 +301,13 @@
       @foreach ($pdf_data['groupedNonFreeGoods'] as $itemName => $items)
       @foreach ($items as $index => $item)
       @php
-      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
       $expirydate = '';
       $batchno = '';
-      if($item['expirydate']) {
-      $expirydate = $item['ismedicine'] ? date('m-d-Y',strtotime($item['expirydate'])) : '';
-      $batchno = $item['ismedicine'] ? $item['batchno'] : '';
+      $qty = '';
+      if($batchdetails) {
+     
       }
       @endphp
       <tr>
@@ -315,15 +317,28 @@
         @endif
         <!-- Display individual item details -->
         <td class="item-td">{{ $item['uom'] }}</td>
-        <td class="item-td">{{ $batchno }}</td>
-        <td class="item-td">{{ $expirydate }}</td>
+        <td class="item-td" width="10">
+          @foreach($batchdetails  as $batch)
+            <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td" style="width:20;">
+          @foreach($batchdetails  as $batch)
+            <div >{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td">
+          @foreach($batchdetails  as $batch)
+            <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+          @endforeach
+        </td>
         <td class="item-td ">{{ $item['order_qty'] }}</td>
         <td class="item-td ">{{ $item['served_qty'] }}</td>
-        <td class="item-td ">{{ $item['balance'] }}</td>
-        <td class="item-td ">{{ ($item['order_qty'] - $item['served_qty']) }}</td>
+        <td class="item-td ">{{ $total }}</td>
+        <td class="item-td ">{{ ($item['order_qty'] - $total) }}</td>
         <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],2) }}</td>
         <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],2) }}</td>
-        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vat'],2) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vatamount'],2) }}</td>
         <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],2) }}</td>
       </tr>
       @endforeach
@@ -331,11 +346,11 @@
 
       @else
       <tr>
-        <td colspan="13"> No Record found</td>
+        <td colspan="14"> No Record found</td>
       </tr>
       @endif
       <tr>
-        <td colspan="13" class="border-none"><br></td>
+        <td colspan="14" class="border-none"><br></td>
       </tr>
     </tbody>
   </table>
@@ -344,19 +359,35 @@
       <td class="border-none text-right"></td>
       <td class="border-none  text-left "> </td>
       <td colspan="8" class="border-none text-right">Gross Amount :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
     </tr>
 
     <tr>
-      <td class="border-none  text-right"></td>
-      <td class="border-none  text-left"></td>
-      <td colspan="8" class="border-none  text-right">Less : Discount :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+      <td colspan="10" width="150" class="border-none  text-right">Less : Discount :</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+    </tr>
+    <tr>
+      <td colspan="10" width="150" class="border-none  text-right"></td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['discount']), 2)}}</td>
+    </tr>
+    <tr>
+      <td colspan="10" width="150" class="border-none  text-right"></td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left"><br></td>
     </tr>
 
     <tr>
-      <td colspan="10" class=" border-none  text-right">VAT :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
+      <td colspan="10" width="150" class=" border-none  text-right">VAT SALES:</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">
+        @if($pdf_data['delivery']['warehouse'] == '78' || $pdf_data['delivery']['warehouse'] == '66')
+        {{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}
+        @else 
+        {{$pdf_data['currency']}}{{number_format((($pdf_data['grand_total'] + $pdf_data['discount']) - $pdf_data['vat_amount']), 2)}}
+        @endif
+    </td>
+    </tr>
+    <tr>
+      <td colspan="10" width="150" class=" border-none  text-right">VAT :</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
     </tr>
     <!-- <tr>
       <td class="border-none text-right"></td>
@@ -379,7 +410,7 @@
         <th rowspan="2" width="40">Code</th>
         <th rowspan="2">Item Description</th>
         <th rowspan="2">UOM</th>
-        <th colspan="2">Batch Information</th>
+        <th colspan="3">Batch Information</th>
         <th>QUANTITY</th>
         <th rowspan="1" class="border-bottom-none">UNIT </th>
         <th rowspan="1" class="border-bottom-none">DISC.</th>
@@ -388,6 +419,7 @@
       </tr>
       <tr>
         <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
+        <th rowspan="1" class="border-top-none border-bottom-none" width="50">QTY</th>
         <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
         <th rowspan="1" class="border-top-none">FREE</th>
         <th rowspan="1" class="border-top-none">PRICE</th>
@@ -399,6 +431,7 @@
     @foreach ($items as $index => $item)
     @php
     $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+    $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
     $expirydate = '';
     $batchno = '';
     if($item['expirydate']) {
@@ -413,8 +446,21 @@
       @endif
       <!-- Display individual item details -->
       <td class="item-td">{{ $item['uom'] }}</td>
-      <td class="item-td">{{ $batchno }}</td>
-      <td class="item-td">{{ $expirydate }}</td>
+      <td class="item-td">
+        @foreach($batchdetails  as $batch)
+          <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
+        @endforeach
+      </td>
+      <td class="item-td">
+        @foreach($batchdetails  as $batch)
+          <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+        @endforeach
+      </td>
+      <td class="item-td">
+        @foreach($batchdetails  as $batch)
+          <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+        @endforeach
+      </td>
       <td class="item-td ">{{ $item['served_qty'] }}</td>
       <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],2) }}</td>
       <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],2) }}</td>
@@ -426,12 +472,12 @@
 
     @else
     <tr>
-      <td colspan="13"> No Record found</td>
+      <td colspan="11"> No Record found</td>
     </tr>
     @endif
     <tr>
       <td colspan="7" class="border-none"></td>
-      <td colspan="3" class="item-td border-none"><br></td>
+      <td colspan="4" class="item-td border-none"><br></td>
     </tr>
   </table>
   @endif

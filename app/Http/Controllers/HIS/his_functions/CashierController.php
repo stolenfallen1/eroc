@@ -36,10 +36,12 @@ use Illuminate\Support\Facades\DB;
 class CashierController extends Controller
 {
     protected $check_is_allow_medsys;
+    protected $check_is_allow_laboratory_auto_rendering;
 
     public function __construct() 
     {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+        $this->check_is_allow_laboratory_auto_rendering = (new SysGlobalSetting())->check_is_allow_laboratory_auto_rendering();
     }
     //
     public function getLabItems($item_id) 
@@ -209,7 +211,7 @@ class CashierController extends Controller
                     $issupplies = $item['issupplies'] ?? null;
                     $isprocedure = $item['isprocedure'] ?? null;
                     $nurseLogReqNum = $revenueID . $tbNursePHSlipSequence->ChargeSlip;
-                    $inventoryRefNum = 'C' . $tbInvChargeSlipSequence->DispensingCSlip . 'M';
+                    $inventoryRefNum = 'C' . $tbInvChargeSlipSequence->DispensingCSlip . 'M'; 
 
                     $update = CashAssessment::where('patient_Id' , $patient_Id)
                         ->where('case_No', $case_No)
@@ -224,11 +226,11 @@ class CashierController extends Controller
                     ]);
                     
                     if ($update) {
-                        $billingOut = HISBillingOut::create([
+                        HISBillingOut::create([
                             'patient_Id'            => $patient_Id,
                             'case_No'               => $case_No,
                             'patient_Type'          => $patient_Type,
-                            'accountnum'            => 'CASH',
+                            'accountnum'            => $patient_Id,
                             'transDate'             => $transDate,
                             'msc_price_scheme_id'   => 1,
                             'revenueID'             => $revenueID,
@@ -241,7 +243,7 @@ class CashierController extends Controller
                             'withholdingTax'        => $withholding_tax,
                             'amount'                => $item_amount,
                             'request_doctors_id'    => $request_doctors_id,
-                            'userid'                => Auth()->user()->idnumber,
+                            'userid'                => $userId,
                             'HostName'              => (new GetIP())->getHostname(),
                             'auto_discount'         => 0,
                             'created_at'            => $transDate,
@@ -267,7 +269,7 @@ class CashierController extends Controller
                                         'patient_Name'              => $patient_Name,
                                         'patient_Type'              => $patient_Type,
                                         'revenue_Id'                => $revenueID,
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'item_Id'                   => $itemID,
                                         'description'               => $description,
@@ -280,14 +282,13 @@ class CashierController extends Controller
                                         'amount'                    => $item_amount,
                                         'record_Status'             => 'W',
                                         'user_Id'                   => $userId, 
-                                        'processBy'                 => $userId,
-                                        'processDate'               => $transDate,
+                                        'process_By'                => $userId,
+                                        'process_Date'              => $transDate,
                                         'stat'                      => $stat,
                                         'ismedicine'                => $ismedicine,
                                         'issupplies'                => $issupplies,
-                                        'isprocedure'               => $isprocedure,
                                         'createdat'                 => $transDate,
-                                        'createdby'                 => $userId,
+                                        'createdby'                 => Auth()->user()->idnumber,
                                         // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
                                     ]);
                                     NurseCommunicationFile::create([
@@ -305,11 +306,11 @@ class CashierController extends Controller
                                         'revenue_Id'                => $revenueID,
                                         'record_Status'             => 'W',
                                         'user_Id'                   => $userId, 
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'stat'                      => $stat,
                                         'createdat'                 => $transDate,
-                                        'createdby'                 => $userId,
+                                        'createdby'                 => Auth()->user()->idnumber,
                                         // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
                                     ]);
                                     InventoryTransaction::create([
@@ -319,8 +320,8 @@ class CashierController extends Controller
                                         'patient_Registry_Id'                   => $case_No,
                                         'transaction_Item_Id'                   => $itemID,
                                         'transaction_Date'                      => $transDate,
-                                        'transaction_Reference_Number'          => $inventoryRefNum,
-                                        'transaction_Acctg_Revenue_Code'        => $revenueID,
+                                        'trasanction_Reference_Number'          => $inventoryRefNum,
+                                        'transaction_Acctg_TransType'           => $revenueID,
                                         'transaction_Qty'                       => $quantity,
                                         'transaction_Item_OnHand'               => $item_OnHand,
                                         'transaction_Item_ListCost'             => $item_ListCost,
@@ -328,8 +329,8 @@ class CashierController extends Controller
                                         'transaction_Item_TotalAmount'          => $item_amount,
                                         'transaction_Item_Med_Frequency_Id'     => $dosage,
                                         'transaction_UserID'                    => $userId,
-                                        'createdat'                             => $transDate,
-                                        'createdby'                             => $userId,
+                                        'created_at'                            => $transDate,
+                                        'createdBy'                             => Auth()->user()->idnumber,
                                     ]);
                                     tbNurseLogBook::create([
                                         'HospNum'                   => $patient_Id,
@@ -345,7 +346,7 @@ class CashierController extends Controller
                                         'UserID'                    => $userId,
                                         'ProcessBy'                 => $userId,
                                         'ProcessDate'               => $transDate,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat,
                                     ]);
@@ -362,7 +363,7 @@ class CashierController extends Controller
                                         'RevenueID'                 => $revenueID,
                                         'RecordStatus'              => 'W',
                                         'UserID'                    => $userId,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat == 1 ? 'N' : 'Y',
                                     ]);
@@ -391,7 +392,7 @@ class CashierController extends Controller
                                         'patient_Name'              => $patient_Name,
                                         'patient_Type'              => $patient_Type,
                                         'revenue_Id'                => $revenueID,
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'item_Id'                   => $itemID,
                                         'description'               => $description,
@@ -407,10 +408,9 @@ class CashierController extends Controller
                                         'stat'                      => $stat,
                                         'ismedicine'                => $ismedicine,
                                         'issupplies'                => $issupplies,
-                                        'isprocedure'               => $isprocedure,
                                         'createdat'                 => $transDate,
-                                        'createdby'                 => $userId,
-                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
+                                        'createdby'                 => Auth()->user()->idnumber,
+                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now sa createby )
                                     ]);
                                     NurseCommunicationFile::create([
                                         'branch_id'                 => 1,
@@ -427,12 +427,12 @@ class CashierController extends Controller
                                         'revenue_Id'                => $revenueID,
                                         'record_Status'             => 'X',
                                         'user_Id'                   => $userId, 
-                                        'requestNum'                => $nurseLogReqNum,
+                                        'requestNum'                => $refNum,
                                         'referenceNum'              => $inventoryRefNum,
                                         'stat'                      => $stat,
                                         'createdat'                 => $transDate,
-                                        'createdby'                 => $userId,
-                                        // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now gi wala nako butangi please do continue if so )
+                                        'createdby'                 => Auth()->user()->idnumber,
+                                       // ASA I BUTANG ANG CASHIER NAME OR ID SA GA PROCESS SA BAYAD? createdby??? ( For now sa createby )
                                     ]);
                                     tbNurseLogBook::create([
                                         'HospNum'                   => $patient_Id,
@@ -448,7 +448,7 @@ class CashierController extends Controller
                                         'Amount'                    => $item_amount,
                                         'RecordStatus'              => null,
                                         'UserID'                    => $userId,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat,
                                     ]);
@@ -465,7 +465,7 @@ class CashierController extends Controller
                                         'RevenueID'                 => $revenueID,
                                         'RecordStatus'              => null,
                                         'UserID'                    => $userId,
-                                        'RequestNum'                => $nurseLogReqNum,
+                                        'RequestNum'                => $refNum,
                                         'ReferenceNum'              => $inventoryRefNum,
                                         'Stat'                      => $stat == 1 ? 'N' : 'Y',
                                     ]);
@@ -473,6 +473,164 @@ class CashierController extends Controller
                             }
                         endif;
 
+                        if($this->check_is_allow_medsys && $isprocedure == 1):
+                            /**
+                             *  For now adding in the NurseLogBook and NurseCommunication akoa usang gi butang dre 
+                             * But can be changed in the near future samot nag mag depende sa procedure nga gi requestan
+                             * Kay I made a setting in for the lab nga ma switch off an on if auto render ba siya or dili 
+                             * If so mas nindot nga i balhin nalang ang pag insert sa nurselogbook og nursecommunication file individually
+                             * per switch case item sa procedure. :) But for now since lab paman pd ang pwede nga i request sa requistion
+                             * Since wala pa na finalize ni sir joe ang ubang department like raidology ( Ultrasound and X-Ray ) and etc.
+                             *  */ 
+                            NurseLogBook::create([
+                                'branch_id'                 => 1,
+                                'patient_Id'                => $patient_Id,
+                                'case_No'                   => $case_No,
+                                'patient_Name'              => $patient_Name,
+                                'patient_Type'              => $patient_Type,
+                                'revenue_Id'                => $revenueID,
+                                'requestNum'                => $refNum,
+                                'item_Id'                   => $itemID,
+                                'description'               => $description,
+                                'Quantity'                  => $quantity,
+                                'amount'                    => $item_amount,
+                                'isprocedure'               => $isprocedure,
+                                'record_Status'             => 'X',
+                                'stat'                      => $stat,
+                                'user_Id'                   => $userId,
+                                'createdat'                 => $transDate,
+                                'createdby'                 => Auth()->user()->idnumber,
+                            ]);
+                            NurseCommunicationFile::create([
+                                'branch_id'                 => 1,
+                                'patient_Id'                => $patient_Id,
+                                'case_No'                   => $case_No,
+                                'patient_Name'              => $patient_Name,
+                                'patient_Type'              => $patient_Type,
+                                'item_Id'                   => $itemID,
+                                'amount'                    => $item_amount,
+                                'quantity'                  => $quantity,
+                                'request_Date'              => $transDate,
+                                'revenue_Id'                => $revenueID,
+                                'record_Status'             => 'X',
+                                'user_Id'                   => $userId,
+                                'requestNum'                => $refNum,
+                                'stat'                      => $stat,
+                                'createdat'                 => $transDate,
+                                'createdby'                 => Auth()->user()->idnumber,
+                            ]);
+                            switch ($revenueID) {
+                                case 'LB':
+                                        $recordStatus = $this->check_is_allow_laboratory_auto_rendering ? 'W' : 'X';
+                                        $processedBy = $this->check_is_allow_laboratory_auto_rendering ? $userId : null;
+                                        $processDate = $this->check_is_allow_laboratory_auto_rendering ? $transDate : null;
+                                        // Way labot sa bungkag ang CBC, Routine Urinalysis and Stool Exam Routine
+                                        if (($item_Id != 160 && $item_Id != 149 && $item_Id != 145) && ($form == 'C' || $form == 'P')) {
+                                            $labProfileData = $this->getLabItems($itemID);
+                                            if ($labProfileData->getStatusCode() === 200) {
+                                                $labItems = $labProfileData->getData()->data;
+                                                foreach ($labItems as $labItem) {
+                                                    foreach ($labItem->lab_exams as $exam) {
+                                                        LaboratoryMaster::create([
+                                                            'patient_Id'            => $patient_Id,
+                                                            'case_No'               => $case_No,
+                                                            'transdate'             => $transDate,
+                                                            'refNum'                => $refNum,
+                                                            'ornumber'              => $ORNum,
+                                                            'profileId'             => $exam->map_profile_id,
+                                                            'item_Charged'          => $exam->map_profile_id,
+                                                            'itemId'                => $exam->map_exam_id,
+                                                            'quantity'              => $quantity,
+                                                            'amount'                => 0, // As per sir joe instructions, wala pay price per exam sa panel / package
+                                                            'NetAmount'             => 0, // As per sir joe instructions, wala pay price per exam sa panel / package
+                                                            'doctor_Id'             => $request_doctors_id,
+                                                            'specimen_Id'           => $exam->map_specimen_id,
+                                                            'processed_By'          => $processedBy,
+                                                            'processed_Date'        => $processDate,
+                                                            'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                                                            'request_Status'        => $recordStatus, 
+                                                            'result_Status'         => $recordStatus, 
+                                                            'userId'                => $userId,
+                                                            'barcode'               => $barcode,
+                                                            'created_at'            => Carbon::now(),
+                                                            'createdby'             => Auth()->user()->idnumber,
+                                                        ]);
+                                                        if ($this->check_is_allow_medsys):
+                                                            tbLABMaster::create([
+                                                                'HospNum'           => $patient_Id,
+                                                                'IdNum'             => $case_No . 'B',
+                                                                'RefNum'            => $refNum,
+                                                                'RequestStatus'     => $recordStatus,
+                                                                'ItemId'            => $exam->map_exam_id,
+                                                                'Amount'            => 0, 
+                                                                'Transdate'         => $transDate,
+                                                                'DoctorId'          => $request_doctors_id,
+                                                                'SpecimenId'        => $exam->map_specimen_id,
+                                                                'UserId'            => $userId,
+                                                                'Quantity'          => $quantity,
+                                                                'Barcode'           => $barcode,
+                                                                'ResultStatus'      => $recordStatus,
+                                                                'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
+                                                                'ProfileId'         => $exam->map_profile_id,
+                                                                'ItemCharged'       => $exam->map_profile_id,
+                                                            ]);
+                                                        endif;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            LaboratoryMaster::create([
+                                                'patient_Id'            => $patient_Id,
+                                                'case_No'               => $case_No,
+                                                'transdate'             => $transDate,
+                                                'refNum'                => $refNum,
+                                                'ornumber'              => $ORNum,
+                                                'profileId'             => $itemID,
+                                                'item_Charged'          => $itemID,
+                                                'itemId'                => $itemID,
+                                                'quantity'              => $quantity,
+                                                'amount'                => 0,
+                                                'doctor_Id'             => $request_doctors_id,
+                                                'specimen_Id'           => $specimen ?? 1, // BLOOD BY DEFAULT if no specimen
+                                                'processed_By'          => $processedBy,
+                                                'processed_Date'        => $processDate,
+                                                'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                                                'request_Status'        => $recordStatus,
+                                                'result_Status'         => $recordStatus,
+                                                'userId'                => $userId,
+                                                'barcode'               => $barcode,
+                                                'created_at'            => Carbon::now(),
+                                                'createdby'             => Auth()->user()->idnumber,
+                                            ]);
+                                            if ($this->check_is_allow_medsys):
+                                                tbLABMaster::create([
+                                                    'HospNum'           => $patient_Id,
+                                                    'IdNum'             => $case_No . 'B',
+                                                    'RefNum'            => $refNum,
+                                                    'RequestStatus'     => $recordStatus,
+                                                    'ItemId'            => $itemID,
+                                                    'Amount'            => 0,
+                                                    'Transdate'         => $transDate,
+                                                    'DoctorId'          => $request_doctors_id,
+                                                    'SpecimenId'        => $specimen ?? 1,
+                                                    'UserId'            => Auth()->user()->idnumber,
+                                                    'Quantity'          => $quantity,
+                                                    'Barcode'           => $barcode,
+                                                    'ResultStatus'      => $recordStatus,
+                                                    'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
+                                                    'ProfileId'         => $itemID,
+                                                    'ItemCharged'       => $itemID,
+                                                ]);
+                                            endif;
+                                        }
+                                    break;
+                                default:
+                                    echo "TABLE FOR GENERAL PROCEDURE's asa i labay?";
+                                    break;
+                            }
+                        endif;
+
+                        // Insert to Billing of Medsys
                         if ($this->check_is_allow_medsys):
                             MedSysCashAssessment::where('HospNum', $patient_Id)
                                 ->where('IdNum', $case_No . 'B')
@@ -502,6 +660,8 @@ class CashierController extends Controller
                             ]);
                         endif;
 
+                        // Insert to our OR Master and Medsys OR Master ( since ang i insert kay single entry nalang that's why I did this logic but feel free to change for all items )
+                        // Meaning One Row for all items
                         if ($ORCashInsertOnce) {
                             CashORMaster::create([
                                 'branch_id'                 => 1,
@@ -572,104 +732,6 @@ class CashierController extends Controller
                                 
                             endif;
                             $ORCashInsertOnce = false;
-                        }
-
-                        if ($billingOut) {
-                            if ($revenueID == 'LB' && $form == 'C') {
-                                $labProfileData = $this->getLabItems($itemID);
-                                if ($labProfileData->getStatusCode() === 200) {
-                                    $labItems = $labProfileData->getData()->data;
-                                    foreach ($labItems as $labItem) {
-                                        foreach ($labItem->lab_exams as $exam) {
-                                            LaboratoryMaster::create([
-                                                'patient_Id'            => $patient_Id,
-                                                'case_No'               => $case_No,
-                                                'transdate'             => $transDate,
-                                                'refNum'                => $refNum,
-                                                'ornumber'              => $ORNum,
-                                                'profileId'             => $exam->map_profile_id,
-                                                'item_Charged'          => $exam->map_profile_id,
-                                                'itemId'                => $exam->map_exam_id,
-                                                'quantity'              => 1,
-                                                'amount'                => 0,
-                                                'doctor_Id'             => $request_doctors_id,
-                                                'specimen_Id'           => $exam->map_specimen_id,
-                                                'processed_By'          => Auth()->user()->idnumber,
-                                                'processed_Date'        => $transDate,
-                                                'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                                                'request_Status'        => 'X', // Pending
-                                                'result_Status'         => 'X', // Pending
-                                                'userId'                => Auth()->user()->idnumber,
-                                                'barcode'               => $barcode,
-                                                'created_at'            => Carbon::now(),
-                                                'createdby'             => Auth()->user()->idnumber,
-                                            ]);
-                                            if ($this->check_is_allow_medsys):
-                                                tbLABMaster::create([
-                                                    'HospNum'           => $patient_Id,
-                                                    'IdNum'             => $case_No . 'B',
-                                                    'RefNum'            => $refNum,
-                                                    'RequestStatus'     => 'X',
-                                                    'ItemId'            => $exam->map_exam_id,
-                                                    'Amount'            => 0,
-                                                    'Transdate'         => $transDate,
-                                                    'DoctorId'          => $request_doctors_id,
-                                                    'SpecimenId'        => $exam->map_specimen_id,
-                                                    'UserId'            => Auth()->user()->idnumber,
-                                                    'Quantity'          => 1,
-                                                    'ResultStatus'      => 'X',
-                                                    'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
-                                                    'ProfileId'         => $exam->map_profile_id,
-                                                    'ItemCharged'       => $exam->map_profile_id,
-                                                ]);
-                                            endif;
-                                        }
-                                    }
-                                }
-                            } else if ($revenueID == 'LB') {
-                                LaboratoryMaster::create([
-                                    'patient_Id'            => $patient_Id,
-                                    'case_No'               => $case_No,
-                                    'transdate'             => $transDate,
-                                    'refNum'                => $refNum,
-                                    'ornumber'              => $ORNum,
-                                    'profileId'             => $itemID,
-                                    'item_Charged'          => $itemID,
-                                    'itemId'                => $itemID,
-                                    'quantity'              => 1,
-                                    'amount'                => 0,
-                                    'doctor_Id'             => $request_doctors_id,
-                                    'specimen_Id'           => $specimen ?? 1, // BLOOD BY DEFAULT if no specimen
-                                    'processed_By'          => Auth()->user()->idnumber,
-                                    'processed_Date'        => $transDate,
-                                    'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                                    'request_Status'        => 'X', // Pending
-                                    'result_Status'         => 'X', // Pending
-                                    'userId'                => Auth()->user()->idnumber,
-                                    'barcode'               => $barcode,
-                                    'created_at'            => Carbon::now(),
-                                    'createdby'             => Auth()->user()->idnumber,
-                                ]);
-                                if ($this->check_is_allow_medsys):
-                                    tbLABMaster::create([
-                                        'HospNum'           => $patient_Id,
-                                        'IdNum'             => $case_No . 'B',
-                                        'RefNum'            => $refNum,
-                                        'RequestStatus'     => 'X',
-                                        'ItemId'            => $itemID,
-                                        'Amount'            => 0,
-                                        'Transdate'         => $transDate,
-                                        'DoctorId'          => $request_doctors_id,
-                                        'SpecimenId'        => $specimen ?? 1,
-                                        'UserId'            => Auth()->user()->idnumber,
-                                        'Quantity'          => 1,
-                                        'ResultStatus'      => 'X',
-                                        'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
-                                        'ProfileId'         => $itemID,
-                                        'ItemCharged'       => $itemID,
-                                    ]);
-                                endif;
-                            }
                         }
                     }
                 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\HIS\his_functions;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Helpers\GetIP;
+use App\Models\BuildFile\FMS\TransactionCodes;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\HIS\his_functions\ExamLaboratoryProfiles;
 use App\Models\HIS\his_functions\HISBillingOut;
@@ -12,6 +13,7 @@ use App\Models\HIS\his_functions\LaboratoryMaster;
 use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbLABMaster;
 use App\Models\HIS\MedsysCashAssessment;
+use App\Models\UserRevenueCodeAccess;
 use Auth;
 use Carbon\Carbon;
 use App\Models\User;
@@ -87,8 +89,9 @@ class HISPostChargesController extends Controller
             $query = HISBillingOut::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
+                ->where('accountnum', '!=', $patient_id)
                 ->where('quantity', '>', 0)
-                ->where('refNum', 'not like', '%[REVOKED]%');
+                ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
@@ -156,6 +159,8 @@ class HISPostChargesController extends Controller
             $request_doctors_id = $request->payload['attending_Doctor'];
             $guarantor_Id = $request->payload['guarantor_Id'];
             $patient_Type = $request->payload['patient_Type'];
+            $user_Id = $request->payload['user_Id'] ?? ($checkUser ?? null);
+
             $refnum = [];
 
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
@@ -201,6 +206,7 @@ class HISPostChargesController extends Controller
                     } else {
                         $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
                     }
+
                     $refnum[] = $sequence;
 
                     $saveCharges = HISBillingOut::create([
@@ -223,6 +229,9 @@ class HISPostChargesController extends Controller
                         'hostName' => (new GetIP())->getHostname(),
                         'accountnum' => $guarantor_Id,
                         'auto_discount' => 0,
+                        'Barcode' => $barcode,
+                        'createdby' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'created_at' => Carbon::now(),
                     ]);
                     if ($saveCharges && $this->check_is_allow_medsys) {
                         MedSysDailyOut::create([
@@ -241,122 +250,109 @@ class HISPostChargesController extends Controller
                             'AutoDiscount'      => 0,
                         ]);
                     }
-                    if ($revenueID == 'LB' && $form == 'C') {
-                        $labProfileData = $this->getLabItems($item_id);
-                        if ($labProfileData->getStatusCode() === 200) {
-                            $labItems = $labProfileData->getData()->data;
-                            foreach ($labItems as $labItem) {
-                                foreach ($labItem->lab_exams as $exam) {
-                                    LaboratoryMaster::create([
-                                        'patient_Id'            => $patient_id,
-                                        'case_No'               => $case_no,
-                                        'transdate'             => $transDate,
-                                        'refNum'                => $sequence,
-                                        'profileId'             => $exam->map_profile_id,
-                                        'item_Charged'          => $exam->map_profile_id,
-                                        'itemId'                => $exam->map_exam_id,
-                                        'quantity'              => 1,
-                                        'amount'                => 0,
-                                        'NetAmount'             => 0,
-                                        'doctor_Id'             => $request_doctors_id,
-                                        'specimen_Id'           => $exam->map_specimen_id,
-                                        'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                        'processed_Date'        => $transDate,
-                                        'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                                        'request_Status'        => 'X',
-                                        'result_Status'         => 'X',
-                                        'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                        'barcode'               => $barcode,
-                                        'created_at'            => Carbon::now(),
-                                        'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                    ]);
-                                    if ($this->check_is_allow_medsys) {
-                                        tbLABMaster::create([
-                                            'HospNum'           => $patient_id,
-                                            'IdNum'             => $case_no . 'B',
-                                            'RefNum'            => $sequence,
-                                            'RequestStatus'     => 'X',
-                                            'ItemId'            => $exam->map_exam_id,
-                                            'Amount'            => 0,
-                                            'Transdate'         => $transDate,
-                                            'DoctorId'          => $request_doctors_id,
-                                            'SpecimenId'        => $exam->map_specimen_id,
-                                            'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                            'Quantity'          => 1,
-                                            'ResultStatus'      => 'X',
-                                            'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
-                                            'ProfileId'         => $exam->map_profile_id,
-                                            'ItemCharged'       => $exam->map_profile_id,
+
+                    // Since This is handled by CDG_CORE to only post charges for Laboratory ( Lab users only or whom is assigned )
+                    // If not assigned well request Lab procedure in Requisition
+                    if ($revenueID == 'LB') {
+                        // Way labot sa bungkag ang CBC, Routine Urinalysis and Stool Exam Routine
+                        if (($item_Id != 160 && $item_Id != 149 && $item_Id != 145) && ($form == 'C' || $form == 'P')) {
+                            $labProfileData = $this->getLabItems($item_id);
+                            if ($labProfileData->getStatusCode() === 200) {
+                                $labItems = $labProfileData->getData()->data;
+                                foreach ($labItems as $labItem) {
+                                    foreach ($labItem->lab_exams as $exam) {
+                                        LaboratoryMaster::create([
+                                            'patient_Id'            => $patient_id,
+                                            'case_No'               => $case_no,
+                                            'transdate'             => $transDate,
+                                            'refNum'                => $sequence,
+                                            'profileId'             => $exam->map_profile_id,
+                                            'item_Charged'          => $exam->map_profile_id,
+                                            'itemId'                => $exam->map_exam_id,
+                                            'quantity'              => 1,
+                                            'amount'                => 0,
+                                            'NetAmount'             => 0,
+                                            'doctor_Id'             => $request_doctors_id,
+                                            'specimen_Id'           => $exam->map_specimen_id,
+                                            'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                            'processed_Date'        => $transDate,
+                                            'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                                            'request_Status'        => 'X',
+                                            'result_Status'         => 'X',
+                                            'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                            'barcode'               => $barcode,
+                                            'created_at'            => Carbon::now(),
+                                            'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                                         ]);
+                                        if ($this->check_is_allow_medsys) {
+                                            tbLABMaster::create([
+                                                'HospNum'           => $patient_id,
+                                                'IdNum'             => $case_no . 'B',
+                                                'RefNum'            => $sequence,
+                                                'RequestStatus'     => 'X',
+                                                'ItemId'            => $exam->map_exam_id,
+                                                'Amount'            => 0,
+                                                'Transdate'         => $transDate,
+                                                'DoctorId'          => $request_doctors_id,
+                                                'SpecimenId'        => $exam->map_specimen_id,
+                                                'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                                'Quantity'          => 1,
+                                                'Barcode'           => $barcode,
+                                                'ResultStatus'      => 'X',
+                                                'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
+                                                'ProfileId'         => $exam->map_profile_id,
+                                                'ItemCharged'       => $exam->map_profile_id,
+                                            ]);
+                                        }
                                     }
                                 }
                             }
-                        }
-                    } else if ($revenueID == 'LB') {
-                        LaboratoryMaster::create([
-                            'patient_Id'            => $patient_id,
-                            'case_No'               => $case_no,
-                            'transdate'             => $transDate,
-                            'refNum'                => $sequence,
-                            'profileId'             => $item_id,
-                            'item_Charged'          => $item_id,
-                            'itemId'                => $item_id,
-                            'quantity'              => 1,
-                            'amount'                => 0,
-                            'NetAmount'             => 0,
-                            'doctor_Id'             => $request_doctors_id,
-                            'specimen_Id'           => $specimenId ?? 1,
-                            'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                            'processed_Date'        => $transDate,
-                            'isrush'                => $charge_type == 1 ? 'N' : 'Y',
-                            'request_Status'        => 'X',
-                            'result_Status'         => 'X',
-                            'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                            'barcode'               => $barcode,
-                            'created_at'            => Carbon::now(),
-                            'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        ]);
-                        if ($this->check_is_allow_medsys) {
-                            tbLABMaster::create([
-                                'HospNum'           => $patient_id,
-                                // 'RequestNum'        => $sequence,
-                                'IdNum'             => $case_no . 'B',
-                                'RefNum'            => $sequence,
-                                'RequestStatus'     => 'X',
-                                'ItemId'            => $item_id,
-                                'Amount'            => 0,
-                                'Transdate'         => $transDate,
-                                'DoctorId'          => $request_doctors_id,
-                                'SpecimenId'        => $specimenId ?? 1,
-                                'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                                'Quantity'          => 1,
-                                'ResultStatus'      => 'X',
-                                'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
-                                'ProfileId'         => $item_id,
-                                'ItemCharged'       => $item_id,
+                        } else {
+                            LaboratoryMaster::create([
+                                'patient_Id'            => $patient_id,
+                                'case_No'               => $case_no,
+                                'transdate'             => $transDate,
+                                'refNum'                => $sequence,
+                                'profileId'             => $item_id,
+                                'item_Charged'          => $item_id,
+                                'itemId'                => $item_id,
+                                'quantity'              => 1,
+                                'amount'                => 0,
+                                'NetAmount'             => 0,
+                                'doctor_Id'             => $request_doctors_id,
+                                'specimen_Id'           => $specimenId ?? 1,
+                                'processed_By'          => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'processed_Date'        => $transDate,
+                                'isrush'                => $charge_type == 1 ? 'N' : 'Y',
+                                'request_Status'        => 'X',
+                                'result_Status'         => 'X',
+                                'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                'barcode'               => $barcode,
+                                'created_at'            => Carbon::now(),
+                                'createdby'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                             ]);
+                            if ($this->check_is_allow_medsys) {
+                                tbLABMaster::create([
+                                    'HospNum'           => $patient_id,
+                                    'IdNum'             => $case_no . 'B',
+                                    'RefNum'            => $sequence,
+                                    'RequestStatus'     => 'X',
+                                    'ItemId'            => $item_id,
+                                    'Amount'            => 0,
+                                    'Transdate'         => $transDate,
+                                    'DoctorId'          => $request_doctors_id,
+                                    'SpecimenId'        => $specimenId ?? 1,
+                                    'UserId'            => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                                    'Quantity'          => 1,
+                                    'Barcode'           => $barcode,
+                                    'ResultStatus'      => 'X',
+                                    'RUSH'              => $charge_type == 1 ? 'N' : 'Y',
+                                    'ProfileId'         => $item_id,
+                                    'ItemCharged'       => $item_id,
+                                ]);
+                            }
                         }
-                    }
-                    
-                    if($revenueID === 'ER' && $this->check_is_allow_medsys) {
-                        MedsysCashAssessment::create([
-                            'idNum'         => $case_no . 'B',
-                            'HospNum'       => $patient_id,
-                            'Name'          => $request->payload['patient_Name'] ?? null,
-                            'TransDate'     => Carbon::now(),
-                            'AssessNum'      => $assessNum,
-                            'Indicator'     => $revenueID,
-                            'DrCr'          => 'D',
-                            'RecordStatus'  => 1,
-                            'itemID'        => $item_id,
-                            'Quantity'      => 1,
-                            'RefNum'        => $sequence,
-                            'Amount'        => $amount,
-                            'UserId'        => $checkUser->idnumber,
-                            'RevenueID'     => $revenueID,
-                            'SpecimenId'    => $request->payload['SpecimenId'] ?? null
-                        ]);
-                    }
+                    } 
                 }
             }
 
@@ -446,10 +442,10 @@ class HISPostChargesController extends Controller
 
             $items = $request->items;
             foreach ($items as $item) {
-                $patient_id = $item['patient_Id'];
-                $case_no = $item['case_No'];
-                $refnum = $item['refNum'];
-                $item_id = $item['itemID'];
+                $patient_id = $item['patient_Id'] ?? $request->patient_Id;
+                $case_no = $item['case_No'] ?? $request->case_No;
+                $refnum = $item['refNum'] ?? $item['request_num'];
+                $item_id = $item['itemID'] ?? $item['code'];
                 
                 $existingData = HISBillingOut::where('patient_Id', $patient_id)
                     ->where('case_No', $case_no)
@@ -457,12 +453,13 @@ class HISPostChargesController extends Controller
                     ->where('itemID', $item_id)
                     ->first();
                 
-                $existingData->updateOrFail([
-                    'refNum' => $refnum . '[REVOKED]',
-                    'ChargeSlip' => $refnum . '[REVOKED]',
-                ]);
+                    $existingData->updateOrFail([
+                        'refNum' => $refnum . '[REVOKED]',
+                        'ChargeSlip' => $refnum . '[REVOKED]'
+                    ]);
                 
-                if ($existingData) {
+                if ($existingData || $existingData === null) {
+                    
                     HISBillingOut::create([
                         'patient_Id' => $existingData->patient_Id,
                         'case_No' => $existingData->case_No,
@@ -473,7 +470,7 @@ class HISPostChargesController extends Controller
                         'itemID' => $existingData->itemID,
                         'quantity' => $existingData->quantity * -1,
                         'refNum' => $existingData->refNum,
-                        'ChargeSlip' => $existingData->refNum,
+                        'ChargeSlip' => $existingData->ChargeSlip,
                         'amount' => $existingData->amount * -1,
                         'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
                         'net_amount' => $existingData->net_amount * -1,

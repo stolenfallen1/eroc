@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use App\Http\Controllers\HIS\PatientDischarge;
+use App\Http\Controllers\HIS\NursingService\ReportMaster;
 
 Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);
@@ -40,9 +41,17 @@ Route::controller(SOAController::class)->group(function() {
     Route::get('generate-statement-summary/{id}', 'createStatmentOfAccountSummary');
 });
 
+Route::controller(ReportMaster::class)->group(function() {
+    Route::get('generate-er-daily-report', 'ERDailyCensusReport');
+});
+
 Route::controller(PatientDischarge::class)->group(function(){
+    Route::get('doctors-list', 'getDoctorsList');
+    Route::get('patient-status', 'getPatientStatusList');
+    Route::get('patient-billing-charges/{id}', 'getPatientChargesStatus');
     Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
     Route::put('untag-patient-maygohome/{id}', 'untagMGH');
+    Route::get('check-elgibility-for-discharge/{id}', 'checkPatientEligibilityForDischarge');
     Route::put('discharge-patient/{id}', 'dischargePatient');
     Route::get('patient-balance/{id}', 'getTotalCharges');
     Route::get('get-er-result', 'erResult');

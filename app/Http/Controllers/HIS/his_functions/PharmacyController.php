@@ -234,22 +234,10 @@ class PharmacyController extends Controller
         DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
 
         try {
-            if ($this->check_is_allow_medsys) {
-                $inventoryChargeSlip = DB::connection('sqlsrv_medsys_inventory')->table('INVENTORY.dbo.tbInvChargeSlip')->increment('DispensingCSlip');
-                if ($inventoryChargeSlip) {
-                    $medSysReferenceNum = DB::connection('sqlsrv_medsys_nurse_station')->table('STATION.dbo.tbNursePHSlip')->value('ChargeSlip');
-                } else {
-                    throw new \Exception("Failed to increment charge slips / transaction sequences");
-                }
-            } else {
-                throw new \Exception('MedSys is not allowed, no sequence of our own tho.');
-            }
-
             $today = Carbon::now();
             $patient_Id = $request->payload['patient_Id'];
             $case_No = $request->payload['case_No'];
             $requestNum = $request->payload['requestNum'];
-            $referenceNum = 'C' . $medSysReferenceNum . 'M';
 
             if (isset($request->payload['Orders']) && count($request->payload['Orders']) > 0) {
                 foreach ($request->payload['Orders'] as $items) {
@@ -259,10 +247,24 @@ class PharmacyController extends Controller
                     $item_ListCost = $items['item_ListCost'];
                     $item_OnHand = $items['item_OnHand'];
                     $price = $items['price'];
-                    // $quantity = isset($items['Carry_Quantity']) && $items['Carry_Quantity'] != "" || $items['Carry_Quantity'] != null ? $items['Carry_Quantity'] : $items['quantity'];
                     $quantity = (array_key_exists('Carry_Quantity', $items) && $items['Carry_Quantity'] !== "") ? $items['Carry_Quantity'] : $items['quantity'];
                     $frequency = $items['frequency'];
                     $amount = $items['amount'];
+
+                    // get reference num
+                    $referenceNum = NurseLogBook::where('patient_Id', $patient_Id)
+                        ->where('case_No', $case_No)
+                        ->where('requestNum', $requestNum)
+                        ->where('item_Id', $item_Id)
+                        ->value('referenceNum');
+                    // get reference num fallback value from different table
+                    if (!$referenceNum) {
+                        $referenceNum = NurseCommunicationFile::where('patient_Id', $patient_Id)
+                            ->where('case_No', $case_No)
+                            ->where('requestNum', $requestNum)
+                            ->where('item_Id', $item_Id)
+                            ->value('referenceNum');
+                    }
 
                     $updateLogBook = NurseLogBook::where('patient_Id', $patient_Id)
                         ->where('case_No', $case_No)
@@ -339,7 +341,7 @@ class PharmacyController extends Controller
                             'Balance'               => $item_OnHand,
                             'NetCost'               => $item_ListCost,
                             'Amount'                => $amount,
-                            // 'Remarks'               => 'Dispensing',
+                            'DosageID'              => $frequency,
                             'UserID'                => Auth()->user()->idnumber,
                             'RequestByID'           => Auth()->user()->idnumber,
                             'LocationID'            => 20,
@@ -384,6 +386,7 @@ class PharmacyController extends Controller
                         ->update([
                             'remarks'           => $remarks,
                             'record_Status'     => 'R',
+                            'requestNum'        => $requestNum . '[REVOKED]',
                             'cancelBy'          => Auth()->user()->idnumber,
                             'cancelDate'        => $today,
                             'updatedat'         => $today,
@@ -397,6 +400,7 @@ class PharmacyController extends Controller
                         ->update([
                             'remarks'           => $remarks,
                             'record_Status'     => 'R',
+                            'requestNum'        => $requestNum . '[REVOKED]',
                             'cancelBy'          => Auth()->user()->idnumber,
                             'cancelDate'        => $today,
                             'updatedat'         => $today,
@@ -411,15 +415,17 @@ class PharmacyController extends Controller
                                 ->where('ItemID', $item_Id)
                                 ->update([
                                     'Remarks'           => $remarks,
+                                    'RequestNum'        => $requestNum . '[REVOKED]',
                                     'RecordStatus'      => 'R',
                                 ]);
 
                             tbNurseCommunicationFile::where('Hospnum', $patient_Id)
                                 ->where('IDnum', $case_No . 'B')
                                 ->where('RequestNum', $requestNum)
-                                ->where('itemID', $item_Id)
+                                ->where('ItemID', $item_Id)
                                 ->update([
                                     'Remarks'           => $remarks,
+                                    'RequestNum'        => $requestNum . '[REVOKED]',
                                     'RecordStatus'      => 'R',
                                 ]);
                         endif;
@@ -438,7 +444,9 @@ class PharmacyController extends Controller
     {
         try {
             $case_No = $request->query('case_No');
-            $patient_details = PatientRegistry::where('case_No', $case_No)->first();
+            $patient_details = PatientRegistry::with('patient_details')
+                        ->where('case_No', $case_No)
+                        ->first();
 
             if (!$patient_details) {
                 return response()->json(['msg' => 'Patient not found'], 404);
@@ -456,8 +464,12 @@ class PharmacyController extends Controller
                     'patient_details' => [
                         'patient_Id' => $patient_details->patient_Id,
                         'case_No' => $patient_details->case_No,
+                        'patient_Name' => $patient_details->patient_details->lastname . ', ' . $patient_details->patient_details->firstname . ' ' . $patient_details->patient_details->middlename,
                         'age' => $patient_details->patient_Age,
+                        'sex' => $patient_details->patient_details->sex_id,
+                        'birthdate' => $patient_details->patient_details->birthdate,
                         'doctor' => $patient_details->attending_Doctor_fullname,
+                        'mscPrice_Schemes' => $patient_details->mscPrice_Schemes,
                         'discharged_Userid' => $patient_details->discharged_Userid,
                         'discharged_Date' => $patient_details->discharged_Date,
                         'inventory_data' => $medicine_data->toArray(),

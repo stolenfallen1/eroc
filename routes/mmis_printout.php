@@ -196,7 +196,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     // Decrypt the ID from the encrypted parameter
     $id = Crypt::decrypt($pid);
     // Fetch the delivery details along with related models
-    $delivery = VwDeliveryMaster::with('items')->where('id', $id)->first();
+    $delivery = VwDeliveryMaster::with('items','warehouse')->where('id', $id)->first();
 
     // Generate the QR code for the delivery
     $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
@@ -226,21 +226,24 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $freeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 1;
     });
+   
     $groupedFreeGoods = $freeGoods->groupBy('itemname');
+
     $nonFreeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 0;
     });
-
     $qty = 0;
     foreach ($nonFreeGoods as $item) {
-        $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
-        $subTotal += (float)$itemTotal;
-        $discount += (float)$item->discount;
-        $vatAmount += (float)$item->vat;
-        $grandTotal += (float)$item->net_amount;
-        if ($item->currency_id == 2) {
-            $currency = '$';
-        }
+        
+            $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
+            $subTotal += (float)$itemTotal;
+            $discount += (float)$item->discount;
+            $vatAmount += (float)$item->vatamount;
+            $grandTotal += (float)$item->net_amount;
+            if ($item->currency_id == 2) {
+                $currency = '$';
+            }
+      
     }
 
     $groupedNonFreeGoods = $nonFreeGoods->groupBy('itemname');
@@ -257,7 +260,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
         'free_goods_delivery_items' => $freeGoods,
         'sub_total' => $subTotal,
         'discount' => $discount,
-        'vat_amount' => $totalVatAmount,
+        'vat_amount' => $vatAmount,
         'grand_total' => $grandTotal,
         'currency' => $currency
     ];
@@ -421,7 +424,7 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
 
         // Generate the PDF using the prepared data and set the paper size to letter in landscape
         $pdf = PDF::loadView('pdf_layout.purchase-order-consignment', ['pdf_data' => $pdf_data])
-            ->setPaper('letter', 'landscape');
+            ->setPaper('letter', 'portait');
 
         // Render the PDF
         $pdf->render();

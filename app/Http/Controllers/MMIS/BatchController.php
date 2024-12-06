@@ -20,7 +20,7 @@ class BatchController extends Controller
 {
     public function getItemBatchs(){
         $warehouse_id = Request()->warehouse_Id ?? Auth::user()->warehouse_id;
-        $batchs = ItemBatchModelMaster::with('unit','item')->where(['warehouse_id' => $warehouse_id, 'item_Id' => Request()->item_id])
+        $batchs = ItemBatchModelMaster::with('unit','item','vendor')->where(['warehouse_id' => $warehouse_id, 'item_Id' => Request()->item_id])
             ->where('isConsumed', '!=', 1)->get();
 
         return response()->json(["batchs" => $batchs], 200);
@@ -105,7 +105,7 @@ class BatchController extends Controller
 
     public function checkAvailability()
     {
-        if(ItemBatchModelMaster::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item])->exists()){
+        if(ItemBatchModelMaster::where(['batch_Number' => Request()->batch, 'item_Id' => Request()->item,'warehouse_id'=>Auth::user()->warehouse_id])->exists()){
             return response()->json(['message' => 'duplicate'], 200);
         }
         return response()->json(['message' => 'available'], 200);

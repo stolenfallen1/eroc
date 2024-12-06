@@ -10,7 +10,7 @@
       font-family: 'DejaVu Sans', sans-serif;
     }
     .header-section {
-      width: 100%;
+      /* width: 100%; */
       position: relative;
     }
 
@@ -23,12 +23,12 @@
     }
 
     .title-section {
-      width: 100%;
+      /* width: 100%; */
       text-align: center;
     }
 
     .info-section {
-      width: 100%;
+      /* width: 100%; */
     }
 
     .item-section th {
@@ -65,16 +65,16 @@
     }
 
     .left-width {
-      width: 130px;
+      /* width: 130px; */
     }
 
     .right-width {
-      width: 100px;
+      /* width: 100px; */
       text-transform: uppercase;
     }
 
     .mid-width {
-      width: 370px;
+      width: 300px;
       text-transform: uppercase;
     }
 
@@ -84,11 +84,11 @@
 
 
     .item-td1 {
-      width: 300px;
+      /* width: 300px; */
     }
 
     .item-td2 {
-      width: 100px;
+      /* width: 100px; */
     }
 
     .item-td {
@@ -109,7 +109,7 @@
 
     .spacer {
       margin-top: 1px;
-      width: 100%;
+      /* width: 100%; */
       /* border-bottom: 2px solid; */
     }
 
@@ -155,7 +155,7 @@
 
     @page {
       margin: 20px 20px 20px 20px !important;
-      width: 100%;
+      /* width: 100%; */
     }
 
     .item-td:nth-child(2) {
@@ -226,10 +226,10 @@
       <tr>
         <td class="left-width text-right">DEPARTMENT :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['warehouse'] ? $pdf_data['delivery']['warehouse']['warehouse_description'] : ''}}</td>
-        <td class="right-width  text-right"></td>
-        <td class=""></td>
-        <td class="right-width  text-right"></td>
-        <td class=""></td>
+        <td class="right-width  text-right">D.R NO.</td>
+        <td class="underline">{{$pdf_data['delivery']['rr_Document_Delivery_Receipt_No']}}</td>
+        <td class="right-width  text-right">D.R DATE:</td>
+        <td class="underline">{{date('m/d/Y',strtotime($pdf_data['delivery']['receivedDate']))}}</td>
       </tr>
       <tr>
         <td class="left-width text-right">Supplier Name. :</td>
@@ -278,7 +278,7 @@
         <th colspan="2">Batch Information</th>
         <th rowspan="2" class="border-bottom-none">QTY </th>
         <th rowspan="1" class="border-bottom-none">UNIT </th>
-        <th rowspan="2">DISCOUNT</th>
+        <th rowspan="2">DISC. AMOUNT</th>
         <th rowspan="2">NET PRICE</th>
         <th rowspan="2">Amount</th>
       </tr>
@@ -301,8 +301,10 @@
               }
           @endphp
         <tr>
-          <td class="item-td" width="60">{{ $detail['itemcode'] }}</td>
-          <td class="item-td" width="200">{{ $detail['itemname'] }} {{ $detail['ismedicine'] ? $detail['description'] :'' }}</td>
+          <td class="item-td" >{{ $detail['itemcode'] }}</td>
+          <td class="item-td">{{ $detail['itemname'] }} 
+          <!-- {{ $detail['ismedicine'] ? $detail['description'] :'' }} -->
+          </td>
           <td class="item-td">{{ $detail['uom'] }}</td>
           <td class="item-td">{{ $batchno }}</td>
           <td class="item-td">{{ $expirydate }}</td>

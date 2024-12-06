@@ -248,7 +248,13 @@ class PurchaseRequests
 
           $q1->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
         })
-        ->with('purchaseRequestDetails.itemMaster', 'purchaseRequestDetails.changedRecommendedCanvas', 'purchaseRequestDetails.changedRecommendedCanvas.vendor');
+        ->with([
+          'purchaseRequestDetails.itemMaster', 
+          'purchaseRequestDetails.changedRecommendedCanvas' => function($q) {
+              $q->where('isFreeGoods', null);
+          },
+          'purchaseRequestDetails.changedRecommendedCanvas.vendor'
+      ]);
     }
     // Apply administrator and corporate admin logic
     else if ($this->role->administrator() || $this->role->corp_admin()) {
@@ -293,27 +299,39 @@ class PurchaseRequests
             })
             ->with('purchaseRequestDetails.itemMaster');
         } else {
-          $this->model->whereHas('purchaseRequestDetails', function ($query) {
-            $query->whereNotNull('pr_DepartmentHead_ApprovedBy')
-              ->whereNull('pr_Branch_Level2_ApprovedBy')
-              ->whereNull('pr_DepartmentHead_CancelledBy');
-          })
+          
+            $this->model->whereHas('purchaseRequestDetails', function ($query) {
+              $query->whereNotNull('pr_DepartmentHead_ApprovedBy')
+                ->whereNull('pr_Branch_Level2_ApprovedBy')
+                ->whereNull('pr_DepartmentHead_CancelledBy');
+            })
             ->whereNull('pr_Branch_Level1_ApprovedBy')
             ->whereNull('pr_Branch_Level1_CancelledBy')
             ->whereNotNull('pr_DepartmentHead_ApprovedBy')
             ->with('purchaseRequestDetails.itemMaster');
         }
       } else {
-        $this->model->where(function ($query) {
-          $query->whereNotNull('pr_DepartmentHead_ApprovedBy');
-        })
-          ->whereNull('pr_Branch_Level2_ApprovedBy')
-          ->whereNull('pr_Branch_Level2_CancelledBy')
-          ->where('invgroup_id', 2)
-          ->whereNull('pr_Branch_Level1_ApprovedBy')
-          ->whereNull('pr_Branch_Level1_CancelledBy')
-          ->whereNotNull('pr_DepartmentHead_ApprovedBy')
-          ->with('purchaseRequestDetails.itemMaster', 'purchaseRequestDetails.changedRecommendedCanvas', 'purchaseRequestDetails.changedRecommendedCanvas.vendor');
+        // $this->model->where(function ($query) {
+        //   $query->where('pr_DepartmentHead_ApprovedBy','!=','')->where(['pr_DepartmentHead_CancelledBy' => null]);
+        // })
+        $this->model
+        ->whereNull('pr_Branch_Level2_ApprovedBy')
+        ->whereNull('pr_Branch_Level2_CancelledBy')
+        ->where('invgroup_id', 2)
+        ->whereNull('pr_Branch_Level1_ApprovedBy')
+        ->whereNull('pr_Branch_Level1_CancelledBy')
+        ->whereNotNull('pr_DepartmentHead_ApprovedBy')
+         
+          ->with([
+        'purchaseRequestDetails' => function ($query) {
+            $query->where('pr_DepartmentHead_ApprovedBy', '!=', '')
+                  ->whereNull('pr_DepartmentHead_CancelledBy');
+        },
+        'purchaseRequestDetails.itemMaster',
+        'purchaseRequestDetails.changedRecommendedCanvas',
+        'purchaseRequestDetails.changedRecommendedCanvas.vendor'
+      ]);
+
       }
     }
     // Apply the common ordering
@@ -398,9 +416,14 @@ class PurchaseRequests
 
     $this->model->whereNull('pr_DepartmentHead_CancelledBy');
     $this->model->with(['purchaseRequestDetails' => function ($q) {
+     
       $q->with(['itemMaster', 'changedRecommendedCanvas', 'changedRecommendedCanvas.vendor']) // Correctly reference nested relationships
-        ->whereNotNull('pr_DepartmentHead_ApprovedBy'); // Simplified where condition
+        ->whereNotNull('pr_DepartmentHead_ApprovedBy');// Simplified where condition
+        
     }]);
+    $this->model->whereHas('purchaseRequestDetails', function ($q1) {
+      $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where(['pr_DepartmentHead_CancelledBy' => null]);
+    });
     // $this->model->with(['purchaseRequestDetails' => function ($q) {
     //   $q->with('itemMaster','purchaseRequestDetails.changedRecommendedCanvas','purchaseRequestDetails.changedRecommendedCanvas.vendor')
     //     ->where(function ($q) {
@@ -428,7 +451,9 @@ class PurchaseRequests
     $this->model->where('pr_Branch_Level2_ApprovedBy', '!=', null)->where(function ($q1) {
       $q1->where('isvoid', 0)->orWhereNull('isvoid');
     });
-
+    $this->model->whereHas('purchaseRequestDetails', function ($q1) {
+      $q1->where('pr_DepartmentHead_ApprovedBy', '!=', null)->where(['pr_DepartmentHead_CancelledBy' => null]);
+    });
     $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
 
     $this->model->orderBy('created_at', 'desc');

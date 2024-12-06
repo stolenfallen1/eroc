@@ -288,10 +288,10 @@
       <tr>
         <th rowspan="1" class="border-top-none border-bottom-none">NUMBER</th>
         <th rowspan="1" class="border-top-none border-bottom-none" width="50">QTY</th>
-        <th rowspan="1" class="border-top-none border-bottom-none" width="50">EXPIRY</th>
-        <th rowspan="1" class="border-top-none">ORDER</th>
-        <th rowspan="1" class="border-top-none">RECEIVED</th>
-        <th rowspan="1" class="border-top-none">SERVED</th>
+        <th rowspan="1" class="border-top-none border-bottom-none" width="15">EXPIRY</th>
+        <th rowspan="1" class="border-top-none" width="15">ORDER</th>
+        <th rowspan="1" class="border-top-none" width="15">RECEIVED</th>
+        <th rowspan="1" class="border-top-none" width="15">SERVED</th>
         <th rowspan="1" class="border-top-none">BALANCE</th>
       </tr>
     </thead>
@@ -375,10 +375,15 @@
       <td colspan="2" width="10" class="item-td border-none border-bottom text-left"><br></td>
     </tr>
 
-    <tr>
+     <tr>
       <td colspan="10" width="150" class=" border-none  text-right">VAT SALES:</td>
-      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}</td>
-    </tr>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">
+        @if($pdf_data['delivery']['warehouse'] == '78' || $pdf_data['delivery']['warehouse'] == '66')
+        {{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}
+        @else 
+        {{$pdf_data['currency']}}{{number_format((($pdf_data['grand_total'] + $pdf_data['discount']) - $pdf_data['vat_amount']), 2)}}
+        @endif
+    </td>
     <tr>
       <td colspan="10" width="150" class=" border-none  text-right">VAT :</td>
       <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>

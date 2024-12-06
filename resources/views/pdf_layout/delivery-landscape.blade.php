@@ -377,9 +377,7 @@
 
     <tr>
       <td colspan="10" width="150" class=" border-none  text-right">VAT SALES:</td>
-      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">
-          {{$pdf_data['currency']}}{{number_format((($pdf_data['grand_total']+$pdf_data['discount']) - $pdf_data['vat_amount']), 2)}}
-      </td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}</td>
     </tr>
     <tr>
       <td colspan="10" width="150" class=" border-none  text-right">VAT :</td>

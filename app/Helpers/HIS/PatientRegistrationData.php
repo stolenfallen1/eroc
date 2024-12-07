@@ -4,9 +4,24 @@
 
     use \Carbon\Carbon;
     use App\Helpers\GetIP;
+    use App\Models\HIS\services\Patient;
+    use App\Models\HIS\services\PatientRegistry;
 
     class PatientRegistrationData {
 
+        public function handleExistingPatientData($lastname, $firstname) {
+            $existingPatient = Patient::where('lastname', $lastname)
+            ->where('firstname', $firstname)
+            ->first();
+            return $existingPatient;
+        }
+
+        public function handleExistingRegistryData($patient_id, $today) {
+            $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
+            ->whereDate('registry_Date', $today)
+            ->exists();
+            return $existingRegistry;
+        }
         public function preparePatientData($request, $checkUser, $currentTimestamp, $patientId, $existingData) {
             return [
                 'patient_Id'                => $request->payload['patient_Id'] ?? $patientId,
@@ -136,7 +151,7 @@
                 'mscAccount_Discount_Id'                    => $request->payload['mscAccount_Discount_Id'] ?? null,
                 'mscAccount_Trans_Types'                    => $request->payload['mscAccount_Trans_Types'] ?? 5, 
                 'mscAdmission_Type_Id'                      => $request->payload['mscAdmission_Type_Id'] ?? null,
-                'mscPatient_Category'                       => $request->payload['patient_Id'] ? 3 : 2,
+                'mscPatient_Category'                       => isset($request->payload['patient_Id']) ? 3 : 2,
                 'mscPrice_Groups'                           => $request->payload['mscPrice_Groups'] ?? null,
                 'mscPrice_Schemes'                          => $request->payload['mscPrice_Schemes'] ?? 100,
                 'mscService_Type'                           => $request->payload['mscService_Type'] ?? null,

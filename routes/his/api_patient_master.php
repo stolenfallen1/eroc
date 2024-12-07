@@ -3,6 +3,7 @@
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 use App\Http\Controllers\HIS\services\OutpatientRegistrationController;
 use App\Http\Controllers\HIS\services\InpatientRegistrationController;
+use App\Http\Controllers\HIS\services\RegistrationController;
 use App\Http\Controllers\HIS\AllergyTypeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
@@ -32,6 +33,11 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('/get-msc-complaint', 'getComplaintList');
     Route::get('disposition', 'getDisposition');
     Route::get('service-type', 'getServiceType');
+    // Route::post('register-emergency', 'register');
+    // Route::put('update-emergency/{id}', 'update');
+});
+
+Route::controller(RegistrationController::class)->group(function() {
     Route::post('register-emergency', 'register');
     Route::put('update-emergency/{id}', 'update');
 });

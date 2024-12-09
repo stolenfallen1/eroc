@@ -25,7 +25,7 @@ class Itemmasters extends Model
 
     public function getNameAttribute()
     {
-        $description = $this->isMedicines ? $this->item_Description : '';
+        $description = $this->isMedicines ? $this->item_Description :  $this->item_Description;
         return $this->item_name . ' ' .$description;
     }
     public function wareHouseItems(){

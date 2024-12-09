@@ -301,7 +301,7 @@
       @foreach ($pdf_data['groupedNonFreeGoods'] as $itemName => $items)
       @foreach ($items as $index => $item)
       @php
-      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('rr_Document_Invoice_No',$item['rr_Document_Invoice_No'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
       $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
       $expirydate = '';
       $batchno = '';
@@ -429,7 +429,7 @@
     @foreach ($pdf_data['groupedFreeGoods'] as $itemName => $items)
     @foreach ($items as $index => $item)
     @php
-    $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+    $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->where('rr_Document_Invoice_No',$item['rr_Document_Invoice_No'])->groupBy('po_Document_Number')->sum('served_qty');
     $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
     $expirydate = '';
     $batchno = '';

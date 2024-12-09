@@ -697,10 +697,10 @@ class PurchaseRequestController extends Controller
                 ]);
             }
 
-            $checkifconsignment = PurchaseOrderConsignment::where('pr_request_id', $pr->id)->where('vendor_id', $vendor_id)->first();
-            if ($checkifconsignment) {
-
-                $checkifconsignmentItem = PurchaseOrderConsignmentItem::where('pr_request_id', $pr->id)->where('request_item_id', $item['canvas_Item_Id'])->first();
+            $checkifconsignment = PurchaseOrderConsignment::where('pr_request_id', $pr->id)->where('vendor_id',$vendor_id)->first();
+            if($checkifconsignment){
+            
+                $checkifconsignmentItem = PurchaseOrderConsignmentItem::where('pr_request_id', $pr->id)->where('request_item_id',$item['canvas_Item_Id'])->first();
                 $checkifconsignment->update([
                     'po_id' => $po['id'],
                     'canvas_id' => $item['id'],

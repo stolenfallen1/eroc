@@ -183,9 +183,14 @@ class DeliveryController extends Controller
                     (new RecomputePrice())->compute($warehouse_id, '', $detail['item']['id'], 'out');
                 }
 
-                // if (isset($detail['free_goods'])) {
-                //     $this->StorebatchDetails($batch,$delivery,$delivery_item,$item_amount);
-                // }
+                if (isset($detail['free_goods'])) {
+                    foreach ($detail['free_goods'] as $key1 => $batch) {
+
+                        (new RecomputePrice())->compute($warehouse_id, '', $batch['item_Id'], 'out');
+                        
+                        $this->StorebatchDetails($batch,$delivery,$delivery_item,$item_amount);
+                    }
+                }
             }
 
             if (count($request['podetails']) > 0) {

@@ -81,7 +81,7 @@ class ConsignmentDeliveryController extends Controller
 
             $has_dup_invoice_no = Consignment::where('rr_Document_Delivery_Receipt_No', 'like', '%'.$request['rr_Document_Delivery_Receipt_No'].'%')->exists();
             $vendor = Vendors::with('term')->findOrFail($request['rr_Document_Vendor_Id']);
-            if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
+            // if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
             $sequence = SystemSequence::where(['isActive' => true, 'code' => 'DSN1'])->first();
             if(!$sequence) return response()->json(['error' => 'No sequence found'], 200);
             $number = str_pad($sequence->seq_no, $sequence->digit, "0", STR_PAD_LEFT);

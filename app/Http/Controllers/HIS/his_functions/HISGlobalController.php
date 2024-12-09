@@ -54,6 +54,7 @@ class HISGlobalController extends Controller
                 'transactions' => $transactions,
                 'totalPostedCount' => $totalPostedCount,
                 'totalReturnedCount' => $totalReturnedCount,
+                'revenueID' => $revenueID,
                 'title' => $revenueDescription,
                 'sub_title' => 'Daily Income Report',
                 'report_identifier' => $patient_Identifier,
@@ -61,7 +62,7 @@ class HISGlobalController extends Controller
                 'printed_By' => Auth()->user()->idnumber,
             ];
 
-            $pdf = PDF::loadView('his.report.ancillary.income_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
+            $pdf = PDF::loadView('his.report.income_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
             $pdf->render();    
             return $pdf->stream('Income Report' . '.pdf');
             
@@ -100,6 +101,7 @@ class HISGlobalController extends Controller
                 'transactions' => $transactions,
                 'totalPostedCount' => $totalPostedCount,
                 'totalReturnedCount' => $totalReturnedCount,
+                'revenueID' => $revenueID,
                 'title' => $revenueDescription,
                 'sub_title' => 'Monthly Income Report',
                 'report_identifier' => $patient_Identifier,
@@ -107,7 +109,7 @@ class HISGlobalController extends Controller
                 'printed_By' => Auth()->user()->idnumber,
             ];
 
-            $pdf = PDF::loadView('his.report.ancillary.income_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
+            $pdf = PDF::loadView('his.report.income_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
             $pdf->render();    
             return $pdf->stream('Income Report' . '.pdf');
             

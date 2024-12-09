@@ -18,9 +18,7 @@ class VwConsignmentMaster extends Model
     {
         return $this->hasMany(VwConsignmentDetails::class, 'rr_id', 'id');
     }
-
     public function warehouse(){
         return $this->belongsTo(Warehouses::class, 'rr_Document_Warehouse_Id');
     }
-
 }

@@ -306,30 +306,27 @@
       $expirydate = '';
       $batchno = '';
       $qty = '';
-      if($batchdetails) {
-     
-      }
       @endphp
       <tr>
         @if ($index == 0)
-        <td class="item-td" rowspan="{{ count($items) }}">{{ $item['itemcode'] }}</td>
-        <td class="item-td" rowspan="{{ count($items) }}">{{ $itemName }}</td>
+        <td class="item-td" >{{ $item['itemcode'] }}</td>
+        <td class="item-td" >{{ $itemName }}</td>
         @endif
         <!-- Display individual item details -->
         <td class="item-td">{{ $item['uom'] }}</td>
         <td class="item-td" width="10">
-          @foreach($batchdetails  as $batch)
-            <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
+          @foreach($batchdetails as $batch)
+          <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
           @endforeach
         </td>
         <td class="item-td" style="width:20;">
-          @foreach($batchdetails  as $batch)
-            <div >{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+          @foreach($batchdetails as $batch)
+          <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
           @endforeach
         </td>
         <td class="item-td">
-          @foreach($batchdetails  as $batch)
-            <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+          @foreach($batchdetails as $batch)
+          <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
           @endforeach
         </td>
         <td class="item-td ">{{ $item['order_qty'] }}</td>
@@ -380,10 +377,10 @@
       <td colspan="2" width="10" class="item-td border-none border-bottom text-left">
         @if($pdf_data['delivery']['warehouse'] == '78' || $pdf_data['delivery']['warehouse'] == '66')
         {{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}
-        @else 
+        @else
         {{$pdf_data['currency']}}{{number_format((($pdf_data['grand_total'] + $pdf_data['discount']) - $pdf_data['vat_amount']), 2)}}
         @endif
-    </td>
+      </td>
     </tr>
     <tr>
       <td colspan="10" width="150" class=" border-none  text-right">VAT :</td>
@@ -441,24 +438,24 @@
     @endphp
     <tr>
       @if ($index == 0)
-      <td class="item-td" rowspan="{{ count($items) }}">{{ $item['itemcode'] }}</td>
-      <td class="item-td" rowspan="{{ count($items) }}">{{ $itemName }}</td>
+      <td class="item-td" >{{ $item['itemcode'] }}</td>
+      <td class="item-td" >{{ $itemName }}</td>
       @endif
       <!-- Display individual item details -->
       <td class="item-td">{{ $item['uom'] }}</td>
       <td class="item-td">
-        @foreach($batchdetails  as $batch)
-          <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
+        @foreach($batchdetails as $batch)
+        <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
         @endforeach
       </td>
       <td class="item-td">
-        @foreach($batchdetails  as $batch)
-          <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+        @foreach($batchdetails as $batch)
+        <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
         @endforeach
       </td>
       <td class="item-td">
-        @foreach($batchdetails  as $batch)
-          <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+        @foreach($batchdetails as $batch)
+        <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
         @endforeach
       </td>
       <td class="item-td ">{{ $item['served_qty'] }}</td>

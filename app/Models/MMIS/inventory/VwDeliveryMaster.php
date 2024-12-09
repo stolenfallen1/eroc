@@ -24,5 +24,4 @@ class VwDeliveryMaster extends Model
     public function warehouse(){
         return $this->belongsTo(Warehouses::class, 'rr_Document_Warehouse_Id');
     }
-    
 }

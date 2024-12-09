@@ -449,7 +449,7 @@ class RequisitionController extends Controller
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
-                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'O' : 'I'), // O rasad daw ang sa emergency
                                 'RevenueID'             => $revenueID,
                                 'RequestDate'           => $today,
                                 'ItemID'                => $itemID,
@@ -465,7 +465,7 @@ class RequisitionController extends Controller
                             tbNurseCommunicationFile::create([
                                 'HospNum'               => $patient_Id,
                                 'IDnum'                 => $case_No . 'B',
-                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'O' : 'I'), // O rasad daw ang sa emergency
                                 'ItemID'                => $itemID,
                                 'Amount'                => $amount,
                                 'Quantity'              => $quantity,
@@ -692,7 +692,7 @@ class RequisitionController extends Controller
                             tbNurseLogBook::create([
                                 'Hospnum'               => $patient_Id,
                                 'IdNum'                 => $case_No . 'B',
-                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'O' : 'I'), // O rasad daw ang sa emergency
                                 'RevenueID'             => $revenueID,
                                 'RequestDate'           => $today,
                                 'ItemID'                => $itemID,
@@ -710,7 +710,7 @@ class RequisitionController extends Controller
                             tbNurseCommunicationFile::create([
                                 'HospNum'               => $patient_Id,
                                 'IDnum'                 => $case_No . 'B',
-                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
+                                'PatientType'           => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'O' : 'I'), // O rasad daw ang sa emergency
                                 'ItemID'                => $itemID,
                                 'Amount'                => $amount,
                                 'Quantity'              => $quantity,

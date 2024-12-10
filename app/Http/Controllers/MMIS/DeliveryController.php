@@ -188,7 +188,7 @@ class DeliveryController extends Controller
 
                         (new RecomputePrice())->compute($warehouse_id, '', $batch['item_Id'], 'out');
                         
-                        $this->StorebatchDetails($batch,$delivery,$delivery_item,$item_amount);
+                        $this->StorebatchDetails($batch,$delivery,$delivery_item,0);
                     }
                 }
             }
@@ -307,7 +307,9 @@ class DeliveryController extends Controller
         if ($batchdetails) {
             $batchqty = $batchdetails->item_Qty;
         }
-
+        if((int)$item_amount > 0){
+            $batchqty = 0;
+        }
         ItemBatchModelMaster::create(
             // [
             //     'branch_id'         => $delivery->rr_Document_Branch_Id,

@@ -293,6 +293,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Invoice_No' => $payload['rr_Document_Invoice_No'] ?? '',
                 'rr_Document_Invoice_Date' => $payload['rr_Document_Invoice_Date'],
                 'rr_Document_Delivery_Receipt_No' => $payload['rr_Document_Delivery_Receipt_No'],
+                'rr_Document_Delivery_Date' => $request['rr_Document_Invoice_Date'],
                 'rr_Document_TotalGrossAmount' => $payload['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $payload['rr_Document_TotalDiscountAmount'],
                 'rr_Document_TotalNetAmount' => $payload['rr_Document_TotalNetAmount'],

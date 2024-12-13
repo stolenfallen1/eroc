@@ -22,7 +22,7 @@ class PurchaseOrderConsignments
       'items','items.itemdetails','items.unit','items.batchs','receiver'); 
     $this->byTab();
     $this->searcColumns();
-    // $this->isApproved();
+    $this->isApproved();
     $per_page = Request()->per_page;
     if ($per_page=='-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);

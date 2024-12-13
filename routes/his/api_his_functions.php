@@ -69,6 +69,7 @@ Route::controller(AncillaryController::class)->group(function() {
     Route::post('carry-ancillary-order', 'carryOrder');
     Route::post('cancel-ancillary-order', 'cancelOrder');
     Route::post('post-return-supplies', 'postReturnSupplies');
+    Route::post('submit-manual-posting-supplies', 'submitManualPostingSupplies');
 });
 // Pharmacy Routes
 Route::controller(PharmacyController::class)->group(function() {

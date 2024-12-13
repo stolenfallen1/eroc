@@ -503,6 +503,7 @@ class PharmacyController extends Controller
 
             $patient_details = PatientRegistry::with('patient_details', 'patient_details.sex')
                 ->where('case_No', $case_No)
+                ->whereNull('discharged_Date')
                 ->first();
 
             return response()->json($patient_details, 200);

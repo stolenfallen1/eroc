@@ -207,6 +207,9 @@ class PurchaseRequests
     } else if (Request()->tab == 12) {
       $this->forDeclinedCanvas();
     }
+    else if (Request()->tab == 13) {
+      $this->forDeptHeadApproval();
+    }
   }
 
   private function forVoidPr()
@@ -217,7 +220,7 @@ class PurchaseRequests
       $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
     }
   }
-
+  
   private function forApproval()
   {
     // Apply department head and staff role logic
@@ -322,7 +325,20 @@ class PurchaseRequests
     // Apply the common ordering
     $this->model->orderBy('created_at', 'desc');
   }
+  private function forDeptHeadApproval()
+  {
+    $this->model->whereIn('warehouse_Id', $this->authUser->departments) 
+      ->where('pr_Purchaser_Status_Id',1)
+      ->whereHas('purchaseRequestDetails', function ($q1) {
+        if ($this->role->isdietary() || $this->role->isdietaryhead()) {
+          $q1->where(['recommended_supplier_id' => null]);
+        }
 
+        $q1->where(['pr_DepartmentHead_ApprovedBy' => null, 'pr_DepartmentHead_CancelledBy' => null]);
+      })
+      ->with('purchaseRequestDetails.itemMaster', 'purchaseRequestDetails.changedRecommendedCanvas', 'purchaseRequestDetails.changedRecommendedCanvas.vendor');
+      $this->model->orderBy('created_at', 'desc');
+  }
   private function forApproval1()
   {
     if ($this->role->department_head() || $this->role->staff()) {

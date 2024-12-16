@@ -108,6 +108,8 @@ php artisan config:cache
 php artisan key:generate 
 ```
 
+After doing this ask your Senior regarding the projects Environment Variables ( .env ) file.
+
 Running the server / project locally
 ```bash
 php artisan serve 
@@ -116,8 +118,6 @@ Running it on specific ports ( sample )
 ```bash
 php artisan serve --host 10.4.15.12 --port 666
 ```
-
-After doing this ask your Senior regarding the projects Environment Variables ( .env ) file.
 
 After development you can push your changes on to your branch then merge it to the master branch. But always ask your Senior for guidance before merging to master.
 ```bash

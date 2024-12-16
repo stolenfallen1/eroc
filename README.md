@@ -28,16 +28,16 @@ To check if you have Git installed, if not please do so but usually windows alre
 git -v 
 ```
 To check if you have associated your GitHub account to your computer.
-```base
+```bash
 git config --global user.name
 git config --global user.email
 ```
 To check if you have SSH Configured in your computer.
-```base
+```bash
 ls ~/.ssh
 ```
 To check if you already connected to GitHub
-```base
+```bash
 ssh -T git@github.com
 ```
 
@@ -46,24 +46,24 @@ If you haven't configured your ssh and connected your GitHub account to your com
 Please follow this steps or ask ChatGPT about it
 
 Connect your GitHub username and email
-```base
+```bash
 git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 Verify the configuration
-```base
+```bash
 git config --global --list
 ```
 Generate and SSH Key
-```base
+```bash
 ssh-keygen -t ed25519 -C "your.email@example.com"
 ```
 If naa error, try this one 
-```base
+```bash
 ssh-keygen -t rsa -b 4096 -C "your.email@example.com"
 ```
 After adding the SSH key ( private and public ) use the public and add it to your GitHub account manually. To get your public ssh key 
-```base
+```bash
 cat ~/.ssh/id_rsa.pub
 ```
 Copy and paste the id then navigate to GITHUB => SETTINGS => SSH AND GPG KEYS.
@@ -88,4 +88,14 @@ php artisan key:generate
 
 After doing this ask your Senior regarding the projects Environment Variables ( .env ) file.
 
-Now your all set-up! If any error happens please ask your Senior for guidance.
+Now your all set-up! 
+
+Running the server / project locally
+```bash
+php artisan serve 
+```
+Running it on specific ports ( sample )
+```bash
+php artisan serve --host 10.4.15.12 --port 666
+```
+If any error happens please ask your Senior for guidance.

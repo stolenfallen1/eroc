@@ -19,7 +19,6 @@ class InventoryTransaction extends Model
     public function batch(){
         return $this->belongsTo(ItemBatchModelMaster::class, 'batch_id');
     }
-
     public function unit(){
         return $this->belongsTo(Unitofmeasurement::class, 'transaction_Item_UnitofMeasurement_Id','id');
     }

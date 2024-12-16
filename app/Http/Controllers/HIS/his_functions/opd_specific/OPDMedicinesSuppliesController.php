@@ -9,9 +9,11 @@ use App\Models\BuildFile\Itemmasters;
 use App\Models\BuildFile\SystemSequence;
 use App\Models\BuildFile\Warehouseitems;
 use App\Models\HIS\his_functions\CashAssessment;
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\his_functions\NurseLogBook;
 use App\Models\HIS\medsys\MedSysCashAssessment;
+use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbInvStockCard;
 use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\medsys\tbNurseLogBook;
@@ -38,26 +40,22 @@ class OPDMedicinesSuppliesController extends Controller
             if (!$revenueCode) {
                 return response()->json(["msg" => "Revenue code not found"], 404);
             }
-            $warehouseItems = Warehouseitems::where('warehouse_Id', $request->warehouseID)->pluck('item_Id');
-            $warehouseItemsArray = $warehouseItems->toArray();
-            if (empty($warehouseItemsArray)) {
-                return response()->json(["msg" => "Warehouse items not found"], 404);
-            }
 
             $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
             $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
                 $query->where('warehouse_Id', $request->warehouseID)
-                    ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
+                        ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
             }])
-            ->whereIn('id', $warehouseItemsArray) 
+            ->whereHas('wareHouseItems', function ($query) use ($request) {
+                $query->where('warehouse_Id', $request->warehouseID);
+            })
             ->orderBy('item_name', 'asc');
-
-            if ($request->itemcodes) {
-                $items->whereNotIn('map_item_id', $request->itemcodes);  
-            }
 
             if($request->keyword) {
                 $items->where('item_name','LIKE','%'.$request->keyword.'%');
+            }
+            if($request->itemcodes) {
+                $items->whereNotIn('map_item_id', $request->itemcodes);
             }
             $page  = $request->per_page ?? '15';
             return response()->json($items->paginate($page), 200);
@@ -84,7 +82,7 @@ class OPDMedicinesSuppliesController extends Controller
                     $medSysRequestNum = DB::connection('sqlsrv_medsys_nurse_station')->table('STATION.dbo.tbNursePHSlip')->value('ChargeSlip');
                     $medSysReferenceNum = DB::connection('sqlsrv_medsys_inventory')->table('INVENTORY.dbo.tbInvChargeSlip')->value('DispensingCSlip');
                 } else {
-                    throw new \Exception("Failed to increment charge slips / transaction sequences");
+                    throw new \Exception('Error in getting MedSys Request Number and Reference Number');
                 }
             } else {
                 $assessnum_sequence = SystemSequence::where('code', 'GAN')->first();
@@ -170,6 +168,27 @@ class OPDMedicinesSuppliesController extends Controller
                             ]);
                         endif;
                     } else if ($charge_to == 'Company / Insurance') {
+                        HISBillingOut::create([
+                            'patient_Id'                => $patient_Id,
+                            'case_No'                   => $case_No,
+                            'patient_Type'              => 'O',
+                            'transDate'                 => $today,
+                            'msc_price_scheme_id'       => 2,
+                            'revenueID'                 => $revenueID,
+                            'itemID'                    => $itemID,
+                            'quantity'                  => $requestQuantity,
+                            'refNum'                    => $requestNum,
+                            'ChargeSlip'                => $requestNum,
+                            'amount'                    => $amount,
+                            'userId'                    => Auth()->user()->idnumber,
+                            'request_doctors_id'        => $doctor_Id,
+                            'net_amount'                => $amount,
+                            'hostName'                  => (new GetIP())->getHostname(),
+                            'accountnum'                => $patient_Id,
+                            'auto_discount'             => 0,
+                            'createdby'                 => Auth()->user()->idnumber,
+                            'created_at'                => $today,
+                        ]);
                         NurseLogBook::create([
                             'branch_Id'                 => 1,
                             'patient_Id'                => $patient_Id,
@@ -238,6 +257,20 @@ class OPDMedicinesSuppliesController extends Controller
                             'createdBy'                             => Auth()->user()->idnumber,
                         ]);
                         if ($this->check_is_allow_medsys): 
+                            MedSysDailyOut::create([
+                                'Hospnum'                   => $patient_Id,
+                                'IDNum'                     => $case_No . 'B',
+                                'TransDate'                 => $today,
+                                'RevenueID'                 => $revenueID,
+                                'ItemID'                    => $itemID,
+                                'Quantity'                  => $requestQuantity,
+                                'RefNum'                    => $requestNum,
+                                'ChargeSlip'                => $requestNum,
+                                'Amount'                    => $amount,
+                                'UserID'                    => Auth()->user()->idnumber,
+                                'HostName'                  => (new GetIP())->getHostname(),
+                                'AutoDiscount'              => 0,
+                            ]);
                             tbNurseLogBook::create([
                                 'Hospnum'                   => $patient_Id,
                                 'IDnum'                     => $case_No . 'B',
@@ -520,7 +553,6 @@ class OPDMedicinesSuppliesController extends Controller
         try {
             $cashAssessmentResults = CashAssessment::where('patient_Id', $patient_Id)
                 ->where('case_No', $case_No)
-                ->whereNull('ORNumber')
                 ->whereNotNull('refNum')
                 ->where(function($query) {
                     $query->where('issupplies', 1)
@@ -550,13 +582,19 @@ class OPDMedicinesSuppliesController extends Controller
                     return $item;
                 });
     
-            $combinedResults = $cashAssessmentResults->merge($nurseLogBookResults);
+            $cashAssessmentKeys = $cashAssessmentResults->pluck('refNum')->all();
+            $filteredNurseLogBookResults = $nurseLogBookResults->filter(function ($item) use ($cashAssessmentKeys) {
+                return !in_array($item->requestNum, $cashAssessmentKeys);
+            });
+    
+            // Merge both results
+            $combinedResults = $cashAssessmentResults->merge($filteredNurseLogBookResults);
     
             return $combinedResults;
         } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
-    }
+    }    
     public function revokecharge(Request $request) 
     {
         DB::connection('sqlsrv_medsys_inventory')->beginTransaction();

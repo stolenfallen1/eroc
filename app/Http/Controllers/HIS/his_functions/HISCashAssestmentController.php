@@ -69,6 +69,8 @@ class HISCashAssestmentController extends Controller
     public function history($patient_id, $case_no, $code, $refNum = [])
     {
         try {
+            $today = Carbon::now()->format('Y-m-d');
+
             $query = CashAssessment::with('items', 'doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
@@ -76,6 +78,7 @@ class HISCashAssestmentController extends Controller
                 ->where('ismedicine', 0)
                 ->where('issupplies', 0)
                 ->where('isprocedure', 0)
+                ->whereDate('created_at', $today)
                 ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
             if ($code == 'MD') {

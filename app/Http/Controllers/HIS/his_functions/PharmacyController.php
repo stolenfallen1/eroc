@@ -248,7 +248,7 @@ class PharmacyController extends Controller
 
             if (isset($request->payload['Orders']) && count($request->payload['Orders']) > 0) {
                 foreach ($request->payload['Orders'] as $items) {
-                    $warehouse_Id = $items['warehouse_Id'];
+                    $warehouse_Id = $items['warehouse_Id'] ?? 78;
                     $revenue_Id = $items['revenue_Id'];
                     $item_Id = $items['item_Id'];
                     $item_ListCost = $items['item_ListCost'];

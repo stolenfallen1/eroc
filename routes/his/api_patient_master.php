@@ -58,7 +58,7 @@ Route::controller(PatientDischarge::class)->group(function(){
     Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
     Route::put('untag-patient-maygohome/{id}', 'untagMGH');
     Route::get('check-elgibility-for-discharge/{id}', 'checkPatientEligibilityForDischarge');
-    Route::put('discharge-patient/{id}', 'dischargePatient');
+    Route::put('discharge-patient/{id}', 'dischargePatient'); 
     Route::get('patient-balance/{id}', 'getTotalCharges');
     Route::get('get-er-result', 'erResult');
 });

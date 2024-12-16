@@ -79,7 +79,6 @@ git clone git@github.com:CEBU-DOCTORS-UNIVERISTY-HOSPITAL/cdgcore.git
 Things you should do after cloning the project
 
 ```bash
-npm install 
 composer install 
 php artisan config:clear
 php artisan config:cache

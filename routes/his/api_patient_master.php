@@ -38,8 +38,8 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 });
 
 Route::controller(RegistrationController::class)->group(function() {
-    Route::post('register-emergency', 'register');
-    Route::put('update-emergency/{id}', 'update');
+    Route::post('register-patient', 'register');
+    Route::put('update-patient/{id}', 'update');
 });
 
 Route::controller(SOAController::class)->group(function() {

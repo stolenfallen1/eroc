@@ -94,11 +94,10 @@ class HISPatientMasterObserver
         try {
 
             if($this->check_is_allow_medsys && $patient) {
+                
                 $patientInfo    = MedsysPatientMaster::findOrFail($patient->patient_Id);
                 $patientInfo2   = MedsysPatientMaster2::findOrFail($patient->patient_Id);
-
                 if($patientInfo && $patientInfo2) {
-
                     $spName     = ($patient->spLastname || $patient->spFirstname)
                                 ? $patient->spLastname      . ', ' . $patient->spFirstname      . ' ' . $patient->spMiddlename
                                 : '';

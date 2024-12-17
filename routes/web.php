@@ -18,6 +18,7 @@ use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
 use App\Http\Controllers\HIS\EmergencyRoomMedicine;
+use App\Http\Controllers\BuildFile\Hospital\DoctorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,3 +64,4 @@ Route::get('get-transaction-codes', [TransactionCodesController::class, 'list'])
 Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);
 Route::get('get-charge-items', [EmergencyRoomMedicine::class, 'getMedicineSupplyCharges']);
 Route::get('er-patient-daily-report', [ReportMaster::class, 'ERDailyCensusReport']);
+Route::get('doctors-categories', [DoctorController::class, 'doctorsCategories']);

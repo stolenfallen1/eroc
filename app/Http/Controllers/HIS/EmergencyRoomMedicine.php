@@ -410,8 +410,8 @@ class EmergencyRoomMedicine extends Controller
                     'record_Status' => $item->record_Status ?? $item->recordStatus,
                     'item_Id'       => $item->item_Id ?? $item->itemID,
                     'description'   => (isset($item->requestDescription) 
-                                    ? $item->requestDescription 
-                                    : $item->description ?? null),
+                                    ?  $item->requestDescription 
+                                    :  $item->description ?? null),
                     'price'         => $item->price ?? null,
                     'Quantity'      => $item->Quantity ?? $item->quantity,
                     'dosage'        => $item->dosage ?? $item->dosage,

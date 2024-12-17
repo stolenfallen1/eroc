@@ -36,7 +36,8 @@ class EmergencyRegistrationController extends Controller
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 5)  
                     ->where('isRevoked', 0)              
-                    ->whereDate('registry_Date', $today);
+                    ->whereDate('registry_Date', $today)
+                    ->where('discharged_Date', '=', null);
             });
             if (Request()->has('keyword')) {
                 $keyword = Request()->keyword;
@@ -151,7 +152,6 @@ class EmergencyRegistrationController extends Controller
             $data = Patient::query();
             $data->with('sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries', 'patientRegistry');
             $today = Carbon::now()->format('Y-m-d');
-
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_trans_types', 5);
                 $query->where('isRevoked', 1);
@@ -187,13 +187,11 @@ class EmergencyRegistrationController extends Controller
                 'UpdatedBy' => Auth()->user()->idnumber,
                 'updated_at' => Carbon::now(),
             ]);
-
             DB::connection('sqlsrv_patient_data')->commit();
             return response()->json([
                 'message' => 'Patient revoked successfully',
                 'patientRegistry' => $patientRegistry
             ], 200);
-
         } catch(\Exception $e) {
             DB::connection('sqlsrv_patient_data')->rollBack();
             return response()->json([
@@ -207,7 +205,6 @@ class EmergencyRegistrationController extends Controller
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         try {
             $patientRegistry = PatientRegistry::where('patient_id', $id)->first();
-
             $patientRegistry->update([
                 'isRevoked' => 0,
                 'revokedBy' => null,
@@ -217,13 +214,11 @@ class EmergencyRegistrationController extends Controller
                 'UpdatedBy' => Auth()->user()->idnumber,
                 'updated_at' => Carbon::now(),
             ]);
-
             DB::connection('sqlsrv_patient_data')->commit();
             return response()->json([
                 'message' => 'Patient revoked successfully',
                 'patientRegistry' => $patientRegistry
             ], 200);
-
         } catch(\Exception $e) {
             DB::connection('sqlsrv_patient_data')->rollBack();
             return response()->json([
@@ -241,7 +236,6 @@ class EmergencyRegistrationController extends Controller
             $causeOfAllergyUpdated    = $allergy->cause_of_allergy()->update(['isDeleted' => 1]);
             $symptomsOfAllergyUpdated = $allergy->symptoms_allergy()->update(['isDeleted' => 1]);
             $drugUseOfAllergyUpdated  = $allergy->drug_used_for_allergy()->update(['isDeleted' => 1]);
-    
             if($allergyUpdated && $causeOfAllergyUpdated && $symptomsOfAllergyUpdated && $drugUseOfAllergyUpdated) {
                 $isUpdated = true;
             }

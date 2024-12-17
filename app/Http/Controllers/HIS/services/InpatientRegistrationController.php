@@ -35,11 +35,11 @@ class InpatientRegistrationController extends Controller
         try {
 
             $today = Carbon::now()->format('Y-m-d');
-            // $today = '2024-11-26';
+            // $today = '2024-12-09';
             $data = Patient::query();
 
             $data->whereHas('patientRegistry', function($query) use ($today) {
-                $query->where('mscAccount_Trans_Types', 5)  
+                $query->where('mscAccount_Trans_Types', 6)  
                     ->where('isRevoked', 0)              
                     ->whereDate('registry_Date', $today);
             });
@@ -58,7 +58,7 @@ class InpatientRegistrationController extends Controller
                 'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
                 'patientRegistry' => function($query) use ($today) {
                     $query->whereDate('registry_Date', $today)
-                          ->where('mscAccount_Trans_Types', 5)
+                          ->where('mscAccount_Trans_Types', 6)
                           ->where('isRevoked', 0)
                           ->with(['allergies' => function($allergyQuery) use ($today) {
                                 $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')

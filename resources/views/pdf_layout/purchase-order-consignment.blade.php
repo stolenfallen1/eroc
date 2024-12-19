@@ -236,11 +236,11 @@
       <tr>
         <td class="left-width text-right">Supplier Name. :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['vendor_Name']}}</td>
-        <td class="right-width  text-right">INVOICE No. :</td>
+        <td class="right-width  text-right">INV. No. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_No']}}</td>
-        <td class="right-width  text-right">INVOICE Date. :</td>
+        <td class="right-width  text-right">INV. Date. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_Date'] ? date('m/d/Y',strtotime($pdf_data['delivery']['rr_Document_Invoice_Date'])) : ''}}</td>
-        <td class="right-width  text-right">Inv Rcvd Date:</td>
+        <td class="right-width  text-right">INV. Rcvd Date:</td>
         <td class="underline ">{{date('m/d/Y',strtotime($pdf_data['delivery']['invoice_received_date']))}}</td>
       </tr>
       

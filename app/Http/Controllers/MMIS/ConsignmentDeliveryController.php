@@ -53,7 +53,8 @@ class ConsignmentDeliveryController extends Controller
                 if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
                 PurchaseOrderConsignment::where('id',$payload['id'])->update([
                     'invoice_no'=>$payload['invoice_no'],
-                    'invoice_date'=>$payload['invoice_date']
+                    'invoice_date'=>$payload['invoice_date'],
+                    'receivedDate'=>$payload['receivedDate']
                 ]);
                 DB::connection('sqlsrv_mmis')->commit();
                 return response()->json(['message' => 'success'], 200);
@@ -145,6 +146,7 @@ class ConsignmentDeliveryController extends Controller
                 'po_id' => $request['id'],
                 'rr_Status' => $request['rr_Status'],
                 'rr_received_by' => Auth::user()->idnumber,
+                'rr_received_date' => $request['rr_received_date'],
 
                 'category_id' => $request['category_id'],
                 'item_group_id' => $request['item_group_id'],
@@ -302,7 +304,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
                 'rr_Document_Warehouse_Id' => $department,
                 'rr_received_by' => Auth::user()->idnumber,
-
+                'rr_received_date' => $payload['rr_received_date'],
                 'category_id' => $payload['category_id'],
                 'item_group_id' => $payload['item_group_id'],
                 'isConsignment' => 1,

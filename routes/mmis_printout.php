@@ -25,7 +25,9 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
     
     $id = Crypt::decrypt($pid);
     try {
-        $purchase_order = VwPurchaseOrderMaster::with('items')->where('id',$id)->first();
+         $purchase_order = VwPurchaseOrderMaster::with(['items' => function ($query) {
+            $query->orderBy('prdetailsid', 'asc');
+        }])->where('id',$id)->first();
         $po = purchaseOrderMaster::where('id',$id)->first();
         $consignment = VwConsignmentMaster::where('po_Document_Number',$po->po_Document_number)->first();
         // Generate the QR code for the purchase-order

@@ -226,11 +226,11 @@
       <tr>
         <td class="left-width text-right">DEPARTMENT :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['warehouse'] ? $pdf_data['delivery']['warehouse']['warehouse_description'] : ''}}</td>
-        <td class="right-width  text-right">D.R NO.</td>
+        <td class="right-width  text-right">DR NO.</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Delivery_Receipt_No']}}</td>
-        <td class="right-width  text-right">D.R DATE:</td>
+        <td class="right-width  text-right">DR DATE:</td>
         <td class="underline">{{date('m/d/Y',strtotime($pdf_data['delivery']['receivedDate']))}}</td>
-        <td class="right-width  text-right">RECEIVED DATE:</td>
+        <td class="right-width  text-right">DR Rcvd Date:</td>
         <td class="underline ">{{date('m/d/Y',strtotime($pdf_data['delivery']['rr_received_date']))}}</td>
       </tr>
       <tr>
@@ -240,7 +240,7 @@
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_No']}}</td>
         <td class="right-width  text-right">INVOICE Date. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_Date'] ? date('m/d/Y',strtotime($pdf_data['delivery']['rr_Document_Invoice_Date'])) : ''}}</td>
-        <td class="right-width  text-right">RECEIVED Date:</td>
+        <td class="right-width  text-right">Inv Rcvd Date:</td>
         <td class="underline ">{{date('m/d/Y',strtotime($pdf_data['delivery']['invoice_received_date']))}}</td>
       </tr>
       
@@ -275,6 +275,7 @@
       </tr>
     </tbody>
   </table>
+    
     
   <table class="item-section">
     <thead>

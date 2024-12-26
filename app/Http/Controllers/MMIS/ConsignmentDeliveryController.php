@@ -207,7 +207,8 @@ class ConsignmentDeliveryController extends Controller
                         return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+                        'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
                     ]);
                     
                     $batchdetails = ItemBatchModelMaster::create([
@@ -340,7 +341,8 @@ class ConsignmentDeliveryController extends Controller
                     if(!$warehouse_item) return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+                        'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
                     ]);
                     
                     $batchdetails = ItemBatchModelMaster::where('item_Id', $batch['item_Id'])->where('warehouse_id', $warehouse_item->warehouse_Id)->first();     

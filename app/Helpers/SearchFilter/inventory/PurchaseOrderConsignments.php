@@ -17,28 +17,49 @@ class PurchaseOrderConsignments
     $this->authUser = auth()->user();
   }
 
-  public function searchable(){
-    $this->model->with('rr_consignment_master','purchaseRequest','purchaseOrder','vendor',
-      'items','items.itemdetails','items.unit','items.batchs','receiver'); 
+  public function searchable()
+  {
+    $this->model->with(
+      'rr_consignment_master',
+      'purchaseRequest',
+      'purchaseOrder',
+      'vendor',
+      'items',
+      'items.itemdetails',
+      'items.unit',
+      'items.batchs',
+      'receiver'
+    );
     $this->byTab();
     $this->searcColumns();
     $this->isApproved();
     $per_page = Request()->per_page;
-    if ($per_page=='-1') return $this->model->paginate($this->model->count());
+    if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
   }
-  
-  public function auditsearchable(){
+
+  public function auditsearchable()
+  {
     $this->model->whereNull('isaudit');
-    $this->model->with('rr_consignment_master','purchaseRequest','purchaseOrder','vendor',
-      'items','items.itemdetails','items.unit','items.batchs','receiver',
-      'purchaseRequest.warehouse', 'purchaseRequest.status', 'purchaseRequest.category', 
-      'purchaseRequest.subcategory', 
-      'purchaseRequest.purchaseRequestAttachments', 
-      'purchaseRequest.user', 
-      'rr_consignment_master.items', 
-      'rr_consignment_master.items.item', 
-      'rr_consignment_master.items.unit', 
+    $this->model->with(
+      'rr_consignment_master',
+      'purchaseRequest',
+      'purchaseOrder',
+      'vendor',
+      'items',
+      'items.itemdetails',
+      'items.unit',
+      'items.batchs',
+      'receiver',
+      'purchaseRequest.warehouse',
+      'purchaseRequest.status',
+      'purchaseRequest.category',
+      'purchaseRequest.subcategory',
+      'purchaseRequest.purchaseRequestAttachments',
+      'purchaseRequest.user',
+      'rr_consignment_master.items',
+      'rr_consignment_master.items.item',
+      'rr_consignment_master.items.unit',
       'purchaseRequest.itemGroup',
       'consignmentPr',
       'consignmentPr.items',
@@ -48,25 +69,36 @@ class PurchaseOrderConsignments
       'consignmentPo.items',
       'consignmentPo.items.itemdetails',
       'consignmentPo.items.unit'
-    ); 
+    );
     $this->byTab();
     $this->searcColumns();
     $per_page = Request()->per_page;
-    if ($per_page=='-1') return $this->model->paginate($this->model->count());
+    if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
   }
 
-  public function auditedsearchable(){
-    $this->model->where('isaudit',1);
-    $this->model->with('rr_consignment_master','purchaseRequest','purchaseOrder','vendor',
-      'items','items.itemdetails','items.unit','items.batchs','receiver',
-      'purchaseRequest.warehouse', 'purchaseRequest.status', 'purchaseRequest.category', 
-      'purchaseRequest.subcategory', 
-      'purchaseRequest.purchaseRequestAttachments', 
-      'purchaseRequest.user', 
-      'rr_consignment_master.items', 
-      'rr_consignment_master.items.item', 
-      'rr_consignment_master.items.unit', 
+  public function auditedsearchable()
+  {
+    $this->model->where('isaudit', 1);
+    $this->model->with(
+      'rr_consignment_master',
+      'purchaseRequest',
+      'purchaseOrder',
+      'vendor',
+      'items',
+      'items.itemdetails',
+      'items.unit',
+      'items.batchs',
+      'receiver',
+      'purchaseRequest.warehouse',
+      'purchaseRequest.status',
+      'purchaseRequest.category',
+      'purchaseRequest.subcategory',
+      'purchaseRequest.purchaseRequestAttachments',
+      'purchaseRequest.user',
+      'rr_consignment_master.items',
+      'rr_consignment_master.items.item',
+      'rr_consignment_master.items.unit',
       'purchaseRequest.itemGroup',
       'consignmentPr',
       'consignmentPr.items',
@@ -80,32 +112,40 @@ class PurchaseOrderConsignments
       'auditConsignment.user',
       'consignmentPo.auditConsignment',
       'consignmentPo.auditConsignment.user',
-    ); 
+    );
     $this->byTab();
     $this->searcColumns();
     $per_page = Request()->per_page;
-    if ($per_page=='-1') return $this->model->paginate($this->model->count());
+    if ($per_page == '-1') return $this->model->paginate($this->model->count());
     return $this->model->paginate($per_page);
   }
-    public function searcColumns(){
-    $searchable = ['invoice','rr_number'];
+  public function searcColumns()
+  {
+    $searchable = ['invoice', 'rr_number'];
     if (Request()->keyword) {
       $keyword = Request()->keyword;
       // $this->model->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
 
-      $this->model->where(function($query) use ($keyword){
-        $query->whereHas('rr_consignment_master', function($q2) use ($keyword){
-            $q2->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
-        });
-    });
+      $this->model->where(function ($query) use ($keyword, $searchable) {
+        foreach ($searchable as $column) {
+          if ($column === 'rr_number') {
+            $query->orWhereHas('rr_consignment_master', function ($q2) use ($keyword) {
+              $q2->where('rr_Document_Number', 'LIKE', '%' . $keyword . '%');
+            });
+          } elseif ($column === 'invoice') {
+            $query->orWhere('invoice_no', 'LIKE', '%' . $keyword . '%');
+          }
+        }
+      });
     }
   }
-  
-  public function isApproved(){
-    $this->model->where(function($query) {
-        $query->whereHas('purchaseOrder', function($q2){
-            $q2->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null);
-        });
+
+  public function isApproved()
+  {
+    $this->model->where(function ($query) {
+      $query->whereHas('purchaseOrder', function ($q2) {
+        $q2->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null);
+      });
     });
   }
   // public function searcColumns(){
@@ -115,7 +155,7 @@ class PurchaseOrderConsignments
   //     $this->model->where('invoice_no', 'LIKE' , $keyword.'%' );
   //   }
   // }
-  
+
   // public function isApproved(){
   //   $this->model->where(function($query) {
   //       $query->where('total_net_amount', '<', 99999)->whereHas('purchaseOrder', function($q2){
@@ -132,11 +172,11 @@ class PurchaseOrderConsignments
   // }
   public function byTab()
   {
-    if(Request()->tab == 3){
+    if (Request()->tab == 3) {
       $this->model->whereNull('receivedstatus');
-    }else if( Request()->tab == 4){
+    } else if (Request()->tab == 4) {
       $this->model->whereNull('invoice_no');
-    }else if( Request()->tab == 5){
+    } else if (Request()->tab == 5) {
       $this->model->whereNotNull('invoice_no');
     }
   }

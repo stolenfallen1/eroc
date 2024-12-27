@@ -93,11 +93,17 @@ class PurchaseOrderConsignments
       $keyword = Request()->keyword;
       // $this->model->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
 
-      $this->model->where(function($query) use ($keyword){
-        $query->whereHas('rr_consignment_master', function($q2) use ($keyword){
-            $q2->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
-        });
-    });
+     $this->model->where(function ($query) use ($keyword, $searchable) {
+        foreach ($searchable as $column) {
+          if ($column === 'rr_number') {
+            $query->orWhereHas('rr_consignment_master', function ($q2) use ($keyword) {
+              $q2->where('rr_Document_Number', 'LIKE', '%' . $keyword . '%');
+            });
+          } elseif ($column === 'invoice') {
+            $query->orWhere('invoice_no', 'LIKE', '%' . $keyword . '%');
+          }
+        }
+      });
     }
   }
   

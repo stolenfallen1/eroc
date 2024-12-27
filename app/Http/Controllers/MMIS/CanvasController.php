@@ -139,6 +139,7 @@ class CanvasController extends Controller
                     'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
                     'canvas_item_vat_amount' => $vat_amount,
                     'vat_type' => $request->vat_type,
+                    'discount_type' => $request->discount_type ?? 2,
                     'isFreeGoods' => $freegoods,
                     'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
                     'terms_id'=>  $request->terms_id ?? 10,
@@ -179,6 +180,7 @@ class CanvasController extends Controller
                     'canvas_item_vat_rate' => $request->canvas_item_vat_rate,
                     'canvas_item_vat_amount' => $vat_amount,
                     'vat_type' => $request->vat_type,
+                    'discount_type' => $request->discount_type ?? 2,
                     'isFreeGoods' => $freegoods,
                     'isRecommended' => $checkcanvas ? $checkcanvas->isRecommended : 0,
                     'terms_id'=>  $request->terms_id ?? 10,
@@ -315,7 +317,7 @@ class CanvasController extends Controller
                 'pr_Purchaser_UserId'=>$authUser->idnumber,
             ]);
         }
-        $details = canvasMaster::where('pr_request_id',$request->prid)->whereIn('pr_request_details_id', $request->items)->where('isRecommended',1)->get();
+        $details = canvasMaster::where('pr_request_id',$request->prid)->whereIn('pr_request_details_id', $request->items)->whereNull('isFreeGoods')->where('isRecommended',1)->get();
         canvasMaster::where('pr_request_id',$request->prid)->update([
             'canvas_Document_CanvassBy'=>$authUser->idnumber
         ]);

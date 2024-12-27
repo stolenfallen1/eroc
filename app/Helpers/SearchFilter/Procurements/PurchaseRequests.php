@@ -695,7 +695,7 @@ class PurchaseRequests
   private function canvasForApproval()
   {
 
-    $this->model->whereNotNull('approved_admin');
+    // $this->model->whereNotNull('approved_admin');
     $this->model->whereHas('newPurchaseRequestDetails', function ($q) {
       $q->where('is_submitted', true);
       $q->whereNull('canvas_Level2_ApprovedBy')->whereNull('canvas_Level2_CancelledBy')

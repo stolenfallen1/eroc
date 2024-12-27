@@ -91,22 +91,21 @@ class PurchaseOrderConsignments
     $searchable = ['invoice','rr_number'];
     if (Request()->keyword) {
       $keyword = Request()->keyword;
-      $this->model->where('invoice_no', 'LIKE' , $keyword.'%' );
+      // $this->model->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
+
+      $this->model->where(function($query) use ($keyword){
+        $query->whereHas('rr_consignment_master', function($q2) use ($keyword){
+            $q2->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
+        });
+    });
     }
   }
   
   public function isApproved(){
     $this->model->where(function($query) {
-        $query->where('total_net_amount', '<', 99999)->whereHas('purchaseOrder', function($q2){
-            $q2->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null)->where('po_Document_total_net_amount', '<', 99999);
+        $query->whereHas('purchaseOrder', function($q2){
+            $q2->where('comptroller_approved_date', '!=', null)->where('admin_approved_date', '!=', null);
         });
-    })->orWhere(function($query) {
-      $query->where('total_net_amount', '>', 99999)->whereHas('purchaseOrder', function($q2){
-          $q2->where('comptroller_approved_date', '!=', null);
-          $q2->where(function($q3) {
-            $q3->where('admin_approved_date', '!=', null)->orWhere('comptroller_approved_date', '!=', null);
-          })->where(['ysl_approved_date' => null, 'ysl_cancelled_date' => null])->where('po_Document_total_net_amount', '>', 99999);
-      });
     });
   }
   public function byTab()

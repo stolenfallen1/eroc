@@ -401,6 +401,16 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    public function updatePOItem(Request $request){
+
+        $pr_request_id = $request->payload['pr_request_id'] ?? '';
+        $po_Detail_item_id = $request->payload['po_Detail_item_id'] ?? '';
+        $newprice = $request->payload['newprice'] ?? '';
+        if(!$pr_request_id)  throw new \Exception('required pr id');
+        if(!$po_Detail_item_id)  throw new \Exception('required itemid');
+        if(!$newprice)  throw new \Exception('required price');
+        return DB::connection('sqlsrv_mmis')->update("SET NOCOUNT ON;EXEC RecomputeCanvasAndPurchaseOrderDetails_BaseNewPrice ?,?,?",[$pr_request_id,$po_Detail_item_id,$newprice]);
+    }
     public function approve(Request $request){
         $user = auth()->user();
         if($user->role->name == 'comptroller'){

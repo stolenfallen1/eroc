@@ -72,6 +72,8 @@ Route::controller(PurchaseOrderController::class)->group(function () {
   Route::post('purchase-order-reconsider', 'reconsider');
   Route::get('purchase-order-by-number', 'getByNumber');
   Route::post('approve-purchase-order', 'approve');
+  Route::post('update-po-item', 'updatePOItem');
+  
 });
 
 Route::controller(BatchController::class)->group(function () {

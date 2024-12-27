@@ -233,18 +233,6 @@ class InventoryTransactionObserver
                             ]
                         );
                         
-                        InventoryStock::where('LocationID',$warehouse_item['warehouse']['map_item_id'])->where('ItemID',$itemdetails['map_item_id'])->update(
-                            [
-                                'Markup_Out'=> $warehouse_item['item_Markup_Out'],
-                                'Markup_In'=> $warehouse_item['item_Markup_In'],
-                                'OnHand'=> $warehouse_item['item_OnHand'],
-                                'SellingPriceOut'=> $warehouse_item['item_Selling_Price_Out'],
-                                'SellingPriceIn'=> $warehouse_item['item_Selling_Price_In'],
-                                'AverageCost'=> $warehouse_item['item_AverageCost'],
-                                'ComputedOut'=> $warehouse_item['item_Selling_Price_Out'],
-                                'ComputedIn'=> $warehouse_item['item_Selling_Price_In'],
-                            ]
-                        );
                     }
                     
                 }

@@ -28,7 +28,7 @@ class purchaseOrderMaster extends Model
                 ->where(function($query) {
                     $query->whereNull('isFreeGoods')
                         ->orWhere('isFreeGoods', 0);
-                });
+                })->orderBy('pr_detail_id', 'asc'); 
     }
 
     public function podetails(){

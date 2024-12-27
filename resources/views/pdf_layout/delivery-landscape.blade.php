@@ -301,7 +301,7 @@
       @foreach ($pdf_data['groupedNonFreeGoods'] as $itemName => $items)
       @foreach ($items as $index => $item)
       @php
-      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('rr_Document_Invoice_No',$item['rr_Document_Invoice_No'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
       $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
       $expirydate = '';
       $batchno = '';
@@ -311,7 +311,7 @@
         @if ($index == 0)
         <td class="item-td" >{{ $item['itemcode'] }}</td>
         <td class="item-td" >{{ $itemName }}</td>
-        @endif
+        <!-- @endif -->
         <!-- Display individual item details -->
         <td class="item-td">{{ $item['uom'] }}</td>
         <td class="item-td" width="10">
@@ -333,10 +333,10 @@
         <td class="item-td ">{{ $item['served_qty'] }}</td>
         <td class="item-td ">{{ $total }}</td>
         <td class="item-td ">{{ ($item['order_qty'] - $total) }}</td>
-        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],2) }}</td>
-        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],2) }}</td>
-        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vatamount'],2) }}</td>
-        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],2) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],4) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],4) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vatamount'],4) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],4) }}</td>
       </tr>
       @endforeach
       @endforeach
@@ -378,7 +378,10 @@
         @if($pdf_data['delivery']['warehouse'] == '78' || $pdf_data['delivery']['warehouse'] == '66')
         {{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}
         @else
-        {{$pdf_data['currency']}}{{number_format((($pdf_data['grand_total'] + $pdf_data['discount']) - $pdf_data['vat_amount']), 2)}}
+        {{$pdf_data['currency']}}
+        
+        {{number_format((($pdf_data['sub_total']) - $pdf_data['vat_amount']), 2)}}
+
         @endif
       </td>
     </tr>
@@ -427,7 +430,7 @@
     @foreach ($pdf_data['groupedFreeGoods'] as $itemName => $items)
     @foreach ($items as $index => $item)
     @php
-    $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+    $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('itemcode',$item['itemcode'])->where('rr_Document_Invoice_No',$item['rr_Document_Invoice_No'])->groupBy('po_Document_Number')->sum('served_qty');
     $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
     $expirydate = '';
     $batchno = '';

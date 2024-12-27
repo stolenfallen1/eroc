@@ -265,7 +265,6 @@
             <thead>
                 <th style="width: 50px;">Code</th>
                 <th style="width: 150px;">Item Name</th>
-                <th style="width: 150px;">Description</th>
                 <th style="width: 60px;">Unit</th>
                 <th style="width: 60px;">Qty</th>
                 <th style="width: 60px;">Unit Price</th>
@@ -285,19 +284,18 @@
                 @endphp
                 <tr>
                     <td>{{$row['returned_item_id']}}</td>
-                    <td>{{$row['details']['item_name']}}</td>
-                    <td>{{$row['details']['item_Description']}}</td>
+                    <td>{{$row['details']['item_name'] }} {{$row['details']['item_Description']}}</td>
                     <td>{{$row['unit']['name']}}</td>
                     <td>{{$row['returned_item_qty']}}</td>
                     <td>{{number_format($row['returned_item_price'],2)}}</td>
-                    <td>{{$row['batch']['batch_Number']}}</td>
-                    <td>{{$row['returned_item_vat_amount']}}</td>
-                    <td>{{$row['returned_item_discount']}}</td>
+                    <td>{{$row['batch']? $row['batch']['batch_Number'] : ''}}</td>
+                    <td>{{number_format($row['returned_item_vat_amount'],2)}}</td>
+                    <td>{{number_format($row['returned_item_discount'],2)}}</td>
                     <td>{{number_format($row['returned_item_total_gross'],2)}}</td>
                     <td>{{number_format($row['returned_item_total_net_amount'],2)}}</td>
                 </tr>
                 @endforeach
-                <tr class="border-none">
+                <!-- <tr class="border-none">
                     <td colspan="11" class="border-none"><br></td>
                 </tr>
                 <tr>
@@ -314,14 +312,14 @@
                     <td class="border-none" colspan="7"></td>
                     <td class="border-none text-right" colspan="2">Gross Amount : </td>
                     <td class="border-none text-right" colspan="2">{{number_format($grandTotalGross,2)}}</td>
-                </tr>
+                </tr> -->
                 <tr>
-                    <td class="border-none" colspan="7"></td>
-                    <td class="border-none text-right" colspan="2">Net Amount: </td>
-                    <td class="border-none text-right" colspan="2">{{number_format($grandTotalNet,2)}}</td>
+                    <td class="border-none" colspan="6"></td>
+                    <td class="border-none text-right" colspan="3">TOTAL AMOUNT: </td>
+                    <td class="border-none text-center" >{{number_format($grandTotalNet,2)}}</td>
                 </tr>
                 <tr class="border-none">
-                    <td colspan="11" class="border-none"><br></td>
+                    <td colspan="10" class="border-none"><br></td>
                 </tr>
             </tbody>
         </table>

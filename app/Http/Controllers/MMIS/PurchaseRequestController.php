@@ -270,6 +270,7 @@ class PurchaseRequestController extends Controller
                         'lead_time' => $item['lead_time'] ?? 0,
                         'vat_rate' => (int)$item['vat_rate'] ?? 0,
                         'vat_type' => (int)$item['vat_type'] ?? 2,
+                        'discount_type' => (int)$item['discount_type'] ?? 2,
                         'discount_amount' => $item['discount_amount'] ?? 0,
                         'vat_amount' => $item['vat_amount'] ?? 0,
                         'total_amount' => $item['total_amount'] ?? 0,
@@ -441,7 +442,6 @@ class PurchaseRequestController extends Controller
             if (isset($item["id"])) {
                 $pr->purchaseRequestDetails()->where('id', $item['id'])->update([
                     'item_Id' => $item['item_Id'],
-
                     'item_ListCost' => $item['item_ListCost'] ?? 0,
                     'discount' => $item['discount'] ?? 0,
                     'item_Request_Qty' => $item['item_Request_Qty'],
@@ -450,11 +450,11 @@ class PurchaseRequestController extends Controller
                     'lead_time' => $item['lead_time'] ?? 0,
                     'vat_rate' => $item['vat_rate'] ?? 0,
                     'vat_type' => $item['vat_type'] ?? 2,
+                    'discount_type' => (int)$item['discount_type'] ?? 2,
                     'discount_amount' => $item['discount_amount'] ?? 0,
                     'vat_amount' => $item['vat_amount'] ?? 0,
                     'total_amount' => $item['total_amount'] ?? 0,
                     'total_net' => $item['total_net'] ?? 0,
-
                     'item_Request_UnitofMeasurement_Id' => $item['item_Request_UnitofMeasurement_Id'],
                     'ismedicine' => $ismed,
                     'isdietary' => $isdiet
@@ -479,6 +479,7 @@ class PurchaseRequestController extends Controller
                     $item['total_net'] = $details->total_net;
                     $item['lead_time'] = $details->lead_time;
                     $item['warehouse_id'] = $request->department_id;
+                    $item['discount_type'] = $details->discount_type;
                     $this->addPharmaCanvas($item);
                 }
             } else {
@@ -523,6 +524,7 @@ class PurchaseRequestController extends Controller
                     $item['total_net'] = $details->total_net;
                     $item['lead_time'] = $details->lead_time;
                     $item['warehouse_id'] = $request->department_id;
+                    $item['discount_type'] = $details->discount_type;
                     $this->addPharmaCanvas($item);
                 }
             }
@@ -994,6 +996,7 @@ class PurchaseRequestController extends Controller
                 'canvas_item_total_amount' => $item['total_amount'],
                 'canvas_item_discount_percent' => $item['discount'],
                 'canvas_item_discount_amount' => $item['discount_amount'],
+                'discount_type' => $item['discount_type'],
                 'canvas_item_net_amount' => $item['total_net'],
                 'canvas_lead_time' => $item['lead_time'],
                 // 'canvas_remarks' => $request->canvas_remarks,

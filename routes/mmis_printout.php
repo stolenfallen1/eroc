@@ -26,7 +26,9 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
 
     $id = Crypt::decrypt($pid);
     try {
-        $purchase_order = VwPurchaseOrderMaster::with('items')->where('id',$id)->first();
+        $purchase_order = VwPurchaseOrderMaster::with(['items' => function ($query) {
+            $query->orderBy('prdetailsid', 'asc');
+        }])->where('id',$id)->first();
         $po = purchaseOrderMaster::where('id',$id)->first();
         $consignment = VwConsignmentMaster::where('po_Document_Number',$po->po_Document_number)->first();
         // Generate the QR code for the purchase-order
@@ -102,6 +104,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
     } catch (Exception $e) {
         return $e->getMessage();
     }
+    
 });
 
 // <!====================================== END PURCHASE ORDER  ====================================== !> 
@@ -424,7 +427,7 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
 
         // Generate the PDF using the prepared data and set the paper size to letter in landscape
         $pdf = PDF::loadView('pdf_layout.purchase-order-consignment', ['pdf_data' => $pdf_data])
-            ->setPaper('letter', 'portait');
+            ->setPaper('letter', 'landscape');
 
         // Render the PDF
         $pdf->render();

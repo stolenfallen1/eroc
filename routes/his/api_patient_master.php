@@ -38,8 +38,8 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
 });
 
 Route::controller(RegistrationController::class)->group(function() {
-    Route::post('register-emergency', 'register');
-    Route::put('update-emergency/{id}', 'update');
+    Route::post('register-patient', 'register');
+    Route::put('update-patient/{id}', 'update');
 });
 
 Route::controller(SOAController::class)->group(function() {
@@ -58,7 +58,7 @@ Route::controller(PatientDischarge::class)->group(function(){
     Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
     Route::put('untag-patient-maygohome/{id}', 'untagMGH');
     Route::get('check-elgibility-for-discharge/{id}', 'checkPatientEligibilityForDischarge');
-    Route::put('discharge-patient/{id}', 'dischargePatient');
+    Route::put('discharge-patient/{id}', 'dischargePatient'); 
     Route::get('patient-balance/{id}', 'getTotalCharges');
     Route::get('get-er-result', 'erResult');
 });

@@ -1,64 +1,127 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# CDGCORE
 
-## About Laravel
+The backend codebase for multiple CDG Software / Applications
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Learning Laravel
+## Installation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Before installation always ask Our Beloved Senior and mamaw Jucel Estribo gwapo and make sure you have this tools installed in your machine.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Git, PHP 7.4.25 and Composer 2.7.2 ( Compatible with PHP 7.4.25)
 
-## Laravel Sponsors
+To check if you have PHP and Composer installed, Open your terminal and input this command
+```bash
+php -v   
+composer --version 
+```
+If you don't have it installed please ask for you Senior's guidance or ask him regarding the installer.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+NOTE: If you have PHP Installed but are using different version. Please do downgrade or upgrade to the specified version. Thanks 😊
 
-### Premium Partners
+TIP: No need to update the composer version since it will automatically do so base on your PHP version.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+To check if you have Git installed, if not please do so but usually windows already have it pre installed in your computer.
+```bash
+git -v 
+```
+To check if you have associated your GitHub account to your computer.
+```bash
+git config --global user.name
+git config --global user.email
+```
+To check if you have SSH Configured in your computer.
+```bash
+ls ~/.ssh
+```
+To check if you already connected to GitHub
+```bash
+ssh -T git@github.com
+```
 
-## Contributing
+If you haven't configured your ssh and connected your GitHub account to your computer well it's your problem! Just kidding haha 😜
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Please follow this steps or ask ChatGPT about it
 
-## Code of Conduct
+Connect your GitHub username and email
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+Verify the configuration
+```bash
+git config --global --list
+```
+Generate and SSH Key
+```bash
+ssh-keygen -t ed25519 -C "your.email@example.com"
+```
+If naa error, try this one 
+```bash
+ssh-keygen -t rsa -b 4096 -C "your.email@example.com"
+```
+After adding the SSH key ( private and public ) use the public and add it to your GitHub account manually. To get your public ssh key 
+```bash
+cat ~/.ssh/id_rsa.pub
+```
+Copy and paste the id then navigate to GITHUB => SETTINGS => SSH AND GPG KEYS.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+After this you are ready to clone the project!
 
-## Security Vulnerabilities
+## Cloning the Codebase
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+git clone git@github.com:CEBU-DOCTORS-UNIVERISTY-HOSPITAL/cdgcore.git
+```
 
-## License
+Create separate branch for yourself during development ( Two ways to do so )
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- One using Git Terminal Commands
+```bash
+cd cdgcore ( navigate to the file )
+git branch <branch_name>
+```
+
+Switch to the New Branch.
+```bash
+git checkout <branch_name>
+```
+
+- Two doing it manually in the GitHub Repository by navigating to the Following
+
+=> Go To GitHub Repo -> Locate Branches -> Create a New Branch
+
+Then after that in your terminal you have to Run this command
+```bash
+git fetch
+git checkout <branch_name>
+```
+
+To get started install the following in the Project repo locally 
+
+```bash
+composer install 
+php artisan config:clear
+php artisan config:cache
+php artisan key:generate 
+```
+
+After doing this ask your Senior regarding the projects Environment Variables ( .env ) file.
+
+Running the server / project locally
+```bash
+php artisan serve 
+```
+Running it on specific ports ( sample )
+```bash
+php artisan serve --host 10.4.15.12 --port 666
+```
+
+After development you can push your changes on to your branch then merge it to the master branch. But always ask your Senior for guidance before merging to master.
+```bash
+git push origin <branch_name>
+```
+
+If any error happens please ask your Senior for guidance.

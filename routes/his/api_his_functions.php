@@ -69,17 +69,20 @@ Route::controller(AncillaryController::class)->group(function() {
     Route::post('carry-ancillary-order', 'carryOrder');
     Route::post('cancel-ancillary-order', 'cancelOrder');
     Route::post('post-return-supplies', 'postReturnSupplies');
+    Route::post('submit-manual-posting-supplies', 'submitManualPostingSupplies');
 });
 // Pharmacy Routes
 Route::controller(PharmacyController::class)->group(function() {
     Route::get('get-opd-pharmacy-orders', 'getOPDOrders');
     Route::get('get-er-pharmacy-orders', 'getEROrders');
     Route::get('get-pharmacy-posted-meds', 'getPostedMedicineByCaseNo');
-    Route::get('get-ipd-pharmacy-orders', 'getIPDOrders');
-    Route::get('pharmacy-unit-dose-report', 'printDailyPatientUnitDoseReport');
+    Route::get('get-ipd-pharmacy-orders', 'getIPDOrders'); 
+    Route::get('get-patient-for-charging', 'getPatientDetailsForManualPosting');
+    Route::get('pharmacy-unit-dose-report', 'printPatientUnitDoseReport');
     Route::post('carry-pharmacy-order', 'carryOrder');
     Route::post('cancel-pharmacy-order', 'cancelOrder');
     Route::post('post-return-medicine', 'postReturnMedicine');
+    Route::post('submit-manual-posting-meds', 'submitManualPostingMedicine');
 });
 // Requisition Routes 
 Route::controller(RequisitionController::class)->group(function() {

@@ -93,8 +93,8 @@
                 $patient_id     = $this->handleMedsysPatientSeqNo();
                 $registry_id    = $this->handleCDGInPatientCaseNo();
             }
-            SystemSequence::where('code', 'MPID')->update(['recent_generated'   => $patient_id]);
-            SystemSequence::where('code', 'SIPCN')->update(['recent_generated'  => $registry_id]);
+            SystemSequence::where('code', 'MPID')->update(['seq_no'   => $patient_id, 'recent_generated'  => $patient_id]);
+            SystemSequence::where('code', 'SIPCN')->update(['seq_no'  => $registry_id,'recent_generated'  => $registry_id]);
             return [
                 'patientId'         => $patient_id,
                 'registryId'        => $registry_id,
@@ -109,8 +109,8 @@
                 $registry_id    = $this->handleCDGEmergencyPatientCaseNo();
                 $er_Case_No     = $this->handleCDGErCaseNo();
             }
-            SystemSequence::where('code', 'MERN')->update(['seq_no'  => $registry_id, 'recent_generated'  => $registry_id]);
-            SystemSequence::where('code', 'MOPD')->update(['seq_no'  => $registry_id, 'recent_generated'  => $registry_id]);
+            SystemSequence::where('code', 'MERN')->update(['seq_no'  => $registry_id, 'recent_generated' => $registry_id]);
+            SystemSequence::where('code', 'MOPD')->update(['seq_no'  => $registry_id, 'recent_generated' => $registry_id]);
             SystemSequence::where('code', 'SERCN')->update(['seq_no' => $er_Case_No, 'recent_generated'  => $er_Case_No]);
             return [
                 'registryId'        => $registry_id,
@@ -124,8 +124,8 @@
             } else {
                 $registry_id    = $this->handleCDGInPatientCaseNo();
             }
-            SystemSequence::where('code', 'MERN')->update(['recent_generated'   => $registry_id]);
-            SystemSequence::where('code', 'MOPD')->update(['recent_generated'   => $registry_id]);
+            SystemSequence::where('code', 'MERN')->update(['seq_no'  => $registry_id, 'recent_generated'  => $registry_id]);
+            SystemSequence::where('code', 'MOPD')->update(['seq_no'  => $registry_id,'recent_generated'   => $registry_id]);
             return [
                 'registryId'        => $registry_id
             ];

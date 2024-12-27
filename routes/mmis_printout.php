@@ -26,7 +26,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
 
     $id = Crypt::decrypt($pid);
     try {
-        $purchase_order = VwPurchaseOrderMaster::with(['items' => function ($query) {
+         $purchase_order = VwPurchaseOrderMaster::with(['items' => function ($query) {
             $query->orderBy('prdetailsid', 'asc');
         }])->where('id',$id)->first();
         $po = purchaseOrderMaster::where('id',$id)->first();

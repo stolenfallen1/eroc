@@ -375,7 +375,7 @@ class RequisitionController extends Controller
                             'case_No'                   => $case_No,
                             'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                             'transDate'                 => $today,
-                            'msc_price_scheme_id'       => 1,
+                            'msc_price_scheme_id'       => 2,
                             'revenueID'                 => $revenueID,
                             'itemID'                    => $itemID,
                             'quantity'                  => $quantity,
@@ -612,7 +612,7 @@ class RequisitionController extends Controller
                             'case_No'                   => $case_No,
                             'patient_Type'              => $patient_type == 'Out-Patient' ? 'O' : ($patient_type == 'Emergency' ? 'E' : 'I'),
                             'transDate'                 => $today,
-                            'msc_price_scheme_id'       => 1,
+                            'msc_price_scheme_id'       => 2,
                             'revenueID'                 => $revenueID,
                             'itemID'                    => $itemID,
                             'quantity'                  => $quantity,
@@ -1109,11 +1109,16 @@ class RequisitionController extends Controller
             $data = NurseLogBook::where('patient_Id', $request->patient_Id)
                 ->where('case_No', $request->case_No)
                 ->where('record_Status', 'W')
+                ->where(function ($query) {
+                    $query->where('isprocedure', 1)
+                            ->orWhere('ismedicine', 1)
+                            ->orWhere('issupplies', 1);
+                })
                 ->orderBy('createdat', 'desc')
                 ->get();
     
             return response()->json($data, 200);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(["msg" => $e->getMessage()], 500);
         }
     }

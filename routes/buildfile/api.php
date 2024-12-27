@@ -360,6 +360,8 @@ Route::controller(DoctorController::class)->group(function () {
     Route::get('get-doctors', 'list');
     Route::get('doctors', 'index');
     Route::get('get-his-doctors', 'his_list');
+    Route::get('doctors-categories', 'doctorsCategories');
+    Route::get('doctors-specialization', 'doctorsSpecialization');
     Route::get('get-his-professional-details', 'index');
     Route::get('get-his-reader-details', 'index');
 });

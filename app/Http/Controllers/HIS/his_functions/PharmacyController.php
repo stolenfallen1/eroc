@@ -5,17 +5,24 @@ namespace App\Http\Controllers\HIS\his_functions;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Http\Controllers\Controller;
 use App\Models\BuildFile\FMS\TransactionCodes;
+use App\Models\BuildFile\SystemSequence;
+use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\his_functions\NurseCommunicationFile;
 use App\Models\HIS\his_functions\NurseLogBook;
+use App\Models\HIS\medsys\MedSysDailyOut;
 use App\Models\HIS\medsys\tbInvStockCard;
 use App\Models\HIS\medsys\tbNurseCommunicationFile;
 use App\Models\HIS\medsys\tbNurseLogBook;
 use App\Models\HIS\mscDosages;
 use App\Models\HIS\services\PatientRegistry;
 use App\Models\MMIS\inventory\InventoryTransaction;
+use Auth;
 use Carbon\Carbon;
+use App\Helpers\GetIP;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use GlobalChargingSequences;
+use PDF;
 
 class PharmacyController extends Controller
 {
@@ -241,7 +248,7 @@ class PharmacyController extends Controller
 
             if (isset($request->payload['Orders']) && count($request->payload['Orders']) > 0) {
                 foreach ($request->payload['Orders'] as $items) {
-                    $warehouse_Id = $items['warehouse_Id'];
+                    $warehouse_Id = $items['warehouse_Id'] ?? 78;
                     $revenue_Id = $items['revenue_Id'];
                     $item_Id = $items['item_Id'];
                     $item_ListCost = $items['item_ListCost'];
@@ -489,6 +496,256 @@ class PharmacyController extends Controller
             return response()->json(["msg" => $e->getMessage()], 500);
         }
     }
+    public function getPatientDetailsForManualPosting(Request $request) 
+    {
+        try {
+            $case_No = $request->query('case_No');
+
+            $patient_details = PatientRegistry::with('patient_details', 'patient_details.sex')
+                ->where('case_No', $case_No)
+                ->whereNull('discharged_Date')
+                ->first();
+
+            return response()->json($patient_details, 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    public function submitManualPostingMedicine(Request $request) 
+    {
+        DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
+
+        try {
+            if ($this->check_is_allow_medsys) {
+                $cashAssessmentSequence = new GlobalChargingSequences();
+                $cashAssessmentSequence->incrementSequence();
+                $assessnum_sequence = $cashAssessmentSequence->getSequence();
+                $assessnum_sequence = $assessnum_sequence['MedSysCashSequence'];
+                $inventoryChargeSlip = DB::connection('sqlsrv_medsys_inventory')->table('INVENTORY.dbo.tbInvChargeSlip')->increment('DispensingCSlip');
+                $nurseChargeSlip = DB::connection('sqlsrv_medsys_nurse_station')->table('STATION.dbo.tbNursePHSlip')->increment('ChargeSlip');
+                if ($inventoryChargeSlip && $nurseChargeSlip) {
+                    $medSysRequestNum = DB::connection('sqlsrv_medsys_nurse_station')->table('STATION.dbo.tbNursePHSlip')->value('ChargeSlip');
+                    $medSysReferenceNum = DB::connection('sqlsrv_medsys_inventory')->table('INVENTORY.dbo.tbInvChargeSlip')->value('DispensingCSlip');
+                } else {
+                    throw new \Exception('Error in getting MedSys Request Number and Reference Number');
+                }
+            } else {
+                $assessnum_sequence = SystemSequence::where('code', 'GAN')->first();
+            }
+
+            $today = Carbon::now();
+            $patient_Id = $request->payload['patient_Id'];
+            $case_No = $request->payload['caseNo'];
+            $patient_Name = $request->payload['patient_Name'];
+            $guarantor_Id = $request->payload['guarantor_Id'] ?? $patient_Id;
+            $doctor_Id = $request->payload['doctor_id'];
+            $account = $request->payload['account'];
+            $patient_Type = $request->payload['patient_Type'] == 2 ? 'O' : ($request->payload['patient_Type'] == 5 ? 'E' : 'I');
+
+            if (isset($request->payload['Medicines']) && count($request->payload['Medicines']) > 0) {
+                foreach ($request->payload['Medicines'] as $medicine) {
+                    $revenueID = $medicine['code'];
+                    $warehouseID = $medicine['warehouse_id'];
+                    $warehouse_medsysID = $medicine['warehouse_medsys_id'];
+                    $frequency = $medicine['frequency']['id'];
+                    $item_OnHand = $medicine['item_OnHand'];
+                    $itemID = $medicine['map_item_id'];
+                    $item_name = $medicine['item_name'];
+                    $requestQuantity = $medicine['quantity'];
+                    $item_list_cost = $medicine['item_ListCost'];
+                    $price = floatval(str_replace([',', '₱'], '', $medicine['price']));
+                    $stat = $medicine['stat'] ?? null;
+                    $amount = floatval(str_replace([',', '₱'], '', $medicine['amount']));
+                    $requestNum = $revenueID . $medSysRequestNum;
+                    $referenceNum = 'C' . $medSysReferenceNum . 'M';
+                    $refNumSequence = $revenueID . $medSysReferenceNum;
+
+                    if (($patient_Type == 'O' || $patient_Type == 'E') && $account == 'Self-Pay') {
+                        throw new \Exception('Self-Pay Patients are not allowed for manual posting');
+                    } else if (($patient_Type == 'O' || $patient_Type == 'E') && $account == 'Company / Insurance') {
+                        HISBillingOut::create([
+                            'patient_Id'            => $patient_Id,
+                            'case_No'               => $case_No,
+                            'patient_Type'          => $patient_Type,
+                            'transDate'             => $today,
+                            'msc_price_scheme_id'   => 2,
+                            'revenueID'             => $revenueID,
+                            'itemID'                => $itemID,
+                            'quantity'              => $requestQuantity,
+                            'refNum'                => $requestNum,
+                            'ChargeSlip'            => $requestNum,
+                            'amount'                => $amount,
+                            'userId'                => Auth()->user()->idnumber,
+                            'request_doctors_id'    => $doctor_Id,
+                            'net_amount'            => $amount,
+                            'hostName'              => (new GetIP())->getHostname(),
+                            'accountnum'            => $guarantor_Id,
+                            'auto_discount'         => 0,
+                            'createdby'             => Auth()->user()->idnumber,
+                            'created_at'            => $today,
+                        ]);
+                        NurseLogBook::create([
+                            'branch_Id'             => 1,
+                            'patient_Id'            => $patient_Id,
+                            'case_No'               => $case_No,
+                            'patient_Name'          => $patient_Name,
+                            'patient_Type'          => $patient_Type,
+                            'revenue_Id'            => $revenueID,
+                            'requestNum'            => $requestNum,
+                            'referenceNum'          => $referenceNum,
+                            'item_Id'               => $itemID,
+                            'description'           => $item_name,
+                            'Quantity'              => $requestQuantity,
+                            'item_OnHand'           => $item_OnHand,
+                            'item_ListCost'         => $item_list_cost,
+                            'dosage'                => $frequency,
+                            'section_Id'            => $warehouseID,
+                            'price'                 => $price,
+                            'amount'                => $amount,
+                            'record_Status'         => 'W',
+                            'user_Id'               => Auth()->user()->idnumber,
+                            'request_Date'          => $today,
+                            'process_By'            => Auth()->user()->idnumber,
+                            'process_Date'          => $today,
+                            'stat'                  => $stat,
+                            'ismedicine'            => 1,
+                            'createdat'             => $today,
+                            'createdby'             => Auth()->user()->idnumber,
+                        ]);
+                        NurseCommunicationFile::create([
+                            'branch_Id'             => 1,
+                            'patient_Id'            => $patient_Id,
+                            'case_No'               => $case_No,
+                            'patient_Name'          => $patient_Name,
+                            'patient_Type'          => $patient_Type,
+                            'item_Id'               => $itemID,
+                            'amount'                => $amount,
+                            'quantity'              => $requestQuantity,
+                            'dosage'                => $frequency,
+                            'section_Id'            => $warehouseID,
+                            'request_Date'          => $today,
+                            'revenue_Id'            => $revenueID,
+                            'record_Status'         => 'W',
+                            'requestNum'            => $requestNum,
+                            'referenceNum'          => $referenceNum,
+                            'stat'                  => $stat,
+                            'createdby'             => Auth()->user()->idnumber,
+                            'createdat'             => $today,
+                        ]);
+                        InventoryTransaction::create([
+                            'branch_Id'                             => 1,
+                            'warehouse_Id'                          => $warehouseID,
+                            'patient_Id'                            => $patient_Id,
+                            'patient_Registry_Id'                   => $case_No,
+                            'transaction_Item_Id'                   => $itemID,
+                            'transaction_Date'                      => $today,
+                            'trasanction_Reference_Number'          => $referenceNum,
+                            'transaction_Acctg_TransType'           => $revenueID,
+                            'transaction_Qty'                       => $requestQuantity,
+                            'transaction_Item_OnHand'               => $item_OnHand,
+                            'transaction_Item_ListCost'             => $item_list_cost,
+                            'transaction_Item_SellingAmount'        => $price,
+                            'transaction_Item_TotalAmount'          => $amount,
+                            'transaction_Item_Med_Frequency_Id'     => $frequency,
+                            'transaction_UserID'                    => Auth()->user()->idnumber,
+                            'created_at'                            => $today,
+                            'createdBy'                             => Auth()->user()->idnumber,
+                        ]);
+                        if ($this->check_is_allow_medsys):
+                            MedSysDailyOut::create([
+                                'Hospnum'               => $patient_Id,
+                                'IDNum'                 => $case_No . 'B',
+                                'TransDate'             => $today,
+                                'RevenueID'             => $revenueID,
+                                'ItemID'                => $itemID,
+                                'Quantity'              => $requestQuantity,
+                                'RefNum'                => $requestNum,
+                                'ChargeSlip'            => $requestNum,
+                                'Amount'                => $amount,
+                                'UserID'                => Auth()->user()->idnumber,
+                                'HostName'              => (new GetIP())->getHostname(),
+                                'AutoDiscount'          => 0,
+                            ]);
+                            tbNurseLogBook::create([
+                                'Hospnum'               => $patient_Id,
+                                'IDnum'                 => $case_No . 'B',
+                                'PatientType'           => $patient_Type,
+                                'RevenueID'             => $revenueID,
+                                'RequestDate'           => $today,
+                                'ItemID'                => $itemID,
+                                'Description'           => $item_name,
+                                'Quantity'              => $requestQuantity,
+                                'Dosage'                => $frequency,
+                                'SectionID'             => $warehouseID,
+                                'Amount'                => $amount,
+                                'RecordStatus'          => 'W',
+                                'UserID'                => Auth()->user()->idnumber,
+                                'ProcessBy'             => Auth()->user()->idnumber,
+                                'ProcessDate'           => $today,
+                                'RequestNum'            => $requestNum,
+                                'ReferenceNum'          => $referenceNum,
+                                'Stat'                  => $stat,
+                            ]);
+                            tbNurseCommunicationFile::create([
+                                'Hospnum'               => $patient_Id,
+                                'IDnum'                 => $case_No . 'B',
+                                'PatientType'           => $patient_Type,
+                                'ItemID'                => $itemID,
+                                'Amount'                => $amount,
+                                'Quantity'              => $requestQuantity,
+                                'Dosage'                => $frequency,
+                                'SectionID'             => $warehouseID,
+                                'RequestDate'           => $today,
+                                'RevenueID'             => $revenueID,
+                                'RecordStatus'          => 'W',
+                                'UserID'                => Auth()->user()->idnumber,
+                                'RequestNum'            => $requestNum,
+                                'ReferenceNum'          => $referenceNum,
+                                'Stat'                  => $stat,
+                            ]);
+                            tbInvStockCard::create([
+                                'SummaryCode'           => $revenueID,
+                                'Hospnum'               => $patient_Id,
+                                'IdNum'                 => $case_No . 'B',
+                                'TransDate'             => $today,
+                                'RevenueID'             => $revenueID,
+                                'RefNum'                => $refNumSequence,
+                                'Quantity'              => $requestQuantity,
+                                'Balance'               => $item_OnHand,
+                                'NetCost'               => $item_list_cost,
+                                'Amount'                => $amount,
+                                'UserID'                => Auth()->user()->idnumber,
+                                'DosageID'              => $frequency,
+                                'RequestByID'           => Auth()->user()->idnumber,
+                                'LocationID'            => $warehouse_medsysID,
+                            ]);
+                        endif;
+                    } else if ($patient_Type == 'I' && $account == 'Company / Insurance') {
+                        // Submit Datas for Inpatient ( Insurance tagged )
+                    } else if ($patient_Type == 'I' && $account == 'Self-Pay') {
+                        // Submit Datas for Inpatient ( Self-Pay tagged )
+                    }
+
+                }
+            }
+            DB::connection('sqlsrv_medsys_inventory')->commit();
+            DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_mmis')->commit();
+            DB::connection('sqlsrv_medsys_nurse_station')->commit();
+            return response()->json(['message' => 'Medicine Posted Successfully'], 200);
+
+        } catch(\Exception $e) {
+            DB::connection('sqlsrv_medsys_inventory')->rollBack();
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            DB::connection('sqlsrv_mmis')->rollBack();
+            DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
     public function postReturnMedicine(Request $request) 
     {
         DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
@@ -645,25 +902,44 @@ class PharmacyController extends Controller
     }
     public function printPatientUnitDoseReport(Request $request) 
     {
-        // NOT YET DONE
         try {
             $patient_Type = $request->query('patient_Type');
             if ($patient_Type) {
                 $patient_Type = $patient_Type == 1 ? 'O' : ($patient_Type == 2 ? 'E' : 'I');
             }
 
-            $transactions = PatientRegistry::with('patient_details', 'nurse_logbook')
-                ->whereNotNull('case_No')
-                ->whereHas('nurse_logbook', function ($query) use ($patient_Type) {
-                    $query->where('patient_Type', $patient_Type)
-                        ->where('record_Status', 'W')
-                        ->where('revenue_Id', 'PH');
-                })
-                ->get()
-                ->orderBy('created_at', 'desc');
+            $transactions = PatientRegistry::with('nurse_logbook') 
+            ->whereNotNull('case_No')
+            ->whereHas('nurse_logbook', function ($query) use ($patient_Type) {
+                $query->where('patient_Type', $patient_Type)
+                    ->where('record_Status', 'W')
+                    ->where('revenue_Id', 'PH');
+            })
+            ->get();
 
+            $dosages = mscDosages::all()->keyBy('dosage_id'); 
+
+            $groupedData = $transactions->map(function ($transaction) use ($dosages, $patient_Type) {
+                return [
+                    'patient_Name' => $transaction->nurse_logbook[0]->patient_Name,
+                    'patient_Id' => $transaction->patient_Id,
+                    'case_No' => $transaction->case_No,
+                    'er_Bedno' => $patient_Type == 'E' && $transaction->er_Bedno != null ? $transaction->er_Bedno : 'N/A',
+                    'nurse_logbook' => $transaction->nurse_logbook->map(function ($medicine_item) use ($dosages) {
+                        $dosage_id = $medicine_item->dosage;
+                        $dosage = $dosages->get($dosage_id); 
+                        
+                        return [
+                            'description' => $medicine_item->description,
+                            'dosage_id' => $dosage ? $dosage->dosage_id : 'N/A', 
+                            'dosage_description' => $dosage ? $dosage->description : 'N/A', 
+                        ];
+                    }),
+                ];
+            });
+            
             $pdf_data = [
-                'transactions' => $transactions,
+                'transactions' => $groupedData,
                 'title' => 'Pharmacy',
                 'sub_title' => 'Patient Unit Dose Report',
                 'revenueID' => 'PH',
@@ -671,11 +947,26 @@ class PharmacyController extends Controller
                 'printed_By' => Auth()->user()->idnumber,
             ];
 
-            $pdf = PDF::loadView('his.report.pharmacy.patient_unit_dose_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
-            $pdf->render();
+            switch($patient_Type) {
+                // Okay na ata ni sa OPD
+                case 'O':
+                    $pdf = PDF::loadView('his.report.pharmacy.unit_dose_report.opd_unit_dose_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
+                    $pdf->render();
+                    break;
+                // Wala pa sa ER kay need ang ER bed no. sa report
+                case 'E':
+                    $pdf = PDF::loadView('his.report.pharmacy.unit_dose_report.er_unit_dose_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
+                    $pdf->render();
+                    break;
+                // Wala pa sa IPD kay need ang stations, buildings, etc.
+                case 'I':
+                    $pdf = PDF::loadView('his.report.pharmacy.unit_dose_report.ipd_unit_dose_report', ['pdf_data' => $pdf_data])->setPaper('letter', 'potrait');
+                    $pdf->render();
+                    break;
+            }
+
             return $pdf->stream('Patient Unit Dose Report' . '.pdf');
 
-            
 
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

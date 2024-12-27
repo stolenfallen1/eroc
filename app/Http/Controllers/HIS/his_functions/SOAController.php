@@ -94,7 +94,6 @@ class SOAController extends Controller
     }
 
     public function createStatmentOfAccountSummary($id) {
-        
         $data = OutPatient::with(['patientBillingInfo' => function($query) {
                 $query->orderBy('revenueID', 'asc'); 
             }])

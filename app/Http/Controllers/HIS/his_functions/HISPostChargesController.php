@@ -255,7 +255,7 @@ class HISPostChargesController extends Controller
                     // If not assigned well request Lab procedure in Requisition
                     if ($revenueID == 'LB') {
                         // Way labot sa bungkag ang CBC, Routine Urinalysis and Stool Exam Routine
-                        if (($item_Id != 160 && $item_Id != 149 && $item_Id != 145) && ($form == 'C' || $form == 'P')) {
+                        if (($item_id != 160 && $item_id != 149 && $item_id != 145) && ($form == 'C' || $form == 'P')) {
                             $labProfileData = $this->getLabItems($item_id);
                             if ($labProfileData->getStatusCode() === 200) {
                                 $labItems = $labProfileData->getData()->data;

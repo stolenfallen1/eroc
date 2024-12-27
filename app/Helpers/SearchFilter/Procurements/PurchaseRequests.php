@@ -209,6 +209,9 @@ class PurchaseRequests
     } else if (Request()->tab == 13) {
       $this->forDeptHeadApproval();
     }
+    else if (Request()->tab == 13) {
+      $this->forDeptHeadApproval();
+    }
   }
 
   private function forVoidPr()
@@ -219,7 +222,7 @@ class PurchaseRequests
       $this->model->with('purchaseOrder', 'purchaseRequestDetails.itemMaster');
     }
   }
-
+  
   private function forApproval()
   {
     // Apply department head and staff role logic
@@ -334,7 +337,6 @@ class PurchaseRequests
     // Apply the common ordering
     $this->model->orderBy('created_at', 'desc');
   }
-
   private function forDeptHeadApproval()
   {
     $this->model->whereIn('warehouse_Id', $this->authUser->departments) 

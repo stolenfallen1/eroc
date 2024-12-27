@@ -209,7 +209,8 @@ class ConsignmentDeliveryController extends Controller
                         return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+                        'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
                     ]);
                     
                     $batchdetails = ItemBatchModelMaster::create([
@@ -298,6 +299,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Invoice_Date' => $payload['rr_Document_Invoice_Date'],
                 'rr_Document_Delivery_Date' => $payload['rr_Document_Delivery_Date'],
                 'rr_Document_Delivery_Receipt_No' => $payload['rr_Document_Delivery_Receipt_No'],
+                'rr_Document_Delivery_Date' => $payload['rr_Document_Delivery_Date'],
                 'rr_Document_TotalGrossAmount' => $payload['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $payload['rr_Document_TotalDiscountAmount'],
                 'rr_Document_TotalNetAmount' => $payload['rr_Document_TotalNetAmount'],
@@ -342,7 +344,7 @@ class ConsignmentDeliveryController extends Controller
                     if(!$warehouse_item) return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],   
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
                         'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
                     ]);
                     

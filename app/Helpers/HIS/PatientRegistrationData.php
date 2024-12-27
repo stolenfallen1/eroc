@@ -125,9 +125,13 @@
                 'branch_id'                 => $request->payload['branch_id'] ?? optional($existingData)->branch_id,
                 'previous_patient_id'       => $request->payload['previous_patient_id'] ?? optional($existingData)->previous_patient_id,
                 'medsys_patient_id'         => $request->payload['medsys_patient_id'] ?? optional($existingData)->medsys_patient_id,
-                'createdBy'                 => $checkUser->idnumber,
+                'createdBy'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => $currentTimestamp,
-                'updatedBy'                 => $checkUser->idnumber,
+                'updatedBy'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'updated_at'                => $currentTimestamp,   
             ];
         }
@@ -149,7 +153,7 @@
                 'room_Rate'                                 => $request->payload['room_Rate'] ?? null,
                 'mscAccount_Type'                           => $request->payload['mscAccount_Type'] ?? '',
                 'mscAccount_Discount_Id'                    => $request->payload['mscAccount_Discount_Id'] ?? null,
-                'mscAccount_Trans_Types'                    => $request->payload['mscAccount_Trans_Types'] ?? 5, 
+                'mscAccount_Trans_Types'                    => $request->payload['mscAccount_Trans_Types'] ?? null, 
                 'mscAdmission_Type_Id'                      => $request->payload['mscAdmission_Type_Id'] ?? null,
                 'mscPatient_Category'                       => isset($request->payload['patient_Id']) ? 3 : 2,
                 'mscPrice_Groups'                           => $request->payload['mscPrice_Groups'] ?? null,
@@ -165,7 +169,9 @@
                 'mscBroughtBy_Relationship_Id'              => $request->payload['mscBroughtBy_Relationship_Id'] ?? null,
                 'queue_Number'                              => $request->payload['queue_Number'] ?? null,
                 'arrived_Date'                              => Carbon::now(),
-                'registry_Userid'                           => $checkUser->idnumber,
+                'registry_Userid'                           => isset($checkUser->idnumber) 
+                                                            ?  $checkUser->idnumber
+                                                            :  Auth()->user()->idnumber,
                 'registry_Date'                             => Carbon::now(),
                 'registry_Status'                           => $request->payload['registry_Status'] ?? 1,
                 'registry_Hostname'                         => (new GetIP())->getHostname(),
@@ -304,7 +310,9 @@
                 'isBadDebt'                                 => $request->payload['isBadDebt'] ?? null,
                 'registry_Remarks'                          => $request->payload['registry_Remarks'] ?? null,
                 'medsys_map_idnum'                          => $request->payload['medsys_map_idnum'] ?? null,
-                'createdBy'                                 => $checkUser->idnumber,
+                'createdBy'                                 => isset($checkUser->idnumber) 
+                                                            ?  $checkUser->idnumber
+                                                            :  Auth()->user()->idnumber,
                 'created_at'                                => Carbon::now(), 
             ];
     }
@@ -443,7 +451,9 @@
                 'followUp_Prenatal_BloodPresureDiastolic_12th'          => $request->payload['followUp_Prenatal_BloodPresureDiastolic_12th'] ?? null,
                 'followUp_Prenatal_Temperature_12th'                    => $request->payload['followUp_Prenatal_Temperature_12th'] ?? null,
                 'followUp_Prenatal_Remarks'                             => $request->payload['followUp_Prenatal_Remarks'] ?? null,
-                'createdby'                                             => $checkUser->idnumber,
+                'createdby'                                             => isset($checkUser->idnumber) 
+                                                                        ?  $checkUser->idnumber
+                                                                        :  Auth()->user()->idnumber,
                 'created_at'                                            => Carbon::now(),
             ];
         }
@@ -458,7 +468,9 @@
                 'site'                  => $request->payload['site'] ?? null,
                 'administrator_Name'    => $request->payload['administrator_Name'] ?? null,
                 'notes'                 => $request->payload['notes'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
             ];
         }
@@ -469,7 +481,9 @@
                 'diagnose_Description'      => $request->payload['diagnose_Description'] ?? null,
                 'diagnosis_Date'            => $request->payload['diagnosis_Date'] ?? null,
                 'treament'                  => $request->payload['treament'] ?? null,
-                'createdby'                 => $checkUser->idnumber,
+                'createdby'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ];
         }
@@ -479,7 +493,9 @@
                 'patient_Id'                => $patient_id,
                 'description'               => $request->payload['description'] ?? null,
                 'date_Of_Procedure'         => $request->payload['date_Of_Procedure'] ?? null,
-                'createdby'                 => $checkUser->idnumber,
+                'createdby'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ];
         }
@@ -495,7 +511,9 @@
                 'administered_By'       => $request->payload['administered_By'] ?? null,
                 'reference_num'         => $request->payload['reference_num'] ?? null,
                 'transaction_num'       => $request->payload['transaction_num'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
             ];
         }
@@ -528,7 +546,9 @@
                 'physicalExamination_LympNodes'             => $request->payload['physicalExamination_LympNodes'] ?? null,
                 'physicalExamination_Extremities'           => $request->payload['physicalExamination_Extremities'] ?? null,
                 'physicalExamination_Neurological'          => $request->payload['physicalExamination_Neurological'] ?? null,
-                'createdby'                                 => $checkUser->idnumber,
+                'createdby'                                 => isset($checkUser->idnumber) 
+                                                            ?  $checkUser->idnumber
+                                                            :  Auth()->user()->idnumber,
                 'created_at'                                => Carbon::now(),
             ];
         }
@@ -544,7 +564,9 @@
                 'site'                  => $request->payload['site'] ?? null,
                 'administrator_Name'    => $request->payload['administrator_Name'] ?? null,
                 'Notes'                 => $request->payload['Notes'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
             ];
         }
@@ -557,7 +579,9 @@
                 'date_Of_Procedure'             => $request->payload['date_Of_Procedure'] ?? null,
                 'performing_Doctor_Id'          => $request->payload['performing_Doctor_Id'] ?? null,
                 'performing_Doctor_Fullname'    => $request->payload['performing_Doctor_Fullname'] ?? null,
-                'createdby'                     => $checkUser->idnumber,
+                'createdby'                     => isset($checkUser->idnumber) 
+                                                ?  $checkUser->idnumber
+                                                :  Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
             ];
         }
@@ -574,7 +598,9 @@
                 'pulseRate'                 => isset($request->payload['pulseRate'])  ? (int)$request->payload['pulseRate'] : null,
                 'respiratoryRate'           => isset($request->payload['respiratoryRate'])  ? (int)$request->payload['respiratoryRate'] : null,
                 'oxygenSaturation'          => isset($request->payload['oxygenSaturation']) ? (float)$request->payload['oxygenSaturation'] : null,
-                'createdby'                 => $checkUser->idnumber,
+                'createdby'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ];
         }
@@ -584,7 +610,9 @@
                 'patient_Id'    => $patient_id,
                 'case_No'       => $registry_id,
                 'description'   => $request->payload['description'] ?? null,
-                'createdby'     => $checkUser->idnumber,
+                'createdby'     => isset($checkUser->idnumber) 
+                                ?  $checkUser->idnumber
+                                :  Auth()->user()->idnumber,
                 'created_at'    => Carbon::now(),
             ];
         }
@@ -593,21 +621,29 @@
             return [
                 'patient_Id'    => $patient_id,
                 'description'   => $request->payload['description'] ?? null,
-                'createdby'     => $checkUser->idnumber,
+                'createdby'     => isset($checkUser->idnumber) 
+                                ?  $checkUser->idnumber
+                                :  Auth()->user()->idnumber,
                 'created_at'    => Carbon::now(),
-                'updatedby'     => $checkUser->idnumber,
+                'updatedby'     => isset($checkUser->idnumber) 
+                                ?  $checkUser->idnumber
+                                :  Auth()->user()->idnumber,
                 'updated_at'    => Carbon::now()
             ];
         }
 
         public function preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+            $consultant = $request->payload['selectedConsultant'][0] ?? null;
             return [
                 'patient_Id'        => $patient_id,
                 'case_No'           => $registry_id,
-                'doctor_Id'         => $request->payload['doctor_Id'] ?? null,
-                'doctors_Fullname'  => $request->payload['doctors_Fullname'] ?? null,
-                'role_Id'           => $request->payload['role_Id'] ?? null,
-                'createdby'         => $checkUser->idnumber,
+                'doctor_Id'         => isset($consultant['attending_Doctor']) ? $consultant['attending_Doctor'] : null,
+                'doctors_Fullname'  => isset($consultant['attending_Doctor_fullname']) ? $consultant['attending_Doctor_fullname'] : null,
+                'role_Id'           => isset($consultant['Doctors_Role_Id']) ? $consultant['Doctors_Role_Id'] : null,
+                'specialization_id' => isset($consultant['Doctors_Specialization_Id']) ? $consultant['Doctors_Specialization_Id'] : null,
+                'createdby'         => isset($checkUser->idnumber) 
+                                    ?  $checkUser->idnumber
+                                    :  Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
             ];
         }
@@ -622,7 +658,9 @@
                 'uterine_Contraction'       => $request->payload['uterine_Contraction'] ?? null,
                 'hyperactive_Bowel_Sounds'  => $request->payload['hyperactive_Bowel_Sounds'] ?? null,
                 'others_Description'        => $request->payload['others_Description'] ?? null,
-                'createdby'                 => $checkUser->idnumber,
+                'createdby'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ];
         }
@@ -668,7 +706,9 @@
                 'weightloss'                        => $request->payload['weightloss'] ?? null,
                 'others'                            => $request->payload['others'] ?? null,
                 'others_Description'                => $request->payload['others_Description'] ?? null,
-                'createdby'                         => $checkUser->idnumber,
+                'createdby'                         => isset($checkUser->idnumber) 
+                                                    ?  $checkUser->idnumber
+                                                    :  Auth()->user()->idnumber,
                 'created_at'                        => Carbon::now(),
             ];
         }
@@ -685,7 +725,9 @@
                 'intercostalrib_Clavicular_Retraction'  => $request->payload['intercostalrib_Clavicular_Retraction'] ?? null,
                 'wheezes'                               => $request->payload['wheezes'] ?? null,
                 'others_Description'                    => $request->payload['others_Description'] ?? null,
-                'createdby'                             => $checkUser->idnumber,
+                'createdby'                             => isset($checkUser->idnumber) 
+                                                        ?  $checkUser->idnumber
+                                                        :  Auth()->user()->idnumber,
                 'created_at'                            => Carbon::now(),
             ];
         }
@@ -695,7 +737,9 @@
                 'patient_Id'                            => $patient_id,
                 'case_No'                               => $registry_id,
                 'doctors_OrdersAction'                  => $request->payload['doctors_OrdersAction'] ?? null,
-                'createdby'                             => $checkUser->idnumber,
+                'createdby'                             => isset($checkUser->idnumber) 
+                                                        ?  $checkUser->idnumber
+                                                        :  Auth()->user()->idnumber,
                 'created_at'                            => Carbon::now(),
             ];
         }
@@ -712,7 +756,9 @@
                 'murmurs'                   => $request->payload['murmurs'] ?? null,
                 'pericardial_Bulge'         => $request->payload['pericardial_Bulge'] ?? null,
                 'others_Description'        => $request->payload['others_Description'] ?? null,
-                'createdby'                 => $checkUser->idnumber,
+                'createdby'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ];
         }
@@ -723,7 +769,9 @@
                 'case_No'               => $registry_id,
                 'awake_And_Alert'       => $request->payload['awake_And_Alert'] ?? null,
                 'altered_Sensorium'     => $request->payload['altered_Sensorium'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
             ];
         }
@@ -741,7 +789,9 @@
                 'dry_Mucous_Membrane'           => $request->payload['dry_Mucous_Membrane'] ?? null,
                 'sunken_Fontanelle'             => $request->payload['sunken_Fontanelle'] ?? null,
                 'others_description'            => $request->payload['others_description'] ?? null,
-                'createdby'                     => $checkUser->idnumber,
+                'createdby'                     => isset($checkUser->idnumber) 
+                                                ?  $checkUser->idnumber
+                                                :  Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
             ];
         }
@@ -755,7 +805,9 @@
                 'cervical_Dilatation'               => $request->payload['cervical_Dilatation'] ?? null,
                 'presence_Of_AbnormalDischarge'     => $request->payload['presence_Of_AbnormalDischarge'] ?? null,
                 'others_Description'                => $request->payload['others_Description'] ?? null,
-                'createdby'                         => $checkUser->idnumber,
+                'createdby'                         => isset($checkUser->idnumber) 
+                                                    ?  $checkUser->idnumber
+                                                    :  Auth()->user()->idnumber,
                 'created_at'                        => Carbon::now(),
             ];
         }
@@ -772,7 +824,9 @@
                 'poor_Muscle_Tone_Strength'     => $request->payload['poor_Muscle_Tone_Strength'] ?? null,
                 'abnormal_Decreased_Sensation'  => $request->payload['abnormal_Decreased_Sensation'] ?? null,
                 'poor_Coordination'             => $request->payload['poor_Coordination'] ?? null,
-                'createdby'                     => $checkUser->idnumber,
+                'createdby'                     => isset($checkUser->idnumber) 
+                                                ?  $checkUser->idnumber
+                                                :  Auth()->user()->idnumber,
                 'created_at'                    => Carbon::now(),
             ];
         }
@@ -792,7 +846,9 @@
                 'cyanosis_Mottled_Skin'     => $request->payload['cyanosis_Mottled_Skin'] ?? null,
                 'poor_Skin_Turgor'          => $request->payload['poor_Skin_Turgor'] ?? null,
                 'others_Description'        => $request->payload['others_Description'] ?? null,
-                'createdby'                 => $checkUser->idnumber,
+                'createdby'                 => isset($checkUser->idnumber) 
+                                            ?  $checkUser->idnumber
+                                            :  Auth()->user()->idnumber,
                 'created_at'                => Carbon::now(),
             ];
         }
@@ -804,7 +860,9 @@
                 'outcome'           => $request->payload['outcome'] ?? null,
                 'deliveryDate'      => $request->payload['deliveryDate'] ?? null,
                 'complications'     => $request->payload['complications'] ?? null,
-                'createdby'         => $checkUser->idnumber,
+                'createdby'         => isset($checkUser->idnumber) 
+                                    ?  $checkUser->idnumber
+                                    :  Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
             ];
         }
@@ -814,7 +872,9 @@
                 'OBGYNHistoryID'    => $id,
                 'conditionName'     => $registry_id,
                 'diagnosisDate'     => $request->payload['diagnosisDate'] ?? null,
-                'createdby'         => $checkUser->idnumber,
+                'createdby'         => isset($checkUser->idnumber) 
+                                    ?  $checkUser->idnumber
+                                    :  Auth()->user()->idnumber,
                 'created_at'        => Carbon::now(),
             ];
         }
@@ -830,7 +890,9 @@
                 'adverse_Side_Effect'   => $request->payload['adverse_Side_Effect'] ?? null,
                 'hospital'              => $request->payload['hospital'] ?? null,
                 'isPrescribed'          => $request->payload['isPrescribed'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now(),
             ];
         }
@@ -852,7 +914,9 @@
                 'points_Redeemed'       => $request->payload['points_Redeemed'] ?? null,
                 'points_Forfeited'      => $request->payload['points_Forfeited'] ?? null,
                 'card_Status'           => $request->payload['card_Status'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now()
             ];
         }
@@ -864,7 +928,9 @@
                 'transaction_Date'  => Carbon::now(),
                 'description'       => $request->payload['description'] ?? null,
                 'points'            => $request->payload['points'] ?? 1000,
-                'createdby'         => $checkUser->idnumber,
+                'createdby'         => isset($checkUser->idnumber) 
+                                    ?  $checkUser->idnumber
+                                    :  Auth()->user()->idnumber,
                 'created_at'        => Carbon::now()
             ];
         }
@@ -876,7 +942,9 @@
                 'transaction_Type'  => $request->payload['transaction_Type'] ?? 'Test Transaction',
                 'description'       => $request->payload['description'] ?? null,
                 'points'            => $request->payload['points'] ?? 1000,
-                'createdby'         => $checkUser->idnumber,
+                'createdby'         => isset($checkUser->idnumber) 
+                                    ?  $checkUser->idnumber
+                                    :  Auth()->user()->idnumber,
                 'created_at'        => Carbon::now()
             ];
         }
@@ -898,7 +966,9 @@
                 'intructedBy_clinicalPharmacist'    => $request->payload['intructedBy_clinicalPharmacist'] ?? null,
                 'intructedBy_Dietitians'            => $request->payload['intructedBy_Dietitians'] ?? null,
                 'intructedBy_Nurse'                 => $request->payload['intructedBy_Nurse'] ?? null,
-                'createdby'                         => $checkUser->idnumber,
+                'createdby'                         => isset($checkUser->idnumber) 
+                                                    ?  $checkUser->idnumber
+                                                    :  Auth()->user()->idnumber,
                 'created_at'                        => Carbon::now()
             ];
         }
@@ -912,7 +982,9 @@
                 'dosage'                => $request->payload['dosage'] ?? null,
                 'frequency'             => $request->payload['frequency'] ?? null,
                 'purpose'               => $request->payload['purpose'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now()
             ];
         }
@@ -925,7 +997,9 @@
                 'doctor_Id'             => $request->payload['doctor_Id'] ?? null,
                 'doctor_Name'           => $request->payload['doctor_Name'] ?? null,
                 'notes'                 => $request->payload['notes'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now()
             ];
         }
@@ -937,7 +1011,9 @@
                 'test_Name'         => $request->payload['test_Name'] ?? null,
                 'test_DateTime'     => $request->payload['test_DateTime'] ?? null,
                 'notes'             => $request->payload['notes'] ?? null,
-                'createdby'         => $checkUser->idnumber,
+                'createdby'         => isset($checkUser->idnumber) 
+                                    ?  $checkUser->idnumber
+                                    :  Auth()->user()->idnumber,
                 'created_at'        => Carbon::now()
             ];
         }
@@ -949,7 +1025,9 @@
                 'doctor_Name'           => $request->payload['doctor_Name'] ?? null,
                 'doctor_Specialization' => $request->payload['doctor_Specialization'] ?? null,
                 'schedule_Date'         => $request->payload['schedule_Date'] ?? null,
-                'createdby'             => $checkUser->idnumber,
+                'createdby'             => isset($checkUser->idnumber) 
+                                        ?  $checkUser->idnumber
+                                        :  Auth()->user()->idnumber,
                 'created_at'            => Carbon::now()
             ];
         }

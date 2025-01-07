@@ -34,16 +34,17 @@ class GetIP
             if (!empty($_SERVER[$key])) {
                 foreach (explode(',', $_SERVER[$key]) as $ip) {
                     $ip = trim($ip); // Ensure no extra spaces
-                    // Check for private/local IP ranges
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE) !== false) {
-                        if ($this->isLocalIp($ip)) {
-                            return $ip; // Return the first valid local IP
-                        }
+                    // Validate IP and prioritize local/private IPs
+                    if (filter_var($ip, FILTER_VALIDATE_IP) && $this->isLocalIp($ip)) {
+                        return $ip; // Return the first valid local/private IP
                     }
                 }
             }
         }
-        return request()->ip(); // Default to Laravel's `request()->ip()` if no local IP is found
+
+        // Default to Laravel's request()->ip() and validate as local
+        $ip = request()->ip();
+        return $this->isLocalIp($ip) ? $ip : null;
     }
 
     /**
@@ -51,13 +52,15 @@ class GetIP
      */
     private function isLocalIp($ip)
     {
-        // Localhost or private IP ranges
+
+        // Match loopback, private, and specific local ranges
         $localIpRanges = [
-            '127.0.0.1',     // Loopback
-            '::1',           // IPv6 Loopback
-            '10.',           // Private IP range 10.0.0.0 – 10.255.255.255
-            '172.16.',       // Private IP range 172.16.0.0 – 172.31.255.255
-            '192.168.',      // Private IP range 192.168.0.0 – 192.168.255.255
+            '127.0.0.1',      // Loopback
+            '::1',            // IPv6 Loopback
+            '10.',            // Private range 10.0.0.0 – 10.255.255.255
+            '172.16.',        // Private range 172.16.0.0 – 172.31.255.255
+            '192.168.',       // Private range 192.168.0.0 – 192.168.255.255
+            '10.4.15.'        // Your specific network range
         ];
 
         foreach ($localIpRanges as $range) {
@@ -65,6 +68,7 @@ class GetIP
                 return true;
             }
         }
+
         return false;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Helpers\HIS\PatientRegistryObserverHelper;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Models\HIS\services\PatientRegistry;
 use Illuminate\Support\Facades\Log;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 use App\Models\HIS\MedsysERMaster;
 use App\Models\HIS\MedsysPatientMaster;
 use App\Models\HIS\MedsysOutpatient;
+use App\Models\HIS\medsys\TbPatient;
 class HISPatientRegistryObserver
 {
     /**
@@ -18,145 +20,31 @@ class HISPatientRegistryObserver
      * @return void
      */
     protected $check_is_allow_medsys;
+    protected $medsysObserverHelper;
     public function __construct() {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+        $this->medsysObserverHelper = new PatientRegistryObserverHelper();
     }
     public function created(PatientRegistry $patientRegistry)
     {
         try{
-            $today = Carbon::now()->format('Y-m-d');
-            $IDnum = $patientRegistry->case_No . 'B';
-            
             if($this->check_is_allow_medsys && $patientRegistry) {
-
                 if(intval($patientRegistry->mscAccount_Trans_Types) === 5) {
-          
-                    $ER_Patient = [
-                        'Hospnum'                   =>  $patientRegistry->patient_Id,
-                        'IDnum'                     =>  $patientRegistry->case_No . 'B',
-                        'ERNum'                     =>  $patientRegistry->er_Case_No         ?? '',
-                        'AdmDate'                   =>  $patientRegistry->registry_Date  
-                                                    ?   $patientRegistry->registry_Date 
-                                                    :   Carbon::now(),
-                        'DcrDate'                   =>  $patientRegistry->discharged_Date,
-                        'AccountNum'                =>  $patientRegistry->guarantor_Id   
-                                                    ?   $patientRegistry->guarantor_Id 
-                                                    :   $patientRegistry->patient_Id,
-                        'OpdStatus'                 =>  'E',
-                        'OpdType'                   =>  'O',
-                        'HosPlan'                   =>  'C',
-                        'ServiceID1'                =>  10,
-                        'PatientClassification'     =>  'C',
-                        'DischargeRemarks'          =>  $patientRegistry->discharge_Diagnosis    ?? '',
-                        'isEmergencyCase'           =>  1,
-                        'DoctorID1'                 =>  $patientRegistry->attending_Doctor       ?? '',
-                        'ReasonOfReferral'          =>  $patientRegistry->referral_Reason        ?? '',
-                        'ReferredFrom'              =>  $patientRegistry->referred_From_HCI      ?? '',
-                        'BEDNUMBER'                 =>  $patientRegistry->er_Bedno               ?? '',
-                        'ReferredTo'                =>  $patientRegistry->referred_To_HCI        ?? ''
-                    ];
-
-                    $OPD_Patient_Data = [
-                        'HospNum'                   =>  $patientRegistry->patient_Id,
-                        'IDNum'                     =>  $patientRegistry->case_No . 'B',
-                        'ERNum'                     =>  $patientRegistry->er_Case_No     ?? '',
-                        'AdmDate'                   =>  $patientRegistry->registry_Date 
-                                                    ?   $patientRegistry->registry_Date 
-                                                    :   Carbon::now(),
-                        'ServiceID1'                =>  10,          
-                        'OpdStatus'                 =>  'E',
-                        'OpdType'                   =>  'O',
-                        'HosPlan'                   =>  'C',
-                        'PatientType'               =>  'C',
-                        'DoctorID1'                 =>  $patientRegistry->attending_Doctor   ?? '',
-                        'AccountNum'                =>  $patientRegistry->guarantor_Id   
-                                                    ?   $patientRegistry->guarantor_Id 
-                                                    :   $patientRegistry->patient_Id,
-                        'UserID'                    =>  $patientRegistry->createdBy
-                    ];
-
-                    $patient_Data = [
-                        'AccountNum'                =>  $patientRegistry->guarantor_Id   
-                                                    ?   $patientRegistry->guarantor_Id 
-                                                    :   $patientRegistry->patient_Id,
-                    ];
-
-                    $isRegisteredToday  = MedsysERMaster::where('IDnum', $IDnum)
-                                        -> whereDate('AdmDate', $today)
-                                        ->exists();
-                                        
-                    $master         = MedsysPatientMaster::where('HospNum', $patientRegistry->patient_Id)->update($patient_Data);
-                    $isRegisterER   = MedsysERMaster::whereDate('AdmDate', $today)->updateOrcreate(['IDnum'   => $IDnum], $ER_Patient); 
-                    $isRegisterOPD  = MedsysOutpatient::whereDate('AdmDate', $today)->updateOrCreate(['IDNum' => $IDnum], $OPD_Patient_Data);
-
-                    $message        = $isRegisteredToday 
-                                    ? 'Patient data updated successfully'
-                                    : 'Patient data created successfully';
-
-
-                    if($master && $isRegisterER && $isRegisterOPD) {
-
-                        Log::info($message);
-
-                    } else {
-
-                        Log::error('Failed to create or update patient data in Medsys.');
-                    } 
-
+                    $this->medsysObserverHelper->processRequestToSaveDataInPatientMaster($patientRegistry);
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbERMaster($patientRegistry); 
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbOutPatient($patientRegistry);
                 } elseif(intval($patientRegistry->mscAccount_Trans_Types) === 2) {
-
-                    $OPD_Patient_Data = [
-                        'HospNum'               =>  $patientRegistry->patient_Id,
-                        'IDNum'                 =>  $patientRegistry->case_No . 'B',
-                        'ERNum'                 =>  $patientRegistry->er_Case_No     ?? '',
-                        'AdmDate'               =>  $patientRegistry->registry_Date 
-                                                ?   $patientRegistry->registry_Date 
-                                                :   Carbon::now(),
-                        'ServiceID1'            =>  10,          
-                        'OpdStatus'             =>  'E',
-                        'OpdType'               =>  'O',
-                        'HosPlan'               =>  $patientRegistry->mscPrice_Schemes == 1 ? 'P' : 'C',
-                        'PatientType'           =>  'C',
-                        'DoctorID1'             =>  $patientRegistry->attending_Doctor   ?? '',
-                        'AccountNum'            =>  $patientRegistry->guarantor_Id   
-                                                ?   $patientRegistry->guarantor_Id 
-                                                :   $patientRegistry->patient_Id,
-                        'UserID'                =>  $patientRegistry->createdBy
-                    ];
-
-                    $isRegisteredToday  = MedsysERMaster::where('IDnum', $IDnum)
-                                        -> whereDate('AdmDate', $today)
-                                        ->exists();
-
-                    $isRegisterOPD  = MedsysOutpatient::whereDate('AdmDate', $today)->updateOrCreate(['IDNum' => $IDnum], $OPD_Patient_Data);
-
-                    $message        = $isRegisteredToday 
-                                    ? 'Patient data updated successfully'
-                                    : 'Patient data created successfully';
-
-                   if($isRegisterOPD) {
-
-                        Log::info($message);
-
-                    } else {
-
-                        Log::error('Failed to create or update patient data in Medsys.');
-                    } 
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbOutPatient($patientRegistry);
                 } else {
-
-                    //For InPatient
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbPatient($patientRegistry);
                 }
-
             } else {
-
                 Log::error('Permission denied or Patient Registry is invalid.');
+                throw new \Exception('Permission denied or Patient Registry is invalid.');
             }
-            
         } catch(\Exception $e) {
-
             Log::error('Failed to process patient data in Medsys: ' . $e->getMessage());
             throw new \Exception('Failed to insert patient into Medsys: ' . $e->getMessage());
-
         } 
     }
 
@@ -166,150 +54,23 @@ class HISPatientRegistryObserver
      * @param  \App\Models\HIS\services\PatientRegistry  $patientRegistry
      * @return void
      */
-    public function updated(PatientRegistry $patientRegistry)
-    {
-    
+    public function updated(PatientRegistry $patientRegistry) {
         try {
-
             if($this->check_is_allow_medsys && $patientRegistry) {
-                
-                $today = Carbon::now()->format('Y-m-d');
-                $erId = $patientRegistry->case_No . 'B';
-
                 if(intval($patientRegistry->mscAccount_Trans_Types) === 5) {
-
-                    $ER_Patient_Master  = MedsysERMaster::where('IDnum', $erId)->first();
-                    $MedsysOPD          = MedsysOutpatient::where('IDNum', $erId)->first();
-                    
-                    if($ER_Patient_Master && $MedsysOPD) {
-
-                        $ER_Patient_Master_Data = [
-                            'Hospnum'                   =>  $patientRegistry->patient_Id,
-                            'ERNum'                     =>  $patientRegistry->er_Case_No ?? $ER_Patient_Master->er_Case_No,
-                            'AdmDate'                   =>  $ER_Patient_Master->AdmDate  
-                                                        ?   $ER_Patient_Master->AdmDate 
-                                                        :   Carbon::now(),
-                            'DcrDate'                   => $patientRegistry->discharged_Date,
-                            'AccountNum'                =>  $patientRegistry->guarantor_Id   
-                                                        ?   $patientRegistry->guarantor_Id 
-                                                        :   $patientRegistry->patient_Id,
-                            'OpdStatus'                 => 'E',
-                            'OpdType'                   => 'O',
-                            'HosPlan'                   => 'C',
-                            'ServiceID1'                => 10,
-                            'PatientClassification'     => 'C',
-                            'DischargeRemarks'          => $patientRegistry->discharge_Diagnosis ?? '',
-                            'isEmergencyCase'           => 1,
-                            'DoctorID1'                 => $patientRegistry->attending_Doctor,
-                            'ReasonOfReferral'          =>  $patientRegistry->referral_Reason,
-                            'ReferredFrom'              =>  $patientRegistry->referred_From_HCI,
-                            'BEDNUMBER'                 =>  $patientRegistry->er_Bedno,
-                            'ReferredTo'                =>  $patientRegistry->referred_To_HCI
-
-                        ];
-
-                        $OPD_Patient_Data = [
-                            'HospNum'       =>  $patientRegistry->patient_Id,
-                            'IDNum'         =>  $patientRegistry->case_No . 'B',
-                            'ERNum'         =>  $patientRegistry->er_Case_No,
-                            'AdmDate'       =>  $patientRegistry->registry_Date  
-                                            ?   $patientRegistry->registry_Date 
-                                            :   Carbon::now(),
-                            'ServiceID1'    => 10,          
-                            'OpdStatus'     => 'E',
-                            'OpdType'       => 'O',
-                            'HosPlan'       => 'C',
-                            'PatientType'   => 'C',
-                            'DoctorID1'     => $patientRegistry->attending_Doctor,                
-                            'AccountNum'    =>  $patientRegistry->guarantor_Id   
-                                            ?   $patientRegistry->guarantor_Id 
-                                            :   $patientRegistry->patient_Id,
-                            'UserID'        => $patientRegistry->updatedBy
-                        ];
-
-                        $isRegisteredToday  = MedsysERMaster::where('IDnum', $erId)
-                                            -> whereDate('AdmDate', $today)
-                                            ->exists();
-                        $patient_Data = [
-                            'AccountNum'    => $patientRegistry->guarantor_Id ?? $patientRegistry->patient_Id,
-                        ];
-
-                        $master = MedsysPatientMaster::where('HospNum', $patientRegistry->patient_Id)->update($patient_Data);
-                        $isUpdatedER    = MedsysERMaster::whereDate('AdmDate', $today)->updateOrCreate(['IDnum' => $erId], $ER_Patient_Master_Data);
-                        $isUpdatedOPD   = MedsysOutpatient::whereDate('AdmDate', $today)->updateOrCreate(['IDNum' => $erId], $OPD_Patient_Data);
-
-                        $message        = $isRegisteredToday 
-                                        ? 'Patient data updated successfully'
-                                        : 'Patient data created successfully';
-
-                        if($master && $isUpdatedER && $isUpdatedOPD) {
-
-                            Log::info($message);
-
-                        } else {
-
-                            Log::info('Failed to Update data in Medsys ERMaster table..');
-                        } 
-
-                    } else {
-
-                        Log::info('No patient Found');
-                    }
-
+                    $this->medsysObserverHelper->processRequestToSaveDataInPatientMaster($patientRegistry);
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbERMaster($patientRegistry);
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbOutPatient($patientRegistry);
                 } elseif(intval($patientRegistry->mscAccount_Trans_Types) === 2) {
-
-                    $MedsysOPD          = MedsysOutpatient::findOrFail($erId);
-
-                    $OPD_Patient_Data = [
-                        'HospNum'       =>  $patientRegistry->patient_Id,
-                        'IDNum'         =>  $patientRegistry->case_No . 'B',
-                        'ERNum'         =>  $patientRegistry->er_Case_No,
-                        'AdmDate'       =>  $patientRegistry->registry_Date  
-                                        ?   $patientRegistry->registry_Date 
-                                        :   Carbon::now(),
-                        'ServiceID1'    => 10,          
-                        'OpdStatus'     => 'E',
-                        'OpdType'       => 'O',
-                        'HosPlan'       => 'C',
-                        'PatientType'   => 'C',
-                        'DoctorID1'     => $patientRegistry->attending_Doctor,                
-                        'AccountNum'    =>  $patientRegistry->guarantor_Id   
-                                        ?   $patientRegistry->guarantor_Id 
-                                        :   $patientRegistry->patient_Id,
-                    ];
-
-                    $isRegisteredToday  = MedsysERMaster::where('IDnum', $erId)
-                                            -> whereDate('AdmDate', $today)
-                                            ->exists();
-
-                    $isUpdatedOPD   = MedsysOutpatient::whereDate('AdmDate', $today)->updateOrCreate(['IDNum' => $erId], $OPD_Patient_Data);
-                    
-                    $message        = $isRegisteredToday 
-                                        ? 'Patient data updated successfully'
-                                        : 'Patient data created successfully';
-                    if($isUpdatedOPD) {
-
-                        Log::info($message);
-
-                    } else {
-
-                        Log::info('Failed to Update data in Medsys ERMaster table..');
-                    } 
-
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbOutPatient($patientRegistry);
                 } else {
-                    //For InPatient
+                    $this->medsysObserverHelper->processRequestToSaveDataInTbPatient($patientRegistry);
                 }
-
-
             } else {
-
-                Log::error('Cannot update is Either persion id denied or patient registry is empty');
+                throw new \Exception('Permission denied or Patient Registry is invalid.');
             }
-            
         } catch(\Exception $e) {
-
             Log::error('Failed to update patient info in  Medsys: ' . $e->getMessage());
-
             throw new \Exception('Failed to update patient into Medsys: ' . $e->getMessage());
         }
     }

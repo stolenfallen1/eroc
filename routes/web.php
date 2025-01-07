@@ -14,6 +14,7 @@ use App\Models\MMIS\procurement\PurchaseOrderDetails;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
+use App\Http\Controllers\HIS\services\InpatientRegistrationController;
 
 use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
@@ -65,3 +66,4 @@ Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);
 Route::get('get-charge-items', [EmergencyRoomMedicine::class, 'getMedicineSupplyCharges']);
 Route::get('er-patient-daily-report', [ReportMaster::class, 'ERDailyCensusReport']);
 Route::get('doctors-categories', [DoctorController::class, 'doctorsCategories']);
+Route::get('patient-for-admission', [InpatientRegistrationController::class, 'getPatientForAdmission']);

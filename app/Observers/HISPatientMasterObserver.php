@@ -111,7 +111,6 @@ class HISPatientMasterObserver
                                 : '';
 
                     $patient_Data = [
-
                         'LastName'      => $patient->lastname       ?? $patientInfo->LastName,
                         'FirstName'     => $patient->firstname      ?? $patientInfo->FirstName,
                         'MiddleName'    => $patient->middlename     ?? $patientInfo->MiddleName,
@@ -121,7 +120,6 @@ class HISPatientMasterObserver
                         'BirthDate'     => $patient->birthdate      ?? $patientInfo->BirthDate,
                         'CivilStatus'   => $patient->civilstatus_id ?? $patientInfo->CivilStatus,
                         'Age'           => $patient->age            ?? $patientInfo->Age
-
                     ];
 
                     $pstient_Data_Master2 = [

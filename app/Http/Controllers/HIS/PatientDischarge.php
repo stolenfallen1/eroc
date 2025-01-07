@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\HIS;
 
 use App\Http\Controllers\Controller;
-use App\Models\HIS\PatientHistory;
 use App\Models\HIS\services\PatientRegistry;
 use App\Models\User;
 use App\Helpers\GetIP;
@@ -11,21 +10,21 @@ use Illuminate\Http\Request;
 use \Carbon\Carbon;
 use App\Models\HIS\ErResult;
 use DB;
-use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\SOA\OutPatient;
-use App\Models\HIS\MedsysAdmittingCommunication;
-use App\Models\HIS\AdmittingCommunicationFile;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Models\Profesional\Doctors;
 use App\Models\HIS\mscPatientStatus;
+use App\Helpers\HIS\DischargePatientHelper;
 
 class PatientDischarge extends Controller
 {
 
     protected $check_is_allow_medsys;
+    protected $dischargePatientData;
 
     public function __construct() {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+        $this->dischargePatientData = new DischargePatientHelper();
     }
     public function mayGoHome(Request $request, $id) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
@@ -88,53 +87,26 @@ class PatientDischarge extends Controller
                 return response()->json([$message='Incorrect Username or Password'], 404);
             endif;
             $patientRegistry = PatientRegistry::where('case_No', $id)->first();
-            $patient_id = $patientRegistry->patient_Id;
-            $case_No = $patientRegistry->case_No;
-            $OPDIDnum = $patientRegistry->case_No . 'B';
-            $registry_data = [
-                'discharged_Userid'         => $checkUser->idnumber,
-                'discharged_Date'           => Carbon::now(),
-                'discharged_Hostname'       => (new GetIP())->getHostname(),
-                'dischargeNotice_UserId'    => $patientRegistry->mgh_Userid,
-                'dischargeNotice_Date'      => $patientRegistry->mgh_Datetime,
-                'dischargeNotice_Hostname'  => $patientRegistry->mgh_Hostname,
-                'discharge_Diagnosis'       => $request->payload['discharge_Diagnosis'],
-                'updatedBy'                 => $checkUser->idnumber,
-                'updated_at'                => Carbon::now()
-            ];
-            $send_to_CDG_ComFile_data = [
-                'patient_Id'    => $patient_id,
-                'case_No'       => $case_No,
-                'requestDate'   =>Carbon::now(),
-                'requestBy'     => $checkUser->idnumber,
-                'createdBy'     => $checkUser->idnumber,
-                'createdat'     => Carbon::now(),
-                'updatedby'     => $checkUser->idnumber,
-                'updatedat'     => Carbon::now()
-            ];
-            $send_to_Medsys_CompFile_data = [
-                'HospNum'       => $patient_id,
-                'OPDIDnum'      => $OPDIDnum,
-                'RequestDate'   =>Carbon::now(),
-                'RequestBy'     => $checkUser->idnumber   
-            ];
-            $patient_registry = PatientRegistry::where('case_No', $id)->first();
-            if($patient_registry) {
+            if($patientRegistry) {
                 if($this->check_is_allow_medsys) {
-                    $is_To_Medsys = MedsysAdmittingCommunication::updateOrCreate(['OPDIDnum' => $OPDIDnum], $send_to_Medsys_CompFile_data);
+                    if(intval($patientRegistry->mscDisposition_Id) === 10) {
+                        $dischargePatient = $this->dischargePatientData->dischargedPatientForAdmission($patientRegistry, $checkUser, $request);
+                    } else {
+                        $dischargePatient = $this->dischargePatientData->processDischargedPatient($patientRegistry, $checkUser, $request);
+                    }
                 } else {
                     return response()->json(['message' => 'Medsys does not allow to save data' ], 500);
                 }
-                if($is_To_Medsys) {
-                    $discharged_patient = $patient_registry->where('case_No', $id)->update($registry_data);
-                    $is_To_CDG = AdmittingCommunicationFile::updateOrCreate(['case_No' => $case_No],  $send_to_CDG_ComFile_data);
-                }
-                if(!$discharged_patient || !$is_To_CDG) {
-                    throw new \Exception('Error');
-                }
+            } else {
+                return response()->json(['message' => 'Patient Not Found'], 404);
             }
+            if(!$dischargePatient) {
+                throw new \Exception('Failed to discharge patient');
+            }
+
             DB::connection('sqlsrv_patient_data')->commit();
             DB::connection('sqlsrv_medsys_patient_data')->commit();
+
             return response()->json([
                 'message' => 'Patient has been discharged successfuly'
             ], 200);
@@ -270,15 +242,14 @@ class PatientDischarge extends Controller
                         }
                         $prevID = $billing->revenueID;
                         return [
-                            'Charges'               => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
-                                                    ? number_format(0, 2)
-                                                    : number_format($charges,2),
-                            'Credit'                => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
-                                                    ? number_format($charges,2)
-                                                    : number_format(0, 2),
-                            'Balance'               => number_format($runningBalance, 2)
+                            'Charges'   => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0)
+                                        ? number_format(0, 2)
+                                        : number_format($charges,2),
+                            'Credit'             => isset($billing->drcr) && ($billing->drcr === 'C' || intval($billing->quantity) <= 0) 
+                                        ? number_format($charges,2)
+                                        : number_format(0, 2),
+                            'Balance'   => number_format($runningBalance, 2)
                         ];
-
                     });
                 });
                 $totalCharges = $patientBill->sum(function($bill) {
@@ -331,10 +302,8 @@ class PatientDischarge extends Controller
             if (!$patientRegistry) {
                 return response()->json(['message' => 'Record Not Found'], 404);
             } 
-            
             $hasMGH = $this->checkHasMGH($patientRegistry);
             $hasDischarged = $this->checkDischargePatient($patientRegistry);
-
             if(!$hasMGH && !$hasDischarged) {
                 return response()->json(['isEligible' => 0, 'isDischarged' => 0], 200);
             } else if($hasMGH && $hasDischarged) {

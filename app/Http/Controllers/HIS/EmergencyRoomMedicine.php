@@ -21,70 +21,58 @@ use App\Helpers\GetIP;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Models\HIS\his_functions\HISBillingOut;
 use App\Models\HIS\medsys\MedSysDailyOut;
+use App\Helpers\HIS\MedicineSuppliesCharges\MedicineSuppliesUseSequences;
+use App\Helpers\HIS\MedicineSuppliesCharges\MedicineSuppliesPrepareData;
 
 class EmergencyRoomMedicine extends Controller
 {
     //
     protected $check_is_allow_medsys;
+    protected $medicineSuppliesSequence;
+    protected $medicineSuppliesData;
     public function __construct() {
         $this->isproduction = true;
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
+        $this->medicineSuppliesSequence = new MedicineSuppliesUseSequences();
+        $this->medicineSuppliesData = new MedicineSuppliesPrepareData();
     }
     
     public function erRoomMedicine(Request $request) {
         try {
-
             $revenueCode = TransactionCodes::where("code",$request->revenuecode)->first();
-
             if (!$revenueCode) {
                 return response()->json(["msg" => "Revenue code not found"], 404);
             }
-
             $warehouseItems = Warehouseitems::where('warehouse_Id', $request->warehouseID)->pluck('item_Id');
             $warehouseItemsArray = $warehouseItems->toArray();
-
             if (empty($warehouseItemsArray)) {
                 return response()->json(["msg" => "Warehouse items not found"], 404);
             }
-
             $priceColumn = $request->patienttype == 1 ? 'item_Selling_Price_Out' : 'item_Selling_Price_In';
-
             $items = Itemmasters::with(['wareHouseItems' => function ($query) use ($request, $priceColumn) {
                 $query->where('warehouse_Id', $request->warehouseID)
                     ->select('id', 'item_Id', 'item_OnHand', 'item_ListCost', DB::raw("$priceColumn as price"));
             }])
             ->whereIn('id', $warehouseItemsArray) 
             ->orderBy('item_name', 'asc');
-
             if($request->keyword) {
                 $items->where('item_name','LIKE','%'.$request->keyword.'%');
             }
-            
             $page  = $request->per_page ?? '15';
             return response()->json($items->paginate($page), 200);
-            
-
         } catch(Exception $e) {
-
             return response()->json(["msg" => $e->getMessage()], 500);
-
         }
-
     }
 
     public function chargePatientMedicineSupply(Request $request) {
-
         DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         DB::connection('sqlsrv_medsys_billing')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
         DB::connection('sqlsrv_medsys_inventory')->beginTransaction();
         DB::connection('sqlsrv_billingOut')->beginTransaction();
-    
         try {
-              /**************************************/
-             /*       Check user credentials       */
-            /**************************************/
             $checkUser = User::where([
                 ['idnumber', '=', $request->payload['user_userid']],
                 ['passcode', '=', $request->payload['user_passcode']]
@@ -93,24 +81,15 @@ class EmergencyRoomMedicine extends Controller
             if (!$checkUser) {
                 return response()->json(['message' => 'Incorrect Username or Password'], 404);
             }
-    
-              /**************************************/
-             /*          Process Medicines         */ 
-            /**************************************/
             if (isset($request->payload['Medicines']) && 
                 count(array_filter($request->payload['Medicines'], function($item) {
                     return !empty($item['code']);
                 })) > 0) {
                 $this->processItems($request, $checkUser, 'Medicines');
             }
-
             if(isset($request->payload['itemListCost'])) {
                 $this->processItems($request, $checkUser, 'itemListCost');
             }
-
-              /**************************************/
-             /*          Process Supplies          */
-            /**************************************/
             if (isset($request->payload['Supplies']) && 
                 count(array_filter($request->payload['Supplies'], function($item) {
                     return !empty($item['code']);
@@ -141,222 +120,43 @@ class EmergencyRoomMedicine extends Controller
     }
     
     private function processItems($request, $checkUser, $itemType) {
-        DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->increment('ChargeSlip');
-        DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->increment('DispensingCSlip');
-        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('AssessmentNum');
-        DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->increment('RequestNum');
-
-        $tbNursePHSlipSequence = DB::connection('sqlsrv_medsys_nurse_station')->table('tbNursePHSlip')->first();
-        $tbInvChargeSlipSequence = DB::connection('sqlsrv_medsys_inventory')->table('tbInvChargeSlip')->first();
-        $medsysCashAssessmentSequence = DB::connection('sqlsrv_medsys_billing')->table('Billing.dbo.tbAssessmentNum')->first();
+        $tbNursePHSlipSequence = $this->medicineSuppliesSequence->handleTbNursePHSlipSequence();
+        $tbInvChargeSlipSequence = $this->medicineSuppliesSequence->handleTbInvChargeSlipSequence();
+        $medsysCashAssessmentSequence = $this->medicineSuppliesSequence->handleMedsysCashAssessmentSequence();
         
         foreach ($request->payload[$itemType] as $index => $item) {
-
-              /********************************************/
-             /*             Increment Sequences          */
-            /********************************************/
-            
             if (!isset($item['code'], $item['item_name'], $item['quantity'], $item['amount'])) {
                 return response()->json(['message' => "Missing required $itemType information"], 400);
             }
-
             if($itemType === 'Medicines') {
-
                 $itemID   = $request->payload['medicine_stocks_OnHand'][$index]['medicine_id'] ?? null;
                 $listCost = $request->payload['medicine_stocks_OnHand'][$index]['item_List_Cost'] ?? null;
                 $stock   = intval($request->payload['medicine_stocks_OnHand'][$index]['medicine_stock']) ?? null;
-
             } else if('Supplies') {
-
                 $itemID     = $request->payload['supply_stocks_OnHand'][$index]['supply_id'] ?? null;
                 $listCost   = $request->payload['supply_stocks_OnHand'][$index]['item_List_Cost'] ?? null;
                 $stock      = intval($request->payload['supply_stocks_OnHand'][$index]['supply_stock']) ?? null;
-
             }
-
-              /**************************************/
-             /*     Prepare data for insertion     */
-            /**************************************/
-            $tbNurseLogBookData         = $this->prepareMedsysLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $tbInvStockCardData         = $this->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost);
-            $cashAssessment             = $this->prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
-            $tbCashAssessment           = $this->prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence);
-            $nurseLogBookData           = $this->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID);
-            $inventoryTransactionData   = $this->prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock);
-    
-              /**************************************/
-             /*            Insert Records          */
-            /**************************************/
             if($request->payload['charge_to'] === 'Company / Insurance') {
-                tbNurseLogBook::create($tbNurseLogBookData);
-                NurseLogBook::create($nurseLogBookData);
-                InventoryTransaction::create($inventoryTransactionData);
-                tbInvStockCard::create($tbInvStockCardData);
+                $tb_medsys_nurse_logbook = tbNurseLogBook::create($this->medicineSuppliesData->prepareMedsysLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID));
+                $cdg_nurse_logbook = NurseLogBook::create($this->medicineSuppliesData->prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID));
+                $CDG_MMIS_inventory_trasaction = InventoryTransaction::create($this->medicineSuppliesData->prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock));
+                $inventory_tb_stock_card = tbInvStockCard::create($this->medicineSuppliesData->prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost));
+                if(!$tb_medsys_nurse_logbook || !$cdg_nurse_logbook || !$CDG_MMIS_inventory_trasaction || !$inventory_tb_stock_card) {
+                    throw new Exception('Failed to charge item');
+                }
             } else {
-                CashAssessment::create($cashAssessment);
-                MedsysCashAssessment::create($tbCashAssessment);
+                $cdg_cash_assessment = CashAssessment::create($this->medicineSuppliesData->prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence));
+                $medsys_cash_assessment = MedsysCashAssessment::create($this->medicineSuppliesData->prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence));
+                if(!$cdg_cash_assessment || !$medsys_cash_assessment) {
+                    throw new Exception('Failed to charge item');
+                }
             }
         }
     }
     
-    private function prepareMedsysLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID) {
-        return [
-            'Hospnum'       => $request->payload['patient_Id'] ?? null,
-            'IDnum'         => $request->payload['case_No'] . 'B' ?? null,
-            'PatientType'   => $request->payload[''] ?? null,
-            'RevenueID'     => $item['code'],
-            'RequestDate'   => Carbon::now(),
-            'ItemID'        => $itemID,
-            'Description'   => $item['item_name'] ?? null,
-            'Quantity'      => $item['quantity'] ?? null,
-            'Dosage'        => $item['frequency'] ?? null,
-            'Amount'        => $item['amount'],
-            'RecordStatus'  => 'W',
-            'UserID'        => $checkUser->idnumber,
-            'ProcessBy'     => $checkUser->idnumber,
-            'ProcessDate'   => Carbon::now(),
-            'Remarks'       => $item['remarks'] ?? null,
-            'RequestNum'    => $tbNursePHSlipSequence->ChargeSlip,
-            'ReferenceNum'  => $tbInvChargeSlipSequence->DispensingCSlip,
-            'Stat'          => $item['stat'] ?? null,
-            'dcrdate'       => $request->payload['dcrdate'] ?? null,
-            'isGeneric'     => 0,
-            'AMPickup'      => 0,
-        ];
-    }
-    
-    private function prepareStockCardData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $listCost) {
-        $item_price =  $item['price'] = str_replace('₱', '', $item['price']);
-        return [
-            'SummaryCode'   => $item['code'],
-            'HospNum'       => $request->payload['patient_Id'] ?? null,
-            'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
-            'ItemID'        => $itemID,
-            'TransDate'     => Carbon::now(),
-            'RevenueID'     => $item['code'] ?? null,
-            'RefNum'        => $tbInvChargeSlipSequence->DispensingCSlip,
-            'Status'        => $item['stat'] ?? null,
-            'Quantity'      => $item['quantity'] ?? null,
-            'Balance'       => $request->payload['Balance'] ?? null,
-            'NetCost'       => $item_price ? floatval($item_price) : null,
-            'Amount'        => $item['amount'] ?? null,
-            'UserID'        => $checkUser->idnumber,
-            'DosageID'      => $item['frequency'] ?? null,
-            'RequestByID'   => $checkUser->idnumber,
-            'CreditMemoNum' => $request->payload['CreditMemoNum'] ?? null,
-            'DispenserCode' => 0,
-            'RequestNum'    => $tbNursePHSlipSequence->ChargeSlip,
-            'ListCost'      => $listCost,
-            'RecordStatus'  => 'W',
-            'HostName'      => (new GetIP())->getHostname(),
-        ];
-    }
-
-    private function prepareCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence) {
-        return [
-            'branch_id'             => 1,
-            'patient_id'            => $request->payload['patient_Id'],
-            'case_No'               => $request->payload['case_No'],
-            'patient_Name'          => $request->payload['patient_Name'],
-            'transdate'             => Carbon::now(),
-            'assessNum'             => intval($medsysCashAssessmentSequence->RequestNum),
-            'Indicator'             => $item['code'],
-            'drcr'                  => 'C',
-            'stat'                  => 1,
-            'revenueID'             => $item['code'],
-            'refNum'                => $item['code'] . intval($medsysCashAssessmentSequence->AssessmentNum),
-            'itemID'                => $itemID,
-            'quantity'              => $item['quantity'],
-            'amount'                => $item['amount'],
-            'specimenId'            => '',
-            'dosage'                => $item['frequency'] ?? null,
-            'departmentID'          => 'ER',
-            'requestDescription'    => $item['item_name'],
-            'ismedicine'            => $item['code'] === 'EM' ? 1 : 0,
-            'issupplies'            => $item['code'] === 'RS' ? 1 : 0,
-            'requestDoctorID'       => '',
-            'requestDoctorName'     => '',
-            'hostname'              => (new GetIP())->getHostname(),
-            'createdBy'             => $checkUser->idnumber,
-            'created_at'            => Carbon::now(),
-        ];
-    }
-
-    private function prepareMedsysCashAssessmentData($request, $item, $checkUser, $itemID, $medsysCashAssessmentSequence) {
-        $item_price =  $item['price'] = str_replace('₱', '', $item['price']);
-        return [
-            'IdNum'         => $request->payload['case_No'] . 'B',
-            'HospNum'       => $request->payload['patient_Id'],
-            'Name'          => $request->payload['patient_Name'],
-            'TransDate'     => Carbon::now() ?? null,
-            'AssessNum'     => intval($medsysCashAssessmentSequence->RequestNum),
-            'Indicator'     => $item['code'],
-            'DrCr'          => 'D',
-            'RecordStatus'  => 'X',
-            'ItemID'        => $itemID,
-            'Quantity'      => $item['quantity'],
-            'RefNum'        => $item['code'] . intval($medsysCashAssessmentSequence->AssessmentNum),
-            'Amount'        => $item['amount'],
-            'UserID'        => $checkUser->idnumber,
-            'RevenueID'     => $item['code'],
-            'DepartmentID'  => 'ER',
-            'UnitPrice'     => $item_price ? floatval($item_price) : null,
-        ];
-    }
-    
-    private function prepareNurseLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID) {
-        return [
-            'branch_Id'        => 1,
-            'patient_Id'       => $request->payload['patient_Id'],
-            'case_No'          => $request->payload['case_No'],
-            'patient_Name'     => $request->payload['patient_Name'],
-            'patient_Type'     => 0,
-            'revenue_Id'       => $item['code'],
-            'requestNum'       => $tbNursePHSlipSequence->ChargeSlip,
-            'referenceNum'     => $tbInvChargeSlipSequence->DispensingCSlip,
-            'item_Id'          => $itemID,
-            'description'      => $item['item_name'] ?? null,
-            'specimen_Id'      => $request->payload['specimen_Id'] ?? null,
-            'Quantity'         => $item['quantity'] ?? null,
-            'dosage'           => $item['frequency'] ?? null,
-            'section_Id'       => $request->payload['section_Id'] ?? null,
-            'amount'           => $item['amount'] ?? null,
-            'record_Status'    => 'W',
-            'user_Id'          => $checkUser->idnumber,
-            'remarks'          => $item['remarks'] ?? null,
-            'isGeneric'        => 0,
-            'isMajorOperation' => 0,
-            'createdat'        => Carbon::now(),
-            'createdby'        => $checkUser->idnumber,
-        ];
-    }
-    
-    private function prepareInventoryTransactionData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID, $stock) {
-        return [
-            'branch_Id'                     => 1,
-            'warehouse_Group_Id'            => $request->payload['warehouse_Group_Id'] ?? null,
-            'warehouse_Id'                  => $request->payload['warehouse_Id'] ?? null,
-            'patient_Id'                    => $request->payload['patient_Id'] ?? null,
-            'patient_Registry_Id'           => $request->payload['case_No'] ?? null,
-            'transaction_Item_Id'           => $itemID,
-            'transaction_Date'              => Carbon::now(),
-            'trasanction_Reference_Number'  => $tbInvChargeSlipSequence->DispensingCSlip,
-            'transaction_Acctg_TransType'   => $item['code'] ?? null,
-            'transaction_Qty'               => $item['quantity'] ?? null,
-            'transaction_Item_OnHand'       => $stock,
-            'transaction_Item_ListCost'     => $request->payload['transaction_Item_ListCost'] ?? null,
-            'transaction_Requesting_Number' => $tbNursePHSlipSequence->ChargeSlip,
-            'transaction_UserId'            => $checkUser->idnumber,
-            'created_at'                    => Carbon::now(),
-            'createdBy'                     => $checkUser->idnumber,
-            'updated_at'                    => Carbon::now(),
-            'updatedby'                     => $checkUser->idnumber,
-        ];
-    }
-    
     public function getMedicineSupplyCharges($id) {
         try {
-
             $accountType = DB::connection('sqlsrv_patient_data')->table('CDG_PATIENT_DATA.dbo.PatientRegistry')->select('guarantor_Name')->where('case_No', $id)->first();
 
             if($accountType->guarantor_Name === 'Self Pay') {
@@ -429,13 +229,87 @@ class EmergencyRoomMedicine extends Controller
                     'message' => 'No Charges'
                 ], 404);
             }
-   
+
             return response()->json($charges, 200);
 
         } catch (Exception $e) {
 
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    public function revokedCharges(Request $request) {
+        $this->handleDatabaseTransactionProcess('start');
+        try {
+            $checkUser = User::where([
+                ['idnumber', '=', $request->payload['user_userid']],
+                ['passcode', '=', $request->payload['user_passcode']]
+            ])->first();
+
+            if (!$checkUser) {
+                return response()->json(['message' => 'Incorrect Username or Password'], 404);
+            }
+
+            $hmoCount = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->count();
+            $selfPayCount = CashAssessment::where('refNum', $request->payload['reference_id'])->count();
+
+            if($request->payload['account'] !=='Self-Pay') {
+                if($hmoCount === 0) {
+                    return response()->json(['message' => 'No charges found'], 404);
+                }
+                while($hmoCount > 0 ) {
+                    //to follow
+                }
+            } else {
+            }
+            $this->handleDatabaseTransactionProcess('commit');
+            return response()->json(['message' => 'Charges successfully revoked'], 200);
+
+        } catch (Exception $e) {
+            $this->handleDatabaseTransactionProcess('rollback');
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    private function handleDatabaseTransactionProcess($progressStatus) {
+        switch ($progressStatus) {
+            case 'start':
+                $this->handleStartTransaction();
+                break;
+            case 'commit':
+                $this->handleCommitTransaction();
+                break;
+            case 'rollback':
+                $this->handleRollbackTransaction();
+                break;
+        }
+    }
+
+    private function handleStartTransaction() {
+        DB::connection('sqlsrv_medsys_nurse_station')->beginTransaction();
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        DB::connection('sqlsrv_mmis')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+        DB::connection('sqlsrv_billingOut')->beginTransaction();
+        DB::connection('sqlsrv_medsys_billing')->beginTransaction();
+    }
+
+    private function handleCommitTransaction() {
+        DB::connection('sqlsrv_medsys_nurse_station')->commit();
+        DB::connection('sqlsrv_patient_data')->commit();
+        DB::connection('sqlsrv_mmis')->commit();
+        DB::connection('sqlsrv_medsys_billing')->commit();
+        DB::connection('sqlsrv_billingOut')->commit();
+        DB::connection('sqlsrv_medsys_billing')->commit();
+    }
+
+    private function handleRollbackTransaction() {
+        DB::connection('sqlsrv_medsys_nurse_station')->rollBack();
+        DB::connection('sqlsrv_patient_data')->rollBack();
+        DB::connection('sqlsrv_mmis')->rollBack();
+        DB::connection('sqlsrv_medsys_billing')->rollBack();
+        DB::connection('sqlsrv_billingOut')->rollBack();
+        DB::connection('sqlsrv_medsys_billing')->rollBack();
     }
     
     
@@ -467,88 +341,91 @@ class EmergencyRoomMedicine extends Controller
             $billingOut                 = HISBillingOut::where('refNum', $request->payload['reference_id'])->first();
             $medsys_billingOut          = MedSysDailyOut::where('RefNum', $request->payload['reference_id'])->first();
 
+            $count = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->count();
+
             $is_MMIS_Created_Successfuly = true; 
             $isCreated_medsys_Inventory_successfuly = true; 
             $is_update_successful = true;
             $is_revoked_billing = true;
-           
 
-            $isHMO =  ($cdg_mmis_inventory && $medsys_inventory) || $request->payload['account'] !== 'Self Pay';
+            $isHMO =  ($cdg_mmis_inventory && $medsys_inventory) || $request->payload['account'] !== 'Self-Pay';
 
-            if($isHMO) {
+            while($count > 0) {
+                if($isHMO) {
+                    if($billingOut) {
+                        $is_updated_billingOut = HISBillingOut::where('refNum',  $request->payload['reference_id'])
+                            ->update([
+                                'refNum' => $request->payload['reference_id'] . '[REVOKED]',
+                                'ChargeSlip' => $request->payload['reference_id'] . '[REVOKED]',
+                            ]);
 
-                if($billingOut) {
-                    $is_updated_billingOut = HISBillingOut::where('refNum',  $request->payload['reference_id'])
-                        ->update([
-                            'refNum' => $request->payload['reference_id'] . '[REVOKED]',
-                            'ChargeSlip' => $request->payload['reference_id'] . '[REVOKED]',
-                        ]);
-
-                    $is_updated_medsys_billingOut = MedSysDailyOut::where('RefNum', $request->payload['reference_id'])
-                        ->update([
-                            'RefNum' => $request->payload['reference_id'] . '[REVOKED]',
-                            'ChargeSlip' => $request->payload['reference_id'] . '[REVOKED]',
-                        ]);
+                        $is_updated_medsys_billingOut = MedSysDailyOut::where('RefNum', $request->payload['reference_id'])
+                            ->update([
+                                'RefNum' => $request->payload['reference_id'] . '[REVOKED]',
+                                'ChargeSlip' => $request->payload['reference_id'] . '[REVOKED]',
+                            ]);
+                        
+                        $is_created_billing = HISBillingOut::create($this->BillingOutData($request, $billingOut, $checkUser));
+                        $is_created_medsys_billing = MedSysDailyOut::create($this->MedsysBillingOutData($request,  $medsys_billingOut, $checkUser));
+                        $is_revoked_billing = $is_updated_billingOut && $is_created_billing  && $is_updated_medsys_billingOut && $is_created_medsys_billing ?  true : false;
                     
-                    $is_created_billing = HISBillingOut::create($this->BillingOutData($request, $billingOut, $checkUser));
-                    $is_created_medsys_billing = MedSysDailyOut::create($this->MedsysBillingOutData($request,  $medsys_billingOut, $checkUser));
-                    $is_revoked_billing = $is_updated_billingOut && $is_created_billing  && $is_updated_medsys_billingOut && $is_created_medsys_billing ?  true : false;
-                }
+                    }
+                    if($cdg_mmis_inventory) {
+                        $isCreated_cdg_MMIS = InventoryTransaction::create($this->CDGMMISInventoryData($request, $cdg_mmis_inventory, $checkUser));
+                        $is_MMIS_Created_Successfuly = $isCreated_cdg_MMIS ? true : false;
+                    }
+                    
+                    if($medsys_inventory) {
+                        $isCreated_medsys_Inventory  = tbInvStockCard::create($this->MedsysStockCardData($request,  $medsys_inventory, $checkUser));
+                        $isCreated_medsys_Inventory_successfuly = $isCreated_medsys_Inventory ? true : false;
+                    }
+                    if($isUseReferenceNumber) {
+                        $isUpdated_cdg_lb  = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
+                        $isUpdated_medsys_lb  = tbNurseLogBook::where('ReferenceNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+                        $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
+                    } 
+                    if($isUseRequestNumber) {
+                        $isUpdated_cdg_lb  = NurseLogBook::where('requestNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
+                        $isUpdated_medsys_lb  = tbNurseLogBook::where('RequestNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
+                        $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
+                    }
 
-                if($cdg_mmis_inventory) {
-                    $isCreated_cdg_MMIS = InventoryTransaction::create($this->CDGMMISInventoryData($request, $cdg_mmis_inventory, $checkUser));
-                    $is_MMIS_Created_Successfuly = $isCreated_cdg_MMIS ? true : false;
-                }
-                
-                if($medsys_inventory) {
-                    $isCreated_medsys_Inventory  = tbInvStockCard::create($this->MedsysStockCardData($request,  $medsys_inventory, $checkUser));
-                    $isCreated_medsys_Inventory_successfuly = $isCreated_medsys_Inventory ? true : false;
-                }
-                if($isUseReferenceNumber) {
-                    $isUpdated_cdg_lb  = NurseLogBook::where('referenceNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
-                    $isUpdated_medsys_lb  = tbNurseLogBook::where('ReferenceNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
-                    $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
-                } 
-                if($isUseRequestNumber) {
-                    $isUpdated_cdg_lb  = NurseLogBook::where('requestNum', $request->payload['reference_id'])->update(['record_Status' => 'R']);
-                    $isUpdated_medsys_lb  = tbNurseLogBook::where('RequestNum', $request->payload['reference_id'])->update(['RecordStatus' => 'R']);
-                    $is_update_successful = $isUpdated_cdg_lb && $isUpdated_medsys_lb ? true : false;
-                }
+                    if(!$is_MMIS_Created_Successfuly || !$isCreated_medsys_Inventory_successfuly || !$is_update_successful || !$is_revoked_billing) {
+                        throw new Exception('Failed to cancel charges');
+                    }
+        
 
-                if(!$is_MMIS_Created_Successfuly || !$isCreated_medsys_Inventory_successfuly || !$is_update_successful || !$is_revoked_billing) {
-                    throw new Exception('Failed to cancel charges');
+                } else {
+                    $is_Row_Created_Successfuly = true;
+                    $is_Medsys_Row_Created_Successfuly = true;
+
+                    $isUpdatedRow = CashAssessment::where('refNum', $request->payload['reference_id'])->update([
+                        'recordStatus'  => 'R',
+                        'dateRevoked'   => Carbon::now(),
+                        'revokedBy'     => $checkUser->idnumber,
+                    ]);
+
+                    if($getCashAssessment) {
+                        $isRowCreated = CashAssessment::create($this->CDGCashAssessmentData($request, $getCashAssessment, $checkUser));
+                        $is_Row_Created_Successfuly = $isRowCreated ? true : false;
+                    }
+
+                    $isMedysUpdatedRow = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->update([
+                        'RecordStatus'  => 'R',
+                        'DateRevoked'   => Carbon::now(),
+                        'RevokedBy'     => $checkUser->idnumber
+                    ]);
+
+                    if($getMedsysCashAssessment) {
+                        $isMedsysRowCreated = MedsysCashAssessment::create($this->MedsysCashAssessmentData($request, $getMedsysCashAssessment, $checkUser));
+                        $is_Medsys_Row_Created_Successfuly = $isMedsysRowCreated ? true : false;
+                    }
+
+                    if(!$isUpdatedRow || !$is_Row_Created_Successfuly || !$isMedysUpdatedRow || !$is_Medsys_Row_Created_Successfuly) {
+                        throw new Exception('Failed to cancel charges');
+                    }
                 }
-
-            } else {
-                
-               $is_Row_Created_Successfuly = true;
-               $is_Medsys_Row_Created_Successfuly = true;
-
-               $isUpdatedRow = CashAssessment::where('refNum', $request->payload['reference_id'])->update([
-                    'recordStatus'  => 'R',
-                    'dateRevoked'   => Carbon::now(),
-                    'revokedBy'     => $checkUser->idnumber,
-                ]);
-
-                if($getCashAssessment) {
-                    $isRowCreated = CashAssessment::create($this->CDGCashAssessmentData($request, $getCashAssessment, $checkUser));
-                    $is_Row_Created_Successfuly = $isRowCreated ? true : false;
-                }
-
-                $isMedysUpdatedRow = MedsysCashAssessment::where('RefNum', $request->payload['reference_id'])->update([
-                    'RecordStatus'  => 'R',
-                    'DateRevoked'   => Carbon::now(),
-                    'RevokedBy'     => $checkUser->idnumber
-                ]);
-
-                if($getMedsysCashAssessment) {
-                    $isMedsysRowCreated = MedsysCashAssessment::create($this->MedsysCashAssessmentData($request, $getMedsysCashAssessment, $checkUser));
-                    $is_Medsys_Row_Created_Successfuly = $isMedsysRowCreated ? true : false;
-                }
-
-                if(!$isUpdatedRow || !$is_Row_Created_Successfuly || !$isMedysUpdatedRow || !$is_Medsys_Row_Created_Successfuly) {
-                    throw new Exception('Failed to cancel charges');
-                }
+                $count--;
             }
         
             DB::connection('sqlsrv_medsys_nurse_station')->commit();

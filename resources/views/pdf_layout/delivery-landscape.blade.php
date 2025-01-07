@@ -269,6 +269,10 @@
         <td class="underline">{{date('m-d-Y',strtotime($pdf_data['delivery']['po_Document_transaction_date']))}}</td>
         <td></td>
       </tr>
+      <tr>
+        <td class="left-width  text-right">Remarks :</td>
+        <td class="mid-width underline" colspan="6">{{$pdf_data['delivery']['remarks']}}</td>
+      </tr>
     </tbody>
   </table>
 

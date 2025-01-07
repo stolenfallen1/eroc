@@ -30,27 +30,21 @@ class GetIP
      * @return string|null
      */
     public function value()
-    {
-        // Check headers for potential IP addresses
-        foreach (
-            [
-                'HTTP_CLIENT_IP',
-                'HTTP_X_FORWARDED_FOR',
-                'HTTP_X_FORWARDED',
-                'HTTP_X_CLUSTER_CLIENT_IP',
-                'HTTP_FORWARDED_FOR',
-                'HTTP_FORWARDED',
-                'REMOTE_ADDR'
-            ] as $key
-        ) {
+    { // Check headers for potential IP addresses
+        $headers = [
+            'HTTP_X_FORWARDED_FOR', // Nginx or Proxy header for original client IP
+            'HTTP_X_REAL_IP',       // Nginx X-Real-IP header
+            'REMOTE_ADDR'           // The IP address directly in the request
+        ];
+    
+        foreach ($headers as $key) {
             if (!empty($_SERVER[$key])) {
-                foreach (explode(',', $_SERVER[$key]) as $ip) {
-                    $ip = trim($ip); // Trim whitespace
-                    // Validate IP and ensure it's local/private
-                    if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                        return $ip; // Return the first valid IP
-                    }
+                // The X-Forwarded-For header may contain multiple IPs, get the first one
+                if ($key == 'HTTP_X_FORWARDED_FOR') {
+                    $ips = explode(',', $_SERVER[$key]);
+                    return trim($ips[0]); // Return the first IP in the list
                 }
+                return $_SERVER[$key]; // Return the first valid IP found
             }
         }
     

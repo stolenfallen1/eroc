@@ -2,24 +2,34 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 
 class GetIP
 {
-
+    /**
+     * Get the hostname for the current IP.
+     *
+     * @return string
+     */
     public function getHostname()
     {
-        $ipAddress = $this->value(); // Call the local IP function
+        $ipAddress = $this->getLocalIp(); // Retrieve the local/private IP address
         if ($ipAddress) {
-            // Use the gethostbyaddr() function to get the hostname
+            // Attempt to resolve the hostname
             $hostname = gethostbyaddr($ipAddress);
-            return $hostname;
+            return $hostname ?: 'Unknown Host';
         }
         return 'Unknown Host';
     }
 
-    public function value()
+    /**
+     * Retrieve the local/private IP address.
+     *
+     * @return string|null
+     */
+    public function getLocalIp()
     {
+        // Check headers for potential IP addresses
         foreach (
             [
                 'HTTP_CLIENT_IP',
@@ -33,38 +43,41 @@ class GetIP
         ) {
             if (!empty($_SERVER[$key])) {
                 foreach (explode(',', $_SERVER[$key]) as $ip) {
-                    $ip = trim($ip); // Ensure no extra spaces
-                    // Validate IP and prioritize local/private IPs
+                    $ip = trim($ip); // Trim whitespace
+                    // Validate IP and ensure it's local/private
                     if (filter_var($ip, FILTER_VALIDATE_IP) && $this->isLocalIp($ip)) {
-                        return $ip; // Return the first valid local/private IP
+                        return $ip;
                     }
                 }
             }
         }
 
-        // Default to Laravel's request()->ip() and validate as local
-        $ip = request()->ip();
+        // Fallback to Laravel's request()->ip()
+        $ip = Request::ip();
         return $this->isLocalIp($ip) ? $ip : null;
     }
 
     /**
-     * Check if the IP is local (private or loopback range)
+     * Check if the given IP is a local or private IP.
+     *
+     * @param string $ip
+     * @return bool
      */
     private function isLocalIp($ip)
     {
-
-        // Match loopback, private, and specific local ranges
-        $localIpRanges = [
-            '127.0.0.1',      // Loopback
-            '::1',            // IPv6 Loopback
-            '10.',            // Private range 10.0.0.0 – 10.255.255.255
-            '172.16.',        // Private range 172.16.0.0 – 172.31.255.255
-            '192.168.',       // Private range 192.168.0.0 – 192.168.255.255
-            '10.4.15.'        // Your specific network range
+        // Define local/private IP ranges
+        $localIpPatterns = [
+            '/^127\./',        // Loopback
+            '/^::1$/',         // IPv6 Loopback
+            '/^10\./',         // Private range 10.0.0.0 – 10.255.255.255
+            '/^172\.(1[6-9]|2[0-9]|3[0-1])\./', // Private range 172.16.0.0 – 172.31.255.255
+            '/^192\.168\./',   // Private range 192.168.0.0 – 192.168.255.255
+            '/^10\.4\.15\./'   // Custom local network range
         ];
 
-        foreach ($localIpRanges as $range) {
-            if (strpos($ip, $range) === 0) {
+        // Check if IP matches any local/private pattern
+        foreach ($localIpPatterns as $pattern) {
+            if (preg_match($pattern, $ip)) {
                 return true;
             }
         }

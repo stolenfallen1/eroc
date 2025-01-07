@@ -27,6 +27,13 @@
             return $registry_sequence->seq_no;
         }
 
+        public function handleCDGOutPatientCaseNo() {
+            SystemSequence::where('code','MOPD')->increment('seq_no');
+            SystemSequence::where('code','MERN')->increment('seq_no');
+            $registry_sequence  = SystemSequence::where('code', 'MOPD')->select('seq_no', 'recent_generated')->first();
+            return $registry_sequence->seq_no;
+        }
+
         private function handleCDGInPatientCaseNo() {
             SystemSequence::where('code', 'SIPCN')->increment('seq_no');
             $registry_sequence  = SystemSequence::where('code', 'SIPCN')->select('seq_no', 'recent_generated')->first();
@@ -45,7 +52,7 @@
             return $check_medsys_series_no->HospNum;
         }
 
-        private function handleMedsysEmergencyPatientCaseNo() {
+        private function handleMedsysPatientCaseNo() {
             DB::connection('sqlsrv_medsys_patient_data')->table('tbAdmLastNumber')->increment('OPDId');
             $check_medsys_series_no = MedsysSeriesNo::select('OPDId')->first();
             return $check_medsys_series_no->OPDId;
@@ -66,7 +73,7 @@
         public function handleEmergencyRegisterPatientSequences() {
             if($this->check_is_allow_medsys) {
                 $patient_id     = $this->handleMedsysPatientSeqNo();
-                $registry_id    = $this->handleMedsysEmergencyPatientCaseNo();
+                $registry_id    = $this->handleMedsysPatientCaseNo();
                 $er_Case_No     = $this->handleMedsysErCaseNo();
             } else {
                 $patient_id     = $this->handleCDGPatientSeqNo();
@@ -81,6 +88,23 @@
                 'patientId'         => $patient_id,
                 'registryId'        => $registry_id,
                 'erCaseNo'          => $er_Case_No,
+            ];
+        }
+
+        public function handleOutPatientRegisterPatientSequences() {
+            if($this->check_is_allow_medsys) {
+                $patient_id     = $this->handleMedsysPatientSeqNo();
+                $registry_id    = $this->handleMedsysPatientCaseNo();
+            } else {
+                $patient_id     = $this->handleCDGPatientSeqNo();
+                $registry_id    = $this->handleCDGOutPatientCaseNo();
+            }
+            SystemSequence::where('code', 'MPID')->update(['seq_no'  => $patient_id, 'recent_generated'   => $patient_id]);
+            SystemSequence::where('code', 'MERN')->update(['seq_no'  => $registry_id, 'recent_generated'  => $registry_id]);
+            SystemSequence::where('code', 'MOPD')->update(['seq_no'  => $registry_id , 'recent_generated' => $registry_id]);
+            return [
+                'patientId'         => $patient_id,
+                'registryId'        => $registry_id,
             ];
         }
 
@@ -102,7 +126,7 @@
 
         public function handleUpdateEmergencyPatientSequences() {
             if($this->check_is_allow_medsys) {
-                $registry_id    = $this->handleMedsysEmergencyPatientCaseNo();
+                $registry_id    = $this->handleMedsysPatientCaseNo();
                 $er_Case_No     = $this->handleMedsysErCaseNo();
             } else {
                 $registry_id    = $this->handleCDGEmergencyPatientCaseNo();
@@ -117,6 +141,19 @@
             ];
         }
 
+        public function handleUpdateOutPatientSequences() {
+            if($this->check_is_allow_medsys) {
+                $registry_id    = $this->handleMedsysPatientCaseNo();
+            } else {
+                $registry_id    = $this->handleCDGOutPatientCaseNo();
+            }
+            SystemSequence::where('code', 'MERN')->update(['seq_no'  => $registry_id, 'recent_generated' => $registry_id]);
+            SystemSequence::where('code', 'MOPD')->update(['seq_no'  => $registry_id, 'recent_generated' => $registry_id]);
+            return [
+                'registryId'        => $registry_id
+            ];
+        }
+
         public function handleInPatientUpdateSequences() {
             if($this->check_is_allow_medsys) {
                 $registry_id    = $this->handleMedsysInPatientCaseNo();
@@ -127,5 +164,31 @@
             return [
                 'registryId'        => $registry_id
             ];
+        }
+
+        public function handlePatientRegistrationSequences($type, $status) {
+            if($status === 'new') {
+                switch($type) {
+                    case 'emergency':
+                        return $this->handleEmergencyRegisterPatientSequences();
+                    case 'outpatient':
+                        return $this->handleOutPatientRegisterPatientSequences();
+                    case 'inpatient':
+                        return $this->handleInPatientRegisterPatientSequences();
+                    default:
+                        return [];
+                }
+            } else {
+                switch($type) {
+                    case 'emergency':
+                        return $this->handleUpdateEmergencyPatientSequences();
+                    case 'outpatient':
+                        return $this->handleUpdateOutPatientSequences();
+                    case 'inpatient':
+                        return $this->handleInPatientUpdateSequences();
+                    default:
+                        return [];
+                }
+            }
         }
     }

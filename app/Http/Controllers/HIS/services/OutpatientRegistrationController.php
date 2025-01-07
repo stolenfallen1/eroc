@@ -793,51 +793,49 @@ class OutpatientRegistrationController extends Controller
         }
         return $uniqueRecords;
     }
+
     public function index() {
-        try { 
+        try {
             $today = Carbon::now()->format('Y-m-d');
             $data = Patient::query();
+            $data->whereHas('patientRegistry', function($query) use ($today) {
+                $query->where('mscAccount_Trans_Types', 2)  
+                    ->where('isRevoked', 0)              
+                    ->whereDate('registry_Date', $today);
+            });
+            if (Request()->has('keyword')) {
+                $keyword = Request()->keyword;
+                $data->where(function($subQuery) use ($keyword) {
+                    $subQuery->where('lastname', 'LIKE', '%' . $keyword . '%')
+                            ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
+                            ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
+                });
+            }
             $data->with([
-                'sex', 
-                'civilStatus', 
-                'region', 
-                'provinces', 
-                'municipality', 
-                'barangay', 
-                'countries',
-                'patientRegistry.allergies' => function ($query)use ($today) {
-                    $query->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy');
-                    $query->where('isDeleted', '!=', 1);
-                    // $query->whereDate('created_at', $today);
+                'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
+                'patientRegistry' => function($query) use ($today) {
+                    $query->whereDate('registry_Date', $today)
+                        ->where('mscAccount_Trans_Types', 2)
+                        ->where('isRevoked', 0)
+                        ->with(['allergies' => function($allergyQuery) use ($today) {
+                            $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+                                            ->where('isDeleted', '!=', 1)
+                                            ->whereDate('created_at', $today);
+                        }]);
                 }
             ]);
-
-            $data->whereHas('patientRegistry', function($query) use ($today) {
-            // $data->whereHas('patientRegistryToday', function($query) use ($today) {
-                $query->where('mscAccount_Trans_Types', 2); 
-                $query->where('isRevoked', 0);
-                // $query->whereDate('registry_Date', $today);
-                $query->whereNull('discharged_Date');
-
-                if(Request()->keyword) {
-                    $query->where(function($subQuery) {
-                        $subQuery->where('lastname', 'LIKE', '%'.Request()->keyword.'%')
-                                ->orWhere('firstname', 'LIKE', '%'.Request()->keyword.'%') 
-                                ->orWhere('patient_id', 'LIKE', '%'.Request()->keyword.'%');
-                    });
-                }
-            });
             $data->orderBy('id', 'desc');
-            $page = Request()->per_page ?? '50'; 
+            $page = Request()->per_page ?? '50';
             return response()->json($data->paginate($page), 200);
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to get outpatient patients',
+                'message' => 'Failed to get patients',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     public function register(Request $request) {
         DB::connection('sqlsrv_patient_data')->beginTransaction();

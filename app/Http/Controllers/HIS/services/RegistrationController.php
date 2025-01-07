@@ -4,11 +4,8 @@ namespace App\Http\Controllers\HIS\services;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\HIS\mscPatientBroughtBy;
 use App\Models\HIS\services\Patient;
 use App\Models\HIS\services\PatientRegistry;
-use App\Models\HIS\mscComplaint;
-use App\Models\HIS\mscServiceType;
 use App\Models\HIS\PatientAllergies;
 use App\Models\User;
 use Carbon\Carbon;
@@ -17,6 +14,8 @@ use App\Helpers\GetIP;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Helpers\HIS\PatientRegistrationData;
 use App\Helpers\HIS\PatientRegistrySequence;
+use App\Models\HIS\AdmittingCommunicationFile;
+use App\Models\HIS\MedsysAdmittingCommunication;
 
 class RegistrationController extends Controller
 {
@@ -34,7 +33,6 @@ class RegistrationController extends Controller
         DB::connection('sqlsrv')->beginTransaction();
         try {
             if(intval($request->payload['mscAccount_Trans_Types']) === 5) {
-                echo 'test napud';
                 $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
                 if(!$checkUser):
                     return response()->json([$message='Incorrect Username or Password'], 404);
@@ -45,7 +43,7 @@ class RegistrationController extends Controller
             } else {
                 $sequenceNo = $this->sequence_number->handleInPatientRegisterPatientSequences();
             }
-            $registerPatient = $this->registerPatient($request, $checkUser, $sequenceNo['patientId'], $sequenceNo['registryId'], $sequenceNo['erCaseNo']);
+            $registerPatient = $this->registerPatient($request, $checkUser, $sequenceNo['patientId'], $sequenceNo['registryId'], $sequenceNo['erCaseNo'], $isForAdmission = false);
             if($registerPatient) {
                 DB::connection('sqlsrv_patient_data')->commit();
                 DB::connection('sqlsrv_medsys_patient_data')->commit();
@@ -75,7 +73,8 @@ class RegistrationController extends Controller
         try {
             $checkUser = '';
             $accountType = $request->payload['mscAccount_Trans_Types'];
-            if(intval($accountType) === 5) {
+            $isForAdmission = isset($request->payload['registrationFrom']) ? true : false;
+            if(intval($accountType) === 5 && !$isForAdmission) {
                 $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
                 if(!$checkUser):
                     return response()->json([$message='Incorrect Username or Password'], 404);
@@ -83,8 +82,8 @@ class RegistrationController extends Controller
             }
             $today = Carbon::now();
             $existingRegistry = $this->patient_data->handleExistingRegistryData($id, $today);
-            if(!$existingRegistry) {
-                if(intval($request->payload['mscAccount_Trans_Types']) === 5) {
+            if(!$existingRegistry || $isForAdmission) {
+                if(intval($request->payload['mscAccount_Trans_Types']) === 5 && !$isForAdmission) {
                     $sequenceNo  = $this->sequence_number->handleUpdateEmergencyPatientSequences();
                     $registry_id = $sequenceNo['registryId'];
                     $er_Case_No  = $sequenceNo['erCaseNo'];
@@ -97,12 +96,16 @@ class RegistrationController extends Controller
                 $registry_id = $request->payload['case_No'];
                 $er_Case_No = $request->payload['er_Case_No'] ?? null;
             }
-            $registerPatient = $this->registerPatient($request, $checkUser, $id, $registry_id, $er_Case_No);
-            if($registerPatient) {
-                DB::connection('sqlsrv_patient_data')->commit();
-                DB::connection('sqlsrv_medsys_patient_data')->commit();
-                DB::connection('sqlsrv')->commit();
+            if($isForAdmission) {
+                $this->updateAdmittingCommunicationFile($request);
             }
+            $registerPatient = $this->registerPatient($request, $checkUser, $id, $registry_id, $er_Case_No, $isForAdmission);
+            if(!$registerPatient) {
+                throw new \Exception('Failed to update Emergency data');
+            }
+            DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_medsys_patient_data')->commit();
+            DB::connection('sqlsrv')->commit();
             return response()->json([
                 'message' => 'Patient registered successfully',
                 'patient' =>  $registerPatient['patient'],
@@ -119,7 +122,7 @@ class RegistrationController extends Controller
         }
     }
 
-    private function registerPatient($request, $checkUser, $patient_id, $registry_id, $er_Case_No) {
+    private function registerPatient($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $isForAdmission) {
         $patientRule = [
             'lastname'  => $request->payload['lastname'], 
             'firstname' => $request->payload['firstname'],
@@ -136,7 +139,6 @@ class RegistrationController extends Controller
         $currentTimestamp = Carbon::now();
         $today = Carbon::now()->format('Y-m-d');
         $patient = Patient::updateOrCreate($patientRule, $this->patient_data->preparePatientData($request, $checkUser, $currentTimestamp, $patient_id, $this->patient_data->handleExistingPatientData($request->payload['lastname'], $request->payload['firstname'])));
-        echo $patient;
         $patient->past_medical_procedures()->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastMedicalProcedureData($request, $checkUser, $patient_id, $existingData = null));
         $patient->past_medical_history()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastMedicalHistoryData($request, $checkUser, $patient_id, $existingData = null));
         $patient->past_immunization()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastImmunizationData($request, $checkUser, $patient_id, $existingData = null));
@@ -144,7 +146,10 @@ class RegistrationController extends Controller
         $patientPriviledgeCard = $patient->privilegedCard()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->patientPrivilegedCardData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
         $patientPriviledgeCard->pointTransactions()->whereDate('created_at', $today)->updateOrCreate(['card_Id' => $patientPriviledgeCard->id], $this->patient_data->patientPrivilegedPointTransactionsData($request, $checkUser, $patientPriviledgeCard->id, $existingData = null));
         $patientPriviledgeCard->pointTransfers()->whereDate('created_at', $today)->updateOrCreate(['fromCard_Id' => $patientPriviledgeCard->id], $this->patient_data->patientPrivilegedPointTransferData($request, $checkUser, $patientPriviledgeCard->id, $existingData = null));
-        $patientRegistry = $patient->patientRegistry()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientRegistryData($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $existingData=null));
+        $patientRegistry = $patient->patientRegistry()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientRegistryData($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $isForAdmission));
+        if($isForAdmission) {
+            $this->updatePatientRegistryUponAdmision($request, $patientRegistry->id, $registry_id);
+        }
         $patientRegistry->history()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
         $patientRegistry->immunizations()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientImmunizationData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
         $patientRegistry->vitals()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareVitalSignsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
@@ -180,9 +185,8 @@ class RegistrationController extends Controller
         $patientDischarge->dischargeFollowUpLaboratories()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedFollowUpLaboratoriesData($request, $checkUser, $patientDischarge->id, $existingData = null));
         $patientDischarge->dischargeFollowUpTreatment()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedFollowUpTreatmentData($request, $checkUser, $patientDischarge->id, $existingData = null));
         $patientDischarge->dischargeDoctorsFollowUp()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedDoctorsFolloUpData($request, $checkUser, $patientDischarge->id, $existingData = null));
-       
+    
         if(!$patient || !$patientRegistry):
-            echo 'Failed Here';
             throw new \Exception('Error');
         else: 
             return [
@@ -242,14 +246,14 @@ class RegistrationController extends Controller
         }
     }
     private function processPatientDoctors($request, $checkUser, $patient_id, $registry_id, $patientRegistry) {
-       if(isset($request->payload['selectedConsultant']) && !empty($request->payload['selectedConsultant'])) {
+        if(isset($request->payload['selectedConsultant']) && !empty($request->payload['selectedConsultant'])) {
         foreach($request->payload['selectedConsultant'] as $consultant) {
             $patientRegistry->patientDoctors()->where('case_No', $registry_id)->updateOrCreate(
                 [
                     'doctor_Id' => $consultant['attending_Doctor']
                 ], $this->patient_data->preparePatientDoctorsData($consultant, $checkUser, $patient_id, $registry_id, $existingData = null));
         }
-       }
+        }
     }
     private function updateAllergy($registry_id) {
         $allergy = PatientAllergies::where('case_No', $registry_id)->first();
@@ -265,4 +269,73 @@ class RegistrationController extends Controller
         }
         return $isUpdated; 
     }
+
+    public function updateAdmittingCommunicationFile($request) {
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        try {
+            $admittingCommunicationFile = AdmittingCommunicationFile::where('case_No', $request->payload['old_case_No'])->first();
+            $medsysAdmittingCommunicationFile = MedsysAdmittingCommunication::where('OPDIDnum', $request->payload['OPDIDnum'])->first();
+            if(!$admittingCommunicationFile || !$medsysAdmittingCommunicationFile) {
+                throw new \Exception('Admitting Communication File not found');
+            }
+            $isUpdated = $admittingCommunicationFile->update([
+                'admittedBy'    =>  Auth()->user()->idnumber,
+                'admittedDate'  => $request->payload['discharged_Date'],
+                'recordStatus'  => 'S',
+                'updatedby'     => Auth()->user()->idnumber,
+                'updatedat'     => Carbon::now()
+            ]);
+            if($this->check_is_allow_medsys) {
+                $isMedsysUpdatedComFile = $medsysAdmittingCommunicationFile->update([
+                    'AdmittedBy'    => Auth()->user()->idnumber,
+                    'AdmDate'  => $request->payload['discharged_Date'],
+                    'RecordStatus'  => 'S',
+                ]);
+            } else {
+                throw new \Exception('You are not allowed to update Medsys Admitting Communication File');
+            }
+            if(!$isUpdated || !$isMedsysUpdatedComFile) {
+                throw new \Exception('Failed to update Admitting Communication File');
+            }
+            DB::connection('sqlsrv_patient_data')->commit();
+            return response()->json([
+                'message' => 'Patient Registry updated successfully',
+            ], 200);
+            
+        } catch(\Exception $e) {
+            throw new \Exception('Failed to update Admitting Communication File');
+        } 
+    }
+    
+    public function updatePatientRegistryUponAdmision($request, $inPatieneId, $inPatient_Case_No) {
+        DB::connection('sqlsrv_patient_data')->beginTransaction();
+        try{
+            $patientRegistry = PatientRegistry::where('case_No', $request->payload['old_case_No'])->first();
+            if($patientRegistry) {
+                $isUpdated = $patientRegistry->update([
+                    'register_Link_Case_No' => $inPatieneId,
+                    'register_Case_No_Consolidate'  => $inPatient_Case_No
+                ]);
+                if($isUpdated) {
+                    DB::connection('sqlsrv_patient_data')->commit();
+                    return response()->json([
+                        'message' => 'Patient Registry updated successfully',
+                        'data' => $patientRegistry
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'message' => 'Failed to update Patient Registry',
+                        'error' => 'Failed to update Patient Registry'
+                    ], 500);
+                }
+            }
+        } catch(\Exception $e) {
+            DB::connection('sqlsrv_patient_data')->rollBack();
+            return response()->json([
+                'message' => 'Failed to update Patient Registry',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

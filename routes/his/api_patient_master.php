@@ -68,4 +68,6 @@ Route::controller(InpatientRegistrationController::class)->group(function () {
     Route::get('get-revoked-inpatient', 'getrevokedinpatient');
     Route::post('register-inpatient', 'register');
     Route::put('update-inpatient/{id}', 'update'); 
+    Route::get('patient-for-admission', 'getPatientForAdmission');
+    Route::get('get-selected-patient-for-admission/{id}', 'getSelectedPatientForAdmission');
 });

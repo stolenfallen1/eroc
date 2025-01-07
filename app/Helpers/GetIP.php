@@ -10,24 +10,22 @@ class GetIP
      *
      * @return string
      */
-    public function getHostname()
+    public function getHostname() 
     {
         $ipAddress = $this->value(); // Retrieve the local/private IP address
         if ($ipAddress) {
             // Attempt to resolve the hostname
             $hostname = gethostbyaddr($ipAddress);
-            return $hostname ?: 'Unknown Host';
+            
+            // Log the resolved hostname and IP for debugging purposes
+            return ($hostname !== $ipAddress) ? $hostname : $ipAddress; // If unresolved, return the IP address as fallback
         }
-        return 'Unknown Host';
+    
+        return 'Unknown Host'; // Return if no IP found
     }
-
+    
     /**
      * Retrieve the real client IP address from the headers.
-     *
-     * @return string|null
-     */
-    /**
-     * Retrieve the local/private IP address.
      *
      * @return string|null
      */
@@ -49,16 +47,15 @@ class GetIP
                 foreach (explode(',', $_SERVER[$key]) as $ip) {
                     $ip = trim($ip); // Trim whitespace
                     // Validate IP and ensure it's local/private
-                    if (filter_var($ip, FILTER_VALIDATE_IP) && $this->isLocalIp($ip)) {
-                        return $ip;
+                    if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                        return $ip; // Return the first valid IP
                     }
                 }
             }
         }
-
+    
         // Fallback to Laravel's request()->ip()
-        $ip = Request::ip();
-        return $this->isLocalIp($ip) ? $ip : null;
+        return Request::ip();
     }
 
     /**

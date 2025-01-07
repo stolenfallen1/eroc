@@ -26,25 +26,12 @@ class GetIP
      *
      * @return string|null
      */
-    public function value()
-    {
-        $ip = Request::server('HTTP_X_FORWARDED_FOR');
-        // If the header is present, the first IP in the list is the client IP
-        if ($ip) {
-            $ipArray = explode(',', $ip);
-            return trim($ipArray[0]);  // Return the first IP address in the chain
-        }
-
-        // Fallback to REMOTE_ADDR if no X-Forwarded-For header
-        return Request::ip();
-    }
-
     /**
      * Retrieve the local/private IP address.
      *
      * @return string|null
      */
-    public function getLocalIp()
+    public function value()
     {
         // Check headers for potential IP addresses
         foreach (

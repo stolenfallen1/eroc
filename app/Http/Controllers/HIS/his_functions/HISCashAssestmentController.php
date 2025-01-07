@@ -71,7 +71,7 @@ class HISCashAssestmentController extends Controller
         try {
             $today = Carbon::now()->format('Y-m-d');
 
-            $query = CashAssessment::with('items', 'doctor_details')
+            $query = CashAssessment::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
                 ->where('quantity', '>', 0)
@@ -157,7 +157,7 @@ class HISCashAssestmentController extends Controller
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
                     $revenueID = $charge['code'];
-                    $itemID = $charge['map_item_id'];
+                    $itemID = $charge['id'];
                     $quantity = $charge['quantity'];
                     $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
                     $exam_description = $charge['exam_description'];
@@ -192,6 +192,7 @@ class HISCashAssestmentController extends Controller
                     } else {
                         $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
                     }
+
                     $refNum[] = $sequence;
                     $saveCashAssessment = CashAssessment::create([
                         'branch_id' => 1,

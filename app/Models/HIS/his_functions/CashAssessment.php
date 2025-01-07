@@ -19,8 +19,9 @@ class CashAssessment extends Model
     public function patientRegistry() {
         return $this->belongsTo(PatientRegistry::class, 'patient_Id', 'patient_Id');
     }
-    public function items() {
-        return $this->belongsTo(FmsExamProcedureItems::class, 'itemID', 'map_item_id');
+    public function items($code) {
+        return $this->belongsTo(FmsExamProcedureItems::class, 'itemID', 'map_item_id')
+        ->where('transaction_code', $code);
     }
     public function doctor_details() {
         return $this->belongsTo(Doctor::class, 'itemID', 'doctor_code');

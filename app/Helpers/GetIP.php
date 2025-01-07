@@ -13,11 +13,11 @@ class GetIP
      */
     public function getHostname()
     {
-        $ipAddress = $this->getLocalIp(); // Retrieve the local/private IP address
+        $ipAddress = $this->value(); // Retrieve the local/private IP address
         if ($ipAddress) {
             // Attempt to resolve the hostname
             $hostname = gethostbyaddr($ipAddress);
-            return $hostname ?: 'Unknown Host';
+            return $hostname !== $ipAddress ? $hostname : 'Unknown Host'; // Return hostname or "Unknown Host"
         }
         return 'Unknown Host';
     }
@@ -27,7 +27,7 @@ class GetIP
      *
      * @return string|null
      */
-    public function getLocalIp()
+    public function value()
     {
         // Check headers for potential IP addresses
         foreach (
@@ -52,7 +52,7 @@ class GetIP
             }
         }
 
-        // Fallback to Laravel's request()->ip()
+        // Fallback to Laravel's request()->ip() if no valid local IP found
         $ip = Request::ip();
         return $this->isLocalIp($ip) ? $ip : null;
     }
@@ -65,17 +65,17 @@ class GetIP
      */
     private function isLocalIp($ip)
     {
-        // Define local/private IP ranges
+        // Define local/private IP ranges with patterns
         $localIpPatterns = [
-            '/^127\./',        // Loopback
-            '/^::1$/',         // IPv6 Loopback
+            '/^127\./',        // Loopback address (127.x.x.x)
+            '/^::1$/',         // IPv6 Loopback (::1)
             '/^10\./',         // Private range 10.0.0.0 – 10.255.255.255
             '/^172\.(1[6-9]|2[0-9]|3[0-1])\./', // Private range 172.16.0.0 – 172.31.255.255
             '/^192\.168\./',   // Private range 192.168.0.0 – 192.168.255.255
-            '/^10\.4\.14\./'   // Custom local network range
+            '/^10\.4\.14\./'   // Custom local network range (e.g., 10.4.14.x)
         ];
 
-        // Check if IP matches any local/private pattern
+        // Check if IP matches any of the local/private patterns
         foreach ($localIpPatterns as $pattern) {
             if (preg_match($pattern, $ip)) {
                 return true;

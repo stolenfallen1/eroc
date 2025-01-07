@@ -14,9 +14,9 @@ class SOAController extends Controller
     //  
 
     public function createStatmentOfAccount($id) {
- 
+
         $data = OutPatient::with('patientBillingInfo')->where('case_No', $id)->take(1)->get();
-      
+    
         $patientInfo = $data->map(function($item) {
             return [
                 'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,
@@ -101,7 +101,7 @@ class SOAController extends Controller
             ->where('case_No', $id)
             ->take(1)
             ->get();
-   
+
         $patientInfo = $data->map(function($item) {
             return [
                 'Patient_Name'      => $item->lastname . ', ' . $item->firstname . ' ' . $item->middlename . ' ' . $item->suffix_description,

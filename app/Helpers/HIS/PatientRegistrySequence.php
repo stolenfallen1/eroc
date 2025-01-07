@@ -9,7 +9,6 @@
     use App\Helpers\HIS\SysGlobalSetting;
 
     class PatientRegistrySequence {
-       
         protected $check_is_allow_medsys;
         public function __construct() {
             $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
@@ -124,8 +123,7 @@
             } else {
                 $registry_id    = $this->handleCDGInPatientCaseNo();
             }
-            SystemSequence::where('code', 'MERN')->update(['seq_no'  => $registry_id, 'recent_generated'  => $registry_id]);
-            SystemSequence::where('code', 'MOPD')->update(['seq_no'  => $registry_id,'recent_generated'   => $registry_id]);
+            SystemSequence::where('code', 'SIPCN')->update(['seq_no'  => $registry_id, 'recent_generated'  => $registry_id]);
             return [
                 'registryId'        => $registry_id
             ];

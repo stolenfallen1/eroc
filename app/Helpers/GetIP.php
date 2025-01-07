@@ -72,7 +72,7 @@ class GetIP
             '/^10\./',         // Private range 10.0.0.0 – 10.255.255.255
             '/^172\.(1[6-9]|2[0-9]|3[0-1])\./', // Private range 172.16.0.0 – 172.31.255.255
             '/^192\.168\./',   // Private range 192.168.0.0 – 192.168.255.255
-            '/^10\.4\.15\./'   // Custom local network range
+            '/^10\.4\.14\./'   // Custom local network range
         ];
 
         // Check if IP matches any local/private pattern

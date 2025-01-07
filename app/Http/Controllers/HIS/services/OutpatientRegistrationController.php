@@ -798,6 +798,7 @@ class OutpatientRegistrationController extends Controller
         try {
             $today = Carbon::now()->format('Y-m-d');
             $data = Patient::query();
+            
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2)  
                     ->where('isRevoked', 0)              

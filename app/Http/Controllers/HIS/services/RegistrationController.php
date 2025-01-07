@@ -39,9 +39,11 @@ class RegistrationController extends Controller
                 endif;
             }
             if(intval($request->payload['mscAccount_Trans_Types']) === 5) {
-                $sequenceNo = $this->sequence_number->handleEmergencyRegisterPatientSequences();
+                $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('emergency', 'new');
+            } else if(intval($request->payload['mscAccount_Trans_Types']) === 2) {
+                $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('outpatient', 'new');
             } else {
-                $sequenceNo = $this->sequence_number->handleInPatientRegisterPatientSequences();
+                $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('inpatient', 'new');
             }
             $registerPatient = $this->registerPatient($request, $checkUser, $sequenceNo['patientId'], $sequenceNo['registryId'], $sequenceNo['erCaseNo'], $isForAdmission = false);
             if($registerPatient) {
@@ -84,16 +86,21 @@ class RegistrationController extends Controller
             $existingRegistry = $this->patient_data->handleExistingRegistryData($id, $today);
             if(!$existingRegistry || $isForAdmission) {
                 if(intval($request->payload['mscAccount_Trans_Types']) === 5 && !$isForAdmission) {
-                    $sequenceNo  = $this->sequence_number->handleUpdateEmergencyPatientSequences();
+                    $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('emergency', 'old');
                     $registry_id = $sequenceNo['registryId'];
                     $er_Case_No  = $sequenceNo['erCaseNo'];
-                } else {
-                    $sequenceNo = $this->sequence_number->handleInPatientUpdateSequences();
+                } else if(intval($request->payload['mscAccount_Trans_Types']) === 2 && !$isForAdmission) {
+                    $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('outpatient', 'old');
+                    $registry_id = $sequenceNo['registryId'];
+                    $er_Case_No  = null;
+                }
+                else {
+                    $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('inpatient', 'old');
                     $registry_id = $sequenceNo['registryId'];
                     $er_Case_No  = null;
                 }
             } else {
-                $registry_id = $request->payload['case_No'];
+                $registry_id = $request->payload['case_No'] ?? $request->payload['register_id_no'] ?? null;
                 $er_Case_No = $request->payload['er_Case_No'] ?? null;
             }
             if($isForAdmission) {

@@ -313,8 +313,8 @@
       @endphp
       <tr>
         @if ($index == 0)
-        <td class="item-td" >{{ $item['itemcode'] }}</td>
-        <td class="item-td" >{{ $itemName }}</td>
+        <td class="item-td">{{ $item['itemcode'] }}</td>
+        <td class="item-td">{{ $itemName }}</td>
         <!-- @endif -->
         <!-- Display individual item details -->
         <td class="item-td">{{ $item['uom'] }}</td>
@@ -383,7 +383,7 @@
         {{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}
         @else
         {{$pdf_data['currency']}}
-        
+
         {{number_format((($pdf_data['sub_total']) - $pdf_data['vat_amount']), 2)}}
 
         @endif
@@ -445,8 +445,8 @@
     @endphp
     <tr>
       @if ($index == 0)
-      <td class="item-td" >{{ $item['itemcode'] }}</td>
-      <td class="item-td" >{{ $itemName }}</td>
+      <td class="item-td">{{ $item['itemcode'] }}</td>
+      <td class="item-td">{{ $itemName }}</td>
       @endif
       <!-- Display individual item details -->
       <td class="item-td">{{ $item['uom'] }}</td>

@@ -21,6 +21,7 @@ use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Helpers\SearchFilter\inventory\Consignments;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
+use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 use App\Helpers\SearchFilter\inventory\PurchaseOrderConsignments;
 
 class ConsignmentDeliveryController extends Controller
@@ -52,12 +53,22 @@ class ConsignmentDeliveryController extends Controller
             if(Request()->payload){
                 $payload = Request()->payload;
                 $has_dup_invoice_no = PurchaseOrderConsignment::where('po_id',$payload['po_id'])->where('invoice_no', $payload['invoice_no'])->exists();
-                if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
-                PurchaseOrderConsignment::where('id',$payload['id'])->update([
-                    'invoice_no'=>$payload['invoice_no'],
-                    'invoice_date'=>$payload['invoice_date'],
-                    'receivedDate'=>$payload['receivedDate']
-                ]);
+              
+                // if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
+                if($has_dup_invoice_no){
+                    PurchaseOrderConsignment::where('id',$payload['id'])->update([
+                        'invoice_no'=>$payload['invoice_no'],
+                        'invoice_date'=>$payload['invoice_date'],
+                        'receivedDate'=>$payload['receivedDate']
+                    ]);
+                    Consignment::where('id',$payload['rr_id'])->update([
+                        'rr_Document_Invoice_No'=>$payload['invoice_no'],
+                        'rr_Document_Invoice_Date'=>$payload['invoice_date'],
+                        'rr_Document_Delivery_Date'=>$payload['delivery_date'],
+                        'rr_received_date'=>$payload['rr_received_date']
+                    ]);
+                }
+               
                 DB::connection('sqlsrv_mmis')->commit();
                 return response()->json(['message' => 'success'], 200);
             }
@@ -317,6 +328,7 @@ class ConsignmentDeliveryController extends Controller
             foreach ($payload['items'] as $key => $detail) {
                 
                 $delivery_item = ConsignmentItems::where('rr_id',$delivery->id)->where('rr_Detail_Item_Id',$detail['rr_Detail_Item_Id'])->first();
+             
                 $delivery_item->update([
                     'rr_Detail_Item_ListCost' => $detail['rr_Detail_Item_ListCost'],
                     'rr_Detail_Item_Qty_Received' => $detail['rr_Detail_Item_Qty_Received'],

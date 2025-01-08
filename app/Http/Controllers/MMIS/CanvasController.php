@@ -36,29 +36,36 @@ class CanvasController extends Controller
 
     public function countForPO()
     {
-        $model = PurchaseRequest::query();
-        if($this->role->purchaser()){
-            $model->whereIn('invgroup_id', Auth()->user()->assigneditemgroup);
-        }
-        $model->where(function($q1){
-            $q1->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
-        })->whereHas('purchaseRequestDetails', function($q){
-        $q->where('is_submitted', true)
-        ->whereHas('recommendedCanvas', function($q1){
-            $q1->where('canvas_Level2_ApprovedBy', '!=', null);
-        })->whereDoesntHave('purchaseOrderDetails');
-        });
-        if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){
-            $model->where('isPerishable', 1);
-        }else{
-            $model->where(function($q){
-                $q->where('isPerishable', 0)->orWhere('isPerishable', NULL);
-            });
-        }
+        return 0;
+        // $model = PurchaseRequest::whereNull('pr_DepartmentHead_CancelledBy');
+        // if($this->role->purchaser()){
+        //     $model->whereIn('invgroup_id', Auth()->user()->assigneditemgroup);
+        // }
+        // $model->where(function($query) {
+        //     $query->whereYear('created_at', '!=', 2022);
+        // })->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
+        // $model->whereHas('purchaseRequestDetails', function($q){
+        //     $q->where('is_submitted', true)->whereHas('recommendedCanvas', function($q1){
+        //         $q1->whereNotNull('canvas_Level2_ApprovedBy');
+        //     })->whereDoesntHave('purchaseOrderDetails');
+        // });
+        // $model->where(function($q1){
+        //     $q1->where('pr_Branch_Level1_ApprovedBy', '!=', null)->orWhere('pr_Branch_Level2_ApprovedBy', '!=', null);
+        // })->whereHas('purchaseRequestDetails', function($q){
+        // $q->where('is_submitted', true)
+        // ->whereHas('recommendedCanvas', function($q1){
+        //     $q1->where('canvas_Level2_ApprovedBy', '!=', null);
+        // })->whereDoesntHave('purchaseOrderDetails');
+        // });
+        // if(Auth()->user()->role->name == 'dietary' || Auth()->user()->role->name == 'dietary head'){
+        //     $model->where('isPerishable', 1);
+        // }else{
+        //     $model->where('isPerishable', 0)->orWhereNull('isPerishable');
+        // }
         
-        $model->where('pr_Document_Number', 'like', "000%");
-        if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 
-        return $model->count();
+        // $model->where('pr_Document_Number', 'like', "%000%");
+        // if(Auth::user()->branch_id != 1) $model->where('branch_id', Auth::user()->branch_id); 
+        // return $model->count();
     }
 
     public function store(Request $request)
@@ -82,20 +89,6 @@ class CanvasController extends Controller
         $total_amount = $request->total_amount;
         
         $canvas_item_total_amount = $request->tota_net_amount;
-
-
-        // $total_amount = $request->canvas_item_amount * $request->canvas_Item_Qty;
-        
-        // if($request->canvas_discount_percent){
-        //     $discount_amount = $total_amount * ($request->canvas_discount_percent / 100);
-        // }
-
-        // if($request->canvas_item_vat_rate){
-        //     if($itemDetails->isVatable == 1 || $itemDetails->isVatable != null){
-        //         $vat_amount = ($total_amount - $discount_amount) * ($request->canvas_item_vat_rate / 100);
-        //     }
-        // }
-        // $canvas_item_total_amount =($total_amount - $discount_amount) + $vat_amount;
 
         DB::connection('sqlsrv')->beginTransaction();
         DB::connection('sqlsrv_mmis')->beginTransaction();
@@ -198,75 +191,7 @@ class CanvasController extends Controller
                 }
             }
 
-            if($request->isFreeGoods == true){
-                $prDetails = PurchaseRequestDetails::where('pr_request_id',$request->pr_request_id)->first();
-                // $prDetails->updateOrCreate(
-                //     [
-                //         'pr_request_id' => $request->pr_request_id,
-                //         'item_Id' => $itemid
-                //     ],
-                //     [
-                //         'item_Id' => $request->canvas_Item_Id,
-                //         'item_ListCost' => 0,
-                //         'discount' => 0,
-                //         'item_Request_Qty' => $request->canvas_Item_Qty,
-                //         'prepared_supplier_id' => $request->vendor_id,
-                //         'lead_time' => 0,
-                //         'vat_rate' => 0,
-                //         'vat_type' => 0,
-                //         'isFreeGoods'=>1,
-                //         'item_Request_UnitofMeasurement_Id' => $request->canvas_Item_UnitofMeasurement_Id,
-                //         'item_Request_Department_Approved_Qty' => $request->canvas_Item_Qty,
-                //         'item_Request_Department_Approved_UnitofMeasurement_Id' => $prDetails->item_Request_Department_Approved_UnitofMeasurement_Id,
-                //         'item_Branch_Level1_Approved_Qty' => $request->canvas_Item_Qty,
-                //         'item_Branch_Level1_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level1_Approved_UnitofMeasurement_Id,
-                //         'item_Branch_Level2_Approved_Qty' => $request->canvas_Item_Qty,
-                //         'item_Branch_Level2_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level2_Approved_UnitofMeasurement_Id,
-                //         'item_Branch_Level3_Approved_Qty' => $request->canvas_Item_Qty,
-                //         'item_Branch_Level3_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level3_Approved_UnitofMeasurement_Id,
-                //         'item_Branch_Level4_Approved_Qty' => $request->canvas_Item_Qty,
-                //         'item_Branch_Level4_Approved_UnitofMeasurement_Id' => $prDetails->item_Branch_Level4_Approved_UnitofMeasurement_Id,
-                //         'pr_DepartmentHead_ApprovedBy' => $prDetails->pr_DepartmentHead_ApprovedBy,
-                //         'pr_DepartmentHead_ApprovedDate' => $prDetails->pr_DepartmentHead_ApprovedDate,
-                //         'pr_DepartmentHead_CancelledBy' => $prDetails->pr_DepartmentHead_CancelledBy,
-                //         'pr_DepartmentHead_CancelledDate' => $prDetails->pr_DepartmentHead_CancelledDate,
-                //         'pr_DepartmentHead_Cancelled_Remarks' => $prDetails->pr_DepartmentHead_Cancelled_Remarks,
-                //         'pr_Branch_Level1_ApprovedBy' => $prDetails->pr_Branch_Level1_ApprovedBy,
-                //         'pr_Branch_Level1_ApprovedDate' => $prDetails->pr_Branch_Level1_ApprovedDate,
-                //         'pr_Branch_Level1_CancelledBy' => $prDetails->pr_Branch_Level1_CancelledBy,
-                //         'pr_Branch_Level1_CancelledDate' => $prDetails->pr_Branch_Level1_CancelledDate,
-                //         'pr_Branch_Level1_Cancelled_Remarks' => $prDetails->pr_Branch_Level1_Cancelled_Remarks,
-                //         'pr_Branch_Level2_ApprovedBy' => $prDetails->pr_Branch_Level2_ApprovedBy,
-                //         'pr_Branch_Level2_ApprovedDate' => $prDetails->pr_Branch_Level2_ApprovedDate,
-                //         'pr_Branch_Level2_CancelledBy' => $prDetails->pr_Branch_Level2_CancelledBy,
-                //         'pr_Branch_Level2_CancelledDate' => $prDetails->pr_Branch_Level2_CancelledDate,
-                //         'pr_Branch_Level2_Cancelled_Remarks' => $prDetails->pr_Branch_Level2_Cancelled_Remarks,
-                //         'pr_Branch_Level3_ApprovedBy' => $prDetails->pr_Branch_Level3_ApprovedBy,
-                //         'pr_Branch_Level3_ApprovedDate' => $prDetails->pr_Branch_Level3_ApprovedDate,
-                //         'pr_Branch_Level3_CancelledBy' => $prDetails->pr_Branch_Level3_CancelledBy,
-                //         'pr_Branch_Level3_CancelledDate' => $prDetails->pr_Branch_Level3_CancelledDate,
-                //         'pr_Branch_Level3_Cancelled_Remarks' => $prDetails->pr_Branch_Level3_Cancelled_Remarks,
-                //         'pr_Branch_Level4_ApprovedBy' => $prDetails->pr_Branch_Level4_ApprovedBy,
-                //         'pr_Branch_Level4_ApprovedDate' => $prDetails->pr_Branch_Level4_ApprovedDate,
-                //         'pr_Branch_Level4_CancelledBy' => $prDetails->pr_Branch_Level4_CancelledBy,
-                //         'pr_Branch_Level4_CancelledDate' => $prDetails->pr_Branch_Level4_CancelledDate,
-                //         'pr_Branch_Level4_Cancelled_Remarks' => $prDetails->pr_Branch_Level4_Cancelled_Remarks,
-                //         'item_Last_PR_Date' => $prDetails->item_Last_PR_Date,
-                //         'item_Last_PR_Qty' => $prDetails->item_Last_PR_Qty,
-                //         'item_Last_PR_UnitofMeasurement_Id' => $prDetails->item_Last_PR_UnitofMeasurement_Id,
-                //         'filename' => $prDetails->filename,
-                //         'filepath' => $prDetails->filepath,
-                //         'item_status_id' => $prDetails->item_status_id,
-                //         'is_submitted' => $prDetails->is_submitted,
-                //         'prepared_supplier_id' => $prDetails->prepared_supplier_id,
-                //         'approved_by_purchaser' => $prDetails->approved_by_purchaser,
-                //         'cancelled_by_purchaser' => $prDetails->cancelled_by_purchaser,
-                //         'approved_date_purchaser' => $prDetails->approved_date_purchaser,
-                //         'cancelled_date_purchaser' => $prDetails->cancelled_date_purchaser,
-                //         'cancelled_remarks_purchaser' => $prDetails->cancelled_remarks_purchaser,
-                //     ]
-                // );
-            }
+          
             $sequence->update([
                 'seq_no' => (int) $sequence->seq_no + 1,
                 'recent_generated' => generateCompleteSequence($prefix, $number, $suffix, ""),
@@ -292,10 +217,6 @@ class CanvasController extends Controller
     public function destroy($id)
     {
         $canvas = CanvasMaster::with('attachments')->where('id', $id)->first();
-        // if($canvas->isFreeGoods == 1){
-        //     $prDetails = PurchaseRequestDetails::where('pr_request_id',$canvas->pr_request_id)->where('item_Id',$canvas->canvas_Item_Id)->first();
-        //     $prDetails->delete();
-        // }
         foreach ($canvas->attachments as $key => $attachment) {
             File::delete(public_path().$attachment->filepath);
             $attachment->delete();

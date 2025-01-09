@@ -80,15 +80,16 @@ class HISCashAssestmentController extends Controller
                 ->whereDate('created_at', $today)
                 ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
-            if ($code == 'MD') {
-                $query->whereIn('revenueID', ['MD']);
-            } else {
-                $query->where('revenueID', $code);
-            }
-            if (count($refNum) > 0) {
-                $query->whereIn('refNum', $refNum);
-            }
-            return $query->get();
+                if ($code == 'MD') {
+                    $query->whereIn('revenueID', ['MD']);
+                } else if ($code == '') {
+                    $query->whereNotIn('revenueID', ['MD']);
+                }
+                if (count($refNum) > 0) {
+                    $query->whereIn('refNum', $refNum);
+                }
+    
+                return $query->get();
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

@@ -160,28 +160,28 @@ class HISCashAssestmentController extends Controller
                 'ER'    => 'MedSysCashSequence'
             ];
 
-            $sequenceGenerated = [];
-            $xr_us_codes = ['XR', 'US'];
-            $xr_us_incremented = false;
-            $patient_id = $request->payload['patient_Id'];
-            $case_no = $request->payload['case_No'];
-            $patient_name = $request->payload['patient_Name'];
-            $requesting_doctor_id = $request->payload['attending_Doctor'];
+            $sequenceGenerated      = [];
+            $xr_us_codes            = ['XR', 'US'];
+            $xr_us_incremented      = false;
+            $patient_id             = $request->payload['patient_Id'];
+            $case_no                = $request->payload['case_No'];
+            $patient_name           = $request->payload['patient_Name'];
+            $requesting_doctor_id   = $request->payload['attending_Doctor'];
             $requesting_doctor_name = $request->payload['attending_Doctor_fullname'];
-            $patient_Type = $request->payload['patient_Type'];
+            $patient_Type           = $request->payload['patient_Type'];
             $transdate = Carbon::now();
             
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
-                    $revenueID = $charge['code'];
-                    $itemID = $charge['map_item_id'];
-                    $quantity = $charge['quantity'];
-                    $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
-                    $exam_description = $charge['exam_description'];
-                    $specimenId = $charge['specimen'];
-                    $form = $charge['form'] ?? null;
-                    $charge_type = $charge['charge_type'] ?? null;
-                    $barcode_prefix = $charge['barcode_prefix'] ?? null;
+                    $revenueID          = $charge['code'];
+                    $itemID             = $charge['map_item_id'];
+                    $quantity           = $charge['quantity'];
+                    $amount             = floatval(str_replace([',', '₱'], '', $charge['price']));
+                    $exam_description   = $charge['exam_description'];
+                    $specimenId         = $charge['specimen'];
+                    $form               = $charge['form'] ?? null;
+                    $charge_type        = $charge['charge_type'] ?? null;
+                    $barcode_prefix     = $charge['barcode_prefix'] ?? null;
 
                     if (in_array($revenueID, $xr_us_codes)) {
                         if (!$xr_us_incremented) {
@@ -198,10 +198,10 @@ class HISCashAssestmentController extends Controller
                     }
 
                     if (array_key_exists($revenueID, $revenueCodeSequences)) {
-                        $sequenceType = $revenueCodeSequences[$revenueID];
-                        $sequence = $revenueID . ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType]) 
-                            ? $chargeslip_sequence[$sequenceType] 
-                            : $chargeslip_sequence['seq_no']);
+                        $sequenceType   = $revenueCodeSequences[$revenueID];
+                        $sequence       = $revenueID . ($this->check_is_allow_medsys && isset($chargeslip_sequence[$sequenceType]) 
+                                        ? $chargeslip_sequence[$sequenceType] 
+                                        : $chargeslip_sequence['seq_no']);
                     }
                     
                     if ($barcode_prefix === null) {
@@ -211,31 +211,31 @@ class HISCashAssestmentController extends Controller
                     }
                     $refNum[] = $sequence;
                     $saveCashAssessment = CashAssessment::create([
-                        'branch_id' => 1,
-                        'patient_Id' => $patient_id,
-                        'case_No' => $case_no,
-                        'patient_Name' => $patient_name,
-                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
-                        'transdate' => $transdate,
-                        'assessnum' => $assessnum_sequence['MedSysCashSequence'], 
-                        'drcr' => 'C',
-                        'form' => $form,
-                        'stat' => $charge_type,
-                        'revenueID' => $revenueID,
-                        'itemID' => $itemID,
-                        'requestDescription' => $exam_description,
-                        'quantity' => $quantity,
-                        'refNum' => $sequence,
-                        'amount' => $amount,
-                        'specimenId' => $specimenId,
-                        'requestDoctorID' => $requesting_doctor_id,
-                        'requestDoctorName' => $requesting_doctor_name,
-                        'departmentID' => $revenueID,
-                        'Barcode' => $barcode,
-                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'created_at' => Carbon::now(),
+                        'branch_id'             => 1,
+                        'patient_Id'            => $patient_id,
+                        'case_No'               => $case_no,
+                        'patient_Name'          => $patient_name,
+                        'patient_Type'          => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
+                        'transdate'             => $transdate,
+                        'assessnum'             => $assessnum_sequence['MedSysCashSequence'], 
+                        'drcr'                  => 'C',
+                        'form'                  => $form,
+                        'stat'                  => $charge_type,
+                        'revenueID'             => $revenueID,
+                        'itemID'                => $itemID,
+                        'requestDescription'    => $exam_description,
+                        'quantity'              => $quantity,
+                        'refNum'                => $sequence,
+                        'amount'                => $amount,
+                        'specimenId'            => $specimenId,
+                        'requestDoctorID'       => $requesting_doctor_id,
+                        'requestDoctorName'     => $requesting_doctor_name,
+                        'departmentID'          => $revenueID,
+                        'Barcode'               => $barcode,
+                        'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'hostname'              => (new GetIP())->getHostname(),
+                        'createdBy'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'created_at'            => Carbon::now(),
                     ]);
 
                     if ($saveCashAssessment && $this->check_is_allow_medsys):
@@ -265,35 +265,35 @@ class HISCashAssestmentController extends Controller
 
             if (isset($request->payload['DoctorCharges']) && count($request->payload['DoctorCharges']) > 0) {
                 foreach ($request->payload['DoctorCharges'] as $doctorcharges) {
-                    $revenueID = $doctorcharges['code'];
-                    $itemID = $doctorcharges['doctor_code'];
-                    $doctor_name = $doctorcharges['doctor_name'];
-                    $quantity = 1;
-                    $amount = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
-                    $refNum[] = $sequence;
+                    $revenueID      = $doctorcharges['code'];
+                    $itemID         = $doctorcharges['doctor_code'];
+                    $doctor_name    = $doctorcharges['doctor_name'];
+                    $quantity       = 1;
+                    $amount         = floatval(str_replace([',', '₱'], '', $doctorcharges['amount']));
+                    $refNum[]       = $sequence;
 
                     $saveCashAssessment = CashAssessment::create([
-                        'branch_id' => 1,
-                        'patient_id' => $patient_id,
-                        'case_no' => $case_no,
-                        'patient_Type' => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
-                        'patient_name' => $patient_name,
-                        'transdate' => $transdate,
-                        'assessnum' => $assessnum_sequence['MedSysCashSequence'],
-                        'drcr' => 'C',
-                        'revenueID' => $revenueID,
-                        'itemID' => $itemID,
-                        'requestDescription' => $doctor_name,
-                        'quantity' => $quantity,
-                        'refNum' => $sequence,
-                        'amount' => $amount,
-                        'requestDoctorID' => $requesting_doctor_id,
-                        'requestDoctorName' => $requesting_doctor_name,
-                        'departmentID' => $revenueID,
-                        'userId' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'hostname' => (new GetIP())->getHostname(),
-                        'createdBy' => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
-                        'created_at' => Carbon::now(),
+                        'branch_id'             => 1,
+                        'patient_id'            => $patient_id,
+                        'case_no'               => $case_no,
+                        'patient_Type'          => $patient_Type == 'Out-Patient' ? 'O' : ($patient_Type == 'Emergency' ? 'E' : 'I'),
+                        'patient_name'          => $patient_name,
+                        'transdate'             => $transdate,
+                        'assessnum'             => $assessnum_sequence['MedSysCashSequence'],
+                        'drcr'                  => 'C',
+                        'revenueID'             => $revenueID,
+                        'itemID'                => $itemID,
+                        'requestDescription'    => $doctor_name,
+                        'quantity'              => $quantity,
+                        'refNum'                => $sequence,
+                        'amount'                => $amount,
+                        'requestDoctorID'       => $requesting_doctor_id,
+                        'requestDoctorName'     => $requesting_doctor_name,
+                        'departmentID'          => $revenueID,
+                        'userId'                => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'hostname'              => (new GetIP())->getHostname(),
+                        'createdBy'             => $checkUser ? $checkUser->idnumber : Auth()->user()->idnumber,
+                        'created_at'            => Carbon::now(),
                     ]);
                     if ($saveCashAssessment && $this->check_is_allow_medsys) {
                         MedSysCashAssessment::create([

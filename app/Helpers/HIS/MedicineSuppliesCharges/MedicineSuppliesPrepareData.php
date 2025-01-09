@@ -3,6 +3,7 @@
 namespace App\Helpers\HIS\MedicineSuppliesCharges;
 use \Carbon\Carbon;
 use App\Helpers\GetIP;
+use DB;
 
 class MedicineSuppliesPrepareData {
     public function prepareMedsysLogBookData($request, $item, $checkUser, $tbNursePHSlipSequence, $tbInvChargeSlipSequence, $itemID) {
@@ -39,7 +40,7 @@ class MedicineSuppliesPrepareData {
             'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
             'ItemID'        => $item['map_item_id'] ?? null,
             'TransDate'     => Carbon::now(),
-            'RevenueID'     => $item['code'] ?? null,
+            'RevenueID'     => 'PH', //$item['code'] ?? null,
             'RefNum'        => $tbInvChargeSlipSequence,
             'Status'        => $item['stat'] ?? null,
             'Quantity'      => $item['quantity'] ?? null,
@@ -76,12 +77,13 @@ class MedicineSuppliesPrepareData {
             'amount'                => $item['amount'],
             'specimenId'            => '',
             'dosage'                => $item['frequency'] ?? null,
+            'requestDoctorID'       => null,
+            'requestDoctorName'     => null,
             'departmentID'          => 'ER',
+            'userId'                => $checkUser->idnumber,
             'requestDescription'    => $item['item_name'],
             'ismedicine'            => $item['code'] === 'EM' ? 1 : 0,
             'issupplies'            => $item['code'] === 'RS' ? 1 : 0,
-            'requestDoctorID'       => '',
-            'requestDoctorName'     => '',
             'hostname'              => (new GetIP())->getHostname(),
             'createdBy'             => $checkUser->idnumber,
             'created_at'            => Carbon::now(),
@@ -130,6 +132,8 @@ class MedicineSuppliesPrepareData {
             'record_Status'    => 'W',
             'user_Id'          => $checkUser->idnumber,
             'remarks'          => $item['remarks'] ?? null,
+            'ismedicine'       => $item['code'] === 'EM' ? 1 : 0,
+            'issupplies'       => $item['code'] === 'RS' ? 1 : 0,
             'isGeneric'        => 0,
             'isMajorOperation' => 0,
             'createdat'        => Carbon::now(),
@@ -160,4 +164,151 @@ class MedicineSuppliesPrepareData {
         ];
     }
 
+    public function CDGMMISInventoryData($item, $checkUser) {
+        return [
+            'branch_Id'                         => 1,
+            'warehouse_Group_Id'                => $item->warehouse_Group_Id,
+            'warehouse_Id'                      => $item->warehouse_Id,
+            'patient_Id'                        => $item->patient_Id,
+            'patient_Registry_Id'               => $item->patient_Registry_Id,    
+            'transaction_Item_Id'               => $item->transaction_Item_Id,
+            'transaction_Date'                  => Carbon::now(),
+            'trasanction_Reference_Number'      => $item->trasanction_Reference_Number,
+            'transaction_Acctg_TransType'       => $item->transaction_Acctg_TransType,
+            'transaction_Qty'                   => (intval($item->transaction_Qty) * -1),
+            'transaction_Item_OnHand'           => $item->transaction_Item_OnHand,
+            'transaction_Item_ListCost'         => $item->transaction_Item_ListCost,
+            'transaction_Requesting_Number'     => $item->transaction_Requesting_Number,
+            'transaction_UserId'                => $checkUser->idnumber,
+            'created_at'                        => Carbon::now(),
+            'createdBy'                         => $checkUser->idnumber,
+            'updated_at'                        => Carbon::now(),
+            'updatedby'                         => $checkUser->idnumber,
+        ];
+    }
+
+    public function MedsysStockCardData($request,  $item, $checkUser) {
+        return [
+            'SummaryCode'   => $item->SummaryCode,
+            'HospNum'       => $request->payload['patient_Id'] ?? null,
+            'IdNum'         => $request->payload['case_No'] . 'B' ?? null,
+            'ItemID'        => $item->ItemID,
+            'TransDate'     => Carbon::now(),
+            'RevenueID'     => $item->RevenueID,
+            'RefNum'        => $item->RefNum,
+            'Status'        => $item->Status,
+            'Quantity'      => intval($item->Quantity) * -1,
+            'Balance'       => isset($item->Balance) 
+                            ? $item->Balance 
+                            : null,
+            'NetCost'       => isset($item->NetCost) 
+                            ? floatval($item->NetCost) 
+                            : null,
+            'Amount'        => floatval($item->Amount) * -1,
+            'UserID'        => $checkUser->idnumber,
+            'DosageID'      => $item->DosageID,
+            'RequestByID'   => $checkUser->idnumber,
+            'DispenserCode' => $item->DispenserCode,
+            'RequestNum'    => $item->RequestNum,
+            'ListCost'      => isset($item->ListCost) 
+                            ? $item->ListCost 
+                            : null,
+            'RecordStatus'  => 'R',
+            'HostName'      => (new GetIP())->getHostname(),
+        ];
+    }
+
+    public function CDGCashAssessmentData($request, $item, $checkUser) {
+        return [
+            'branch_id'             =>  1,
+            'patient_id'            =>  $request->payload['patient_Id'],
+            'case_No'               =>  $request->payload['case_No'],
+            'patient_Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
+            'transdate'             =>  Carbon::now(),
+            'assessnum'             =>  $item->assessnum,
+            'indicator'             =>  $item->indicator,
+            'drcr'                  =>  'C',
+            'stat'                  =>  1,
+            'revenueID'             =>  $item->revenueID,
+            'refNum'                =>  $item->refNum,
+            'itemID'                =>  $item->itemID,
+            'item_ListCost'         =>  $item->item_ListCost,
+            'item_Selling_Amount'   =>  $item->item_Selling_Amount,
+            'item_OnHand'           =>  $item->item_OnHand,
+            'quantity'              =>  intval($item->quantity) * -1,
+            'amount'                =>  floatval($item->amount) * -1,
+            'specimenId'            =>  $item->specimenId,
+            'dosage'                =>  $item->dosage,
+            'recordStatus'          =>  'R',
+            'requestDescription'    =>  $item->requestDescription,
+            'departmentID'          =>  $item->departmentID,
+            'userId'                =>  $checkUser->idnumber,
+            'dateRevoked'           =>  Carbon::now(),
+            'revokedBy'             =>  $checkUser->idnumber,
+            'hostname'              =>  (new GetIP())->getHostname(),
+            'updatedBy'             =>  $checkUser->idnumber,
+            'updated_at'            =>  Carbon::now(),
+        ];
+    }
+
+    public function MedsysCashAssessmentData($request, $item, $checkUser) {
+        return [
+            'IdNum'         =>  $request->payload['case_No'] . 'B',
+            'HospNum'       =>  $request->payload['patient_Id'],
+            'Name'          =>  $request->payload['patient_Name'] ?? $request->payload['patient_name'],
+            'TransDate'     =>  Carbon::now() ?? null,
+            'AssessNum'     =>  $item->AssessNum,
+            'Indicator'     =>  $item->Indicator,
+            'DrCr'          =>  'D',
+            'ItemID'        =>  $item->ItemID,
+            'RecordStatus'  =>  'R',
+            'Quantity'      =>  intval($item->Quantity) * -1,
+            'RefNum'        =>  $item->RefNum,
+            'Amount'        =>  floatval($item->Amount) * -1,
+            'UserID'        =>  $checkUser->idnumber,
+            'RevenueID'     =>  $item->RevenueID,
+            'UnitPrice'     =>  $item->UnitPrice ? floatval($item->UnitPrice) : null,
+        ];
+    }
+
+    public function BillingOutData($request,  $billingOut, $checkUser) {
+        return [
+            'patient_Id'            => $request->payload['patient_Id'],
+            'case_No'               => $request->payload['case_No'],
+            'accountnum'            => $billingOut->accountnum,
+            'msc_price_scheme_id'   => $billingOut->msc_price_scheme_id,
+            'revenueID'             => $billingOut->revenueID,
+            'drcr'                  => 'C',
+            'itemID'                => $billingOut->itemID,
+            'quantity'              => ($billingOut->quantity * -1),
+            'refNum'                => $billingOut->refNum . '[REVOKED]',
+            'chargeSlip'            => $billingOut->ChargeSlip . '[REVOKED]',
+            'amount'                => ($billingOut->amount * -1),
+            'net_amount'            => ($billingOut->net_amount * -1),
+            'userId'                => $checkUser->idnumber,
+            'hostName'              => (new GetIP())->getHostname(),
+            'updatedBy'             => $checkUser->idnumber,
+            'updated_at'            => Carbon::now(),
+            'request_doctors_id'    => $billingOut->request_doctors_id,
+            'transDate'             => Carbon::now(),
+
+        ];
+    }
+
+    public function MedsysBillingOutData($request,  $medsys_billingOut, $checkUser) {
+        return [
+            'IDNum'         => $request->payload['case_No'] . 'B',
+            'HospNum'       => $request->payload['patient_Id'],
+            'TransDate'     => Carbon::now(),
+            'RevenueID'     => $medsys_billingOut->RevenueID,
+            'DrCr'          => 'C',
+            'ItenID'        => $medsys_billingOut->itemID,
+            'Quantity'      => ($medsys_billingOut->Quantity * -1),
+            'RefNum'        => $medsys_billingOut->RefNum . '[REVOKED]',
+            'Amount'        => ($medsys_billingOut->Amount * -1),
+            'UserID'        => $checkUser->idnumber,
+            'ChargeSlip'    => $medsys_billingOut->ChargeSlip . '[REVOKED]',
+            'HostName'      => (new GetIP())->getHostname(),
+        ];
+    }
 }

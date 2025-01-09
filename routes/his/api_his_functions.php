@@ -11,7 +11,7 @@ use App\Http\Controllers\HIS\his_functions\RequisitionController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\his_functions\HISPostChargesController;
-use App\Http\Controllers\HIS\EmergencyRoomMedicine;
+use App\Http\Controllers\HIS\charge_medicine_and_supply\EmergencyRoom;
 use App\Http\Controllers\HIS\NurseActivity;
 
 
@@ -104,13 +104,13 @@ Route::controller(OPDMedicinesSuppliesController::class)->group(function() {
     Route::post('get-medicine-supplies-charge-history', 'getPostedMedicineSupplies');
     Route::put('revoke-medicine-supplies-charge', 'revokecharge');
 });
-
-Route::controller(EmergencyRoomMedicine::class)->group(function() {
+Route::controller(EmergencyRoom::class)->group(function() {
     Route::post('er-get-medicine-suplies', 'erRoomMedicine');
     Route::post('er-medicine-supplies-charges', 'chargePatientMedicineSupply');
     Route::get('get-charge-items/{id}', 'getMedicineSupplyCharges');
-    Route::post('er-cancel-charge', 'cancelCharges');
+    Route::post('er-cancel-charge', 'revokedCharges');
 });
+
 
 Route::controller(NurseActivity::class)->group(function() {
     Route::get('get-charges-list/{id}', 'getChargeList');

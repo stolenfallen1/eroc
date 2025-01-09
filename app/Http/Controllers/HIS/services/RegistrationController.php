@@ -32,6 +32,7 @@ class RegistrationController extends Controller
         DB::connection('sqlsrv_medsys_patient_data')->beginTransaction();
         DB::connection('sqlsrv')->beginTransaction();
         try {
+            $checkUser = '';
             if(intval($request->payload['mscAccount_Trans_Types']) === 5) {
                 $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
                 if(!$checkUser):
@@ -45,7 +46,10 @@ class RegistrationController extends Controller
             } else {
                 $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('inpatient', 'new');
             }
-            $registerPatient = $this->registerPatient($request, $checkUser, $sequenceNo['patientId'], $sequenceNo['registryId'], $sequenceNo['erCaseNo'], $isForAdmission = false);
+            $patient_id = $sequenceNo['patientId'];
+            $registry_id = $sequenceNo['registryId'];
+            $erCaseNo = $sequenceNo['erCaseNo'] ?? null;
+            $registerPatient = $this->registerPatient($request, $checkUser, $patient_id, $registry_id, $erCaseNo, $isForAdmission = false);
             if($registerPatient) {
                 DB::connection('sqlsrv_patient_data')->commit();
                 DB::connection('sqlsrv_medsys_patient_data')->commit();

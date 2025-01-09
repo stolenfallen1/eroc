@@ -77,7 +77,7 @@ class HISCashAssestmentController extends Controller
                 ->where('ismedicine', 0)
                 ->where('issupplies', 0)
                 ->where('isprocedure', 0)
-                // ->whereDate('created_at', $today)
+                ->whereDate('created_at', $today)
                 ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
             if ($code == 'MD') {
@@ -88,12 +88,7 @@ class HISCashAssestmentController extends Controller
             if (count($refNum) > 0) {
                 $query->whereIn('refNum', $refNum);
             }
-            $results = $query->get();
-            $results->each(function ($result) use ($code) {
-                $result->items = $result->items($code)->first();
-            });
-
-            return $results;
+            return $query->get();
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

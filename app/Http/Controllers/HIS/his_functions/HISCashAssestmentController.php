@@ -66,8 +66,7 @@ class HISCashAssestmentController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    public function history($patient_id, $case_no, $code, $refNum = [])
-    {
+    public function history($patient_id, $case_no, $code, $refNum = []) {
         try {
             $today = Carbon::now()->format('Y-m-d');
 
@@ -83,18 +82,24 @@ class HISCashAssestmentController extends Controller
 
             if ($code == 'MD') {
                 $query->whereIn('revenueID', ['MD']);
-            } else if ($code == '') {
-                $query->whereNotIn('revenueID', ['MD']);
+            } else {
+                $query->where('revenueID', $code);
             }
             if (count($refNum) > 0) {
                 $query->whereIn('refNum', $refNum);
             }
+            $results = $query->get();
+            $results->each(function ($result) use ($code) {
+                $result->items = $result->items($code)->first();
+            });
 
-            return $query->get();
+            return $results;
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    
     public function cashassessment(Request $request) 
     {
         DB::connection('sqlsrv')->beginTransaction();

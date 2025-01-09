@@ -52,6 +52,7 @@ class ConsignmentDeliveryController extends Controller
         try {
             if(Request()->payload){
                 $payload = Request()->payload;
+               
                 $has_dup_invoice_no = PurchaseOrderConsignment::where('po_id',$payload['po_id'])->where('invoice_no', $payload['invoice_no'])->exists();
               
                 // if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);

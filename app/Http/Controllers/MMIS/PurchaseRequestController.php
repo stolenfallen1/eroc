@@ -1083,7 +1083,7 @@ class PurchaseRequestController extends Controller
                     //     ]
                     // );
                 } else if ($pr->ismedicine == 1) {
-                    $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id', $prd->item_Id)->where('vendor_id', $prd->prepared_supplier_id)->first();
+                    $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id', $prd->item_Id)->where('id', $prd->recommended_supplier_id)->first();
                     $listcost =  $item['item_ListCost'];
                     $qty =  $item['item_Request_Qty'];
                     if ($canvas->canvas_item_amount) {
@@ -1184,7 +1184,7 @@ class PurchaseRequestController extends Controller
                 ]);
 
                 if ($this->role->pharmacy_warehouse()) {
-                    $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id', $prd->item_Id)->where('vendor_id', $prd->prepared_supplier_id)->first();
+                    $canvas = CanvasMaster::where('pr_request_details_id', $prd->id)->where('canvas_Item_Id', $prd->item_Id)->where('id', $prd->recommended_supplier_id)->first();
                     $canvas->update(
                         [
                             'canvas_Level2_CancelledBy' => Auth::user()->idnumber,

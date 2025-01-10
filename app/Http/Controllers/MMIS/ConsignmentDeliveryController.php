@@ -53,7 +53,7 @@ class ConsignmentDeliveryController extends Controller
                 $has_dup_invoice_no = PurchaseOrderConsignment::where('po_id',$payload['po_id'])->where('invoice_no', $payload['invoice_no'])->exists();
               
                 // if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
-                if($has_dup_invoice_no){
+                // if($has_dup_invoice_no){
                     PurchaseOrderConsignment::where('id',$payload['id'])->update([
                         'invoice_no'=>$payload['invoice_no'],
                         'invoice_date'=>$payload['invoice_date'],
@@ -65,7 +65,7 @@ class ConsignmentDeliveryController extends Controller
                         'rr_Document_Delivery_Date'=>$payload['delivery_date'],
                         'rr_received_date'=>$payload['rr_received_date']
                     ]);
-                }
+                // }
                
                 DB::connection('sqlsrv_mmis')->commit();
                 return response()->json(['message' => 'success'], 200);

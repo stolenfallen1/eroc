@@ -11,7 +11,6 @@ class EmployeeTbcMaster extends Controller
     //
     public function getEmployeeDetail(Request $request) {
         try {
-            echo $request->input('lastName');
             $lastname   = strtoupper($request->input('lastName'));
             $firstname  = strtoupper($request->input('firstName'));
             $per_page = Request()->per_page ?? 10;

@@ -21,6 +21,7 @@ use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Helpers\SearchFilter\inventory\Consignments;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
+use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 use App\Helpers\SearchFilter\inventory\PurchaseOrderConsignments;
 
 class ConsignmentDeliveryController extends Controller
@@ -34,10 +35,12 @@ class ConsignmentDeliveryController extends Controller
         }
        
     }
+
     public function auditconsignment()
     {
         return (new PurchaseOrderConsignments)->auditsearchable();
     }
+    
     public function auditedconsignment()
     {
         return (new PurchaseOrderConsignments)->auditedsearchable();
@@ -306,6 +309,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Vendor_Id' => $vendor->id,
                 'rr_Document_Invoice_No' => $payload['rr_Document_Invoice_No'] ?? '',
                 'rr_Document_Invoice_Date' => $payload['rr_Document_Invoice_Date'],
+                'rr_Document_Delivery_Date' => $payload['rr_Document_Delivery_Date'],
                 'rr_Document_Delivery_Receipt_No' => $payload['rr_Document_Delivery_Receipt_No'],
                 'rr_Document_Delivery_Date' => $payload['rr_Document_Delivery_Date'],
                 'rr_Document_TotalGrossAmount' => $payload['rr_Document_TotalGrossAmount'],
@@ -325,6 +329,7 @@ class ConsignmentDeliveryController extends Controller
             foreach ($payload['items'] as $key => $detail) {
                 
                 $delivery_item = ConsignmentItems::where('rr_id',$delivery->id)->where('rr_Detail_Item_Id',$detail['rr_Detail_Item_Id'])->first();
+             
                 $delivery_item->update([
                     'rr_Detail_Item_ListCost' => $detail['rr_Detail_Item_ListCost'],
                     'rr_Detail_Item_Qty_Received' => $detail['rr_Detail_Item_Qty_Received'],

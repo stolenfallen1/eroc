@@ -232,6 +232,7 @@ class InventoryTransactionObserver
                                 'ComputedIn'=> $warehouse_item['item_Selling_Price_In'],
                             ]
                         );
+                        
                     }
                     
                 }

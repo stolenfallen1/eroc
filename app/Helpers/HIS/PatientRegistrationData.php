@@ -169,7 +169,7 @@
                 'mscPrivileged_Card_Id'                     => $request->payload['mscPrivileged_Card_Id'] ?? null,
                 'mscBroughtBy_Relationship_Id'              => $request->payload['mscBroughtBy_Relationship_Id'] ?? null,
                 'queue_Number'                              => $request->payload['queue_Number'] ?? $request->payload['queue_number'] ?? null,
-                'arrived_Date'                              => intval($request->payload['mscAccount_Trans_Types'] === 2) ? $request->payload['arrived_date'] : Carbon::now(),
+                'arrived_Date'                              => intval($request->payload['mscAccount_Trans_Types'] === 2) ? $request->payload['arrived_date'] ?? null : Carbon::now(),
                 'registry_Userid'                           => isset($checkUser->idnumber) 
                                                             ?  $checkUser->idnumber
                                                             :  Auth()->user()->idnumber,

@@ -14,7 +14,6 @@ use CashAssessmentSequence;
 use GlobalChargingSequences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use function Symfony\Component\Translation\t;
 
 class HISCashAssestmentController extends Controller
 {
@@ -60,12 +59,8 @@ class HISCashAssestmentController extends Controller
         try {
             $patient_id = $request->patient_Id;
             $case_no = $request->case_No;
-            // $code = $request->code;
-            $revenueCodes = $this->getRevenueCode($case_no);
-            foreach ($revenueCodes as $code) {
-                $data = $this->history($patient_id, $case_no, $code);
-            }
-            // $data = $this->history($patient_id, $case_no, $code);
+            $code = $request->code;
+            $data = $this->history($patient_id, $case_no, $code);
             return response()->json(['data' => $data]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -75,7 +70,7 @@ class HISCashAssestmentController extends Controller
         try {
             $today = Carbon::now()->format('Y-m-d');
 
-            $query = CashAssessment::with(['doctor_details'])
+            $query = CashAssessment::with('items','doctor_details')
                 ->where('patient_Id', $patient_id)
                 ->where('case_No', $case_no)
                 ->where('quantity', '>', 0)
@@ -85,33 +80,22 @@ class HISCashAssestmentController extends Controller
                 ->whereDate('created_at', $today)
                 ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'");
 
-            if ($code == 'MD') {
-                $query->whereIn('revenueID', ['MD']);
-            } else {
-                $query->where('revenueID', $code);
-            }
-            if (count($refNum) > 0) {
-                $query->whereIn('refNum', $refNum);
-            }
-            $results = $query->get();
-            $results->each(function ($result) use ($code) {
-                $result->items = $result->items($code)->first();
-            });
-
-            return $results;
+                if ($code == 'MD') {
+                    $query->whereIn('revenueID', ['MD']);
+                } else if ($code == '') {
+                    $query->whereNotIn('revenueID', ['MD']);
+                }
+                if (count($refNum) > 0) {
+                    $query->whereIn('refNum', $refNum);
+                }
+    
+                return $query->get();
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    private function getRevenueCode($case_no) {
-        $revenueCodes = CashAssessment::distinct('revenueID')
-                    ->where('case_No', $case_no)
-                    ->whereRaw("refNum NOT LIKE '%\\[REVOKED\\]%' ESCAPE '\\'")
-                    ->pluck('revenueID')
-                    ->toArray();
-        return $revenueCodes;
-    }
+    
     public function cashassessment(Request $request) 
     {
         DB::connection('sqlsrv')->beginTransaction();
@@ -173,15 +157,15 @@ class HISCashAssestmentController extends Controller
             
             if (isset($request->payload['Charges']) && count($request->payload['Charges']) > 0) {
                 foreach ($request->payload['Charges'] as $charge) {
-                    $revenueID          = $charge['code'];
-                    $itemID             = $charge['map_item_id'];
-                    $quantity           = $charge['quantity'];
-                    $amount             = floatval(str_replace([',', '₱'], '', $charge['price']));
-                    $exam_description   = $charge['exam_description'];
-                    $specimenId         = $charge['specimen'];
-                    $form               = $charge['form'] ?? null;
-                    $charge_type        = $charge['charge_type'] ?? null;
-                    $barcode_prefix     = $charge['barcode_prefix'] ?? null;
+                    $revenueID = $charge['code'];
+                    $itemID = $charge['id'];
+                    $quantity = $charge['quantity'];
+                    $amount = floatval(str_replace([',', '₱'], '', $charge['price']));
+                    $exam_description = $charge['exam_description'];
+                    $specimenId = $charge['specimen'];
+                    $form = $charge['form'] ?? null;
+                    $charge_type = $charge['charge_type'] ?? null;
+                    $barcode_prefix = $charge['barcode_prefix'] ?? null;
 
                     if (in_array($revenueID, $xr_us_codes)) {
                         if (!$xr_us_incremented) {
@@ -209,6 +193,7 @@ class HISCashAssestmentController extends Controller
                     } else {
                         $barcode = $this->getBarCode($barcode_prefix, $sequence, $specimenId);
                     }
+
                     $refNum[] = $sequence;
                     $saveCashAssessment = CashAssessment::create([
                         'branch_id'             => 1,

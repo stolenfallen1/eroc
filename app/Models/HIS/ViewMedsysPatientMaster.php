@@ -16,7 +16,7 @@ class ViewMedsysPatientMaster extends Model
     use HasFactory;
 
     protected $connection = 'sqlsrv_medsys_core_db';
-    protected $table = 'CDG_CORE_Live.dbo.vwMedsysPatientMaster'; 
+    protected $table = 'vwMedsysPatientMaster'; 
     protected $primaryKey = 'id';
     protected $guarded = [];
     public $timestamps = false;

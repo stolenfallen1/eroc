@@ -20,6 +20,7 @@ use App\Http\Controllers\MMIS\ConsignmentDeliveryController;
 use App\Http\Controllers\MMIS\PriceList\PriceListController;
 use App\Http\Controllers\MMIS\InventoryStocksAlertController;
 use App\Http\Controllers\MMIS\InventoryTransactionController;
+use App\Http\Controllers\MMIS\PurchaseQuotationController;
 use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 
 Route::controller(UserController::class)->group(function () {
@@ -39,6 +40,8 @@ Route::controller(DashboardController::class)->group(function () {
 
 Route::controller(PurchaseRequestController::class)->group(function () {
   Route::get('purchase-request', [PurchaseRequestController::class, 'index']);
+  Route::get('purchase-canvas', [PurchaseRequestController::class, 'index']);
+  
   Route::put('restore-purchase-request/{id}', [PurchaseRequestController::class, 'restorePR']);
   Route::get('purchase-request/{id}', [PurchaseRequestController::class, 'show']);
   Route::put('purchase-request/void/{id}', [PurchaseRequestController::class, 'voidPR']);
@@ -63,6 +66,11 @@ Route::controller(CanvasController::class)->group(function () {
   Route::post('reconsider-canvas', 'reconsiderCanvas');
   
 });
+Route::controller(PurchaseQuotationController::class)->group(function () {
+  Route::get('quotation', 'index');
+  Route::post('submit-quotaion', 'store');
+});
+
 
 Route::controller(PurchaseOrderController::class)->group(function () {
   Route::get('purchase-orders-counts', 'getCount');
@@ -72,6 +80,8 @@ Route::controller(PurchaseOrderController::class)->group(function () {
   Route::post('purchase-order-reconsider', 'reconsider');
   Route::get('purchase-order-by-number', 'getByNumber');
   Route::post('approve-purchase-order', 'approve');
+  Route::post('update-po-item', 'updatePOItem');
+  
 });
 
 Route::controller(BatchController::class)->group(function () {

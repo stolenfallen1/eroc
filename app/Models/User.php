@@ -82,6 +82,7 @@ class User extends \TCG\Voyager\Models\User
 
     protected $appends = ['departments','RevenueCode','assigneditemgroup','assingcategory'];
 
+    
     public function warehouse()
     {
         return $this->belongsTo(Warehouses::class, 'warehouse_id', 'id');

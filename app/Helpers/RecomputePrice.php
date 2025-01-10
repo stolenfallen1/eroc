@@ -58,7 +58,7 @@ class RecomputePrice
       $mark_up_out_amount = (float) $averagecost * $markup_out;
 
       // Round values to four decimal places
-      $total_averagecost        = round($averagecost, 4);
+      $total_averagecost  = round($averagecost, 4);
       $mark_up_in_amount  = round($mark_up_in_amount, 4);
       $mark_up_out_amount = round($mark_up_out_amount, 4);
       $total_item_onhand  = round($total_item_onhand, 4);

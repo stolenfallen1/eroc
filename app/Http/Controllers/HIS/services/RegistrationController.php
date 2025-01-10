@@ -81,6 +81,7 @@ class RegistrationController extends Controller
             $accountType = $request->payload['mscAccount_Trans_Types'];
             $isForAdmission = isset($request->payload['registrationFrom']) ? true : false;
             if(intval($accountType) === 5 && !$isForAdmission) {
+                echo 'Emergency';
                 $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
                 if(!$checkUser):
                     return response()->json([$message='Incorrect Username or Password'], 404);
@@ -99,15 +100,18 @@ class RegistrationController extends Controller
                     $er_Case_No  = null;
                 }
                 else {
+                    echo 'Inpatient Registration';
                     $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('inpatient', 'old');
                     $registry_id = $sequenceNo['registryId'];
                     $er_Case_No  = null;
                 }
             } else {
+                echo 'Existing';
                 $registry_id = $request->payload['case_No'] ?? $request->payload['register_id_no'] ?? null;
                 $er_Case_No = $request->payload['er_Case_No'] ?? null;
             }
             if($isForAdmission) {
+                echo 'Admission';
                 $this->updateAdmittingCommunicationFile($request);
             }
             $registerPatient = $this->registerPatient($request, $checkUser, $id, $registry_id, $er_Case_No, $isForAdmission);
@@ -134,11 +138,17 @@ class RegistrationController extends Controller
     }
 
     private function registerPatient($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $isForAdmission) {
-        $patientRule = [
-            'lastname'  => $request->payload['lastname'], 
-            'firstname' => $request->payload['firstname'],
-            'birthdate' => $request->payload['birthdate']
-        ];
+        if($request->payload['patient_Id'] !== '') {
+            $patientRule = [
+                'patient_Id' => $patient_id
+            ];
+        } else {
+            $patientRule = [
+                'lastname'  => $request->payload['lastname'], 
+                'firstname' => $request->payload['firstname'],
+                'birthdate' => $request->payload['birthdate'],
+            ];
+        }
         $patientPastDataCond = [
             'patient_Id'    => $patient_id, 
         ];
@@ -149,53 +159,53 @@ class RegistrationController extends Controller
         ];
         $currentTimestamp = Carbon::now();
         $today = Carbon::now()->format('Y-m-d');
-        $patient = Patient::updateOrCreate($patientRule, $this->patient_data->preparePatientData($request, $checkUser, $currentTimestamp, $patient_id, $this->patient_data->handleExistingPatientData($request->payload['lastname'], $request->payload['firstname'])));
-        $patient->past_medical_procedures()->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastMedicalProcedureData($request, $checkUser, $patient_id, $existingData = null));
-        $patient->past_medical_history()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastMedicalHistoryData($request, $checkUser, $patient_id, $existingData = null));
-        $patient->past_immunization()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastImmunizationData($request, $checkUser, $patient_id, $existingData = null));
-        $patient->past_bad_habits()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastBadHabitsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientPriviledgeCard = $patient->privilegedCard()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->patientPrivilegedCardData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientPriviledgeCard->pointTransactions()->whereDate('created_at', $today)->updateOrCreate(['card_Id' => $patientPriviledgeCard->id], $this->patient_data->patientPrivilegedPointTransactionsData($request, $checkUser, $patientPriviledgeCard->id, $existingData = null));
-        $patientPriviledgeCard->pointTransfers()->whereDate('created_at', $today)->updateOrCreate(['fromCard_Id' => $patientPriviledgeCard->id], $this->patient_data->patientPrivilegedPointTransferData($request, $checkUser, $patientPriviledgeCard->id, $existingData = null));
+        $patient = Patient::updateOrCreate($patientRule, $this->patient_data->preparePatientData($request, $checkUser, $currentTimestamp, $patient_id, $this->patient_data->handleExistingPatientData($request->payload['lastname'], $request->payload['firstname'], $patient_id)));
+        $patient->past_medical_procedures()->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastMedicalProcedureData($request, $checkUser, $patient_id));
+        $patient->past_medical_history()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastMedicalHistoryData($request, $checkUser, $patient_id));
+        $patient->past_immunization()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastImmunizationData($request, $checkUser, $patient_id));
+        $patient->past_bad_habits()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->preparePastBadHabitsData($request, $checkUser, $patient_id, $registry_id));
+        $patientPriviledgeCard = $patient->privilegedCard()->whereDate('created_at', $today)->updateOrCreate($patientPastDataCond, $this->patient_data->patientPrivilegedCardData($request, $checkUser, $patient_id, $registry_id));
+        $patientPriviledgeCard->pointTransactions()->whereDate('created_at', $today)->updateOrCreate(['card_Id' => $patientPriviledgeCard->id], $this->patient_data->patientPrivilegedPointTransactionsData($request, $checkUser, $patientPriviledgeCard->id));
+        $patientPriviledgeCard->pointTransfers()->whereDate('created_at', $today)->updateOrCreate(['fromCard_Id' => $patientPriviledgeCard->id], $this->patient_data->patientPrivilegedPointTransferData($request, $checkUser, $patientPriviledgeCard->id));
         $patientRegistry = $patient->patientRegistry()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientRegistryData($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $isForAdmission));
         if($isForAdmission) {
             $this->updatePatientRegistryUponAdmision($request, $patientRegistry->id, $registry_id);
         }
-        $patientRegistry->history()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->immunizations()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientImmunizationData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->vitals()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareVitalSignsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->medical_procedures()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientMedicalProcedure($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->administered_medicines()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareAdministeredMedicineData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->bad_habits()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareBadHabitsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->patientDoctors()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
+        $patientRegistry->history()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareHistoryData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->immunizations()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientImmunizationData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->vitals()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareVitalSignsData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->medical_procedures()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientMedicalProcedure($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->administered_medicines()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareAdministeredMedicineData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->bad_habits()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareBadHabitsData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->patientDoctors()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id));
         // if(isset($request->payload['selectedConsultant']) && !empty($request->payload['selectedConsultant'])) {
         //     $this->processPatientDoctors($request, $checkUser, $patient_id, $registry_id, $patientRegistry);
         // }
-        $patientRegistry->patientDoctors()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->pertinentSignAndSymptoms()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPertinentSignAndSymptomsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->physicalExamtionChestLungs()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalExamptionChestLungsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->courseInTheWard()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientCourseInTheWardData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->physicalExamtionCVS()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalExamptionCVSData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->medications()->updateOrCreate($patientRegistryCond, $this->patient_data-> patientMedicationsData($request, $checkUser, $patient_id, $registry_id, $existingData = null ));
-        $patientRegistry->physicalExamtionHEENT()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalExamptionHEENTData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->physicalSkinExtremities()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalSkinExtremitiesData($request, $checkUser, $patient_id, $registry_id, $existingData = null ));
-        $patientRegistry->physicalAbdomen()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalAbdomenData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->physicalNeuroExam()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalNeuroExamData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $patientRegistry->physicalGUIE()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalGUIData($request, $checkUser, $patient_id, $registry_id, $existingData = null ));
-        $patientRegistry->PhysicalExamtionGeneralSurvey()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalExamptionGeneralSurveyData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
-        $OBG = $patientRegistry->oBGYNHistory()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareOBGHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
+        $patientRegistry->patientDoctors()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->pertinentSignAndSymptoms()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPertinentSignAndSymptomsData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->physicalExamtionChestLungs()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalExamptionChestLungsData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->courseInTheWard()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientCourseInTheWardData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->physicalExamtionCVS()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalExamptionCVSData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->medications()->updateOrCreate($patientRegistryCond, $this->patient_data-> patientMedicationsData($request, $checkUser, $patient_id, $registry_id ));
+        $patientRegistry->physicalExamtionHEENT()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalExamptionHEENTData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->physicalSkinExtremities()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalSkinExtremitiesData($request, $checkUser, $patient_id, $registry_id ));
+        $patientRegistry->physicalAbdomen()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalAbdomenData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->physicalNeuroExam()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalNeuroExamData($request, $checkUser, $patient_id, $registry_id));
+        $patientRegistry->physicalGUIE()->updateOrCreate($patientRegistryCond, $this->patient_data->patientPhysicalGUIData($request, $checkUser, $patient_id, $registry_id ));
+        $patientRegistry->PhysicalExamtionGeneralSurvey()->updateOrCreate($patientRegistryCond, $this->patient_data->preparePatientPhysicalExamptionGeneralSurveyData($request, $checkUser, $patient_id, $registry_id));
+        $OBG = $patientRegistry->oBGYNHistory()->updateOrCreate($patientRegistryCond, $this->patient_data->prepareOBGHistoryData($request, $checkUser, $patient_id, $registry_id));
         $obgyneCond = ['OBGYNHistoryID' => $OBG->id];
-        $OBG->PatientPregnancyHistory()->updateOrCreate($obgyneCond, $this->patient_data->patientPregnancyHistoryData($request, $checkUser, $OBG->id, $registry_id, $existingData = null));
-        $OBG->gynecologicalConditions()->updateOrCreate($obgyneCond, $this->patient_data->patientGynecologicalConditions($request, $checkUser, $OBG->id, $registry_id, $existingData = null ));
+        $OBG->PatientPregnancyHistory()->updateOrCreate($obgyneCond, $this->patient_data->patientPregnancyHistoryData($request, $checkUser, $OBG->id, $registry_id));
+        $OBG->gynecologicalConditions()->updateOrCreate($obgyneCond, $this->patient_data->patientGynecologicalConditions($request, $checkUser, $OBG->id, $registry_id ));
         if(isset($request->payload['selectedAllergy']) && !empty($request->payload['selectedAllergy'])) {
             $this->processAllergy($request, $checkUser, $patient_id, $registry_id, $patientRegistry, $today);
         }
-        $patientDischarge = $patientRegistry->dischargeInstructions()->updateOrCreate($patientRegistryCond, $this->patient_data->patientDischargeInstructionsData($request, $checkUser, $patient_id, $registry_id, $existingData = null));
+        $patientDischarge = $patientRegistry->dischargeInstructions()->updateOrCreate($patientRegistryCond, $this->patient_data->patientDischargeInstructionsData($request, $checkUser, $patient_id, $registry_id));
         $dischargedCond = ['instruction_Id' => $patientDischarge->id];
-        $patientDischarge->dischargeMedications()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedMedicationsData($request, $checkUser, $patientDischarge->id, $existingData = null));
-        $patientDischarge->dischargeFollowUpLaboratories()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedFollowUpLaboratoriesData($request, $checkUser, $patientDischarge->id, $existingData = null));
-        $patientDischarge->dischargeFollowUpTreatment()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedFollowUpTreatmentData($request, $checkUser, $patientDischarge->id, $existingData = null));
-        $patientDischarge->dischargeDoctorsFollowUp()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedDoctorsFolloUpData($request, $checkUser, $patientDischarge->id, $existingData = null));
+        $patientDischarge->dischargeMedications()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedMedicationsData($request, $checkUser, $patientDischarge->id));
+        $patientDischarge->dischargeFollowUpLaboratories()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedFollowUpLaboratoriesData($request, $checkUser, $patientDischarge->id));
+        $patientDischarge->dischargeFollowUpTreatment()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedFollowUpTreatmentData($request, $checkUser, $patientDischarge->id));
+        $patientDischarge->dischargeDoctorsFollowUp()->updateOrCreate($dischargedCond, $this->patient_data->patientDischargedDoctorsFolloUpData($request, $checkUser, $patientDischarge->id));
     
         if(!$patient || !$patientRegistry):
             throw new \Exception('Error');
@@ -262,7 +272,7 @@ class RegistrationController extends Controller
             $patientRegistry->patientDoctors()->where('case_No', $registry_id)->updateOrCreate(
                 [
                     'doctor_Id' => $consultant['attending_Doctor']
-                ], $this->patient_data->preparePatientDoctorsData($consultant, $checkUser, $patient_id, $registry_id, $existingData = null));
+                ], $this->patient_data->preparePatientDoctorsData($consultant, $checkUser, $patient_id, $registry_id));
         }
         }
     }
@@ -286,12 +296,13 @@ class RegistrationController extends Controller
         try {
             $admittingCommunicationFile = AdmittingCommunicationFile::where('case_No', $request->payload['old_case_No'])->first();
             $medsysAdmittingCommunicationFile = MedsysAdmittingCommunication::where('OPDIDnum', $request->payload['OPDIDnum'])->first();
-            if(!$admittingCommunicationFile || !$medsysAdmittingCommunicationFile) {
+            $patientRegistry = PatientRegistry::where('case_No', $request->payload['old_case_No'])->first();
+            if(!$admittingCommunicationFile || !$medsysAdmittingCommunicationFile || !$patientRegistry) {
                 throw new \Exception('Admitting Communication File not found');
             }
             $isUpdated = $admittingCommunicationFile->update([
                 'admittedBy'    =>  Auth()->user()->idnumber,
-                'admittedDate'  => $request->payload['discharged_Date'],
+                'admittedDate'  => $patientRegistry->discharged_Date,
                 'recordStatus'  => 'S',
                 'updatedby'     => Auth()->user()->idnumber,
                 'updatedat'     => Carbon::now()
@@ -299,7 +310,7 @@ class RegistrationController extends Controller
             if($this->check_is_allow_medsys) {
                 $isMedsysUpdatedComFile = $medsysAdmittingCommunicationFile->update([
                     'AdmittedBy'    => Auth()->user()->idnumber,
-                    'AdmDate'  => $request->payload['discharged_Date'],
+                    'AdmDate'       => $patientRegistry->discharged_Date,
                     'RecordStatus'  => 'S',
                 ]);
             } else {

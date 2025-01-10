@@ -797,6 +797,7 @@ class OutpatientRegistrationController extends Controller
     public function index() {
         try {
             $today = Carbon::now()->format('Y-m-d');
+            // $today = Carbon::now()->format('2025-01-09');
             $data = Patient::query();
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 2)  

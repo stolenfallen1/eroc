@@ -22,7 +22,7 @@ use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
 //     return $request->user();
 // });
 
-// Route::get('/dashboard',                                        [TbcMaster::class,              'dashboard']);
+Route::get('/dashboard',                                        [TbcMaster::class,              'dashboard']);
 // Route::get('/employee-master',                                  [EmployeeTbcMaster::class,      'index']);
 // Route::get('/employee-detail',                                  [EmployeeTbcMaster::class,      'getEmployeeDetail']);
 // Route::get('/employee-leave',                                   [EmployeeTbcMaster::class,      'getEmployeeLeaves']);

@@ -137,15 +137,15 @@ class EmergencyRoom extends Controller
                     $billingOut          = HISBillingOut::where('refNum', $reference_id)->get();
                     $medsys_dailyOut     = MedSysDailyOut::where('RefNum', $reference_id)->get();
                     if(!$billingOut->isEmpty() && !$medsys_inventory->isEmpty()) {
-                        $this->cancelSupportProcess->processRevokedBillingout($request, $billingOut, $medsys_dailyOut, $checkUser);
+                        $this->cancelSupportProcess->processRevokedBillingout($request, $billingOut, $medsys_dailyOut, $checkUser, $reference_id);
                     }
-                    $this->cancelSupportProcess->processRevokedHMOCharges($request, $checkUser, $cdg_mmis_inventory, $medsys_inventory);
+                    $this->cancelSupportProcess->processRevokedHMOCharges($request, $checkUser, $cdg_mmis_inventory, $medsys_inventory, $reference_id);
                 }
             } else {
                 foreach($request->payload['reference_id'] as $reference_id) {
                     $getCashAssessment        = CashAssessment::where('RefNum', $reference_id)->get();
                     $getMedsysCashAssessment  = MedsysCashAssessment::where('RefNum', $reference_id)->get();
-                    $this->cancelSupportProcess->processRevokedSelfPayCharges($request, $checkUser, $getCashAssessment, $getMedsysCashAssessment);
+                    $this->cancelSupportProcess->processRevokedSelfPayCharges($request, $checkUser, $getCashAssessment, $getMedsysCashAssessment, $reference_id);
                 }
             }
             $this->dbTransactionController->handleDatabaseTransactionProcess('commit');

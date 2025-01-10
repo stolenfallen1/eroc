@@ -139,7 +139,7 @@ class DeliveryController extends Controller
                         'rr_Detail_Item_UnitofMeasurement_Id_Received'  => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
                         'rr_Detail_Item_Qty_Convert'                    => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : NULL,
                         'rr_Detail_Item_UnitofMeasurement_Id_Convert'   => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_uom'] : NULL,
-                        'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] ?? NULL,
+                        'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] ?? 0,
                         'rr_Detail_Item_UnitofMeasurement_Id_BackOrder' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
                         'rr_Detail_Item_TotalGrossAmount'               => $total_amount,
                         'rr_Detail_Item_TotalDiscount_Percent'          => $discount_percent,
@@ -195,58 +195,60 @@ class DeliveryController extends Controller
 
             if (count($request['podetails']) > 0) {
                 foreach ($request['podetails'] as $key => $detail) {
-                    
-                    $delivery_item = DeliveryItems::create(
-                        [
-                            'rr_id'                                         => $delivery->id,
-                            'rr_Detail_Item_Id'                             => $detail['item']['id'],
-                            'rr_Detail_Item_ListCost'                       => $detail['po_Detail_item_listcost'] ?? 0,
-                            'rr_Detail_Item_Qty_Received'                   => $detail['rr_Detail_Item_Qty_Received'],
-                            'rr_Detail_Item_UnitofMeasurement_Id_Received'  => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
-                            'rr_Detail_Item_Qty_Convert'                    => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : NULL,
-                            'rr_Detail_Item_UnitofMeasurement_Id_Convert'   => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_uom'] : NULL,
-                            'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] ?? NULL,
-                            'rr_Detail_Item_UnitofMeasurement_Id_BackOrder' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
-                            'rr_Detail_Item_TotalGrossAmount'               => ($detail['po_Detail_item_listcost'] * $detail['rr_Detail_Item_Qty_Received']) ?? 0,
-                            'rr_Detail_Item_TotalDiscount_Percent'          => $detail['po_Detail_item_discount_percent'] ?? 0,
-                            'rr_Detail_Item_TotalDiscount_Amount'           => $detail['po_Detail_item_discount_amount'] ?? 0,
-                            'rr_Detail_Item_TotalNetAmount'                 => $detail['po_Detail_net_amount'] ?? 0,
-                            'rr_Detail_Item_Per_Box'                        => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['rr_Detail_Item_Per_Box'] : NULL,
-                            'rr_Detail_Item_Vat_Rate'                       => $detail['po_Detail_vat_percent'] ?? 0,
-                            'rr_Detail_Item_Vat_Amount'                     => $detail['po_Detail_vat_amount'] ?? 0,
-                            'rr_canvas_id'                                  => $detail['canvas_id'],
-                            'isFreeGoods'                                   => 1
-                        ]
-                    );
+                    $check = DeliveryItems::where('rr_Detail_Item_Id',$detail['item']['id'])->where('rr_canvas_id',$detail['canvas_id'])->first();
+                    if(!$check){
+                        $delivery_item = DeliveryItems::create(
+                            [
+                                'rr_id'                                         => $delivery->id,
+                                'rr_Detail_Item_Id'                             => $detail['item']['id'],
+                                'rr_Detail_Item_ListCost'                       => $detail['po_Detail_item_listcost'] ?? 0,
+                                'rr_Detail_Item_Qty_Received'                   => $detail['rr_Detail_Item_Qty_Received'],
+                                'rr_Detail_Item_UnitofMeasurement_Id_Received'  => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
+                                'rr_Detail_Item_Qty_Convert'                    => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : NULL,
+                                'rr_Detail_Item_UnitofMeasurement_Id_Convert'   => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_uom'] : NULL,
+                                'rr_Detail_Item_Qty_BackOrder'                  => $detail['rr_Detail_Item_Qty_BackOrder'] ?? NULL,
+                                'rr_Detail_Item_UnitofMeasurement_Id_BackOrder' => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'],
+                                'rr_Detail_Item_TotalGrossAmount'               => ($detail['po_Detail_item_listcost'] * $detail['rr_Detail_Item_Qty_Received']) ?? 0,
+                                'rr_Detail_Item_TotalDiscount_Percent'          => $detail['po_Detail_item_discount_percent'] ?? 0,
+                                'rr_Detail_Item_TotalDiscount_Amount'           => $detail['po_Detail_item_discount_amount'] ?? 0,
+                                'rr_Detail_Item_TotalNetAmount'                 => $detail['po_Detail_net_amount'] ?? 0,
+                                'rr_Detail_Item_Per_Box'                        => $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['rr_Detail_Item_Per_Box'] : NULL,
+                                'rr_Detail_Item_Vat_Rate'                       => $detail['po_Detail_vat_percent'] ?? 0,
+                                'rr_Detail_Item_Vat_Amount'                     => $detail['po_Detail_vat_amount'] ?? 0,
+                                'rr_canvas_id'                                  => $detail['canvas_id'],
+                                'isFreeGoods'                                   => 1
+                            ]
+                        );
 
-                    if ($detail['item']['isLotNo_Required'] != "1" && $detail['rr_Detail_Item_Qty_Received'] > 0) {
-                        $batch_seq = SystemSequence::where('seq_description', 'like', '%Receiving Batch NUmber%')->where('branch_id', Auth::user()->branch_id)->first();
+                        if ($detail['item']['isLotNo_Required'] != "1" && $detail['rr_Detail_Item_Qty_Received'] > 0) {
+                            $batch_seq = SystemSequence::where('seq_description', 'like', '%Receiving Batch NUmber%')->where('branch_id', Auth::user()->branch_id)->first();
 
-                        $batch_number = str_pad($batch_seq->seq_no, $batch_seq->digit, "0", STR_PAD_LEFT);
-                        $batch_suffix = $batch_seq->seq_suffix;
-                        $batch_prefix = $batch_seq->seq_prefix;
-                        $generated_seq = generateCompleteSequence($batch_prefix, $batch_number, $batch_suffix, "");
+                            $batch_number = str_pad($batch_seq->seq_no, $batch_seq->digit, "0", STR_PAD_LEFT);
+                            $batch_suffix = $batch_seq->seq_suffix;
+                            $batch_prefix = $batch_seq->seq_prefix;
+                            $generated_seq = generateCompleteSequence($batch_prefix, $batch_number, $batch_suffix, "");
 
-                        $detail['batches']                                  = [];
-                        $detail['batches'][0]['item_Id']                    = $detail['item']['id'];
-                        $detail['batches'][0]['batch_Number']               = $generated_seq;
-                        $detail['batches'][0]['batch_Remarks']              = 'auto generated';
-                        $detail['batches'][0]['item_Qty']                   = $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : $detail['rr_Detail_Item_Qty_Received'];
-                        $detail['batches'][0]['item_UnitofMeasurement_Id']  = 2;
-                        $detail['batches'][0]['item_Expiry_Date']           = Carbon::now()->addDays(30);
-                        $detail['batches'][0]['mark_up']                    = 0;
-                    }
-
-                    if (isset($detail['batches'])) {
-
-                        foreach ($detail['batches'] as $key1 => $batch) {
-
-                            (new RecomputePrice())->compute($warehouse_id, '', $batch['item_Id'], 'out');
-
-                            $this->StorebatchDetails($batch, $delivery, $delivery_item, 0);
+                            $detail['batches']                                  = [];
+                            $detail['batches'][0]['item_Id']                    = $detail['item']['id'];
+                            $detail['batches'][0]['batch_Number']               = $generated_seq;
+                            $detail['batches'][0]['batch_Remarks']              = 'auto generated';
+                            $detail['batches'][0]['item_Qty']                   = $detail['rr_Detail_Item_UnitofMeasurement_Id_Received'] != 2 ? $detail['convert_qty'] : $detail['rr_Detail_Item_Qty_Received'];
+                            $detail['batches'][0]['item_UnitofMeasurement_Id']  = 2;
+                            $detail['batches'][0]['item_Expiry_Date']           = Carbon::now()->addDays(30);
+                            $detail['batches'][0]['mark_up']                    = 0;
                         }
-                    } else {
-                        (new RecomputePrice())->compute($warehouse_id, '', $detail['item']['id'], 'out');
+
+                        if (isset($detail['batches'])) {
+
+                            foreach ($detail['batches'] as $key1 => $batch) {
+
+                                (new RecomputePrice())->compute($warehouse_id, '', $batch['item_Id'], 'out');
+
+                                $this->StorebatchDetails($batch, $delivery, $delivery_item, 0);
+                            }
+                        } else {
+                            (new RecomputePrice())->compute($warehouse_id, '', $detail['item']['id'], 'out');
+                        } 
                     }
                 }
             }
@@ -330,7 +332,9 @@ class DeliveryController extends Controller
                 'isConsumed'                => 0,
                 'delivery_item_id'          => $delivery_item->id,
                 'price'                     => $item_amount,
+                'vendor_id'                 => $delivery->rr_Document_Vendor_Id,
                 'mark_up'                   => $batch['mark_up'] ?? 0,
+
             ]
         );
     }

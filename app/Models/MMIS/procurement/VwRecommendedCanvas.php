@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class VwCanvasMaster extends Model
+class VwRecommendedCanvas extends Model
 {
     use HasFactory;
     protected $connection = 'sqlsrv_mmis';
-    protected $table = 'CDG_MMIS.dbo.VwCanvas';
+    protected $table = 'CDG_MMIS.dbo.VwRecommendedCanvas';
     protected $guarded = [];
     
     protected $appends = ['currency'];
@@ -21,6 +21,7 @@ class VwCanvasMaster extends Model
     public function purchaseRequestDetail(){
         return $this->belongsTo(PurchaseRequestDetails::class, 'pr_request_details_id');
     }
+    
     public function item(){
         return $this->belongsTo(Itemmasters::class, 'canvas_Item_Id');
     }

@@ -340,23 +340,25 @@
         <td colspan="6" class="border-none text-right" >SubTotal :</td>
         <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
       </tr>
-
       <tr>
         <td class="border-none" >Printed Date</td>
-        <td class="border-none" > : {{ date('m-d-Y H:i:s A')}}</td>
-        <td colspan="6" class="border-none  text-right" >Discount :</td>
-        <td colspan="2"  class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+        <td class="border-none text-left" > : {{ date('m-d-Y H:i:s A')}}</td>
+        <td colspan="6" class="border-none text-right" >Discount :</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
       </tr>
 
       <tr>
-        <td colspan="8" class=" border-none  text-right" >Vat :</td>
-        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
+        <td class="border-none" ></td>
+        <td class="border-none" ></td>
+        <td colspan="6" class="border-none  text-right" >Vat :</td>
+        <td colspan="2"  class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
       </tr>
 
       <tr>
-        <td colspan="8" class="border-none  text-right" >Total Amount :</td>
-        <td colspan="2"  class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
+        <td colspan="8" class=" border-none  text-right" >Total Amount :</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
       </tr>
+    
 
     </tbody>
   </table>

@@ -9,12 +9,14 @@ use App\Models\MMIS\inventory\Consignment;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Models\MMIS\inventory\VwDeliveryMaster;
 use App\Models\MMIS\procurement\PurchaseRequest;
+use App\Models\MMIS\procurement\QuotationMaster;
 use App\Models\MMIS\inventory\StockTransferMaster;
 use App\Models\MMIS\inventory\VwConsignmentMaster;
 use App\Models\MMIS\inventory\VwConsignmentDelivery;
 use App\Models\MMIS\inventory\VwPurchaseOrderMaster;
 use App\Models\MMIS\procurement\purchaseOrderMaster;
 use Illuminate\Contracts\Encryption\DecryptException;
+use App\Models\MMIS\inventory\PurchaseOrderConsignment;
 use App\Http\Controllers\MMIS\PriceList\PriceListController;
 use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 
@@ -22,7 +24,7 @@ use App\Http\Controllers\MMIS\Reports\PurchaseSubsidiaryReportController;
 // <!====================================== PURCHASE ORDER  ====================================== !> 
 
 Route::get('/print-purchase-order/{id}', function ($pid) {
-    
+
     $id = Crypt::decrypt($pid);
     try {
          $purchase_order = VwPurchaseOrderMaster::with(['items' => function ($query) {
@@ -67,6 +69,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
         foreach ($nonFreeGoods as $item) {
             $itemTotal = $item->order_qty * $item->price;
             $subTotalNonFreeGoods += (float)$itemTotal;
+           
             $Nondiscount += (float)$item->discount;
             $vatAmount += (float)$item->vat_amount;
             $grandTotalNonFreeGoods += (float)$item->net_amount;
@@ -102,6 +105,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
     } catch (Exception $e) {
         return $e->getMessage();
     }
+    
 });
 
 // <!====================================== END PURCHASE ORDER  ====================================== !> 
@@ -134,7 +138,7 @@ Route::get('/print-purchase-request/{id}', function ($prid) {
 
         $pdf = PDF::loadView('pdf_layout.purchaser_request', ['pdf_data' => $pdf_data]);
 
-        return $pdf->stream('Purchase_order-' . $id . '.pdf');
+        return $pdf->stream('PR-' . $id . '.pdf');
     } catch (DecryptException $e) {
         Log::error('Decryption error: ' . $e->getMessage());
         return response()->json(['data' => 'No match found'], 200); // Return unencrypted value or handle error
@@ -142,6 +146,57 @@ Route::get('/print-purchase-request/{id}', function ($prid) {
 });
 
 // <!====================================== END PURCHASE REQUEST  ====================================== !> 
+
+// <!======================================  REQUEST FOR QUOTATION  ====================================== !> 
+
+Route::get('/print-quotation/{id}', function ($prid) {
+    $id = Crypt::decrypt($prid);
+    try {
+        $rfq_request = QuotationMaster::with(['purchaseRequest','purchaseRequest.warehouse','user','vendor','warehouse','branch','item'])->where('rfq_document_Reference_Number',$id)->get();
+
+        if (!$rfq_request) {
+            return response()->json(['data' => 'REQUEST FOR QUOTATION request not found'], 404);
+        }
+
+        $imagePath = public_path('images/logo1.png'); // Replace with the actual path to your image
+        $imageData = base64_encode(file_get_contents($imagePath));
+        $mimeType = mime_content_type($imagePath);
+        $imageSrc = 'data:' . $mimeType . ';base64,' . $imageData;
+        
+
+        $rfqHeader = [
+            'pr_number'                         => $rfq_request[0]['purchaseRequest']['code'],
+            'rfq_document_Reference_Number'     => $rfq_request[0]['rfq_document_Reference_Number'],
+            'rfq_document_Date_Required'        => Carbon::parse($rfq_request[0]['rfq_document_Date_Required'])->format('m/d/Y'),
+            'rfq_document_Issued_Date'          => Carbon::parse($rfq_request[0]['rfq_document_Issued_Date'])->format('m/d/Y'),
+            'rfq_document_IntructionToBidders'  => $rfq_request[0]['rfq_document_IntructionToBidders'],
+            'rfq_document_LeadTime'             => $rfq_request[0]['rfq_document_LeadTime'],
+            'rfq_document_Vendor_Id'            => $rfq_request[0]['vendor']['vendor_Name'] ?? "",
+            'rfq_document_Vendor_address'       => $rfq_request[0]['vendor']['vendor_Address'] ?? "",
+            'rfq_document_Vendor_telno'         => $rfq_request[0]['vendor']['vendor_TelNo'] ?? "",
+            'rfq_document_IssuedBy'             => $rfq_request[0]['user']['name'] ?? "",
+            'warehouse'                         => $rfq_request[0]['warehouse']['warehouse_description'] ?? "",
+            'branch'                            => $rfq_request[0]['branch']['name'] ?? "",
+            'address'                           => $rfq_request[0]['branch']['address'] ?? "",
+            'TIN'                               => $rfq_request[0]['branch']['TIN'] ?? "",
+        ];
+
+        $pdf_data = [
+            'logo' => $imageSrc,
+            'rfq_header' => $rfqHeader,
+            'rfq_request' => $rfq_request,
+        ];
+
+        $pdf = PDF::loadView('pdf_layout.rfq', ['pdf_data' => $pdf_data]);
+
+        return $pdf->stream('RFQ-' . $id . '.pdf');
+    } catch (DecryptException $e) {
+        Log::error('Decryption error: ' . $e->getMessage());
+        return response()->json(['data' => 'No match found'], 200); // Return unencrypted value or handle error
+    }
+});
+
+// <!====================================== END REQUEST FOR QUOTATION  ====================================== !> 
 
 
 
@@ -364,7 +419,7 @@ Route::get('/print-purchase-order-consignment', function (Request $request) {
         $po_id = $request->input('po_id');
         // $id = Crypt::decrypt($pid);
         // Fetch the delivery details along with related models
-        $delivery = VwConsignmentMaster::with('items')->where('id', $id)->first();
+        $delivery = VwConsignmentMaster::with('items','warehouse')->where('id', $id)->first();
         // Generate the QR code for the delivery
         $qrCode = QrCode::size(200)->generate(config('app.url') . '/print-delivery/' . $id);
 

@@ -13,6 +13,7 @@ class VwConsignmentMaster extends Model
     protected $connection = "sqlsrv_mmis";
     protected $table = 'VwConsignmentMaster';
     protected $guarded = [];
+
     public function items()
     {
         return $this->hasMany(VwConsignmentDetails::class, 'rr_id', 'id');

@@ -7,6 +7,7 @@ use App\Models\BuildFile\Warehouses;
 use App\Models\BuildFile\Itemmasters;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\BuildFile\Unitofmeasurement;
+use App\Models\BuildFile\Vendors;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ItemBatchModelMaster extends Model
@@ -24,6 +25,10 @@ class ItemBatchModelMaster extends Model
 
     public function item(){
         return $this->belongsTo(Itemmasters::class, 'item_Id');
+    }
+    public function vendor()
+    {
+        return $this->belongsTo(Vendors::class, 'vendor_id','id');
     }
 
     public function warehouse(){

@@ -164,6 +164,7 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         Jenssegers\Agent\AgentServiceProvider::class,
         Karmendra\LaravelAgentDetector\AgentDetectorServiceProvider::class,
+        Barryvdh\DomPDF\ServiceProvider::class,
         /*
          * Package Service Providers...
          */
@@ -236,6 +237,7 @@ return [
         'AgentDetector' => Karmendra\LaravelAgentDetector\Facades\AgentDetector::class,
         'QrCode' => SimpleSoftwareIO\QrCode\Facades\QrCode::class,
         'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+        'Pdf' => Barryvdh\DomPDF\Facade\Pdf::class,
     ],
 
 ];

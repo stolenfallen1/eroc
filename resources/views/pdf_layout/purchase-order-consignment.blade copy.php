@@ -179,6 +179,14 @@
       <table class="info-section">
         <tbody>
           <tr>
+            <td class="left-width text-right">DEPARTMENT :</td>
+            <td class="mid-width underline">{{$pdf_data['delivery']['warehouse_description']}}</td>
+            <td class="right-width  text-right"></td>
+            <td class=""></td>
+            <td class="right-width  text-right"></td>
+            <td class=""></td>
+          </tr>
+          <tr>
             <td class="left-width">Supplier Name</td>
             <td class="mid-width underline">{{$pdf_data['delivery']['vendor']['vendor_Name']}}</td>
             <td class="right-width">Delivery No.</td>

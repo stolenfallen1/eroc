@@ -173,6 +173,7 @@
     .text-right {
       text-align: right;
     }
+
     .text-left {
       text-align: left;
     }
@@ -239,7 +240,7 @@
   <table class="item-section">
     <thead>
       <tr>
-        <th>Code</th>
+        <th colspan="2">Code</th>
         <th>Item Description</th>
         <th>UOM</th>
         <th>QTY </th>
@@ -249,36 +250,44 @@
         <th>VAT AMOUNT</th>
         <th>NET AMOUNT</th>
       </tr>
-      
+
     </thead>
     <tbody>
       @foreach ($pdf_data['purchase_order_items'] as $detail)
       <tr>
-        <td class="item-td" width="60">{{ $detail['itemcode'] }}</td>
+        <td class="item-td" width="10">
+          @if($detail['vat_type'] == 1)
+          <div>**</div>
+          @elseif($detail['vat_type'] == 2)
+          <div>*</div>
+          @else
+          @endif
+        </td>
+        <td class="item-td" width="40">{{ $detail['itemcode'] }}</td>
         <td class="item-td">{{ $detail['itemname'] }}</td>
         <td class="item-td" width="40">{{ $detail['uom'] }}</td>
         <td class="item-td" width="40">{{ intval($detail['order_qty']) }}</td>
-        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
-        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],2) }}</td>
-        <td class="item-td" width="50">{{ number_format($detail['disc_amount'],2) }}</td>
-        <td class="item-td" width="30">{{ number_format($detail['vat_amount'],2) }}</td>
-        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],2) }}</td>
+        <td class="item-td text-right" width="55">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
+        <td class="item-td text-right" width="60">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],2) }}</td>
+        <td class="item-td text-right" width="50">{{$pdf_data['currency']}}{{number_format($detail['disc_amount'],2) }}</td>
+        <td class="item-td text-right" width="60">{{$pdf_data['currency']}}{{number_format(abs($detail['vat_amount']),2) }}</td>
+        <td class="item-td text-right" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],2) }}</td>
       </tr>
       @endforeach
-        @if(count($pdf_data['free_goods_purchase_order_items']) > 0)
+      @if(count($pdf_data['free_goods_purchase_order_items']) > 0)
+      <tr>
+        <td colspan="10" class="item-td border-none text-left">
+          <div><br></div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="10" class="item-td border-none text-left">
+          All Free Goods
+        </td>
+      </tr>
+      <thead>
         <tr>
-          <td colspan="9" class="item-td border-none text-left">
-              <div><br></div>
-          </td>
-        </tr>
-        <tr>
-          <td colspan="9" class="item-td border-none text-left">
-            All Free Goods
-          </td>
-        </tr>
-        <thead>
-        <tr>
-          <th>Code</th>
+          <th colspan="2">Code</th>
           <th>Item Description</th>
           <th>UOM</th>
           <th>QTY </th>
@@ -288,46 +297,57 @@
           <th>VAT AMOUNT</th>
           <th>NET AMOUNT</th>
         </tr>
-        
+
       </thead>
-      
-        @foreach ($pdf_data['free_goods_purchase_order_items'] as $detail)
-        <tr>
-          <td class="item-td" width="60">{{ $detail['itemcode'] }}</td>
-          <td class="item-td" >{{ $detail['itemname'] }}</td>
-          <td class="item-td">{{ $detail['uom'] }}</td>
-          <td class="item-td" width="40">{{ intval($detail['order_qty']) }}</td>
-          <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
-          <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],2) }}</td>
-          <td class="item-td" width="50">{{ number_format($detail['disc_amount'],2) }}</td>
-          <td class="item-td" width="30">{{ number_format($detail['vat_amount'],2) }}</td>
-          <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],2) }}</td>
-        </tr>
-        @endforeach
+
+      @foreach ($pdf_data['free_goods_purchase_order_items'] as $detail)
+      <tr>
+        <td class="item-td" width="60" colspan="2">{{ $detail['itemcode'] }}</td>
+        <td class="item-td">{{ $detail['itemname'] }}</td>
+        <td class="item-td">{{ $detail['uom'] }}</td>
+        <td class="item-td" width="40">{{ intval($detail['order_qty']) }}</td>
+        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
+        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],2) }}</td>
+        <td class="item-td" width="50">{{ number_format($detail['disc_amount'],2) }}</td>
+        <td class="item-td" width="30">{{ number_format(abs($detail['vat_amount']),2) }}</td>
+        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],2) }}</td>
+      </tr>
+      @endforeach
       @endif
       <tr>
-        <td colspan="9" class="item-td border-none text-left">
-            <div><br></div>
+        <td colspan="10" class="item-td border-none text-left">
+          <div><br></div>
         </td>
       </tr>
       <tr>
-        <td colspan="5" rowspan="4" class="border-none">
+        <td colspan="6" rowspan="7" class="border-none">
           <p class="note">Please enter out order subject to following conditions. Purchase Order number must appear on all invoices. When price are not stated, order must not be filled at
             a price higher than charged on last purchase without notifying the hospital.
           </p>
         </td>
-        <td colspan="2" class="border-none text-right">SubTotal :</td>
-        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+        <td colspan="2" class="border-none text-right">Gross Amount :</td>
+        <td colspan="2" class="item-td border-none  text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
       </tr>
-
       <tr>
-        <td colspan="2" class="border-none  text-right">Discount :</td>
+        <td colspan="2" class="border-none  text-right">LESS: Discount :</td>
         <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
       </tr>
+      <tr>
+        <td colspan="2" class="border-none  text-right"></td>
+        <td colspan="2" class="item-td border-none text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'] - $pdf_data['discount'], 2)}}</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="border-none  text-right"><div style="height: 5px;"></div></td>
+        <td colspan="2" class="item-td border-none text-left"></td>
+      </tr>
+      <tr>
+        <td colspan="2" class=" border-none  text-right">VAT SALES:</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - abs($pdf_data['vat_amount'])), 2)}}</td>
+      </tr>
 
       <tr>
-        <td colspan="2" class=" border-none  text-right">Total Vat :</td>
-        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
+        <td colspan="2" class=" border-none  text-right">VAT :</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(abs($pdf_data['vat_amount']), 2)}}</td>
       </tr>
 
       <tr>

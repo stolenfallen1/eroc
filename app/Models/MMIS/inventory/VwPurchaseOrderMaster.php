@@ -21,7 +21,9 @@ class VwPurchaseOrderMaster extends Model
         return $this->hasMany(VwPurchaseOrderDetails::class, 'po_id', 'id');
     }
     public function getCurrencyAttribute(){
-        $currency = $this->currency == 1 ? "₱" :"$";
-        return $currency;
+        if($this->currency){
+            $currency = $this->currency == 1 ? "₱" :"$";
+            return $currency;
+        }
     }
 }

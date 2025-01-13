@@ -31,33 +31,33 @@ class EmergencyRegistrationController extends Controller
     public function index() {
         try {
             $today = Carbon::now()->format('Y-m-d');
-            // $today = '2024-11-26';
+            // $today = '2025-01-06';
             $data = Patient::query();
             $data->whereHas('patientRegistry', function($query) use ($today) {
                 $query->where('mscAccount_Trans_Types', 5)  
                     ->where('isRevoked', 0)              
-                    ->whereDate('registry_Date', $today)
-                    ->where('discharged_Date', '=', null);
+                    ->whereDate('registry_Date', $today);
+                    // ->where('discharged_Date', '=', null);
             });
             if (Request()->has('keyword')) {
                 $keyword = Request()->keyword;
                 $data->where(function($subQuery) use ($keyword) {
                     $subQuery->where('lastname', 'LIKE', '%' . $keyword . '%')
-                             ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
-                             ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
+                            ->orWhere('firstname', 'LIKE', '%' . $keyword . '%')
+                            ->orWhere('patient_id', 'LIKE', '%' . $keyword . '%');
                 });
             }
             $data->with([
                 'sex', 'civilStatus', 'region', 'provinces', 'municipality', 'barangay', 'countries',
                 'patientRegistry' => function($query) use ($today) {
                     $query->whereDate('registry_Date', $today)
-                          ->where('mscAccount_Trans_Types', 5)
-                          ->where('isRevoked', 0)
-                          ->with(['allergies' => function($allergyQuery) use ($today) {
-                                $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
-                                             ->where('isDeleted', '!=', 1)
-                                             ->whereDate('created_at', $today);
-                          }]);
+                        ->where('mscAccount_Trans_Types', 5)
+                        ->where('isRevoked', 0)
+                        ->with(['allergies' => function($allergyQuery) use ($today) {
+                            $allergyQuery->with('cause_of_allergy', 'symptoms_allergy', 'drug_used_for_allergy')
+                                            ->where('isDeleted', '!=', 1)
+                                            ->whereDate('created_at', $today);
+                        }]);
                 }
             ]);
             $data->orderBy('id', 'desc');
@@ -90,7 +90,7 @@ class EmergencyRegistrationController extends Controller
 
     public function getDisposition() {
         try {
-           $data =  DB::connection('sqlsrv')->table('mscDispositions')
+            $data =  DB::connection('sqlsrv')->table('mscDispositions')
                 ->select('id', 'disposition_description')
                 ->orderBy('disposition_description','asc')->get();
             if($data->isEmpty()) {

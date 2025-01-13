@@ -45,7 +45,7 @@ class PurchaseReturnController extends Controller
         return response()->json($this->model->paginate($per_page),200);
     }
     public function list(Request $request){
-        $data= VwPurchaseReturn::where('warehouse_id',$request->warehouse_id)->where('branch_id',$request->branch_id)->whereNotNull('updated_at')->get();
+        $data= VwPurchaseReturn::where('warehouse_id',$request->warehouse_id)->where('branch_id',$request->branch_id)->where('onhand','>',0)->whereNotNull('updated_at')->get();
         return response()->json($data,200);
     }
 

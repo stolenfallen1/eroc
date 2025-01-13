@@ -35,3 +35,20 @@ Route::get('/employee-ot',                                      [EmployeeTbcMast
 Route::get('/department/department-list',                       [DepartmentTbcMaster::class,    'getDepartmentList']);
 Route::get('/department/department-employee',                   [DepartmentTbcMaster::class,    'getDeptEmployee']);
 
+// Route::controller(EmployeeTbcMaster::class)->group(function() {
+//     Route::get('get-employee', 'index');
+//     Route::get('get-employee-detail', 'getEmployeeDetail');
+//     Route::get('get-employee-leave', 'getEmployeeLeaves');
+//     Route::get('get-employee-undertime-summary', 'getEmployeeUnderTime');
+//     Route::get('get-employee-tardiness-summary', 'getEmployeeTardiness');
+//     Route::get('get-employee-serves-record', 'getEmployeeServiceRecords');
+//     Route::get('get-paid-leave', 'getPainLeaves');
+//     Route::get('get-non-paid-leave', 'getNonPaidLeave');
+//     Route::get('get-employee-ot', 'getEmployeeOT');
+// });
+
+// Route::controller(DepartmentTbcMaster::class)->group(function() {
+//     Route::get('get-department-list', 'getDepartmentList');
+//     Route::get('get-department-employee', 'getDeptEmployee');
+// });
+

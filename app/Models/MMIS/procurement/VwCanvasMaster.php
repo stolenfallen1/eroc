@@ -15,7 +15,7 @@ class VwCanvasMaster extends Model
     protected $connection = 'sqlsrv_mmis';
     protected $table = 'CDG_MMIS.dbo.VwCanvas';
     protected $guarded = [];
-
+    
     protected $appends = ['currency'];
     
     public function purchaseRequestDetail(){

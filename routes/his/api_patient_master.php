@@ -8,8 +8,9 @@ use App\Http\Controllers\HIS\AllergyTypeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
-use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\HIS\NursingService\ReportMaster;
+use App\Http\Controllers\HIS\discharge_patient\DischargePatient;
+use App\Http\Controllers\HIS\patient_may_go_home\PatientForMayGoHome;
 
 Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);
@@ -33,8 +34,6 @@ Route::controller(EmergencyRegistrationController::class)->group(function () {
     Route::get('/get-msc-complaint', 'getComplaintList');
     Route::get('disposition', 'getDisposition');
     Route::get('service-type', 'getServiceType');
-    // Route::post('register-emergency', 'register');
-    // Route::put('update-emergency/{id}', 'update');
 });
 
 Route::controller(RegistrationController::class)->group(function() {
@@ -51,15 +50,18 @@ Route::controller(ReportMaster::class)->group(function() {
     Route::get('generate-er-daily-report', 'ERDailyCensusReport');
 });
 
-Route::controller(PatientDischarge::class)->group(function(){
-    Route::get('doctors-list', 'getDoctorsList');
-    Route::get('patient-status', 'getPatientStatusList');
-    Route::get('patient-billing-charges/{id}', 'getPatientChargesStatus');
-    Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
-    Route::put('untag-patient-maygohome/{id}', 'untagMGH');
+Route::controller(DischargePatient::class)->group(function(){
     Route::get('check-elgibility-for-discharge/{id}', 'checkPatientEligibilityForDischarge');
     Route::put('discharge-patient/{id}', 'dischargePatient'); 
     Route::get('patient-balance/{id}', 'getTotalCharges');
+});
+
+Route::controller(PatientForMayGoHome::class)->group(function(){
+    Route::put('tag-patient-maygohome/{id}', 'mayGoHome');
+    Route::put('untag-patient-maygohome/{id}', 'untagMGH');
+    Route::get('patient-billing-charges/{id}', 'getPatientChargesStatus');
+    Route::get('doctors-list', 'getDoctorsList');
+    Route::get('patient-status', 'getPatientStatusList');
     Route::get('get-er-result', 'erResult');
 });
 
@@ -68,4 +70,6 @@ Route::controller(InpatientRegistrationController::class)->group(function () {
     Route::get('get-revoked-inpatient', 'getrevokedinpatient');
     Route::post('register-inpatient', 'register');
     Route::put('update-inpatient/{id}', 'update'); 
+    Route::get('patient-for-admission', 'getPatientForAdmission');
+    Route::get('get-selected-patient-for-admission/{id}', 'getSelectedPatientForAdmission');
 });

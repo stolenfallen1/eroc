@@ -21,6 +21,7 @@ use App\Models\MMIS\inventory\InventoryTransaction;
 use App\Models\MMIS\inventory\ItemBatchModelMaster;
 use App\Helpers\SearchFilter\inventory\Consignments;
 use App\Models\MMIS\inventory\PurchaseOrderConsignment;
+use App\Models\MMIS\inventory\PurchaseOrderConsignmentItem;
 use App\Helpers\SearchFilter\inventory\PurchaseOrderConsignments;
 
 class ConsignmentDeliveryController extends Controller
@@ -34,10 +35,12 @@ class ConsignmentDeliveryController extends Controller
         }
        
     }
+
     public function auditconsignment()
     {
         return (new PurchaseOrderConsignments)->auditsearchable();
     }
+    
     public function auditedconsignment()
     {
         return (new PurchaseOrderConsignments)->auditedsearchable();
@@ -49,12 +52,24 @@ class ConsignmentDeliveryController extends Controller
         try {
             if(Request()->payload){
                 $payload = Request()->payload;
+               
                 $has_dup_invoice_no = PurchaseOrderConsignment::where('po_id',$payload['po_id'])->where('invoice_no', $payload['invoice_no'])->exists();
-                if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
-                PurchaseOrderConsignment::where('id',$payload['id'])->update([
-                    'invoice_no'=>$payload['invoice_no'],
-                    'invoice_date'=>$payload['invoice_date']
-                ]);
+              
+                // if($has_dup_invoice_no) return response()->json(['error' => 'Invoice already exist'], 200);
+                // if($has_dup_invoice_no){
+                    PurchaseOrderConsignment::where('id',$payload['id'])->update([
+                        'invoice_no'=>$payload['invoice_no'],
+                        'invoice_date'=>$payload['invoice_date'],
+                        'receivedDate'=>$payload['receivedDate']
+                    ]);
+                    Consignment::where('id',$payload['rr_id'])->update([
+                        'rr_Document_Invoice_No'=>$payload['invoice_no'],
+                        'rr_Document_Invoice_Date'=>$payload['invoice_date'],
+                        'rr_Document_Delivery_Date'=>$payload['delivery_date'],
+                        'rr_received_date'=>$payload['rr_received_date']
+                    ]);
+                // }
+               
                 DB::connection('sqlsrv_mmis')->commit();
                 return response()->json(['message' => 'success'], 200);
             }
@@ -127,7 +142,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Vendor_Id' => $vendor->id,
                 'rr_Document_Delivery_Receipt_No' => $request['rr_Document_Delivery_Receipt_No'],
                 'rr_Document_Invoice_Date' => $request['rr_Document_Invoice_Date'],
-                'rr_Document_Delivery_Date' => $request['rr_Document_Invoice_Date'],
+                'rr_Document_Delivery_Date' => $request['rr_Document_Delivery_Date'],
                 'rr_Document_Terms_Id' => $vendor['term'] ? $vendor['term']['id'] : '',
                 'rr_Document_TotalGrossAmount' => $rr_Document_TotalGrossAmount,
                 'rr_Document_TotalDiscountAmount' => $rr_Document_TotalDiscountAmount,
@@ -145,6 +160,7 @@ class ConsignmentDeliveryController extends Controller
                 'po_id' => $request['id'],
                 'rr_Status' => $request['rr_Status'],
                 'rr_received_by' => Auth::user()->idnumber,
+                'rr_received_date' => $request['rr_received_date'],
 
                 'category_id' => $request['category_id'],
                 'item_group_id' => $request['item_group_id'],
@@ -205,7 +221,8 @@ class ConsignmentDeliveryController extends Controller
                         return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+                        'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
                     ]);
                     
                     $batchdetails = ItemBatchModelMaster::create([
@@ -292,8 +309,9 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Vendor_Id' => $vendor->id,
                 'rr_Document_Invoice_No' => $payload['rr_Document_Invoice_No'] ?? '',
                 'rr_Document_Invoice_Date' => $payload['rr_Document_Invoice_Date'],
+                'rr_Document_Delivery_Date' => $payload['rr_Document_Delivery_Date'],
                 'rr_Document_Delivery_Receipt_No' => $payload['rr_Document_Delivery_Receipt_No'],
-                'rr_Document_Delivery_Date' => $payload['rr_Document_Invoice_Date'],
+                'rr_Document_Delivery_Date' => $payload['rr_Document_Delivery_Date'],
                 'rr_Document_TotalGrossAmount' => $payload['rr_Document_TotalGrossAmount'],
                 'rr_Document_TotalDiscountAmount' => $payload['rr_Document_TotalDiscountAmount'],
                 'rr_Document_TotalNetAmount' => $payload['rr_Document_TotalNetAmount'],
@@ -302,7 +320,7 @@ class ConsignmentDeliveryController extends Controller
                 'rr_Document_Warehouse_Group_Id' => Auth::user()->warehouse->warehouse_Group_Id,
                 'rr_Document_Warehouse_Id' => $department,
                 'rr_received_by' => Auth::user()->idnumber,
-
+                'rr_received_date' => $payload['rr_received_date'],
                 'category_id' => $payload['category_id'],
                 'item_group_id' => $payload['item_group_id'],
                 'isConsignment' => 1,
@@ -311,6 +329,7 @@ class ConsignmentDeliveryController extends Controller
             foreach ($payload['items'] as $key => $detail) {
                 
                 $delivery_item = ConsignmentItems::where('rr_id',$delivery->id)->where('rr_Detail_Item_Id',$detail['rr_Detail_Item_Id'])->first();
+             
                 $delivery_item->update([
                     'rr_Detail_Item_ListCost' => $detail['rr_Detail_Item_ListCost'],
                     'rr_Detail_Item_Qty_Received' => $detail['rr_Detail_Item_Qty_Received'],
@@ -338,7 +357,8 @@ class ConsignmentDeliveryController extends Controller
                     if(!$warehouse_item) return response()->json(['error' => 'Item id: ' . $batch['item_Id']. ' not found in your location'], 200);
                     
                     $warehouse_item->update([
-                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty']
+                        'item_OnHand' => (float)$warehouse_item->item_OnHand + (float)$batch['item_Qty'],
+                        'item_ListCost' => (float)$delivery_item->rr_Detail_Item_ListCost,
                     ]);
                     
                     $batchdetails = ItemBatchModelMaster::where('item_Id', $batch['item_Id'])->where('warehouse_id', $warehouse_item->warehouse_Id)->first();     

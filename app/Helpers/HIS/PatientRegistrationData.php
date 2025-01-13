@@ -9,9 +9,10 @@
 
     class PatientRegistrationData {
 
-        public function handleExistingPatientData($lastname, $firstname) {
+        public function handleExistingPatientData($lastname, $firstname, $patient_id) {
             $existingPatient = Patient::where('lastname', $lastname)
             ->where('firstname', $firstname)
+            ->where('patient_Id', $patient_id)
             ->first();
             return $existingPatient;
         }
@@ -45,7 +46,7 @@
                 'religion_id'               => $request->payload['religion_id'] ?? optional($existingData)->religion_id,
                 'civilstatus_id'            => $request->payload['civilstatus_id'] ?? optional($existingData)->civilstatus_id,
                 'bloodtype_id'              => $request->payload['bloodtype_id'] ?? optional($existingData)->bloodtype_id,
-                'dialect_spoken'            => $request->payload['dialect_spoken'] ?? optional($existingData)->dialect_spoken,
+                'dialect_spoken'            => $request->payload['dialect_spoken'] ?? $request->payload['dialect'] ?? optional($existingData)->dialect_spoken,
                 'bldgstreet'                => $request->payload['address']['bldgstreet'] ?? optional($existingData)->bldgstreet,
                 'region_id'                 => $request->payload['address']['region_id'] ?? optional($existingData)->region_id,
                 'province_id'               => $request->payload['address']['province_id'] ?? optional($existingData)->province_id,
@@ -136,7 +137,7 @@
             ];
         }
 
-        public function preparePatientRegistryData($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $existingData=null) {
+        public function preparePatientRegistryData($request, $checkUser, $patient_id, $registry_id, $er_Case_No, $isForAdmission) {
             $identifier = $this->preparepatientIdentifierData($request);
             return [
                 'branch_Id'                                 =>  1,
@@ -145,15 +146,15 @@
                 'er_Case_No'                                => $er_Case_No,
                 'register_source'                           => $request->payload['register_Source'] ?? null,
                 'register_Casetype'                         => $request->payload['register_Casetype'] ?? null,
-                'register_Link_Case_No'                     => $request->payload['register_Link_Case_No'] ?? null,
-                'register_Case_No_Consolidate'              => $request->payload['register_Case_No_Consolidate'] ?? null,
-                'patient_Age'                               => $request->payload['age'] ?? null,
+                'register_Link_Case_No'                     => $isForAdmission ? $request->payload['old_registry_id'] : $request->payload['register_Link_Case_No'] ?? null,
+                'register_Case_No_Consolidate'              => $isForAdmission ? $request->payload['old_case_No'] : $request->payload['register_Case_No_Consolidate'] ?? null,
+                'patient_Age'                               => $isForAdmission ? $request->payload['age'] : $request->payload['age'] ?? null,
                 'er_Bedno'                                  => $request->payload['er_Bedno'] ?? null,
-                'room_Code'                                 => $request->payload['room_Code'] ?? null,
+                'room_Code'                                 => $request->payload['room_Id'] ?? null,
                 'room_Rate'                                 => $request->payload['room_Rate'] ?? null,
-                'mscAccount_Type'                           => $request->payload['mscAccount_Type'] ?? '',
-                'mscAccount_Discount_Id'                    => $request->payload['mscAccount_Discount_Id'] ?? null,
-                'mscAccount_Trans_Types'                    => $request->payload['mscAccount_Trans_Types'] ?? null, 
+                'mscAccount_Type'                           => $request->payload['mscAccount_Type'] ?? null,
+                'mscAccount_Discount_Id'                    => $request->payload['mscAccount_Discount_Id'] ?? $request->payload['mscAccount_discount_id'] ?? null,
+                'mscAccount_Trans_Types'                    => $isForAdmission ? 6 : $request->payload['mscAccount_Trans_Types'] ?? null, 
                 'mscAdmission_Type_Id'                      => $request->payload['mscAdmission_Type_Id'] ?? null,
                 'mscPatient_Category'                       => isset($request->payload['patient_Id']) ? 3 : 2,
                 'mscPrice_Groups'                           => $request->payload['mscPrice_Groups'] ?? null,
@@ -163,31 +164,31 @@
                 'mscDiet_Meal_Id'                           => $request->payload['mscDiet_Meal_Id'] ?? null,
                 'mscDisposition_Id'                         => $request->payload['mscDisposition_Id'] ?? null,
                 'mscTriage_level_Id'                        => $request->payload['mscTriage_level_Id'] ?? null,
-                'mscCase_Result_Id'                         => $request->payload['mscCase_Result_Id'] ?? null,
+                'mscCase_Result_Id'                         => $request->payload['mscCase_Result_Id'] ?? $request->payload['mscCase_result_id'] ?? null,
                 'mscCase_Indicators_Id'                     => $request->payload['mscCase_Indicators_Id'] ?? null,
                 'mscPrivileged_Card_Id'                     => $request->payload['mscPrivileged_Card_Id'] ?? null,
                 'mscBroughtBy_Relationship_Id'              => $request->payload['mscBroughtBy_Relationship_Id'] ?? null,
-                'queue_Number'                              => $request->payload['queue_Number'] ?? null,
-                'arrived_Date'                              => Carbon::now(),
+                'queue_Number'                              => $request->payload['queue_Number'] ?? $request->payload['queue_number'] ?? null,
+                'arrived_Date'                              => intval($request->payload['mscAccount_Trans_Types'] === 2) ? $request->payload['arrived_date'] ?? null : Carbon::now(),
                 'registry_Userid'                           => isset($checkUser->idnumber) 
                                                             ?  $checkUser->idnumber
                                                             :  Auth()->user()->idnumber,
                 'registry_Date'                             => Carbon::now(),
-                'registry_Status'                           => $request->payload['registry_Status'] ?? 1,
+                'registry_Status'                           => $request->payload['registry_Status'] ?? null,
                 'registry_Hostname'                         => (new GetIP())->getHostname(),
-                'discharged_Userid'                         => $request->payload['discharged_Userid'] ?? null,
-                'discharged_Date'                           => $request->payload['discharged_Date'] ?? null,
-                'discharged_Hostname'                       => $request->payload['discharged_Hostname'] ?? null,
+                'discharged_Userid'                         => $isForAdmission ? null : $request->payload['discharged_Userid'] ?? null,
+                'discharged_Date'                           => $isForAdmission ? null : $request->payload['discharged_Date'] ?? null,
+                'discharged_Hostname'                       => $isForAdmission ? null : $request->payload['discharged_Hostname'] ?? null,
                 'billed_Userid'                             => $request->payload['billed_Userid'] ?? null,
                 'billed_Date'                               => $request->payload['billed_Date'] ?? null,
                 'billed_Remarks'                            => $request->payload['billed_Remarks'] ?? null,
                 'billed_Hostname'                           => $request->payload['billed_Hostname'] ?? null,
-                'mgh_Userid'                                => $request->payload['mgh_Userid'] ?? null,
-                'mgh_Datetime'                              => $request->payload['mgh_Datetime'] ?? null,
-                'mgh_Hostname'                              => $request->payload['mgh_Hostname'] ?? null,
-                'untag_Mgh_Userid'                          => $request->payload['untag_Mgh_Userid'] ?? null,
-                'untag_Mgh_Datetime'                        => $request->payload['untag_Mgh_Datetime'] ?? null,
-                'untag_Mgh_Hostname'                        => $request->payload['untag_Mgh_Hostname'] ?? null,
+                'mgh_Userid'                                => $isForAdmission ? null : $request->payload['mgh_Userid'] ?? null,
+                'mgh_Datetime'                              => $isForAdmission ? null : $request->payload['mgh_Datetime'] ?? null,
+                'mgh_Hostname'                              => $isForAdmission ? null : $request->payload['mgh_Hostname'] ?? null,
+                'untag_Mgh_Userid'                          => $isForAdmission ? null : $request->payload['untag_Mgh_Userid'] ?? null,
+                'untag_Mgh_Datetime'                        => $isForAdmission ? null : $request->payload['untag_Mgh_Datetime'] ?? null,
+                'untag_Mgh_Hostname'                        => $isForAdmission ? null : $request->payload['untag_Mgh_Hostname'] ?? null,
                 'isHoldReg'                                 => $request->payload['isHoldReg'] ?? false,
                 'hold_Userid'                               => $request->payload['hold_Userid'] ?? null,
                 'hold_No'                                   => $request->payload['hold_No'] ?? null,
@@ -224,14 +225,20 @@
                                                                 ? Carbon::parse($request->payload['selectedGuarantor'][0]['guarantor_Validity_date']) 
                                                                 : null,
                 'guarantor_Approval_remarks'                => $request->payload['guarantor_Approval_remarks'] ?? null,
-                'isWithCreditLimit'                         => isset($request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit']) ? true : false,
-                'guarantor_Credit_Limit'                    => $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null,
+                'isWithCreditLimit'                         => isset($request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'])
+                                                                && !empty($request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit']) 
+                                                                ? true 
+                                                                : false,
+                'guarantor_Credit_Limit'                    => isset($request->payload['selectedGuarantor'][0]['isOpen']) 
+                                                                    && $request->payload['selectedGuarantor'][0]['isOpen'] 
+                                                                    ? null
+                                                                    : $request->payload['selectedGuarantor'][0]['guarantor_Credit_Limit'] ?? null,
                 'isWithMultiple_Gurantor'                   => $request->payload['isWithMultiple_Gurantor'] ?? false,
                 'gurantor_Mutiple_TotalCreditLimit'         => $request->payload['gurantor_Mutiple_TotalCreditLimit'] ?? false,
                 'isWithPhilHealth'                          => $request->payload['isWithPhilHealth'] ?? false,
                 'mscPHIC_Membership_Type_id'                => $request->payload['mscPHIC_Membership_Type_id'] ?? null,
                 'philhealth_Number'                         => $request->payload['philhealth_Number'] ?? null,
-                'isWithMedicalPackage'                      => $request->payload['isWithMedicalPackage'] ?? false,
+                'isWithMedicalPackage'                      => !empty($request->payload['medical_Package_Id']) ? true : ($request->payload['isWithMedicalPackage'] ?? false),
                 'medical_Package_Id'                        => $request->payload['medical_Package_Id'] ?? null,
                 'medical_Package_Name'                      => $request->payload['medical_Package_Name'] ?? null,
                 'medical_Package_Amount'                    => $request->payload['medical_Package_Amount'] ?? null,
@@ -279,7 +286,7 @@
                 'mother_Case_No'                            => $request->payload['mother_Case_No'] ?? null,
                 'isDiedLess48Hours'                         => $request->payload['isDiedLess48Hours'] ?? null,
                 'isDeadOnArrival'                           => $request->payload['isDeadOnArrival'] ?? null,
-                'isAutopsy'                                 => $request->payload['isAutopsy'] ?? null,
+                'isAutopsy'                                 => $request->payload['isAutopsy'] ?? false,
                 'typeOfDeath_id'                            => $request->payload['typeOfDeath_id'] ?? null,
                 'dateOfDeath'                               => $request->payload['dateOfDeath'] ?? null,
                 'timeOfDeath'                               => $request->payload['timeOfDeath'] ?? null,
@@ -317,7 +324,7 @@
             ];
     }
 
-        public function prepareOBGHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function prepareOBGHistoryData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                                            => $patient_id,
                 'case_No'                                               => $registry_id,
@@ -458,7 +465,7 @@
             ];
         }
 
-        public function  preparePastImmunizationData($request, $checkUser, $patient_id, $existingData = null) {
+        public function  preparePastImmunizationData($request, $checkUser, $patient_id) {
             return [
                 'branch_Id'             => 1,
                 'patient_Id'            => $patient_id,
@@ -475,7 +482,7 @@
             ];
         }
 
-        public function preparePastMedicalHistoryData($request, $checkUser, $patient_id, $existingData = null) { 
+        public function preparePastMedicalHistoryData($request, $checkUser, $patient_id) { 
             return [
                 'patient_Id'                => $patient_id,
                 'diagnose_Description'      => $request->payload['diagnose_Description'] ?? null,
@@ -488,7 +495,7 @@
             ];
         }
 
-        public function preparePastMedicalProcedureData($request, $checkUser, $patient_id, $existingData = null) {
+        public function preparePastMedicalProcedureData($request, $checkUser, $patient_id) {
             return [
                 'patient_Id'                => $patient_id,
                 'description'               => $request->payload['description'] ?? null,
@@ -500,7 +507,7 @@
             ];
         }
 
-        public function prepareAdministeredMedicineData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function prepareAdministeredMedicineData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
@@ -518,7 +525,7 @@
             ];
         }
 
-        public function prepareHistoryData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function prepareHistoryData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'branch_Id'                                 => $request->payload['branch_Id'] ?? 1,
                 'patient_Id'                                => $patient_id,
@@ -553,7 +560,7 @@
             ];
         }
 
-        public function preparePatientImmunizationData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientImmunizationData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'branch_id'             => 1,
                 'patient_Id'            => $patient_id,
@@ -571,7 +578,7 @@
             ];
         }
 
-        public function preparePatientMedicalProcedure($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientMedicalProcedure($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
@@ -586,7 +593,7 @@
             ];
         }
 
-        public function prepareVitalSignsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function prepareVitalSignsData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'branch_Id'                 => 1,
                 'patient_Id'                => $patient_id,
@@ -605,7 +612,7 @@
             ];
         }
 
-        public function prepareBadHabitsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function prepareBadHabitsData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'    => $patient_id,
                 'case_No'       => $registry_id,
@@ -617,7 +624,7 @@
             ];
         }
 
-        public function preparePastBadHabitsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePastBadHabitsData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'    => $patient_id,
                 'description'   => $request->payload['description'] ?? null,
@@ -632,7 +639,7 @@
             ];
         }
 
-        public function preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientDoctorsData($request, $checkUser, $patient_id, $registry_id) {
             $consultant = $request->payload['selectedConsultant'][0] ?? null;
             return [
                 'patient_Id'        => $patient_id,
@@ -648,7 +655,7 @@
             ];
         }
 
-        public function preparePatientPhysicalAbdomenData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientPhysicalAbdomenData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
@@ -665,7 +672,7 @@
             ];
         }
 
-        public function preparePatientPertinentSignAndSymptomsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientPertinentSignAndSymptomsData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                        => $patient_id,
                 'case_No'                           => $registry_id,
@@ -713,7 +720,7 @@
             ];
         }
 
-        public function preparePatientPhysicalExamptionChestLungsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientPhysicalExamptionChestLungsData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                            => $patient_id,
                 'case_No'                               => $registry_id,
@@ -732,7 +739,7 @@
             ];
         }
 
-        public function preparePatientCourseInTheWardData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientCourseInTheWardData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                            => $patient_id,
                 'case_No'                               => $registry_id,
@@ -744,7 +751,7 @@
             ];
         }
 
-        public function preparePatientPhysicalExamptionCVSData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientPhysicalExamptionCVSData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
@@ -763,7 +770,7 @@
             ];
         }
 
-        public function preparePatientPhysicalExamptionGeneralSurveyData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function preparePatientPhysicalExamptionGeneralSurveyData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
@@ -776,7 +783,7 @@
             ];
         }
 
-        public function patientPhysicalExamptionHEENTData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function patientPhysicalExamptionHEENTData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
@@ -796,7 +803,7 @@
             ];
         }
 
-        public function patientPhysicalGUIData($request, $checkUser, $patient_id, $registry_id, $existingData = null ) {
+        public function patientPhysicalGUIData($request, $checkUser, $patient_id, $registry_id ) {
             return [
                 'patient_Id'                        => $patient_id,
                 'case_No'                           => $registry_id,
@@ -812,7 +819,7 @@
             ];
         }
 
-        public function patientPhysicalNeuroExamData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function patientPhysicalNeuroExamData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'                    => $patient_id,
                 'case_No'                       => $registry_id,
@@ -831,7 +838,7 @@
             ];
         }
 
-        public function patientPhysicalSkinExtremitiesData($request, $checkUser, $patient_id, $registry_id, $existingData = null ) {
+        public function patientPhysicalSkinExtremitiesData($request, $checkUser, $patient_id, $registry_id ) {
             return [
                 'patient_Id'                => $patient_id,
                 'case_No'                   => $registry_id,
@@ -853,7 +860,7 @@
             ];
         }
         
-        public function patientPregnancyHistoryData($request, $checkUser, $id, $registry_id, $existingData = null) {
+        public function patientPregnancyHistoryData($request, $checkUser, $id, $registry_id) {
             return [
                 'OBGYNHistoryID'    => $id,
                 'pregnancyNumber'   => $registry_id,
@@ -867,7 +874,7 @@
             ];
         }
 
-        public function patientGynecologicalConditions($request, $checkUser, $id, $registry_id, $existingData = null ) {
+        public function patientGynecologicalConditions($request, $checkUser, $id, $registry_id ) {
             return [
                 'OBGYNHistoryID'    => $id,
                 'conditionName'     => $registry_id,
@@ -879,7 +886,7 @@
             ];
         }
 
-        public function patientMedicationsData($request, $checkUser, $patient_id, $registry_id, $existingData = null ) {
+        public function patientMedicationsData($request, $checkUser, $patient_id, $registry_id ) {
             return [
                 'patient_Id'            => $patient_id,
                 'case_No'               => $registry_id,
@@ -897,7 +904,7 @@
             ];
         }
 
-        public function patientPrivilegedCardData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function patientPrivilegedCardData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'patient_Id'            => $patient_id,
                 'card_number'           => $request->payload['card_number'] ?? '374245455400126',
@@ -921,7 +928,7 @@
             ];
         }
 
-        public function patientPrivilegedPointTransferData($request, $checkUser, $id, $existingData = null) {
+        public function patientPrivilegedPointTransferData($request, $checkUser, $id) {
             return [
                 'fromCard_Id'       => $id,
                 'toCard_Id'         => $id,
@@ -935,7 +942,7 @@
             ];
         }
 
-        public function patientPrivilegedPointTransactionsData($request, $checkUser, $id, $existingData = null) {
+        public function patientPrivilegedPointTransactionsData($request, $checkUser, $id) {
             return [
                 'card_Id'           => $id,
                 'transaction_Date'  => Carbon::now(),
@@ -949,7 +956,7 @@
             ];
         }
 
-        public function patientDischargeInstructionsData($request, $checkUser, $patient_id, $registry_id, $existingData = null) {
+        public function patientDischargeInstructionsData($request, $checkUser, $patient_id, $registry_id) {
             return [
                 'branch_Id'                         => $request->payload['branch_Id'] ?? 1,
                 'patient_Id'                        => $patient_id,
@@ -973,7 +980,7 @@
             ];
         }
 
-        public function patientDischargedMedicationsData($request, $checkUser, $id, $existingData = null) {
+        public function patientDischargedMedicationsData($request, $checkUser, $id) {
             return [
                 'instruction_Id'        => $id,
                 'Item_Id'               => $request->payload['Item_Id'] ?? null,
@@ -989,7 +996,7 @@
             ];
         }
 
-        public function patientDischargedFollowUpTreatmentData($request, $checkUser, $id, $existingData = null) {
+        public function patientDischargedFollowUpTreatmentData($request, $checkUser, $id) {
             return [
                 'instruction_Id'        => $id,
                 'treatment_Description' => $request->payload['treatment_Description'] ?? null,
@@ -1004,7 +1011,7 @@
             ];
         }
 
-        public function patientDischargedFollowUpLaboratoriesData($request, $checkUser, $id, $existingData = null) {
+        public function patientDischargedFollowUpLaboratoriesData($request, $checkUser, $id) {
             return [
                 'instruction_Id'    => $id,
                 'item_Id'           => $request->payload['item_Id'] ?? null,
@@ -1018,7 +1025,7 @@
             ];
         }
 
-        public function patientDischargedDoctorsFolloUpData($request, $checkUser, $id, $existingData = null) {
+        public function patientDischargedDoctorsFolloUpData($request, $checkUser, $id) {
             return [
                 'instruction_Id'        => $id,
                 'doctor_Id'             => $request->payload['doctor_Id'] ?? null,

@@ -221,31 +221,38 @@
       </tr>
     </table>
   </div>
-  <table class="info-section">
+ <table class="info-section">
     <tbody>
       <tr>
         <td class="left-width text-right">DEPARTMENT :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['warehouse'] ? $pdf_data['delivery']['warehouse']['warehouse_description'] : ''}}</td>
-        <td class="right-width  text-right">D.R NO.</td>
+        <td class="right-width  text-right">DR NO.</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Delivery_Receipt_No']}}</td>
-        <td class="right-width  text-right">D.R DATE:</td>
+        <td class="right-width  text-right">DR DATE:</td>
         <td class="underline">{{date('m/d/Y',strtotime($pdf_data['delivery']['receivedDate']))}}</td>
+        <td class="right-width  text-right">DR Rcvd Date:</td>
+        <td class="underline ">{{date('m/d/Y',strtotime($pdf_data['delivery']['rr_received_date']))}}</td>
       </tr>
       <tr>
         <td class="left-width text-right">Supplier Name. :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['vendor_Name']}}</td>
-        <td class="right-width  text-right">INVOICE No. :</td>
+        <td class="right-width  text-right">INV. No. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_No']}}</td>
-        <td class="right-width  text-right">INVOICE Date. :</td>
-        <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_Date'] ? date('m-d-Y',strtotime($pdf_data['delivery']['rr_Document_Invoice_Date'])) : ''}}</td>
+        <td class="right-width  text-right">INV. Date. :</td>
+        <td class="underline">{{$pdf_data['delivery']['rr_Document_Invoice_Date'] ? date('m/d/Y',strtotime($pdf_data['delivery']['rr_Document_Invoice_Date'])) : ''}}</td>
+        <td class="right-width  text-right">INV. Rcvd Date:</td>
+        <td class="underline ">{{date('m/d/Y',strtotime($pdf_data['delivery']['invoice_received_date']))}}</td>
       </tr>
+      
       <tr>
         <td class="left-width  text-right">Address. :</td>
         <td class="mid-width underline">{{$pdf_data['delivery']['vendor_ContactPerson']}}</td>
         <td class="right-width  text-right">RR No. :</td>
         <td class="underline">{{$pdf_data['delivery']['rr_Document_Number']}}</td>
         <td class="right-width  text-right">RR Date. :</td>
-        <td class="underline">{{date('m-d-Y',strtotime($pdf_data['delivery']['rr_Document_Transaction_Date']))}}</td>
+        <td class="underline ">{{date('m/d/Y',strtotime($pdf_data['delivery']['rr_Document_Transaction_Date']))}}</td>
+        <td class="right-width  text-right"></td>
+        <td class="underline "></td>
       </tr>
 
       <tr>
@@ -254,7 +261,7 @@
         <td class="right-width  text-right"> PR No. :</td>
         <td class="underline">{{$pdf_data['delivery']['pr_Document_Number']}}</td>
         <td class="right-width  text-right"> PR Date. :</td>
-        <td class="underline">{{$pdf_data['delivery']['pr_Transaction_Date'] ? date('m-d-Y',strtotime($pdf_data['delivery']['pr_Transaction_Date'])) : ''}}</td>
+        <td class="underline">{{$pdf_data['delivery']['pr_Transaction_Date'] ? date('m/d/Y',strtotime($pdf_data['delivery']['pr_Transaction_Date'])) : ''}}</td>
         <td></td>
       </tr>
       <tr>
@@ -263,11 +270,12 @@
         <td class="right-width text-right"> PO No. :</td>
         <td class="underline">{{$pdf_data['delivery']['po_Document_Number']}}</td>
         <td class="right-width  text-right"> PO Date. :</td>
-        <td class="underline">{{date('m-d-Y',strtotime($pdf_data['delivery']['po_Document_transaction_date']))}}</td>
+        <td class="underline">{{date('m/d/Y',strtotime($pdf_data['delivery']['po_Document_transaction_date']))}}</td>
         <td></td>
       </tr>
     </tbody>
   </table>
+    
     
   <table class="item-section">
     <thead>
@@ -332,23 +340,25 @@
         <td colspan="6" class="border-none text-right" >SubTotal :</td>
         <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
       </tr>
-
       <tr>
         <td class="border-none" >Printed Date</td>
-        <td class="border-none" > : {{ date('m-d-Y H:i:s A')}}</td>
-        <td colspan="6" class="border-none  text-right" >Discount :</td>
-        <td colspan="2"  class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+        <td class="border-none text-left" > : {{ date('m-d-Y H:i:s A')}}</td>
+        <td colspan="6" class="border-none text-right" >Discount :</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
       </tr>
 
       <tr>
-        <td colspan="8" class=" border-none  text-right" >Vat :</td>
-        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
+        <td class="border-none" ></td>
+        <td class="border-none" ></td>
+        <td colspan="6" class="border-none  text-right" >Vat :</td>
+        <td colspan="2"  class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
       </tr>
 
       <tr>
-        <td colspan="8" class="border-none  text-right" >Total Amount :</td>
-        <td colspan="2"  class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
+        <td colspan="8" class=" border-none  text-right" >Total Amount :</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
       </tr>
+    
 
     </tbody>
   </table>

@@ -26,7 +26,7 @@ class ItemController extends Controller
 
     public function searchItems(Request $request)
     {
-       // ->where('item_Category_Id',$request->item_Category_Id)
+        // ->where('item_Category_Id',$request->item_Category_Id)
         $item = Itemmasters::where('item_InventoryGroup_Id',$request->item_InventoryGroup_Id)->get();
         return response()->json(['item' => $item], 200);
     }

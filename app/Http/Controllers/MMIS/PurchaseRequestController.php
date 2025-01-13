@@ -261,7 +261,6 @@ class PurchaseRequestController extends Controller
                 $discount_type = 2;
                 if($checkVatType){
                     $vat_type = $item['vat_type'];
-                    // $discount_type = isset($item['discount_type']) ? $item['discount_type'] : 2;
                 }
                 $pr->purchaseRequestDetails()->updateOrCreate(
                     [

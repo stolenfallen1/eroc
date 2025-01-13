@@ -459,7 +459,7 @@ class PurchaseRequestController extends Controller
                     'lead_time' => $item['lead_time'] ?? 0,
                     'vat_rate' => $item['vat_rate'] ?? 0,
                     'vat_type' => $item['vat_type'] ?? 2,
-                    'discount_type' => (int)$item['discount_type'] ?? 2,
+                    'discount_type' => (int) 2,
                     'discount_amount' => $item['discount_amount'] ?? 0,
                     'vat_amount' => $item['vat_amount'] ?? 0,
                     'total_amount' => $item['total_amount'] ?? 0,

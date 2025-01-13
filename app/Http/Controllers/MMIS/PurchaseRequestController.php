@@ -184,14 +184,18 @@ class PurchaseRequestController extends Controller
 
         try {
             $ismed = NULL;
+            $checkVatType = NULL;
             if ($this->role->pharmacy_warehouse()) {
                 $ismed = 1;
+                $checkVatType = 1;
             }
             if ($request->isconsignments && $request->isconsignments == 1) {
                 $ismed = 1;
+                $checkVatType = 1;
             }
             $isdiet = NULL;
             if ($this->role->isdietary()  || $this->role->isdietaryhead()) {
+                $checkVatType = 1;
                 $isdiet = 1;
             }
             $pr = PurchaseRequest::updateOrCreate(
@@ -253,7 +257,10 @@ class PurchaseRequestController extends Controller
                 if (isset($item['attachment']) && $item['attachment'] != null) {
                     $filepath = storeDocument($item['attachment'], "procurements/items");
                 }
-
+                $vat_type = 2;
+                if($checkVatType){
+                    $vat_type = $item['vat_type'];
+                }
                 $pr->purchaseRequestDetails()->updateOrCreate(
                     [
                         'pr_request_id' => $pr['id'],
@@ -270,7 +277,7 @@ class PurchaseRequestController extends Controller
                         'recommended_supplier_id' => isset($item['prepared_supplier_id']) ? $item['prepared_supplier_id'] : 0,
                         'lead_time' => $item['lead_time'] ?? 0,
                         'vat_rate' => (int)$item['vat_rate'] ?? 0,
-                        'vat_type' => (int)$item['vat_type'] ?? 2,
+                        'vat_type' => (int)$vat_type,
                         'discount_type' => (int)$item['discount_type'] ?? 2,
                         'discount_amount' => $item['discount_amount'] ?? 0,
                         'vat_amount' => $item['vat_amount'] ?? 0,

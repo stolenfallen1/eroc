@@ -42,8 +42,13 @@ class BiometricsController extends Controller
                 ]
             );
 
+            $data['p_BranchId']             = $request->p_BranchId ?? "";
+            $data['p_Empnum']               = $request->p_Empnum ?? "";
+            $data['p_TransDate']            = $request->p_TransDate ?? "";
+            $data['p_TransType']            = $request->p_TransType ?? "";
+            $data['p_finger']               = $request->p_finger ?? "";
             DB::connection('sqlsrv_cdh_payroll')->commit();
-            return response()->json(['message' => 'success'], 200);
+            return response()->json(['message' => 'success','data'=>$data], 200);
         } catch (\Exception $e) {
 
             DB::connection('sqlsrv_cdh_payroll')->rollback();

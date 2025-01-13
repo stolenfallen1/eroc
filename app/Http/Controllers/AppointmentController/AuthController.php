@@ -55,6 +55,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Invalid token'], 500);
     }
 
+
     public function refreshToken(Request $request)
     {
         $patient = $request->patient;
@@ -62,4 +63,5 @@ class AuthController extends Controller
         $newAccessToken = $patient->createToken();
         return response()->json(['access_token' => $newAccessToken], 200);
     }
+    
 }

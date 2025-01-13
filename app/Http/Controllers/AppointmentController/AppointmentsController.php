@@ -58,6 +58,7 @@ class AppointmentsController extends Controller
             $mobile = ltrim($mobileNo, '0');
             $userdata = $this->AppointmentHelper->createOrUpdateUserAppointment($payload, $existUser, $mobile);
 
+            
             $user = UserAppointments::whereDate('birthdate', Carbon::parse($payload['birthdate'])->format('Y-m-d'))->updateOrCreate(
                 [
                     'lastname' => $payload['lastname'],

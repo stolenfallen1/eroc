@@ -12,8 +12,10 @@ class ClearanceController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
     public function index(Request $request)
     { 
+        
         $payload = $request->all();
         $idnum = $payload['IdNum'];
         $data = Clearance::select('HospNum','LastName','FirstName','MiddleName','BirthDate')

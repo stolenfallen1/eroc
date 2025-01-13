@@ -45,12 +45,14 @@
             Route::post('getAppointment/checkIn/Recieptionist', 'getAppointmentCheckInRecieptionist');
             Route::post('getDone/Appointment/checkIn/Recieptionist', 'getDoneAppointmentCheckInRecieptionist');
         });
+        
         Route::controller(AppointmentsController::class)->group(function () {
             Route::get('/user/token', 'getCurrentUserToken');
             Route::post('store/patient/appointment', 'store_appointment');
             Route::post('payment/appointment', 'store_payment');
             Route::get('appointment/patient/details', 'getUserDetails');
         });
+
         Route::controller(AppointmentEditController::class)->group(function () {
             Route::post('edit/patient/appointment', 'editPatient');
         });

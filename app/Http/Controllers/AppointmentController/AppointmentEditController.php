@@ -19,9 +19,8 @@ class AppointmentEditController extends Controller
 
     public function editPatient(Request $request)
     {
-
-        
         DB::connection('sqlsrv_patient_data')->beginTransaction();
+        
         try{
         $payload = $request->all();
         $seq = 1;

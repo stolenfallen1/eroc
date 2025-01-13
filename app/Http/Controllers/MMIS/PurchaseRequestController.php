@@ -258,8 +258,10 @@ class PurchaseRequestController extends Controller
                     $filepath = storeDocument($item['attachment'], "procurements/items");
                 }
                 $vat_type = 2;
+                $discount_type = 2;
                 if($checkVatType){
                     $vat_type = $item['vat_type'];
+                    $discount_type = $item['discount_type'];
                 }
                 $pr->purchaseRequestDetails()->updateOrCreate(
                     [
@@ -278,7 +280,7 @@ class PurchaseRequestController extends Controller
                         'lead_time' => $item['lead_time'] ?? 0,
                         'vat_rate' => (int)$item['vat_rate'] ?? 0,
                         'vat_type' => (int)$vat_type,
-                        'discount_type' => (int)$item['discount_type'] ?? 2,
+                        'discount_type' => (int)$discount_type,
                         'discount_amount' => $item['discount_amount'] ?? 0,
                         'vat_amount' => $item['vat_amount'] ?? 0,
                         'total_amount' => $item['total_amount'] ?? 0,

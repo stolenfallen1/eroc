@@ -51,9 +51,6 @@
             Route::post('payment/appointment', 'store_payment');
             Route::get('appointment/patient/details', 'getUserDetails');
         });
-
-
-        
         Route::controller(AppointmentEditController::class)->group(function () {
             Route::post('edit/patient/appointment', 'editPatient');
 

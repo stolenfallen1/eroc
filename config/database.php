@@ -323,6 +323,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
+
         'sqlsrv_billingOut_v1' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -407,6 +408,20 @@ return [
             ],
         ],
 
+        
+        'sqlsrv_cdh_payroll' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_HOST_CDH_PAYROLL', '10.4.15.200'),
+            'port' => env('DB_PORT_CDH_PAYROLL', '1433'),
+            'database' => env('DB_DATABASE_CDH_PAYROLL', ''),
+            'username' => env('DB_USERNAME_CDH_PAYROLL', ''),
+            'password' => env('DB_PASSWORD_CDH_PAYROLL', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'dbo',
+        ],
     ],
 
     /*

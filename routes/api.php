@@ -1,16 +1,12 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Models\BuildFile\Syssystems;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthPOSController;
-use App\Http\Controllers\ClearanceController;
 use App\Http\Controllers\POS\SettingController;
-use App\Http\Controllers\ServiceRecord\PdfController;
-use App\Http\Controllers\Schedules\SchedulingDashboard;
-use App\Http\Controllers\POS\TerminalSettingsController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -22,27 +18,7 @@ use App\Http\Controllers\POS\TerminalSettingsController;
 |
 */
 
-Route::get('check-status',function(){
-    $data = Syssystems::where('id',1)->select('isActive')->first();
-    return response()->json($data,200);
-});
-/*require_once('/schedules/api.php');*/
-// Route::resource('userss', UserController::class);
-Route::get('clearances', [ClearanceController::class, 'index']);
-Route::get('/service_record/pdf/generate-save-pdf',  [PdfController::class,          'generatePDF']);
-
-Route::controller(TerminalSettingsController::class)->group(function () {
-    Route::post('store-terminal', 'store');
-});
-
-Route::get('scheduling-json', [SchedulingDashboard::class, 'getSchedulingDashboard']);
-Route::post('login', [AuthController::class, 'login']);
-Route::post('check-pos-terminal', [AuthPOSController::class, 'posterminal']);
-Route::post('pos/login', [AuthPOSController::class, 'login']);
-Route::get('get-schedule', [SettingController::class, 'schedule']);
-Route::post('create-account', [UserController::class, 'createdoctor']);
-
-
+require_once('other.php');
 require_once('appointment/api_appointment.php');
 Route::group(['middleware' => 'auth:api'], function () {
     Route::controller(UserController::class)->group(function () {
@@ -54,7 +30,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('pos/refresh', [AuthPOSController::class, 'refreshToken']);
     Route::get('pos/user-details', [AuthPOSController::class, 'userDetails']);
     Route::post('logout', [AuthController::class, 'logout']);
-
+    
     require_once('pos/api.php');
     require_once('pos/v1/api.php');
     require_once('buildfile/api.php');
@@ -68,4 +44,5 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('schedules/api.php');
     require_once('his/api_his_functions.php');
     require_once('servicerecord/service_record_api.php');
+    require_once('biometrics/api.php');
 });

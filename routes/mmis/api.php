@@ -92,6 +92,7 @@ Route::controller(BatchController::class)->group(function () {
   Route::put('batch', 'update');
   Route::get('check-batch', 'checkAvailability');
 });
+
 Route::controller(InventoryTransactionController::class)->group(function () {
   Route::get('item-transaction', 'index');
   Route::post('reorder-item', 'reorderitem');

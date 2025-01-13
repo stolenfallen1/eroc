@@ -53,6 +53,5 @@
         });
         Route::controller(AppointmentEditController::class)->group(function () {
             Route::post('edit/patient/appointment', 'editPatient');
-
         });
     });

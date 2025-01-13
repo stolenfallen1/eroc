@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Appointment;
 
-use DB;
+
 use Carbon\Carbon;
 use App\Helpers\SMSHelper;
 use Illuminate\Http\Request;
@@ -25,11 +25,12 @@ use App\Models\BuildFile\Hospital\CivilStatus;
 use App\Models\Appointments\PatientAppointment;
 use App\Models\BuildFile\Hospital\Nationalities;
 use App\Models\Appointments\PatientAppointmentsTemporary;
+use Illuminate\Support\Facades\DB;
 
 class PatientAppointmentController extends Controller
 {
     public function __construct() {}
-
+   
     public function index(Request $request)
     {
         // If a keyword is provided, filter by patient name
@@ -80,12 +81,12 @@ class PatientAppointmentController extends Controller
 
             $existingMedsysPatient  = MedsysPatientMaster::where('lastname', $request->payload['lastName'])->where('firstname', $request->payload['firstName'])->whereDate('birthdate', $request->payload['birthdate'])->first();
             SystemSequence::whereIn('code', ['MOPD'])->increment('seq_no');
-            $sequence               = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
+            $sequence = SystemSequence::where('code','MOPD')->where('branch_id', 1)->first();
             if (!$sequence) {
                 throw new \Exception('Sequence not found');
             }
 
-            $existingPatient    = Patient::where('lastname', $request->payload['lastName'])->where('firstname', $request->payload['firstName'])->whereDate('birthdate', $request->payload['birthdate'])->first();
+            $existingPatient  = Patient::where('lastname', $request->payload['lastName'])->where('firstname', $request->payload['firstName'])->whereDate('birthdate', $request->payload['birthdate'])->first();
             if ($existingPatient) {
                 $patient_id = $existingMedsysPatient ? $existingMedsysPatient->HospNum : $existingPatient->patient_Id;
             } else {
@@ -172,7 +173,7 @@ class PatientAppointmentController extends Controller
         }
     }
 
-
+  
 
     public function procedures(Request $request)
     {
@@ -440,6 +441,7 @@ class PatientAppointmentController extends Controller
 
     public function getZipCode()
     {
+       
         $query = Zipcode::with("getMunicipality", "getProvince");
         if (Request()->regionCode) {
             $query->where("regionCode", Request()->regionCode);

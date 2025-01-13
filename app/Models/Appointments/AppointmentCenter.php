@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Appointments\AppointmentSlot;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Appointments\AppointmentCenterSectection;
+use App\Models\BuildFile\FmsExamProcedureItems;
 
 class AppointmentCenter extends Model
 {
@@ -15,10 +16,14 @@ class AppointmentCenter extends Model
     protected $table = 'AppointmentCenters';
     protected $guarded = [];
 
-    protected $with = ['sections'];
+    protected $with = ['sections','procedures'];
 
     public function sections(){
         return $this->hasMany(AppointmentCenterSectection::class,'appointment_center_id','id');
+    }
+    public function procedures(){
+        
+        return $this->hasMany(FmsExamProcedureItems::class,'map_revenue_code','revenueID');
     }
 
 

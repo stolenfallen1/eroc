@@ -19,6 +19,8 @@ use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
 use App\Http\Controllers\HIS\EmergencyRoomMedicine;
 use App\Http\Controllers\BuildFile\Hospital\DoctorController;
+use App\Http\Controllers\Appointment\PatientAppointmentController;
+use App\Http\Controllers\AppointmentController\AppointmentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,10 +40,13 @@ Route::controller(Report_ZController::class)->group(function () {
     Route::get('get-z-report-all-shift', 'generate_z_report');
 });
 
+    Route::get('/rheymar/08',[AppointmentsController::class, 'shin'])->name('rheymar1');
+
+
 // Route::get('login', ['uses' => 'TCG\\Voyager\\Http\\Controllers\\VoyagerAuthController@login',     'as' => 'login']);
-Route::group(['prefix' => 'admin'], function () {
-    Voyager::routes();
-});
+// Route::group(['prefix' => 'admin'], function () {
+//     Voyager::routes();
+// });
 
 require_once('inventory_printout.php');
 require_once('mmis_printout.php');
@@ -49,7 +54,7 @@ Route::group(['middleware' => 'admin.user'], function () {
     require_once('mmis/mmismainroute.php');
     Route::get('user-details', [AuthController::class, 'userDetails']);
 });
-
+// Route::get('/abcd',[AppointmentsController::class,'welcome']);
 Route::get('/fetch-data', [EmergencyRegistrationController::class, 'fetchData'])->where('id', '[0-9]+');
 Route::get('/get-indicator', [CaseIndicatorController::class, 'list']);
 Route::get('/get-emergency', [EmergencyRegistrationController::class, 'index']);
@@ -65,3 +70,5 @@ Route::get('get-items', [EmergencyRoomMedicine::class, 'erRoomMedicine']);
 Route::get('get-charge-items', [EmergencyRoomMedicine::class, 'getMedicineSupplyCharges']);
 Route::get('er-patient-daily-report', [ReportMaster::class, 'ERDailyCensusReport']);
 Route::get('doctors-categories', [DoctorController::class, 'doctorsCategories']);
+Route::get('get-zip-test', [DoctorController::class, 'getZipCode']);
+// Route::get('get-zip', [PatientAppointmentController::class, 'getZipCode']);

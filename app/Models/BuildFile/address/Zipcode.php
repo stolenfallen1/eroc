@@ -27,6 +27,9 @@ class Zipcode extends Model
         return $this->belongsTo(Municipality::class, 'municipality_code', 'municipality_code');
     }
 
+    public function municipalities(){
+        return $this->belongsTo(Municipality::class, 'municipality_code', 'municipality_code');
+    }
 
 
     public function getMunicipality(){

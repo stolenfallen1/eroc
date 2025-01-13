@@ -292,4 +292,9 @@ class DoctorController extends Controller
             return response()->json(["msg" => $e->getMessage()], 200);
         }
     }
+
+    public function getZipCode()
+    {
+        return response()->json(['test' => 'hoy'], 200);
+    }
 }

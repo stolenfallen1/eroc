@@ -2,6 +2,7 @@
 
 namespace App\Models\HIS;
 
+use App\Models\BuildFile\FmsExamProcedureItems;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\HIS\PatientAppointments;
@@ -17,4 +18,8 @@ class PatientAppointmentTransactions extends Model
     public function appointments() {
         return $this->belongsTo(PatientAppointments::class, 'appointment_ReferenceNumber', 'appointment_ReferenceNumber');
     }
+    public function items() {
+        return $this->hasMany(FmsExamProcedureItems::class, 'map_item_id', 'item_Id');
+    }
+    
 }

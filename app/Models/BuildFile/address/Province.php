@@ -16,4 +16,8 @@ class Province extends Model
     public function regions(){
         return $this->belongsTo(Region::class, 'region_code', 'region_code');
     }
+    public function municipalities()
+    {
+        return $this->hasMany(Municipality::class, 'province_code', 'province_code');
+    }
 }

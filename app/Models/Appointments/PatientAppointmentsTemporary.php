@@ -40,5 +40,9 @@ class PatientAppointmentsTemporary extends  Authenticatable
         $this->token = null;
         $this->save();
     }
+    public function appointment()
+    {
+        return $this->hasMany(PatientAppointment::class, 'temporary_Patient_Id','id');
+    }
     
 }

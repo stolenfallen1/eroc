@@ -6,9 +6,16 @@ use App\Http\Controllers\Appointment\PatientAppointmentController;
 use App\Http\Controllers\Appointment\AppointmentRegistrationController;
 use App\Http\Controllers\AuthAppointmentController;
 
-Route::get('/get-zipcodes', [PatientAppointmentController::class, 'getZipCode']);
-Route::post('/get-msc-getbarangay', [PatientAppointmentController::class, 'getBarangay']);
-Route::post('/get-msc-nationality', [PatientAppointmentController::class, 'getnationality']);
+
+Route::controller(PatientAppointmentController::class)->group(function () {
+    Route::get('get-zipcodes', 'getZipCode');
+    Route::post('get-msc-getbarangay', 'getBarangay');
+    Route::post('get-msc-nationality', 'getnationality');
+   
+});
+// Route::get('/get-zipcodes', [PatientAppointmentController::class, 'getZipCode']);
+// Route::post('/get-msc-getbarangay', [PatientAppointmentController::class, 'getBarangay']);
+// Route::post('/get-msc-nationality', [PatientAppointmentController::class, 'getnationality']);
 
 Route::post('appointment-login', [AuthAppointmentController::class, 'login']);
 Route::post('register-account', [PatientAppointmentController::class, 'registration']);

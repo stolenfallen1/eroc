@@ -79,7 +79,7 @@
             $sq = $prefix . $delimeter . $number;
         }
         if($suffix){
-            $sq = $sq . $delimeter . $suffix;
+            $sq = $sq . $delimeter . $suffix; 
         }
         return $sq;
     }

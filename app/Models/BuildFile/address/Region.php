@@ -11,4 +11,7 @@ class Region extends Model
     protected $connection = "sqlsrv";
     protected $table = 'mscAddressRegions';
     protected $guarded = [];
+    public function provinces(){
+        return $this->hasMany(Province::class, 'region_code', 'region_code');
+    }
 }

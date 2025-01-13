@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models\BuildFile\address;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,16 +8,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Municipality extends Model
 {
-    use HasFactory;    
+    use HasFactory;
+
     protected $connection = "sqlsrv";
     protected $table = 'mscAddressMunicipalities';
     protected $guarded = [];
 
-    public function regions(){
+    public function regions()
+    {
         return $this->belongsTo(Region::class, 'region_code', 'region_code');
     }
-    
-    public function provinces(){
+
+    public function provinces()
+    {
         return $this->belongsTo(Province::class, 'province_code', 'province_code');
+    }
+
+    public function barangays()
+    {
+        return $this->hasMany(Barangay::class, 'municipality_code', 'municipality_code');
+    }
+    public function zipcodes()
+    {
+        return $this->hasMany(Zipcode::class, 'municipality_code', 'municipality_code');
     }
 }

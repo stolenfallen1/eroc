@@ -19,10 +19,13 @@ use App\Models\Appointments\PatientAppointment;
 use App\Models\Appointments\PatientAppointmentCheckIn;
 use App\Models\Appointments\AppointmentCenterSectection;
 use App\Models\Appointments\PatientAppointmentsTemporary;
+use App\Models\HIS\MedsysPatientMaster;
 
 class AppointmentController extends Controller
 {
+   
     public function __construct() {}
+ 
 
     public function image(Request $request)
     {

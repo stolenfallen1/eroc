@@ -32,7 +32,7 @@ class PatientAppointment extends Model
     }
 
     public function doctor(){
-        return $this->hasOne(Doctor::class,'id','doctor_Id');
+        return $this->hasOne(Doctor::class,'id','doctor_Id')->select('lastname','firstname','id');
     }
 
     public function payments(){

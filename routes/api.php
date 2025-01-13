@@ -29,7 +29,7 @@ Route::get('check-status',function(){
 /*require_once('/schedules/api.php');*/
 // Route::resource('userss', UserController::class);
 Route::get('clearances', [ClearanceController::class, 'index']);
-Route::get('/service_record/pdf/generate-save-pdf',  [PdfController::class,          'generatePDF']);
+Route::get('/service_record/pdf/generate-save-pdf',  [PdfController::class,'generatePDF']);
 
 Route::controller(TerminalSettingsController::class)->group(function () {
     Route::post('store-terminal', 'store');
@@ -44,6 +44,7 @@ Route::post('create-account', [UserController::class, 'createdoctor']);
 
 
 require_once('appointment/api_appointment.php');
+require_once('appointment/appointment_routes.php');
 Route::group(['middleware' => 'auth:api'], function () {
     Route::controller(UserController::class)->group(function () {
         Route::get('department/users', 'getDepartmentUsers');

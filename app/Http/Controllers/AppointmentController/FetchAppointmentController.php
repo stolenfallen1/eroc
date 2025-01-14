@@ -57,7 +57,7 @@ class FetchAppointmentController extends Controller
                     $query->where('temporary_Patient_Id', $id)
                         ->orWhere('patient_id', $patient_id);
                 })
-                ->whereIn('status_Id', [2, 3])->get();
+                ->whereIn('status_Id', [1,2, 3])->get();
 
             return response()->json(['data' => $data], 200);
 
@@ -164,7 +164,7 @@ class FetchAppointmentController extends Controller
                 }
             ])
                 ->orderBy('created_at', 'desc')
-                ->whereIn('status_Id', [0,1, 2])
+                ->whereIn('status_Id', [0,1,2])
                 ->whereHas('appointmentPayments')
                 ->get();
 
@@ -269,7 +269,7 @@ class FetchAppointmentController extends Controller
                 },
                 'checkIn'
             ])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'asc')
                 ->whereIn('status_Id', [1])
                 ->whereHas('appointmentPayments')
                 ->whereHas('checkIn')

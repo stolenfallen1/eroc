@@ -26,7 +26,7 @@ class RegistryController extends Controller
         $this->dataHelper = new RegistryHelper();
         $this->SmsHelper = new SMSHelper();
     }
-    
+
     public function AppointmentRegistry(Request $request)
     {
 
@@ -62,7 +62,7 @@ class RegistryController extends Controller
             } else {
                 return response()->json(['message' => 'No Patient Data Found Please Check Carefully and Try Again'], 500);
             }
-
+            
 
             $masterData = $this->dataHelper->updateOrCreatePatientMaster($patientData, $patient_Id, $payload);
 
@@ -74,16 +74,16 @@ class RegistryController extends Controller
 
                 $masterData
             );
-
+       
             $registryData = $this->dataHelper->UpdateOrCreateCaseNo($payload, $patient_Id, $case_No);
-
-            PatientRegistry::whereDate('registry_Date', Carbon::today()->toDateString())->updateOrcreate(
+          
+            PatientRegistry::whereDate('registry_Date', Carbon::today()->toDateString())->where('case_No', $case_No)->updateOrcreate(
                 [
                     'case_No' => $case_No
                 ],
                 $registryData
             );
-
+      
             PatientAppointment::where('temporary_Patient_Id', $patientData->id)
                 ->where('appointment_ReferenceNumber', $payload['appointment_ReferenceNumber'])->update([
                     'patient_id' => $patient_Id,
@@ -91,13 +91,13 @@ class RegistryController extends Controller
                     'status_Id' => 1,
                     'confirmation_Date' => Carbon::today(),
                 ]);
-
+          
             PatientAppointmentsTemporary::where('id', $patientData->id)->orWhere('id', $payload['temporary_Patient_Id'])
                 ->firstOrFail()
                 ->update([
                     'patient_id' => $patient_Id,
                 ]);
-
+                // return response()->json(['message' => $case_No], 201);
             // $seq = 2;
             // $message = $this->SmsHelper->data($payload,$seq);
 
@@ -118,24 +118,24 @@ class RegistryController extends Controller
         $payload = $request->all();
         $startDate = Carbon::now()->startOfDay();
         $selectedDate = $payload['appointment_Date'] ?? $startDate->format('Y-m-d');
-        $slotNo = PatientAppointment::where('appointment_Date', '>=', $selectedDate)->whereIn('status_Id', [0,1, 2, 3])->count();
+        $slotNo = PatientAppointment::where('appointment_Date', '>=', $selectedDate)->whereIn('status_Id', [0, 1, 2, 3])->count();
         return $slotNo + 1;
     }
- 
+
 
     public function seclectedSlot(Request $request)
     {
         $payload = $request->all();
-    
+
         $selectedDate = $payload['appointment_Date'];
-    
+
         // Count appointments matching the criteria
         $appointmentCount = PatientAppointment::where('appointment_Date', '>=', $selectedDate)
-            ->whereIn('status_Id', [0,1, 2, 3])
+            ->whereIn('status_Id', [0, 1, 2, 3])
             ->count();
-            $slotNo = $appointmentCount + 1;
-        if ( $slotNo <= 2) {
-            
+        $slotNo = $appointmentCount + 1;
+        if ($slotNo <= 5) {
+
             return response()->json([
                 'data' => $slotNo,
                 'message' => "Your slot has been reserved successfully! Your slot number is $slotNo. Thank you!"
@@ -188,7 +188,7 @@ class RegistryController extends Controller
     {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
         $payload = $request->all();
-        
+
         try {
 
             PatientAppointment::where('appointment_ReferenceNumber', $payload['appointment_ReferenceNumber'])
@@ -216,7 +216,7 @@ class RegistryController extends Controller
         }
     }
 
- 
+
     public function RescheduleAppointment(Request $request)
     {
         DB::connection('sqlsrv_patient_data')->beginTransaction();
@@ -242,7 +242,7 @@ class RegistryController extends Controller
                         ]
                     );
                 }
-                
+
                 // DB::connection('sqlsrv_patient_data');
                 return response()->json(['message' => 'Successfully Reschudle Appointment'], 201);
             } else {

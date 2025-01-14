@@ -171,8 +171,8 @@ class AppointmentsController extends Controller
             $payload = $request->all();
 
             $imagePath = $this->AppointmentHelper->savePaymentRequestImage($request, 'paymentImage');
-            $query = PatientAppointmentsTemporary::select('mobile_Number')->where('id', $payload['id'])->first();
-            $mobile = $query['mobile_Number'];
+            // $query = PatientAppointmentsTemporary::select('mobile_Number')->where('id', $payload['id'])->first();
+            // $mobile = $query['mobile_Number'];
             $paymentData = $this->AppointmentHelper->createOrUpdatePatientPayment($payload, $imagePath);
 
 
@@ -191,7 +191,7 @@ class AppointmentsController extends Controller
             ]);
 
 
-            // DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_patient_data')->commit();
             return response()->json(['message' => 'Successfully Paid appointment'], 201);
         } catch (\Exception $e) {
             DB::connection('sqlsrv_patient_data')->rollBack();

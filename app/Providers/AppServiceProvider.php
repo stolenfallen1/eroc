@@ -42,8 +42,8 @@ class AppServiceProvider extends ServiceProvider
         // PatientRegistry::observe(MedsysOutpatientObserver::class);
         // CashAssessment::observe(CashAssessmentObserver::class);
 
-        Patient::observe(HISPatientMasterObserver::class);
-        PatientRegistry::observe(HISPatientRegistryObserver::class);
+        // Patient::observe(HISPatientMasterObserver::class);
+        // PatientRegistry::observe(HISPatientRegistryObserver::class);
 
     }
 }

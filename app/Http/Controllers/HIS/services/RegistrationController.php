@@ -81,7 +81,6 @@ class RegistrationController extends Controller
             $accountType = $request->payload['mscAccount_Trans_Types'];
             $isForAdmission = isset($request->payload['registrationFrom']) ? true : false;
             if(intval($accountType) === 5 && !$isForAdmission) {
-                echo 'Emergency';
                 $checkUser = User::where([['idnumber', '=', $request->payload['user_userid']], ['passcode', '=', $request->payload['user_passcode']]])->first();
                 if(!$checkUser):
                     return response()->json([$message='Incorrect Username or Password'], 404);
@@ -100,18 +99,15 @@ class RegistrationController extends Controller
                     $er_Case_No  = null;
                 }
                 else {
-                    echo 'Inpatient Registration';
                     $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('inpatient', 'old');
                     $registry_id = $sequenceNo['registryId'];
                     $er_Case_No  = null;
                 }
             } else {
-                echo 'Existing';
                 $registry_id = $request->payload['case_No'] ?? $request->payload['register_id_no'] ?? null;
                 $er_Case_No = $request->payload['er_Case_No'] ?? null;
             }
             if($isForAdmission) {
-                echo 'Admission';
                 $this->updateAdmittingCommunicationFile($request);
             }
             $registerPatient = $this->registerPatient($request, $checkUser, $id, $registry_id, $er_Case_No, $isForAdmission);

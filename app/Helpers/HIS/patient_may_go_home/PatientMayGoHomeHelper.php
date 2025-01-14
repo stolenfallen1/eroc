@@ -5,6 +5,7 @@ use App\Helpers\GetIP;
 
 class PatientMayGoHomeHelper {
     public function savePatientData($request, $checkUser) {
+        echo 'Saving patient data...';
         return [
             'queue_Number'              => 0,
             'mscDisposition_Id'         => $request->payload['mscDisposition_Id'],

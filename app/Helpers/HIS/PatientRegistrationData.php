@@ -242,7 +242,7 @@
                 'medical_Package_Id'                        => $request->payload['medical_Package_Id'] ?? null,
                 'medical_Package_Name'                      => $request->payload['medical_Package_Name'] ?? null,
                 'medical_Package_Amount'                    => $request->payload['medical_Package_Amount'] ?? null,
-                'chief_Complaint_Description'               => $request->payload['chief_Complaint_Description'] ?? null,
+                'chief_Complaint_Description'               => (string)$request->payload['chief_Complaint_Description'] ?? null,
                 'impression'                                => $request->payload['impression'] ?? null,
                 'admitting_Diagnosis'                       => $request->payload['admitting_Diagnosis'] ?? null,
                 'discharge_Diagnosis'                       => $request->payload['discharge_Diagnosis'] ?? null,

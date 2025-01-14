@@ -45,4 +45,5 @@ Route::group(['middleware' => 'auth:api'], function () {
     require_once('his/api_his_functions.php');
     require_once('servicerecord/service_record_api.php');
     require_once('biometrics/api.php');
+    require_once('servicerecord/cdg_service_record/employee_service_record_api.php');
 });

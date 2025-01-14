@@ -7,6 +7,11 @@ use App\Http\Controllers\ServiceRecord\TbcMaster;
 use App\Http\Controllers\ServiceRecord\PdfController;
 use App\Http\Controllers\ServiceRecord\EmployeeTbcMaster;
 use App\Http\Controllers\ServiceRecord\DepartmentTbcMaster;
+
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\dashboard\Dashboard;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\EmployeeMasterRecord;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_department\Department;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_employee\Employee;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -51,4 +56,5 @@ Route::get('/department/department-employee',                   [DepartmentTbcMa
 //     Route::get('get-department-list', 'getDepartmentList');
 //     Route::get('get-department-employee', 'getDeptEmployee');
 // });
+
 

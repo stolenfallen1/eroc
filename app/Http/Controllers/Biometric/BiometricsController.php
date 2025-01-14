@@ -50,6 +50,7 @@ class BiometricsController extends Controller
         return response()->json($data,200);
      
     }
+    
     public function store(Request $request)
     {
 

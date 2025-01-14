@@ -23,7 +23,7 @@ class BiometricsController extends Controller
     protected $p_hostname;
     protected $p_token;
     protected $p_dbstatus; 
-       
+
     public function __construct()
     {
         $this->p_BranchId             = Request()->p_BranchId ?? "";
@@ -56,7 +56,7 @@ class BiometricsController extends Controller
         DB::connection('sqlsrv_cdh_payroll')->beginTransaction();
         try {
             DB::connection('sqlsrv_cdh_payroll')->statement(
-                "SET NOCOUNT ON; EXEC spBiometric_SaveHandPunch_Online ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
+                "SET NOCOUNT ON; EXEC spBiometric_SaveHandPunch_Online ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?",
                 [
                     $this->p_BranchId,
                     $this->p_Empnum,

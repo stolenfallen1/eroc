@@ -40,22 +40,25 @@ class PatientRegistryObserverHelper {
 
     private function handleTBOutPatientData($patientRegistry) {
         return [
-            'HospNum'       =>  $patientRegistry->patient_Id,
-            'IDNum'         =>  $patientRegistry->case_No . 'B',
-            'ERNum'         =>  $patientRegistry->er_Case_No,
-            'AdmDate'       =>  $patientRegistry->registry_Date  
-                            ?   $patientRegistry->registry_Date 
-                            :   Carbon::now(),
-            'ServiceID1'    => 10,          
-            'OpdStatus'     => 'E',
-            'OpdType'       => 'O',
-            'HosPlan'       => $patientRegistry->mscPrice_Schemes == 1 ? 'P' : 'C',
-            'PatientType'   => 'C',
-            'DoctorID1'     => $patientRegistry->attending_Doctor ?? '',                
-            'AccountNum'    =>  $patientRegistry->guarantor_Id   
-                            ?   $patientRegistry->guarantor_Id 
-                            :   $patientRegistry->patient_Id,
-            'UserID'        => $patientRegistry->updatedBy
+            'HospNum'           =>  $patientRegistry->patient_Id,
+            'IDNum'             =>  $patientRegistry->case_No . 'B',
+            'ERNum'             =>  $patientRegistry->er_Case_No,
+            'AdmDate'           =>  $patientRegistry->registry_Date  
+                                ?   $patientRegistry->registry_Date 
+                                :   Carbon::now(),
+            'ServiceID1'        => 10,          
+            'OpdStatus'         => 'E',
+            'OpdType'           => 'O',
+            'HosPlan'           => $patientRegistry->mscPrice_Schemes == 1 ? 'P' : 'C',
+            'PatientType'       => 'C',
+            'ChiefComplaintID1' =>  1,
+            'ChiefComplaintID2' =>  1,
+            'ChiefComplaintID3' =>  1,
+            'DoctorID1'         => $patientRegistry->attending_Doctor ?? '',                
+            'AccountNum'        =>  $patientRegistry->guarantor_Id   
+                                ?   $patientRegistry->guarantor_Id 
+                                :   $patientRegistry->patient_Id,
+            'UserID'            => $patientRegistry->updatedBy
         ];
     }
 

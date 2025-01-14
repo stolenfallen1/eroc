@@ -106,7 +106,7 @@ class AppointmentsController extends Controller
             $slotNo = $this->SequenceHelper->getSlots($payload);
             $slotLimit = 20;
 
-            $data = PatientAppointmentsTemporary::select('lastname', 'firstname', 'patient_Id', 'id', 'user_id')
+            $data = PatientAppointmentsTemporary::select('lastname', 'firstname', 'patient_id', 'id', 'user_id')
                 ->where('user_id', $payload['id'])->first();
 
             $patient_id = $data['patient_id'] ?? null;
@@ -191,7 +191,7 @@ class AppointmentsController extends Controller
             ]);
 
 
-            // DB::connection('sqlsrv_patient_data')->commit();
+            DB::connection('sqlsrv_patient_data')->commit();
             return response()->json(['message' => 'Successfully Paid appointment'], 201);
         } catch (\Exception $e) {
             DB::connection('sqlsrv_patient_data')->rollBack();

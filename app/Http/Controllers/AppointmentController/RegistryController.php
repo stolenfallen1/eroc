@@ -143,8 +143,9 @@ class RegistryController extends Controller
         } else {
             return response()->json([
                 'data' => 0,
-                'message' => "Unfortunately, no slot number is available today. Please select another date. Thank you!"
-            ], 201);
+                'message' => "Unfortunately, no slot number is available today. Please select another date. Thank you!",
+                'status' => 'full'
+            ], 200);
         }
     }
 

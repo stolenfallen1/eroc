@@ -56,8 +56,11 @@ class Patient extends Model
     protected $table = 'CDG_PATIENT_DATA.dbo.PatientMaster';
     protected $connection = "sqlsrv_patient_data";
     protected $guarded = [];
+    protected $appends = ['name'];
 
-
+    public function getNameAttribute(){
+        return $this->lastname.', '.$this->firstname.' '.$this->middlename;
+    }
     // Relationships
     public function medsysPatientInfo() {
         return $this->belongsTo(MedsysPatientMaster::class, 'HospNum', 'patient_Id');

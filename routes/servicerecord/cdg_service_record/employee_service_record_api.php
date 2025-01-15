@@ -24,7 +24,7 @@ use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_employee\E
 // Route::get('/get-employee-detail', [Employee::class, 'getEmployeeDetail']);
 
 Route::controller(Dashboard::class)->group(function() {
-    Route::get('dashboard', 'index');
+    Route::get('display-dashboard', 'index');
     Route::get('service-record-dashboard', 'serviceRecordDashboard');
 });
 

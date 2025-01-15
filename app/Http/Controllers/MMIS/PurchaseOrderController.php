@@ -45,7 +45,7 @@ class PurchaseOrderController extends Controller
 
        if($this->role->purchaser()){
             $branch = Request()->branch_id ? Request()->branch_id : Auth()->user()->branch_id;
-            $department_id = Request()->department_id != '' ? Request()->department_id : NULL;
+            $department_id = NULL;
             $comptroller_count = DB::connection('sqlsrv_mmis')->select("SET NOCOUNT ON; EXEC PurchaseOrderForApprovalCount @branch_id = ?, @warehouse_id = ?, @approver_type = ?", [$branch, $department_id, 'comptroller']);
             $admin_count = DB::connection('sqlsrv_mmis')->select("SET NOCOUNT ON; EXEC PurchaseOrderForApprovalCount @branch_id = ?, @warehouse_id = ?, @approver_type = ?", [$branch, $department_id, 'admin']);
             $corporate_count = DB::connection('sqlsrv_mmis')->select("SET NOCOUNT ON; EXEC PurchaseOrderForApprovalCount @branch_id = ?, @warehouse_id = ?, @approver_type = ?", [$branch, $department_id, 'corporate_admin']);

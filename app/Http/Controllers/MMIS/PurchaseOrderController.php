@@ -43,7 +43,7 @@ class PurchaseOrderController extends Controller
     public function getCount()
     {
 
-       if($this->role->purchaser()){
+       if($this->role->purchaser() || $this->row->isdietary()){
             $branch = Request()->branch_id ? Request()->branch_id : Auth()->user()->branch_id;
             $department_id = Request()->department_id ? Request()->department_id : NULL;
             $comptroller_count = DB::connection('sqlsrv_mmis')->select("EXEC PurchaseOrderForApprovalCount @branch_id = ?, @warehouse_id = ?, @approver_type = ?", [$branch, $department_id, 'comptroller']);

@@ -134,11 +134,7 @@ class PurchaseOrderConsignments
             });
           } elseif ($column === 'invoice') {
             $query->orWhere('invoice_no', 'LIKE', '%' . $keyword . '%');
-          } elseif ($column === 'dr_number') {
-            $query->orWhereHas('rr_consignment_master', function ($q2) use ($keyword) {
-              $q2->orWhere('rr_Document_Delivery_Receipt_No', 'LIKE', '%' . $keyword . '%');
-            });
-          }
+          } 
         }
       });
     }

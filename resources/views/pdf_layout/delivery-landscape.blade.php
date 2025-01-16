@@ -501,17 +501,6 @@
     </tr>
 
   </table>
-  <!-- <p class="csstransforms">THIS DOCUMENT IS NOT VALID <br/> FOR CLAIM OF INPUT TAXES</p> -->
-  <div class="spacer"></div>
-
-  <div class="title-section">
-  </div>
-  <table class="signatory-section1">
-    <tbody>
-
-    </tbody>
-  </table>
-
 </body>
 
 </html>

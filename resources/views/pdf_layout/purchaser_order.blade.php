@@ -101,6 +101,7 @@
     .note {
       font-style: italic;
       font-size: 12px;
+      vertical-align: top !important;
       margin-bottom: 20px;
     }
 
@@ -136,7 +137,7 @@
     }
 
     @page {
-      margin: 40px 10px 10px 10px !important;
+      margin: 35px 15px 15px 15px !important;
       width: 100%;
     }
 
@@ -176,6 +177,21 @@
 
     .text-left {
       text-align: left;
+    }
+    .approver-table{
+      width: 100%;
+    }
+    .approver-table td:nth-child(1){
+      width: 30%;
+    }
+    .approver-table td:nth-child(2){
+      width: 30%;
+    }
+    .approver-table td:nth-child(3){
+      width: 30%;
+    }
+    .text-center{
+      text-align: center;
     }
   </style>
 </head>
@@ -240,7 +256,7 @@
   <table class="item-section">
     <thead>
       <tr>
-        <th colspan="2">Code</th>
+        <th >Code</th>
         <th>Item Description</th>
         <th>UOM</th>
         <th>QTY </th>
@@ -255,14 +271,14 @@
     <tbody>
       @foreach ($pdf_data['purchase_order_items'] as $detail)
       <tr>
-        <td class="item-td" width="10">
+        <!-- <td class="item-td" width="10">
           @if($detail['vat_type'] == 1)
           <div>**</div>
           @elseif($detail['vat_type'] == 2)
           <div>*</div>
           @else
           @endif
-        </td>
+        </td> -->
         <td class="item-td" width="40">{{ $detail['itemcode'] }}</td>
         <td class="item-td">{{ $detail['itemname'] }}</td>
         <td class="item-td" width="40">{{ $detail['uom'] }}</td>
@@ -276,18 +292,18 @@
       @endforeach
       @if(count($pdf_data['free_goods_purchase_order_items']) > 0)
       <tr>
-        <td colspan="10" class="item-td border-none text-left">
+        <td colspan="9" class="item-td border-none text-left">
           <div><br></div>
         </td>
       </tr>
       <tr>
-        <td colspan="10" class="item-td border-none text-left">
+        <td colspan="9" class="item-td border-none text-left">
           All Free Goods
         </td>
       </tr>
       <thead>
         <tr>
-          <th colspan="2">Code</th>
+          <th >Code</th>
           <th>Item Description</th>
           <th>UOM</th>
           <th>QTY </th>
@@ -302,7 +318,7 @@
 
       @foreach ($pdf_data['free_goods_purchase_order_items'] as $detail)
       <tr>
-        <td class="item-td" width="60" colspan="2">{{ $detail['itemcode'] }}</td>
+        <td class="item-td" width="60" >{{ $detail['itemcode'] }}</td>
         <td class="item-td">{{ $detail['itemname'] }}</td>
         <td class="item-td">{{ $detail['uom'] }}</td>
         <td class="item-td" width="40">{{ intval($detail['order_qty']) }}</td>
@@ -315,15 +331,16 @@
       @endforeach
       @endif
       <tr>
-        <td colspan="10" class="item-td border-none text-left">
+        <td colspan="9" class="item-td border-none text-left">
           <div><br></div>
         </td>
       </tr>
       <tr>
-        <td colspan="6" rowspan="7" class="border-none">
-          <p class="note">Please enter out order subject to following conditions. Purchase Order number must appear on all invoices. When price are not stated, order must not be filled at
-            a price higher than charged on last purchase without notifying the hospital.
-          </p>
+        <td colspan="5" rowspan="7" class="border-none">
+            <p class="note">
+              Please enter out order subject to following conditions. Purchase Order number must appear on all invoices. When price are not stated, order must not be filled at
+              a price higher than charged on last purchase without notifying the hospital.
+            </p>
         </td>
         <td colspan="2" class="border-none text-right">Gross Amount :</td>
         <td colspan="2" class="item-td border-none  text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
@@ -337,7 +354,9 @@
         <td colspan="2" class="item-td border-none text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'] - $pdf_data['discount'], 2)}}</td>
       </tr>
       <tr>
-        <td colspan="2" class="border-none  text-right"><div style="height: 5px;"></div></td>
+        <td colspan="2" class="border-none  text-right">
+          <div style="height: 5px;"></div>
+        </td>
         <td colspan="2" class="item-td border-none text-left"></td>
       </tr>
       <tr>
@@ -357,11 +376,16 @@
 
     </tbody>
   </table>
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <br>
+        </td>
+      </tr>
+    </tbody>
+  </table>
   <p class="csstransforms">THIS DOCUMENT IS NOT VALID <br /> FOR CLAIM OF INPUT TAXES</p>
-  <!-- <div class="spacer"></div>  -->
-  <!-- <p class="note">Please enter out order subject to following conditions. Purchase Order number must appear on all invoices. When price are not stated, order must not be filled at
-    a price higher than charged on last purchase without notifying the hospital.
-  </p> -->
   <div class="title-section">
     <h5 class="reminder">** This Form is Electronically Signed Out **</h>
   </div>
@@ -446,5 +470,4 @@
     </tbody>
   </table>
 </body>
-
 </html>

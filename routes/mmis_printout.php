@@ -291,20 +291,13 @@ Route::get('/print-delivery/{id}', function ($pid) {
     });
     $qty = 0;
     $grand = 0;
-    foreach ($nonFreeGoods as $item) {
+     foreach ($nonFreeGoods as $item) {
         
             $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
             $subTotal += (float)$itemTotal;
             $discount += (float)$item->discount;
             $vatAmount += (float)$item->vatamount;
             $grandTotal += (float)$item->net_amount;
-
-            if($item->vat_type == 1){
-                $grand = $grandTotal + $vatAmount;
-            }else{
-                
-                $grand = $grandTotal - $vatAmount;
-            }
             if ($item->currency_id == 2) {
                 $currency = '$';
             }
@@ -326,7 +319,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
         'sub_total' => $subTotal,
         'discount' => $discount,
         'vat_amount' => $vatAmount,
-        'grand_total' => $grand,
+        'grand_total' => $grandTotal,
         'currency' => $currency
     ];
 

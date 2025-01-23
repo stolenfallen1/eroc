@@ -289,15 +289,27 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $nonFreeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 0;
     });
-    $qty = 0;
-    $grand = 0;
-     foreach ($nonFreeGoods as $item) {
+     $vatableSales = 0;
+    $netAmount = 0;
+    foreach ($nonFreeGoods as $item) {
         
             $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
             $subTotal += (float)$itemTotal;
-            $discount += (float)$item->discount;
             $vatAmount += (float)$item->vatamount;
-            $grandTotal += (float)$item->net_amount;
+            if ($item->vat_type == 1) {
+                $vatableSales = $itemTotal;
+            }elseif ($item->vat_type == 2) {
+                $vatableSales = $itemTotal - $vatAmount;
+            }
+            $discount += (float)$item->discount;
+            $netAmount += (float)$itemTotal - $discount;
+            // $netAmount += (float)$item->net_amount;
+            if ($item->vat_type == 1) {
+                $grandTotal = $netAmount + $vatAmount;
+            }elseif ($item->vat_type == 2) {
+                $grandTotal = $netAmount;
+            }
+           
             if ($item->currency_id == 2) {
                 $currency = '$';
             }
@@ -317,6 +329,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
         'groupedNonFreeGoods' => $groupedNonFreeGoods,
         'free_goods_delivery_items' => $freeGoods,
         'sub_total' => $subTotal,
+        'vatableSales' => $vatableSales,
         'discount' => $discount,
         'vat_amount' => $vatAmount,
         'grand_total' => $grandTotal,

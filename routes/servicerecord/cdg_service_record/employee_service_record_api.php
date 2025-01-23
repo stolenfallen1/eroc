@@ -6,6 +6,7 @@ use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\dashboard\Das
 use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\EmployeeMasterRecord;
 use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_department\Department;
 use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_employee\Employee;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\print_record\PrintEmployeeRecord;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -45,5 +46,9 @@ Route::controller(Employee::class)->group(function() {
 Route::controller(Department::class)->group(function() {
     Route::get('get-department-list', 'getDepartmentList');
     Route::get('get-department-employee', 'getDeptEmployee');
+});
+
+Route::controller(PrintEmployeeRecord::class)->group(function() {
+    Route::get('/service_record/pdf/print-employee-service-record', 'generatePDF');
 });
 

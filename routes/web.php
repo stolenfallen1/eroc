@@ -15,6 +15,7 @@ use App\Http\Controllers\HIS\his_functions\SOAController;
 use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 use App\Http\Controllers\HIS\services\InpatientRegistrationController;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\EmployeeMasterRecord;
 
 use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
@@ -51,6 +52,7 @@ Route::group(['middleware' => 'admin.user'], function () {
     Route::get('user-details', [AuthController::class, 'userDetails']);
 });
 
+Route::get('/test-query', [EmployeeMasterRecord::class, 'getEmployeeServiceRecord']);
 Route::get('/fetch-data', [EmergencyRegistrationController::class, 'fetchData'])->where('id', '[0-9]+');
 Route::get('/get-indicator', [CaseIndicatorController::class, 'list']);
 Route::get('/get-emergency', [EmergencyRegistrationController::class, 'index']);

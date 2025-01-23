@@ -30,7 +30,7 @@ class Department extends Controller
                 $item->Middlename   = $this->strTransform($item->Middlename);
                 return $item;
             });
-
+            
             return response()->json($employeeList, 200);
 
         } catch(\Exception $e) {

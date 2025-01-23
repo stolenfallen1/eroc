@@ -490,6 +490,7 @@ Route::resource('age-bracket', AgeBracketController::class);
 Route::resource('bed-status', BedStatusController::class);
 Route::resource('blood-types', BloodTypeController::class);
 Route::resource('death-type', DeathTypeController::class);
+
 Route::controller(DeathTypeController::class)->group(function () {
     Route::get('get-death-type', 'list');
 });

@@ -1,10 +1,14 @@
 <?php
 
-use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
+use App\Http\Controllers\HIS\basic_form_registration_data\BasicRegistryData;
+use App\Http\Controllers\HIS\services\emergency\EmergencyPatientList;
+use App\Http\Controllers\HIS\services\in_patient\InPatientList;
+use App\Http\Controllers\HIS\services\out_patient\OutPatientList;
 use App\Http\Controllers\HIS\services\OutpatientRegistrationController;
 use App\Http\Controllers\HIS\services\InpatientRegistrationController;
-use App\Http\Controllers\HIS\services\RegistrationController;
+use App\Http\Controllers\HIS\services\patient_registration\PatientRegistration;
 use App\Http\Controllers\HIS\AllergyTypeController;
+use App\Http\Controllers\HIS\services\revoke_patient_registration\RevokePatientRegistration;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HIS\MasterPatientController;
 use App\Http\Controllers\HIS\his_functions\SOAController;
@@ -16,29 +20,38 @@ Route::get('search-patient-master', [MasterPatientController::class, 'list']);
 Route::resource('patient-master', MasterPatientController::class);
 Route::post('get-patient-allergy-history', [AllergyTypeController::class, 'getPatientAllergyHistory']);
 
-Route::controller(OutpatientRegistrationController::class)->group(function () {
-    Route::get('get-outpatient', 'index');
-    Route::get('get-revoked-outpatient', 'getrevokedoutpatient');
-    Route::post('register-outpatient', 'register');
-    Route::put('update-outpatient/{id}', 'update');
-    Route::put('revoke-patient/{id}', 'revokepatient');
-    Route::put('unrevoke-patient/{id}', 'unrevokepatient');
-}); 
-
-Route::controller(EmergencyRegistrationController::class)->group(function () {
-    Route::get('get-emergency', 'index');
-    Route::get('get-staff-id', 'getStaffId');
-    Route::put('revoke-patient/{id}', 'revokepatient');
-    Route::get('get-revoked-emergency-patient', 'getrevokedemergencypatient');
-    Route::get('/patient-brought-by', 'getPatientBroughtBy');
-    Route::get('/get-msc-complaint', 'getComplaintList');
+Route::controller(BasicRegistryData::class)->group(function() {
+    Route::get('patient-brought-by', 'getPatientBroughtBy');
     Route::get('disposition', 'getDisposition');
     Route::get('service-type', 'getServiceType');
+    Route::get('get-msc-complaint', 'getComplaintList');
 });
 
-Route::controller(RegistrationController::class)->group(function() {
+Route::controller(PatientRegistration::class)->group(function() {
     Route::post('register-patient', 'register');
     Route::put('update-patient/{id}', 'update');
+});
+
+Route::controller(OutPatientList::class)->group(function () {
+    Route::get('get-out-patient', 'registeredPatientList');
+    Route::get('get-revoked-out-patient', 'revokedPatientList');
+});
+
+Route::controller(EmergencyPatientList::class)->group(function () {
+    Route::get('get-emergency-patient', 'registeredPatientList');
+    Route::get('get-revoked-emergency-patient', 'revokedPatientList');
+});
+
+Route::controller(InPatientList::class)->group(function () {
+    Route::get('get-in-patient', 'registeredPatientList');
+    Route::get('patient-for-admission', 'getPatientForAdmission');
+    Route::get('get-selected-patient-for-admission/{id}', 'getSelectedPatientForAdmission');
+    Route::get('get-revoked-in-patient', 'revokedPatientList');
+});
+
+Route::controller(RevokePatientRegistration::class)->group(function () {
+    Route::put('revoke-patient/{id}', 'revokedPatientRegistration');
+    Route::post('unrevoke-patient', 'unRevokedPatientRegistration');
 });
 
 Route::controller(SOAController::class)->group(function() {
@@ -63,13 +76,4 @@ Route::controller(PatientForMayGoHome::class)->group(function(){
     Route::get('doctors-list', 'getDoctorsList');
     Route::get('patient-status', 'getPatientStatusList');
     Route::get('get-er-result', 'erResult');
-});
-
-Route::controller(InpatientRegistrationController::class)->group(function () {
-    Route::get('get-inpatient', 'index');
-    Route::get('get-revoked-inpatient', 'getrevokedinpatient');
-    Route::post('register-inpatient', 'register');
-    Route::put('update-inpatient/{id}', 'update'); 
-    Route::get('patient-for-admission', 'getPatientForAdmission');
-    Route::get('get-selected-patient-for-admission/{id}', 'getSelectedPatientForAdmission');
 });

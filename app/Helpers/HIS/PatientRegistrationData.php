@@ -16,7 +16,6 @@
             ->first();
             return $existingPatient;
         }
-
         public function handleExistingRegistryData($patient_id, $today) {
             $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
             ->whereDate('registry_Date', $today)
@@ -173,7 +172,7 @@
                 'registry_Userid'                           => isset($checkUser->idnumber) 
                                                             ?  $checkUser->idnumber
                                                             :  Auth()->user()->idnumber,
-                'registry_Date'                             => Carbon::now(),
+                'registry_Date'                             => $isForAdmission ? $request->payload['discharged_Date'] : Carbon::now(),
                 'registry_Status'                           => $request->payload['registry_Status'] ?? null,
                 'registry_Hostname'                         => (new GetIP())->getHostname(),
                 'discharged_Userid'                         => $isForAdmission ? null : $request->payload['discharged_Userid'] ?? null,

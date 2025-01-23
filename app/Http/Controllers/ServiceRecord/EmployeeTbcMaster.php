@@ -34,11 +34,11 @@ class EmployeeTbcMaster extends Controller
     public function getEmployeeServiceRecords() {
         try{
             $userRequest = $this->getUserRequest();
-            $serviceRecords     =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $serviceRecords = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($serviceRecords)) {
-                return response()->json([], 200);
+                return response()->json([], 404);
             }
-            return response()->json($serviceRecords);
+            return response()->json($serviceRecords, 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

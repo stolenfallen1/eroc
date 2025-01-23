@@ -51,11 +51,11 @@ class MscWarehouseGroupController extends Controller
     {
         try {
             $data['data'] = Warehousegroups::where('id', $id)->update([
-                           'description' => $request->payload['description'],
-                           'prefix' => $request->payload['prefix'],
-                           'postfix' => $request->payload['postfix'],
-                           'isactive' => $request->payload['isactive']
-                        ]);
+                        'description' => $request->payload['description'],
+                        'prefix' => $request->payload['prefix'],
+                        'postfix' => $request->payload['postfix'],
+                        'isactive' => $request->payload['isactive']
+                    ]);
             $data['msg'] = 'Success';
             return Response()->json($data, 200);
 

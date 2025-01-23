@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\HIS\services;
+namespace App\Http\Controllers\HIS\services\patient_registration;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -17,8 +17,8 @@ use App\Helpers\HIS\PatientRegistrySequence;
 use App\Models\HIS\AdmittingCommunicationFile;
 use App\Models\HIS\MedsysAdmittingCommunication;
 
-class RegistrationController extends Controller
-{
+class PatientRegistration extends Controller {
+    //
     protected $check_is_allow_medsys;
     protected $patient_data;
     protected $sequence_number;
@@ -355,5 +355,4 @@ class RegistrationController extends Controller
             ], 500);
         }
     }
-
 }

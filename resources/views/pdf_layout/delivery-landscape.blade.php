@@ -302,46 +302,49 @@
 
     <tbody>
       @if(count($pdf_data['groupedNonFreeGoods']) > 0)
-          @foreach ($pdf_data['groupedNonFreeGoods'] as $itemName => $items)
-            @foreach ($items as $index => $item)
-              @php
-                $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('rr_Document_Invoice_No',$item['rr_Document_Invoice_No'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
-                $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
-                $expirydate = '';
-                $batchno = '';
-                $qty = '';
-              @endphp
-              <tr>
-                <td class="item-td">{{ $item['itemcode'] }}</td>
-                <td class="item-td">{{ $itemName }}</td>
-                <!-- Display individual item details -->
-                <td class="item-td">{{ $item['uom'] }}</td>
-                <td class="item-td" width="10">
-                  @foreach($batchdetails as $batch)
-                  <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
-                  @endforeach
-                </td>
-                <td class="item-td" style="width:20;">
-                  @foreach($batchdetails as $batch)
-                  <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
-                  @endforeach
-                </td>
-                <td class="item-td">
-                  @foreach($batchdetails as $batch)
-                  <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
-                  @endforeach 
-                </td>
-                <td class="item-td ">{{ $item['order_qty'] }}</td>
-                <td class="item-td ">{{ $item['served_qty'] }}</td>
-                <td class="item-td ">{{ $total }}</td>
-                <td class="item-td ">{{ ($item['order_qty'] - $total) }}</td>
-                <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],4) }}</td>
-                <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],4) }}</td>
-                <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vatamount'],4) }}</td>
-                <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],4) }}</td>
-              </tr>
-            @endforeach
+      @foreach ($pdf_data['groupedNonFreeGoods'] as $itemName => $items)
+      @foreach ($items as $index => $item)
+      @php
+      $total = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.VwDeliveryDetails')->where('po_Document_Number',$item['po_Document_Number'])->where('isFreeGoods',0)->where('rr_Document_Invoice_No',$item['rr_Document_Invoice_No'])->where('itemcode',$item['itemcode'])->groupBy('po_Document_Number')->sum('served_qty');
+      $batchdetails = DB::connection('sqlsrv_mmis')->table('CDG_MMIS.dbo.itemBatchModelNumberMaster')->where('delivery_item_id',$item->rr_detail_id)->get();
+      $expirydate = '';
+      $batchno = '';
+      $qty = '';
+      @endphp
+      <tr>
+        @if ($index == 0)
+        <td class="item-td">{{ $item['itemcode'] }}</td>
+        <td class="item-td">{{ $itemName }}</td>
+        <!-- @endif -->
+        <!-- Display individual item details -->
+        <td class="item-td">{{ $item['uom'] }}</td>
+        <td class="item-td" width="10">
+          @foreach($batchdetails as $batch)
+          <div>{{$item['ismedicine'] ? $batch->batch_Number : ''}}</div>
           @endforeach
+        </td>
+        <td class="item-td" style="width:20;">
+          @foreach($batchdetails as $batch)
+          <div>{{$item['ismedicine'] ? $batch->item_Qty : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td">
+          @foreach($batchdetails as $batch)
+          <div>{{$item['ismedicine'] ? date('m-d-Y',strtotime($batch->item_Expiry_Date)) : ''}}</div>
+          @endforeach
+        </td>
+        <td class="item-td ">{{ $item['order_qty'] }}</td>
+        <td class="item-td ">{{ $item['served_qty'] }}</td>
+        <td class="item-td ">{{ $total }}</td>
+        <td class="item-td ">{{ ($item['order_qty'] - $total) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['price'],4) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['discount'],4) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['vatamount'],4) }}</td>
+        <td class="item-td ">{{$pdf_data['currency']}}{{ number_format($item['net_amount'],4) }}</td>
+      </tr>
+      @endforeach
+      @endforeach
+
       @else
       <tr>
         <td colspan="14"> No Record found</td>
@@ -357,16 +360,16 @@
       <td class="border-none text-right"></td>
       <td class="border-none  text-left "> </td>
       <td colspan="8" class="border-none text-right">Gross Amount :</td>
-      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 4)}}</td>
     </tr>
 
     <tr>
       <td colspan="10" width="150" class="border-none  text-right">Less : Discount :</td>
-      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 2)}}</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['discount'], 4)}}</td>
     </tr>
     <tr>
       <td colspan="10" width="150" class="border-none  text-right"></td>
-      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['discount']), 2)}}</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['discount']), 4)}}</td>
     </tr>
     <tr>
       <td colspan="10" width="150" class="border-none  text-right"></td>
@@ -380,23 +383,25 @@
         {{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - $pdf_data['vat_amount']), 2)}}
         @else
         {{$pdf_data['currency']}}
-            {{number_format((($pdf_data['sub_total']) - $pdf_data['vat_amount']), 2)}}
+
+        {{number_format(($pdf_data['vatableSales']), 4)}}
+
         @endif
       </td>
     </tr>
     <tr>
       <td colspan="10" width="150" class=" border-none  text-right">VAT :</td>
-      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 2)}}</td>
+      <td colspan="2" width="10" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vat_amount'], 4)}}</td>
     </tr>
     <!-- <tr>
       <td class="border-none text-right"></td>
       <td class="border-none  text-left "> </td>
       <td colspan="8" class="border-none text-right">SubTotal (Vat Exclusive):</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 2)}}</td>
+      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['sub_total'], 4)}}</td>
     </tr> -->
     <tr>
       <td colspan="10" class="border-none  text-right">TOTAL AMOUNT DUE :</td>
-      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 2)}}</td>
+      <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['grand_total'], 4)}}</td>
     </tr>
   </table>
   @if(count($pdf_data['free_goods_delivery_items']) > 0)

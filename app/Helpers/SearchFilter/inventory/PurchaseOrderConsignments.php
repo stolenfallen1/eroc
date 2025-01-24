@@ -121,7 +121,7 @@ class PurchaseOrderConsignments
   }
   public function searcColumns()
   {
-    $searchable = ['invoice', 'rr_number', 'dr_number'];
+    $searchable = ['invoice', 'rr_number', 'dr_number','po_number'];
     if (Request()->keyword) {
       $keyword = Request()->keyword;
       // $this->model->where('rr_Document_Number', 'LIKE' , '%'.$keyword.'%' );
@@ -132,7 +132,13 @@ class PurchaseOrderConsignments
             $query->orWhereHas('rr_consignment_master', function ($q2) use ($keyword) {
               $q2->where('rr_Document_Number', 'LIKE', '%' . $keyword . '%');
             });
-          } elseif ($column === 'invoice') {
+          }
+          elseif ($column === 'po_number') {
+            $query->orWhereHas('purchaseOrder', function ($q2) use ($keyword) {
+              $q2->where('po_Document_Number', 'LIKE', '%' . $keyword . '%');
+            });
+          }
+          elseif ($column === 'invoice') {
             $query->orWhere('invoice_no', 'LIKE', '%' . $keyword . '%');
           }
         }

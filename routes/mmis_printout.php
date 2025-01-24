@@ -65,6 +65,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
 
 
 
+        $vatatableSales = 0;
         // Calculate totals for non-free goods
         foreach ($nonFreeGoods as $item) {
             $itemTotal = $item->order_qty * $item->price;
@@ -72,6 +73,13 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
            
             $Nondiscount += (float)$item->discount;
             $vatAmount += (float)$item->vat_amount;
+
+             if ($item->discount_type == 1) {
+                $vatatableSales =  ($subTotalNonFreeGoods - $Nondiscount) - $vatAmount;
+            }else{
+                $vatatableSales =  $subTotalNonFreeGoods - $vatAmount;
+            }
+            
             $grandTotalNonFreeGoods += (float)$item->net_amount;
             if ($item->currency_id == 2) {
                 $currency = '$';
@@ -87,6 +95,7 @@ Route::get('/print-purchase-order/{id}', function ($pid) {
             'free_goods_purchase_order_items' => $freeGoods,
             'sub_total' => $subTotalNonFreeGoods,
             'discount' => $Nondiscount,
+            'vatablesales' => $vatatableSales,
             'vat_amount' => $vatAmount,
             'grand_total' => $grandTotalNonFreeGoods,
             'consignment'=>$consignment,

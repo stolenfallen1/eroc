@@ -27,7 +27,7 @@ class Dashboard extends Controller
 
     public function serviceRecordDashboard() {
         try {
-            $data = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeServiceDashBoard');
+            $data = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeServiceDashBoard');
             if(empty($data)) {
                 return response()->json([], 400);
             }

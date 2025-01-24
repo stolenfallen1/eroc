@@ -361,7 +361,7 @@
       </tr>
       <tr>
         <td colspan="2" class=" border-none  text-right">VAT SALES:</td>
-        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format(($pdf_data['sub_total'] - abs($pdf_data['vat_amount'])), 4)}}</td>
+        <td colspan="2" class="item-td border-none border-bottom text-left">{{$pdf_data['currency']}}{{number_format($pdf_data['vatablesales'], 4)}}</td>
       </tr>
 
       <tr>

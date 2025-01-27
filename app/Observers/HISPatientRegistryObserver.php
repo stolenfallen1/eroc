@@ -6,6 +6,7 @@ use App\Helpers\HIS\PatientRegistryObserverHelper;
 use App\Helpers\HIS\SysGlobalSetting;
 use App\Models\HIS\services\PatientRegistry;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\HIS\PatientMasterObserverHelper;
 use Carbon\Carbon;
 use App\Models\HIS\MedsysERMaster;
 use App\Models\HIS\MedsysPatientMaster;
@@ -21,9 +22,11 @@ class HISPatientRegistryObserver
      */
     protected $check_is_allow_medsys;
     protected $medsysObserverHelper;
+    protected $check_patient_account_type;
     public function __construct() {
         $this->check_is_allow_medsys = (new SysGlobalSetting())->check_is_allow_medsys_status();
         $this->medsysObserverHelper = new PatientRegistryObserverHelper();
+        $this->check_patient_account_type = new PatientMasterObserverHelper();
     }
     public function created(PatientRegistry $patientRegistry)
     {

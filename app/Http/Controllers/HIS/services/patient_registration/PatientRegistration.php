@@ -87,7 +87,7 @@ class PatientRegistration extends Controller {
                 endif;
             }
             $today = Carbon::now();
-            $existingRegistry = $this->patient_data->handleExistingRegistryData($id, $today);
+            $existingRegistry = $this->patient_data->handleExistingRegistryData($id, $today, $request->payload['mscAccount_Trans_Types']);
             if(!$existingRegistry || $isForAdmission) {
                 if(intval($request->payload['mscAccount_Trans_Types']) === 5 && !$isForAdmission) {
                     $sequenceNo = $this->sequence_number->handlePatientRegistrationSequences('emergency', 'old');
@@ -104,7 +104,8 @@ class PatientRegistration extends Controller {
                     $er_Case_No  = null;
                 }
             } else {
-                $registry_id = $request->payload['case_No'] ?? $request->payload['register_id_no'] ?? null;
+                $use_Case_No = $this->patient_data->getUseCaseNo($request->payload['patient_Id'], $today, $request->payload['mscAccount_Trans_Types']);
+                $registry_id = $request->payload['case_No'] ?? $request ->payload['register_id_no'] ?? $use_Case_No;
                 $er_Case_No = $request->payload['er_Case_No'] ?? null;
             }
             if($isForAdmission) {

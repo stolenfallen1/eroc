@@ -310,6 +310,8 @@ Route::get('/print-delivery/{id}', function ($pid) {
                 $vatableSales += $itemTotal + $vatAmount;
             }elseif ($item->vat_type == 2) {
                 $vatableSales += $itemTotal;
+            }elseif ($item->vat_type == 3) {
+                $vatableSales += $itemTotal ;
             }
             $discount += (float)$item->discount;
             $netAmount += (float)$itemTotal;

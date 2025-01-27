@@ -9,6 +9,7 @@ use App\Http\Controllers\AuthPOSController;
 use App\Http\Controllers\ClearanceController;
 use App\Http\Controllers\POS\SettingController;
 use App\Http\Controllers\ServiceRecord\PdfController;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\print_record\PrintEmployeeRecord;
 use App\Http\Controllers\Schedules\SchedulingDashboard;
 use App\Http\Controllers\POS\TerminalSettingsController;
 
@@ -18,7 +19,6 @@ Route::get('check-status',function(){
 });
 
 Route::get('clearances', [ClearanceController::class, 'index']);
-Route::get('/service_record/pdf/generate-save-pdf',  [PdfController::class,          'generatePDF']);
 Route::controller(TerminalSettingsController::class)->group(function () {
     Route::post('store-terminal', 'store');
 });

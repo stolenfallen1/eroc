@@ -49,6 +49,6 @@ Route::controller(Department::class)->group(function() {
 });
 
 Route::controller(PrintEmployeeRecord::class)->group(function() {
-    Route::get('/service_record/pdf/print-employee-service-record', 'generatePDF');
+    Route::get('/service_record/pdf/generate-save-pdf', 'generatePDF');
 });
 

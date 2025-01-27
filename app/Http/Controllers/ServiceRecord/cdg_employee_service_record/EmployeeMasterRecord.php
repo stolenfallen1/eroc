@@ -40,7 +40,7 @@ class EmployeeMasterRecord extends Controller
     public function getEmployeeUnderTime() {
         try {
             $userRequest = $this->getUserRequest();
-            $employeeUdertimeSummary        =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $employeeUdertimeSummary =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($employeeUdertimeSummary)) {
                 return response()->json([], 200);
             }
@@ -54,7 +54,7 @@ class EmployeeMasterRecord extends Controller
     public function getEmployeeTardiness() {
         try {
             $userRequest = $this->getUserRequest();
-            $employeeTardySummary           =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $employeeTardySummary = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($employeeTardySummary)) {
                 return response()->json([], 200);
             }
@@ -70,7 +70,6 @@ class EmployeeMasterRecord extends Controller
             if(empty($paidLeaves)) {
                 return response()->json([], 200);
             }
-
             return response()->json($paidLeaves);
         } catch(\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

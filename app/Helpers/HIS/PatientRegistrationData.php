@@ -16,11 +16,20 @@
             ->first();
             return $existingPatient;
         }
-        public function handleExistingRegistryData($patient_id, $today) {
+        public function handleExistingRegistryData($patient_id, $today, $mscAccountTransTypes) {
             $existingRegistry = PatientRegistry::where('patient_Id', $patient_id)
             ->whereDate('registry_Date', $today)
+            ->where('mscAccount_Trans_Types', $mscAccountTransTypes)
             ->exists();
             return $existingRegistry;
+        }
+
+        public function getUseCaseNo($patient_id, $today, $mscAccountTransTypes) {
+            $useCaseNo = PatientRegistry::where('patient_Id', $patient_id)
+            ->whereDate('registry_Date', $today)
+            ->where('mscAccount_Trans_Types', $mscAccountTransTypes)
+            ->first();
+            return $useCaseNo->case_No;
         }
         public function preparePatientData($request, $checkUser, $currentTimestamp, $patientId, $existingData) {
             return [
@@ -1071,6 +1080,5 @@
                     'isRadioTherapy'         => false,
                 ];
             }
-
         }
     }

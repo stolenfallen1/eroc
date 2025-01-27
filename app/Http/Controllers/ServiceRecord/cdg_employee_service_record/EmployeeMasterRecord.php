@@ -12,7 +12,7 @@ class EmployeeMasterRecord extends Controller
     public function getEmployeeServiceRecords() {
         try{
             $userRequest = $this->getUserRequest();
-            $serviceRecords     =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $serviceRecords = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($serviceRecords)) {
                 return response()->json([], 200);
             }
@@ -26,7 +26,7 @@ class EmployeeMasterRecord extends Controller
     public function getEmployeeLeaves() {
         try {
             $userRequest = $this->getUserRequest();
-            $employeeLeaves     =   DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $employeeLeaves = DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($employeeLeaves)) {
                 return response()->json([], 200);
             }
@@ -40,7 +40,7 @@ class EmployeeMasterRecord extends Controller
     public function getEmployeeUnderTime() {
         try {
             $userRequest = $this->getUserRequest();
-            $employeeUdertimeSummary =   DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
+            $employeeUdertimeSummary = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empnum']]);
             if (empty($employeeUdertimeSummary)) {
                 return response()->json([], 200);
             }

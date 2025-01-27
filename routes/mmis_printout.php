@@ -300,6 +300,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     });
     $vatableSales = 0;
     $netAmount = 0;
+    $totalNetAmount = 0;
     foreach ($nonFreeGoods as $item) {
         
             $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure

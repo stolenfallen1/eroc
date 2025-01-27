@@ -19,7 +19,7 @@ Route::get('check-status',function(){
 });
 
 Route::get('clearances', [ClearanceController::class, 'index']);
-Route::get('/service_record/pdf/generate-save-pdf',  [PrintEmployeeRecord::class,'generatePDF']);
+// Route::get('/service_record/pdf/generate-save-pdf',  [PrintEmployeeRecord::class,'generatePDF']);
 Route::controller(TerminalSettingsController::class)->group(function () {
     Route::post('store-terminal', 'store');
 });

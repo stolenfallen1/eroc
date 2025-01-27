@@ -103,8 +103,4 @@ class OutPatientList extends Controller {
             ], 500);
         }
     }
-    
-    
-
-
 }

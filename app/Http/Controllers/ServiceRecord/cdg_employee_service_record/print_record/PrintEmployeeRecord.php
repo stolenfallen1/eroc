@@ -16,13 +16,13 @@ class PrintEmployeeRecord extends Controller
             $p_monthName = $request->input('month');
             $p_empnum = $request->input('empId');
 
-            $employeeLeaves             = DB::connection('sqlsrv_service_record')->select(' EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?', [$p_year, $p_monthName, $p_empnum]);
-            $serviceRecords             = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeServiceRecord ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeUdertimeSummary    = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeUndertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeTardySummary       = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeTardySummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $employeeOT                 = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
-            $paidLeaves                 = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeePaidLeaves');
-            $nonPaidLeaves              = DB::connection('sqlsrv_service_record')->select(' EXEC sp_EmployeeWithoutPaidLeaves');
+            $employeeLeaves             = DB::connection('sqlsrv_service_record')->select('EXEC sp_employee_leaves @Year = ?, @MonthName = ?, @empnum = ?', [$p_year, $p_monthName, $p_empnum]);
+            $serviceRecords             = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeServiceRecord ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeUdertimeSummary    = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeUndertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeTardySummary       = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeTardySummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $employeeOT                 = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeOvertimeSummary ?, ?, ?', [$p_year, $p_monthName, $p_empnum]);
+            $paidLeaves                 = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeePaidLeaves');
+            $nonPaidLeaves              = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeWithoutPaidLeaves');
 
             if (
                     empty($serviceRecords) &&
@@ -34,7 +34,7 @@ class PrintEmployeeRecord extends Controller
                 ) {
                 return response()->json([], 200);
             }
-
+            print_r($employeeLeaves);
             $employeeName           = $serviceRecords[0]->EmployeeName ?? '';
             $section                = $serviceRecords[0]->Section ?? '';
             $dept                   = $serviceRecords[0]->Department ?? '';
@@ -45,62 +45,66 @@ class PrintEmployeeRecord extends Controller
             $resignationDate        = isset($serviceRecords[0]->ResignedDate) ? date('F j, Y', strtotime($serviceRecords[0]->ResignedDate)) : '';
             $yearResigned           = isset($serviceRecords[0]->ResignedDate) ? date('Y', strtotime($serviceRecords[0]->ResignedDate)) : '';
 
-            // Group the data by month
-            $groupedData = collect($serviceRecords)->groupBy(function ($item) {
-                return \Carbon\Carbon::parse($item->TransDate)->format('Y-m');
-            })->map(function ($monthData) {
-                $codes      = [];
-                $days       = [];
-                $monthDesc  = [];
-                $year       = [];
-                foreach ($monthData as $sched) {
-                    $code = $sched->Code;
-                    if (!in_array($code, ['VL', 'SIL', 'R']) && !in_array($code, $codes)) {
-                        $codes[] = $code;
+            $hasFilter = false;
+            if($hasFilter) {
+                $groupedData = $this->filteredServiceRecords($serviceRecords, $p_monthName);
+            } else {
+                $groupedData = collect($serviceRecords)->groupBy(function ($item) {
+                    return \Carbon\Carbon::parse($item->TransDate)->format('Y-m');
+                })->map(function ($monthData, $p_monthName) {
+                    $codes      = [];
+                    $days       = [];
+                    $monthDesc  = [];
+                    $year       = [];
+                    foreach ($monthData as $sched) {
+                        $code = $sched->Code;
+                        if (!in_array($code, ['VL', 'SIL', 'R']) && !in_array($code, $codes)) {
+                            $codes[] = $code;
+                        }
+
+                        $day = \Carbon\Carbon::parse($sched->TransDate)->day;
+                        if (!isset($days[$day])) {
+                            $days[$day] = [];
+                        }
+
+                        if ($sched->Category === 'O' && !in_array('OT', $days[$day])) {
+                            $days[$day][] = 'OT';
+                        } elseif ($sched->Category !== 'O' && !in_array($sched->Code, $days[$day])) {
+                            $days[$day][] = $sched->Code;
+                        }
+
+                        if ($sched->Tardy != ".0000") {
+                            $late = $this->formatTime($sched->Tardy, 'L');
+                            $days[$day][] = $late;
+
+                        }
+                        if ($sched->UnderTime != ".0000") {
+                            $undertime = $this->formatTime($sched->UnderTime, 'U');
+                            $days[$day][] = $undertime;
+                        }
+                        if ($sched->Absent != ".0000") {
+                            $days[$day][] = 'A';
+                        }
+
+                        $formattedMonth = \Carbon\Carbon::parse($sched->TransDate)->format('F');
+                        if (!in_array($formattedMonth, $monthDesc)) {
+                            $monthDesc[] = $formattedMonth;
+                        }
+
+                        $yearValue = \Carbon\Carbon::parse($sched->TransDate)->year;
+                        if (!in_array($yearValue, $year)) {
+                            $year[] = $yearValue;
+                        }
                     }
 
-                    $day = \Carbon\Carbon::parse($sched->TransDate)->day;
-                    if (!isset($days[$day])) {
-                        $days[$day] = [];
-                    }
-
-                    if ($sched->Category === 'O' && !in_array('OT', $days[$day])) {
-                        $days[$day][] = 'OT';
-                    } elseif ($sched->Category !== 'O' && !in_array($sched->Code, $days[$day])) {
-                        $days[$day][] = $sched->Code;
-                    }
-
-                    if ($sched->Tardy != ".0000") {
-                        $late = $this->formatTime($sched->Tardy, 'L');
-                        $days[$day][] = $late;
-
-                    }
-                    if ($sched->UnderTime != ".0000") {
-                        $undertime = $this->formatTime($sched->UnderTime, 'U');
-                        $days[$day][] = $undertime;
-                    }
-                    if ($sched->Absent != ".0000") {
-                        $days[$day][] = 'A';
-                    }
-
-                    $formattedMonth = \Carbon\Carbon::parse($sched->TransDate)->format('F');
-                    if (!in_array($formattedMonth, $monthDesc)) {
-                        $monthDesc[] = $formattedMonth;
-                    }
-
-                    $yearValue = \Carbon\Carbon::parse($sched->TransDate)->year;
-                    if (!in_array($yearValue, $year)) {
-                        $year[] = $yearValue;
-                    }
-                }
-
-                return [
-                    'codes' => $codes,
-                    'days' => $days,
-                    'monthDesc' => $monthDesc,
-                    'year' => $year
-                ];
-            });
+                    return [
+                        'codes' => $codes,
+                        'days' => $days,
+                        'monthDesc' => $monthDesc,
+                        'year' => $year
+                    ];
+                });
+            }
 
             $data = [
                 'groupedData'       => $groupedData->toArray(),
@@ -139,6 +143,66 @@ class PrintEmployeeRecord extends Controller
         }
     }
 
+    public function filteredServiceRecords($serviceRecords, $p_monthName) {
+        $filteredRecords = collect($serviceRecords)->filter(function ($item) use ($p_monthName) {
+            return $item->Month === $p_monthName;
+        });
+
+        $groupedData = $filteredRecords->groupBy(function ($item) {
+            return \Carbon\Carbon::parse($item->TransDate)->format('Y-m');
+        })->map(function ($monthData) {
+            $codes      = [];
+            $days       = [];
+            $monthDesc  = [];
+            $year       = [];
+            foreach ($monthData as $sched) {
+                $code = $sched->Code;
+                if (!in_array($code, ['VL', 'SIL', 'R']) && !in_array($code, $codes)) {
+                    $codes[] = $code;
+                }
+
+                $day = \Carbon\Carbon::parse($sched->TransDate)->day;
+                if (!isset($days[$day])) {
+                    $days[$day] = [];
+                }
+
+                if ($sched->Category === 'O' && !in_array('OT', $days[$day])) {
+                    $days[$day][] = 'OT';
+                } elseif ($sched->Category !== 'O' && !in_array($sched->Code, $days[$day])) {
+                    $days[$day][] = $sched->Code;
+                }
+
+                if ($sched->Tardy != ".0000") {
+                    $late = $this->formatTime($sched->Tardy, 'L');
+                    $days[$day][] = $late;
+                }
+                if ($sched->UnderTime != ".0000") {
+                    $undertime = $this->formatTime($sched->UnderTime, 'U');
+                    $days[$day][] = $undertime;
+                }
+                if ($sched->Absent != ".0000") {
+                    $days[$day][] = 'A';
+                }
+
+                $formattedMonth = \Carbon\Carbon::parse($sched->TransDate)->format('F');
+                if (!in_array($formattedMonth, $monthDesc)) {
+                    $monthDesc[] = $formattedMonth;
+                }
+
+                $yearValue = \Carbon\Carbon::parse($sched->TransDate)->year;
+                if (!in_array($yearValue, $year)) {
+                    $year[] = $yearValue;
+                }
+            }
+            return [
+                'codes' => $codes,
+                'days' => $days,
+                'monthDesc' => $monthDesc,
+                'year' => $year
+            ];
+        });
+        return $groupedData;
+    }
     private function formatTime($time, $label) {
         $hours = floor(intval($time) / 60);
         $minutes = intval($time) % 60;

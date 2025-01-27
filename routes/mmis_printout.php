@@ -298,7 +298,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $nonFreeGoods = $delivery->items->filter(function ($item) {
         return $item->isFreeGoods == 0;
     });
-     $vatableSales = 0;
+    $vatableSales = 0;
     $netAmount = 0;
     foreach ($nonFreeGoods as $item) {
         
@@ -311,12 +311,15 @@ Route::get('/print-delivery/{id}', function ($pid) {
                 $vatableSales = $itemTotal - $vatAmount;
             }
             $discount += (float)$item->discount;
-            $netAmount += (float)$itemTotal - $discount;
-            // $netAmount += (float)$item->net_amount;
+            $netAmount += (float)$itemTotal;
+            $totalNetAmount = $netAmount - $discount;
+
             if ($item->vat_type == 1) {
-                $grandTotal = $netAmount + $vatAmount;
+                $grandTotal = $totalNetAmount + $vatAmount;
             }elseif ($item->vat_type == 2) {
-                $grandTotal = $netAmount;
+                $grandTotal = $totalNetAmount;
+            }elseif ($item->vat_type == 3) {
+                $grandTotal = $totalNetAmount;
             }
            
             if ($item->currency_id == 2) {
@@ -324,6 +327,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
             }
       
     }
+
 
     $groupedNonFreeGoods = $nonFreeGoods->groupBy('itemname');
     // Calculate overall total

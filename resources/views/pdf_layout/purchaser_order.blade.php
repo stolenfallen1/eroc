@@ -318,15 +318,15 @@
 
       @foreach ($pdf_data['free_goods_purchase_order_items'] as $detail)
       <tr>
-        <td class="item-td" width="60" >{{ $detail['itemcode'] }}</td>
+        <td class="item-td"  >{{ $detail['itemcode'] }}</td>
         <td class="item-td">{{ $detail['itemname'] }}</td>
         <td class="item-td">{{ $detail['uom'] }}</td>
-        <td class="item-td" width="40">{{ intval($detail['order_qty']) }}</td>
-        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['price'],4) }}</td>
-        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],4) }}</td>
-        <td class="item-td" width="50">{{ number_format($detail['disc_amount'],4) }}</td>
-        <td class="item-td" width="30">{{ number_format(abs($detail['vat_amount']),4) }}</td>
-        <td class="item-td" width="55">{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],4) }}</td>
+        <td class="item-td" >{{ intval($detail['order_qty']) }}</td>
+        <td class="item-td" >{{$pdf_data['currency']}}{{ number_format($detail['price'],4) }}</td>
+        <td class="item-td" >{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],4) }}</td>
+        <td class="item-td" >{{ number_format($detail['disc_amount'],4) }}</td>
+        <td class="item-td" >{{ number_format(abs($detail['vat_amount']),4) }}</td>
+        <td class="item-td" >{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],4) }}</td>
       </tr>
       @endforeach
       @endif

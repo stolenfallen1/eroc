@@ -16,7 +16,7 @@ use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\HIS\services\EmergencyRegistrationController;
 use App\Http\Controllers\HIS\services\InpatientRegistrationController;
 use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\EmployeeMasterRecord;
-
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\print_record\PrintEmployeeRecord;
 use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
 use App\Http\Controllers\HIS\EmergencyRoomMedicine;
@@ -69,3 +69,5 @@ Route::get('get-charge-items', [EmergencyRoomMedicine::class, 'getMedicineSupply
 Route::get('er-patient-daily-report', [ReportMaster::class, 'ERDailyCensusReport']);
 Route::get('doctors-categories', [DoctorController::class, 'doctorsCategories']);
 Route::get('patient-for-admission', [InpatientRegistrationController::class, 'getPatientForAdmission']);
+
+Route::get('/service_record/pdf/generate-save-pdf',  [PrintEmployeeRecord::class,'generatePDF']);

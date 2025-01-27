@@ -303,13 +303,13 @@ Route::get('/print-delivery/{id}', function ($pid) {
     $totalNetAmount = 0;
     foreach ($nonFreeGoods as $item) {
         
-            $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
+             $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
             $subTotal += (float)$itemTotal;
             $vatAmount += (float)$item->vatamount;
             if ($item->vat_type == 1) {
-                $vatableSales = $itemTotal;
+                $vatableSales += $itemTotal + $vatAmount;
             }elseif ($item->vat_type == 2) {
-                $vatableSales = $itemTotal - $vatAmount;
+                $vatableSales += $itemTotal;
             }
             $discount += (float)$item->discount;
             $netAmount += (float)$itemTotal;

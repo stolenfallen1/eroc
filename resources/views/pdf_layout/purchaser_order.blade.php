@@ -283,11 +283,11 @@
         <td class="item-td">{{ $detail['itemname'] }}</td>
         <td class="item-td" >{{ $detail['uom'] }}</td>
         <td class="item-td" >{{ intval($detail['order_qty']) }}</td>
-        <td class="item-td text-right" >{{$pdf_data['currency']}}{{ number_format($detail['price'],4) }}</td>
-        <td class="item-td text-right" ">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],4) }}</td>
-        <td class="item-td text-right" >{{$pdf_data['currency']}}{{number_format($detail['disc_amount'],4) }}</td>
-        <td class="item-td text-right" >{{$pdf_data['currency']}}{{number_format(abs($detail['vat_amount']),4) }}</td>
-        <td class="item-td text-right" >{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],4) }}</td>
+        <td class="item-td text-right" >{{$pdf_data['currency']}}{{ number_format($detail['price'],2) }}</td>
+        <td class="item-td text-right" ">{{$pdf_data['currency']}}{{ number_format($detail['item_total_amount'],2) }}</td>
+        <td class="item-td text-right" >{{$pdf_data['currency']}}{{number_format($detail['disc_amount'],2) }}</td>
+        <td class="item-td text-right" >{{$pdf_data['currency']}}{{number_format(abs($detail['vat_amount']),2) }}</td>
+        <td class="item-td text-right" >{{$pdf_data['currency']}}{{ number_format($detail['item_total_net_amount'],2) }}</td>
       </tr>
       @endforeach
       @if(count($pdf_data['free_goods_purchase_order_items']) > 0)

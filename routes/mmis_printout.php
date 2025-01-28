@@ -299,19 +299,26 @@ Route::get('/print-delivery/{id}', function ($pid) {
         return $item->isFreeGoods == 0;
     });
     $vatableSales = 0;
+    $totalVatableSales = 0;
     $netAmount = 0;
     $totalNetAmount = 0;
+
     foreach ($nonFreeGoods as $item) {
         
-             $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
+            $itemTotal = $item->served_qty * $item->price; // Modify field names based on your structure
             $subTotal += (float)$itemTotal;
             $vatAmount += (float)$item->vatamount;
+            
             if ($item->vat_type == 1) {
                 $vatableSales += $itemTotal + $vatAmount;
+                $totalVatableSales = $vatableSales;
             }elseif ($item->vat_type == 2) {
-                $vatableSales += $itemTotal;
+                $vatableSales += $itemTotal;                
+                $totalVatableSales = $vatableSales - $vatAmount;
+
             }elseif ($item->vat_type == 3) {
                 $vatableSales += $itemTotal ;
+                $totalVatableSales = $vatableSales;
             }
             $discount += (float)$item->discount;
             $netAmount += (float)$itemTotal;
@@ -320,7 +327,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
             if ($item->vat_type == 1) {
                 $grandTotal = $totalNetAmount + $vatAmount;
             }elseif ($item->vat_type == 2) {
-                $grandTotal = $totalNetAmount;
+                $grandTotal = $totalVatableSales + $vatAmount;
             }elseif ($item->vat_type == 3) {
                 $grandTotal = $totalNetAmount;
             }
@@ -330,7 +337,6 @@ Route::get('/print-delivery/{id}', function ($pid) {
             }
       
     }
-
 
     $groupedNonFreeGoods = $nonFreeGoods->groupBy('itemname');
     // Calculate overall total
@@ -345,7 +351,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
         'groupedNonFreeGoods' => $groupedNonFreeGoods,
         'free_goods_delivery_items' => $freeGoods,
         'sub_total' => $subTotal,
-        'vatableSales' => $vatableSales,
+        'vatableSales' => $totalVatableSales,
         'discount' => $discount,
         'vat_amount' => $vatAmount,
         'grand_total' => $grandTotal,

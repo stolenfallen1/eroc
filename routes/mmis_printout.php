@@ -327,7 +327,7 @@ Route::get('/print-delivery/{id}', function ($pid) {
             if ($item->vat_type == 1) {
                 $grandTotal = $totalNetAmount + $vatAmount;
             }elseif ($item->vat_type == 2) {
-                $grandTotal = $totalVatableSales + $vatAmount;
+                $grandTotal = ($totalVatableSales + $vatAmount) - $discount;
             }elseif ($item->vat_type == 3) {
                 $grandTotal = $totalNetAmount;
             }

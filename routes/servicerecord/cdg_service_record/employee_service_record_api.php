@@ -48,7 +48,4 @@ Route::controller(Department::class)->group(function() {
     Route::get('get-department-employee', 'getDeptEmployee');
 });
 
-// Route::controller(PrintEmployeeRecord::class)->group(function() {
-//     Route::get('/service_record/pdf/generate-save-pdf', 'generatePDF');
-// });
 

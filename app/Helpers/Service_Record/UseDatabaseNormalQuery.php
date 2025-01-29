@@ -244,7 +244,7 @@ class UseDatabaseNormalQuery {
             ->table('CDH_PAYROLL_temp.dbo.tbtMultiSched as st')
             ->select(
                 [
-                    'Code', 
+                    DB::raw('Code as code'), 
                     DB::raw('count(*) as CumulativeCount')
                 ])
             ->whereBetween('sDate', [$startDate, $endDate])

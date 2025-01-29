@@ -5,17 +5,17 @@ use Illuminate\Support\Facades\DB;
 
 class UseStoredProcedure {
     public function getEmployeeServiceRecords($userRequest) {
-        $serviceRecords = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empNum']]);
+        $serviceRecords = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeServiceRecord ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empNum']]);
         return $serviceRecords;
     }
 
     public function getEmployeeUndertimeRecord($userRequest) {
-        $employeeUdertimeSummary = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empNum']]);
+        $employeeUdertimeSummary = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeUndertimeSummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empNum']]);
         return $employeeUdertimeSummary;
     }
 
     public function getEmployeeTardinessRecord($userRequest) {
-        $employeeTardySummary = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empNum']]);
+        $employeeTardySummary = DB::connection('sqlsrv_service_record')->select('EXEC sp_EmployeeTardySummary ?, ?, ?',[$userRequest['year'], $userRequest['month'], $userRequest['empNum']]);
         return $employeeTardySummary;
     }
 
@@ -30,7 +30,7 @@ class UseStoredProcedure {
     }
 
     public function getSumOfAbsencesEachDepartment($userRequest) {
-        $sumOfAbsences = DB::connection('sqlsrv_service_record')->select('SET NOCOUNT ON; Exec sp_EmployeeServiceRecord_Absences ?, ?',[$userRequest['year'], $userRequest['month']]);
+        $sumOfAbsences = DB::connection('sqlsrv_service_record')->select('Exec sp_EmployeeServiceRecord_Absences ?, ?',[$userRequest['year'], $userRequest['month']]);
         return $sumOfAbsences;
     }
 

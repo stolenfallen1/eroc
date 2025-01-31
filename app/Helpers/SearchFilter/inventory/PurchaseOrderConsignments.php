@@ -74,7 +74,7 @@ class PurchaseOrderConsignments
     $this->searcColumns();
     $per_page = Request()->per_page;
     if ($per_page == '-1') return $this->model->paginate($this->model->count());
-    return $this->model->paginate($per_page);
+    return $this->model->paginate(2000);
   }
 
   public function auditedsearchable()

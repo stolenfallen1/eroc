@@ -13,7 +13,7 @@ class UseDatabaseNormalQuery {
         $startDate = '01/01/' . $year;
         $endDate = sprintf('%02d/%02d/%s 23:59', $monthNo, $numDays, $year);
         $serviceRecords = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.vwTimekeeping_DataMerge as A')
+            ->table('CDH_PAYROLL.dbo.vwTimekeeping_DataMerge as A')
             ->select(
                 'A.Empnum',
                 DB::raw("CONCAT(M.Lastname, ', ', M.FirstName, ' ', CASE WHEN M.MiddleName <> '' THEN LEFT(M.MiddleName, 1) + '.' ELSE '' END) AS EmployeeName"),
@@ -44,7 +44,7 @@ class UseDatabaseNormalQuery {
                     CASE
                         WHEN ISNULL(S.Description, '') LIKE '%overload%' THEN 0
                         WHEN A.Code IN ('HD', 'R', 'VL', 'SIL', 'PL', 'ML', 'EL', 'OB', 'HR', 'AL', 'BL', 'UL', 'IL', 'BVL', 'STL', 'WL', 'ED', 'UD', 'SPL') THEN 0
-                        ELSE CASE WHEN A.Category = 'W' AND (SELECT SUM(Workmin) FROM CDH_PAYROLL_temp.dbo.vwTimekeeping_Datamerge WHERE Empnum = A.Empnum AND TransDate = A.TransDate AND Category = 'W') <> 0 THEN UnderTime ELSE 0 END
+                        ELSE CASE WHEN A.Category = 'W' AND (SELECT SUM(Workmin) FROM CDH_PAYROLL.dbo.vwTimekeeping_Datamerge WHERE Empnum = A.Empnum AND TransDate = A.TransDate AND Category = 'W') <> 0 THEN UnderTime ELSE 0 END
                     END AS UnderTime
                 "),
                 DB::raw("
@@ -52,26 +52,26 @@ class UseDatabaseNormalQuery {
                         WHEN ISNULL(S.Description, '') LIKE '%overload%' THEN 0
                         WHEN A.Code IN ('HD', 'R', 'VL', 'SIL', 'PL', 'OB', 'HR', 'AL', 'BL', 'UL', 'IL', 'BVL', 'STL', 'WL', 'ED', 'UD', 'SPL') THEN 0
                         WHEN A.Code IN ('ML', 'EL') THEN 480
-                        ELSE CASE WHEN A.Category = 'W' AND (SELECT SUM(Workmin) FROM CDH_PAYROLL_temp.dbo.vwTimekeeping_Datamerge WHERE Empnum = A.Empnum AND TransDate = A.TransDate AND Category = 'W') = 0 THEN ScheduleMin ELSE 0 END
+                        ELSE CASE WHEN A.Category = 'W' AND (SELECT SUM(Workmin) FROM CDH_PAYROLL.dbo.vwTimekeeping_Datamerge WHERE Empnum = A.Empnum AND TransDate = A.TransDate AND Category = 'W') = 0 THEN ScheduleMin ELSE 0 END
                     END AS Absent
                 "),
                 'Category'
             )
-            ->join('CDH_PAYROLL_temp.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tmpLogs as L', function ($join) {
+            ->join('CDH_PAYROLL.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
+            ->leftJoin('CDH_PAYROLL.dbo.tmpLogs as L', function ($join) {
                 $join->on('L.TransDate', '=', 'A.TransDate')
                     ->on('L.Empnum', '=', 'A.Empnum');
             })
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tbcHoliday as H', function ($join) {
+            ->leftJoin('CDH_PAYROLL.dbo.tbcHoliday as H', function ($join) {
                 $join->on('H.HolidayDate', '=', 'A.TransDate')
                     ->orOn('H.HolidayDate', '=', 'A.TimeIn')
                     ->orOn('H.HolidayDate', '=', 'A.TimeOut');
             })
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tbcSchedType as S', 'A.Type', '=', 'S.Code')
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tbcDepartment as DEPT', 'M.DepartmentCode', '=', 'DEPT.Code')
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tbcSectionCode as SECT', 'M.SectionCode', '=', 'SECT.Code')
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tbcPosition as POST', 'M.PositionCode', '=', 'POST.Code')
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tmpLogs as L2', function ($join) {
+            ->leftJoin('CDH_PAYROLL.dbo.tbcSchedType as S', 'A.Type', '=', 'S.Code')
+            ->leftJoin('CDH_PAYROLL.dbo.tbcDepartment as DEPT', 'M.DepartmentCode', '=', 'DEPT.Code')
+            ->leftJoin('CDH_PAYROLL.dbo.tbcSectionCode as SECT', 'M.SectionCode', '=', 'SECT.Code')
+            ->leftJoin('CDH_PAYROLL.dbo.tbcPosition as POST', 'M.PositionCode', '=', 'POST.Code')
+            ->leftJoin('CDH_PAYROLL.dbo.tmpLogs as L2', function ($join) {
                 $join->on('L2.TransDate', '=', 'A.TransDate')
                     ->on('L2.Empnum', '=', 'A.Empnum');
             })
@@ -99,8 +99,8 @@ class UseDatabaseNormalQuery {
         ];
 
         $query = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.vwTimekeeping_Datamerge as A')
-            ->join('CDH_PAYROLL_temp.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
+            ->table('CDH_PAYROLL.dbo.vwTimekeeping_Datamerge as A')
+            ->join('CDH_PAYROLL.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
             ->selectRaw("
                 YEAR(A.Transdate) as Year,
                 MONTH(A.Transdate) as MonthNo,
@@ -141,8 +141,8 @@ class UseDatabaseNormalQuery {
             'EL', 'SIL', 'ML', 'PL', 'S', 'LOA', 'AWOL', 'SLX', 'RX'
         ];
         $query = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.vwTimekeeping_Datamerge as A')
-            ->join('CDH_PAYROLL_temp.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
+            ->table('CDH_PAYROLL.dbo.vwTimekeeping_Datamerge as A')
+            ->join('CDH_PAYROLL.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
             ->selectRaw("
                 YEAR(A.Transdate) as Year,
                 MONTH(A.Transdate) as MonthNo,
@@ -173,13 +173,13 @@ class UseDatabaseNormalQuery {
         $startDate = '01/01/' . $year;
         $endDate = sprintf('%02d/%02d/%s 23:59', $monthNo, $numDays, $year);
         $query = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.vwTimekeeping_Datamerge as A')
-            ->join('CDH_PAYROLL_temp.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tmpLogs as L', function ($join) {
+            ->table('CDH_PAYROLL.dbo.vwTimekeeping_Datamerge as A')
+            ->join('CDH_PAYROLL.dbo.tbcMaster as M', 'A.Empnum', '=', 'M.Empnum')
+            ->leftJoin('CDH_PAYROLL.dbo.tmpLogs as L', function ($join) {
                 $join->on('L.TransDate', '=', 'A.TransDate')
                     ->on('L.Empnum', '=', 'A.Empnum');
             })
-            ->leftJoin('CDH_PAYROLL_temp.dbo.tbcSchedType as S', function ($join) {
+            ->leftJoin('CDH_PAYROLL.dbo.tbcSchedType as S', function ($join) {
                 $join->on('A.Type', '=', 'S.Code');
             })
             ->selectRaw("
@@ -241,7 +241,7 @@ class UseDatabaseNormalQuery {
         $startDate = '01/01/' . $year;
         $endDate = sprintf('%02d/%02d/%s 23:59', $monthNo, $numDays, $year);
         $employeeComulativeLeaveCount = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.tbtMultiSched as st')
+            ->table('CDH_PAYROLL.dbo.tbtMultiSched as st')
             ->select(
                 [
                     DB::raw('Code as code'), 
@@ -258,7 +258,7 @@ class UseDatabaseNormalQuery {
 
     public function getPaidLeaveListQuery() {
         $paidLeaves = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.tbcShifts as ts')
+            ->table('CDH_PAYROLL.dbo.tbcShifts as ts')
             ->select('ts.Code', 'ts.Description') 
             ->where('ts.WorkingHrs', '24')
             ->where('ts.WPay', '1')
@@ -268,7 +268,7 @@ class UseDatabaseNormalQuery {
     }
     public function getNonPaidLeaveListQuery() {
         $nonPaidLeaves = DB::connection('sqlsrv_service_record')
-            ->table('CDH_PAYROLL_temp.dbo.tbcShifts as ts')
+            ->table('CDH_PAYROLL.dbo.tbcShifts as ts')
             ->select('ts.Code', 'ts.Description') 
             ->where('ts.WorkingHrs', '24')
             ->where('ts.WPay', '0')

@@ -5,11 +5,20 @@ namespace App\Http\Controllers\ServiceRecord\cdg_employee_service_record\print_r
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Helpers\Service_Record\UseDatabaseNormalQuery;
+use App\Helpers\Service_Record\UseStoredProcedure;
+use App\Helpers\Service_Record\UserRequestProcessing;
 use PDF;
 
-class PrintEmployeeRecord extends Controller
-{
-    //
+class PrintEmployeeRecord extends Controller{
+    protected $request_handler;
+    protected $use_query;
+    protected $sp;
+    public function __construct(UserRequestProcessing $request_handler, UseDatabaseNormalQuery $use_query, UseStoredProcedure $sp) {
+        $this->request_handler = $request_handler;
+        $this->use_query = $use_query;
+        $this->sp = $sp;
+    }
     public function generatePDF(Request $request) {
         try {
             $p_year = $request->input('year');
@@ -203,6 +212,62 @@ class PrintEmployeeRecord extends Controller
         });
         return $groupedData;
     }
+
+    public function generatedRecordedAbsences(Request $request) {
+        $recieved_userRequest = [
+            'year' => $request->input('year'),
+            'month' => $request->input('month'),
+            'empnum' => ''
+        ];
+        $userRequest = $this->request_handler->extractRequestDate($recieved_userRequest);
+        try {
+            $sumOfAbsences = $this->use_query->sumOfAbsentQuery($userRequest);
+            if (empty($sumOfAbsences)) {
+                throw new \Exception('No record found');
+            }
+            $data = [
+                'Year' => $recieved_userRequest['year'],
+                'sumOfAbsences' => $sumOfAbsences->toArray(),
+                'year' => $recieved_userRequest['year'],
+                'month' => $recieved_userRequest['month']
+            ];
+            $filename   = 'Total Absences Each Department';
+            $html       = view('service_record.pdf.absences', $data)->render();
+            $pdf        = PDF::loadHTML($html)->setPaper('letter', 'landscape');
+
+            $pdf->render();
+            $dompdf = $pdf->getDomPDF();
+            $font = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
+            $dompdf->get_canvas()->page_text(740, 580, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
+            $currentDateTime = \Carbon\Carbon::now()->format('Y-m-d g:i A');
+            $dompdf->get_canvas()->page_text(35, 580, $currentDateTime, $font, 10, array(0, 0, 0));
+            return $pdf->stream($filename . '.pdf');
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Unable to fetch sum of absences each department.' . $e->getMessage()], 500);
+            // try {
+            //     $sumOfAbsences = $this->sp->getSumOfAbsencesEachDepartment($recieved_userRequest);
+            //     if (empty($sumOfAbsences)) {
+            //         throw new \Exception('No record found');
+            //     }
+            //     $data = [
+            //         'sumOfAbsences' => $sumOfAbsences,
+            //         'year' => $recieved_userRequest['year'],
+            //         'month' => $recieved_userRequest['month']
+            //     ];
+            //     $filename   = 'Total Absences Each Department';
+            //     $html       = view('service_record.pdf.absences', $data)->render();
+            //     $pdf        = PDF::loadHTML($html)->setPaper('letter', 'landscape');
+    
+            //     $pdf->render();
+            //     $dompdf = $pdf->getDomPDF();
+            //     $font = $dompdf->getFontMetrics()->get_font("Montserrat", "normal");
+            //     $dompdf->get_canvas()->page_text(750, 575, "{PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
+            // } catch (\Exception $fallbackException) {
+            //     return response()->json(['error' => 'Unable to fetch sum of absences each department.' . $fallbackException->getMessage()], 500);
+            // }
+        }
+    }
+
     private function formatTime($time, $label) {
         $hours = floor(intval($time) / 60);
         $minutes = intval($time) % 60;

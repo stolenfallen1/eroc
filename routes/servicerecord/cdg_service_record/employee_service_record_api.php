@@ -37,6 +37,7 @@ Route::controller(EmployeeMasterRecord::class)->group(function() {
     Route::get('get-paid-leave', 'getPaidLeaves');
     Route::get('get-non-paid-leave', 'getNonPaidLeave');
     Route::get('get-employee-ot', 'getEmployeeOT');
+    Route::get('get-sum-of-absences-each-department', 'sumOfAbsencesEachDepartment');
 });
 
 Route::controller(Employee::class)->group(function() {
@@ -47,5 +48,6 @@ Route::controller(Department::class)->group(function() {
     Route::get('get-department-list', 'getDepartmentList');
     Route::get('get-department-employee', 'getDeptEmployee');
 });
+
 
 

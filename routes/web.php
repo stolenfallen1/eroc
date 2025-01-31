@@ -21,6 +21,7 @@ use App\Http\Controllers\HIS\PatientDischarge;
 use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
 use App\Http\Controllers\HIS\EmergencyRoomMedicine;
 use App\Http\Controllers\BuildFile\Hospital\DoctorController;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_department\Department;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,5 +71,12 @@ Route::group(['middleware' => 'admin.user'], function () {
 // Route::get('doctors-categories', [DoctorController::class, 'doctorsCategories']);
 // Route::get('patient-for-admission', [InpatientRegistrationController::class, 'getPatientForAdmission']);
 
-Route::get('/service_record/pdf/generate-save-pdf',  [PrintEmployeeRecord::class,'generatePDF']);
-Route::get('get-sum-of-absences-each-department', [EmployeeMasterRecord::class, 'sumOfAbsencesEachDepartment']);
+// Route::get('/service_record/pdf/generate-save-pdf',  [PrintEmployeeRecord::class,'generatePDF']);
+// Route::get('service_record/pdf/generate-pdf-for-absences', [EmployeeMasterRecord::class, 'sumOfAbsencesEachDepartment']);
+
+Route::controller(PrintEmployeeRecord::class)->group(function() {
+    Route::get('/service_record/pdf/generate-save-pdf', 'generatePDF');
+    Route::get('/service_record/pdf/generate-pdf-for-absences', 'generatedRecordedAbsences');
+});
+
+Route::get('get-inactive-employee', [Department::class, 'getInActiveEmployeeList']);

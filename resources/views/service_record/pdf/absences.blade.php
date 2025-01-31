@@ -37,7 +37,7 @@
 
             .sub-header-text h1 {
                 margin: 0;
-                font-size: 20px
+                font-size: 16px
             }
 
             .container {
@@ -47,13 +47,10 @@
             .styled-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-top: 10px;
-                margin-bottom: 10px;
             }
-
             .styled-table thead tr {
-                background-color: #107dac !important;
-                color: #ffffff;
+                /* background-color: #107dac !important; */
+                color: #000;
                 text-align: left;
             }
 
@@ -85,16 +82,6 @@
                 text-align: center;
                 vertical-align: top;
             }
-
-            .sp-td {
-                border: 2px solid #ff0000;
-                background: yellow
-            }
-
-            .sp-text {
-                color: red;
-            }
-
             .page-break {
                 page-break-after: always;
             }
@@ -102,31 +89,6 @@
             .page-break-before {
                 page-break-before: always;
             }
-
-            .employee-creds-text {
-                width: 100%;
-                display: inline-flex;
-                justify-content: space-evenly;
-                flex-wrap: wrap;
-            }
-
-            .employee-creds-text p {
-                margin: 0 10px;
-            }
-
-            .full-width-line {
-                border-top: 0.5px solid #009879;
-                width: 100%;
-                margin: 0 auto;
-            }
-
-            .date-info {
-                font-family: Arial, sans-serif;
-                font-size: 14px;
-                line-height: 1.6;
-                text-align: left;
-            }
-
             .date-label {
                 font-weight: bold;
                 margin-bottom: 5px;
@@ -189,7 +151,6 @@
                 display: inline-block;
                 box-sizing: border-box;
                 width: 100%;
-                margin-top: 1.5rem;
             }
 
             .column{
@@ -218,19 +179,20 @@
             }
 
             .table-height {
-                height: 90%;
+                height: 25%;
             }
 
-            .employee-data {
+            .header-info {
                 height: 20%;
             }
 
-            .employee-data p {
-                font-size: 12px;
+            .header-info p {
+                font-size: 1rem;
+                font-weight: bold;
                 text-transform: capitalize;
             }
 
-            .employee-data p span {
+            .header-info p span {
                 font-weight: bold;
             }
 
@@ -239,10 +201,21 @@
                 top:-20;
                 left:160;
             }
+            .total-column {
+                padding: 4px 8px;
+            }
         </style>
     </head>
 
     <body>
+        @php
+            $monthName = array(
+                'January', 'February', 'March', 'April', 'May', 'June', 'July',
+                'August', 'September', 'October', 'November', 'December'
+            );
+            $groupedAbsences = collect($sumOfAbsences)->groupBy('Department');
+            $totalPerMonth = array_fill_keys($monthName, 0);
+        @endphp
         <div class="container">
             <div class="table-height">
                 <div class="header-text">
@@ -251,46 +224,58 @@
                     <p>Osmeña Blvd., Capitol Site, Cebu City</p>
                 </div>
                 <div class="sub-header-text">
-                    <h1>Service Record {{ $year }}</h1>
+                    <h1>Total Absences Per Department</h1>
                 </div>
                 <div class="employee-record-detail">
                     <div class="column">
-                        <div class="employee-data">
-                            <p><span>Employee No.</span> : {{ $employeeId }}</p>
-                            <p><span>Employee Name</span> :  {{ $employeeName }}</p>
-                            <p><span>Job Description</span> :  {{ $Position }}</p>
-                            <p><span>Section</span> : {{ $Section }}</p>
-                            <p><span>Department</span> :  {{ $Department }}</p>
-                        </div>
-                    </div>
-                    <div class="column">
-                        <div class="employee-data">
-                            <div class="employment-info">
-                                <p><span>Probationary Date</span> : {{ $dateEmployed }}</p>
-                                <p><span>Regularization Date</span> : {{ $Regularization }}</p>
-                                <p><span>Resignation Date</span> : {{ $dateResigned }}</p>
-                            </div>
+                        <div class="header-info">
+                            <p>Year : {{ $Year }}</p>
                         </div>
                     </div>
                 </div>
-                <table class="styled-table">
+                <table border="1" class="styled-table">
                     <thead>
                         <tr>
-                            <th>Year</th>
-                            <th>Month</th>
-                            <th>Department</th>
-                            <th>Total Absences</th>
+                            <th rowspan="2" style="text-align: center">Department</th>
+                            <th colspan="12" style="text-align: center">Month</th>
+                            <th rowspan="2">Total</th>
+                        </tr>
+                        <tr>
+                            @foreach($monthName as $month)
+                                <th>{{ $month }}</th>
+                            @endforeach
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($absences as $absence)
+                    <tbody
+                        @foreach($groupedAbsences as $department => $records)
+                            @php
+                                $absencesByMonth = array_fill_keys($monthName, 0);
+                                $totalDepartmentAbsences = 0;
+                            @endphp
+
+                            @foreach($records as $absence)
+                                @php
+                                    $absencesByMonth[$absence->Month] = $absence->AbsentCount;
+                                    $totalDepartmentAbsences += $absence->AbsentCount;
+                                    $totalPerMonth[$absence->Month] += $absence->AbsentCount;
+                                @endphp
+                            @endforeach
+
                             <tr>
-                                <td>{{ $absence->year }}</td>
-                                <td>{{ $absence->month }}</td>
-                                <td>{{ $absence->department }}</td>
-                                <td>{{ $absence->total_absences }}</td>
+                                <td>{{ $department }}</td>
+                                @foreach($monthName as $month)
+                                    <td style="text-align: center">{{ $absencesByMonth[$month] }}</td>
+                                @endforeach
+                                <td style="text-align: center"><strong>{{ $totalDepartmentAbsences }}</strong></td>
                             </tr>
                         @endforeach
+                        <tr style="border-bottom: 1px solid #000000;">
+                            <td><strong>Total</strong></td>
+                            @foreach($monthName as $month)
+                                <td style="text-align: center"><strong>{{ $totalPerMonth[$month] }}</strong></td>
+                            @endforeach
+                            <td style="text-align: center"><strong>{{ array_sum($totalPerMonth) }}</strong></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

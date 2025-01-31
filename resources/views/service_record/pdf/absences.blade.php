@@ -156,7 +156,7 @@
             .column{
                 width: 48%;
                 display: inline-block;
-                margin-top:30px;
+                margin-top: 10px;
             }
 
             .column-table {

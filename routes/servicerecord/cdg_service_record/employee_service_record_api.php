@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\print_record\PrintAbsencesExcell;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\dashboard\Dashboard;
@@ -48,6 +49,10 @@ Route::controller(Department::class)->group(function() {
     Route::get('get-department-list', 'getDepartmentList');
     Route::get('get-department-employee', 'getDeptEmployee');
 });
+
+// Route::controller(PrintAbsencesExcell::class)->group(function() {
+//     Route::get('create-exell-file', 'generatedRecordedAbsences');
+// });
 
 
 

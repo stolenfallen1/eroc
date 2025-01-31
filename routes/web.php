@@ -22,6 +22,7 @@ use App\Http\Controllers\BuildFile\FMS\TransactionCodesController;
 use App\Http\Controllers\HIS\EmergencyRoomMedicine;
 use App\Http\Controllers\BuildFile\Hospital\DoctorController;
 use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\by_department\Department;
+use App\Http\Controllers\ServiceRecord\cdg_employee_service_record\print_record\PrintAbsencesExcell;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,3 +81,6 @@ Route::controller(PrintEmployeeRecord::class)->group(function() {
 });
 
 Route::get('get-inactive-employee', [Department::class, 'getInActiveEmployeeList']);
+Route::controller(PrintAbsencesExcell::class)->group(function() {
+    Route::get('create-exell-file', 'generatedRecordedAbsences');
+});
